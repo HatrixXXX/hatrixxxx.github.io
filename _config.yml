@@ -26,10 +26,10 @@ description: >- # used by seo meta and the atom feed
 url: "https://hatrix.site"
 
 github:
-  username: HatrixXXXXX # change to your GitHub username
+  username: HatrixXXX # change to your GitHub username
 
 # twitter:
-#   username: HatrixXXXXX # change to your Twitter username
+#   username: HatrixXXX # change to your Twitter username
 
 social:
   # Change to your full name.
@@ -39,7 +39,7 @@ social:
   links:
     # The first element serves as the copyright owner's link
     # - https://twitter.com/username # change to your Twitter homepage
-    - https://github.com/HatrixXXXXX # change to your GitHub homepage
+    - https://github.com/HatrixXXX # change to your GitHub homepage
     - https://gitee.com/hatrixxxx
     # Uncomment below to add more social links
     - https://space.bilibili.com/352420563
@@ -122,7 +122,7 @@ comments:
     issue_term: # < url | pathname | title | ...>
   # Giscus options › https://giscus.app
   giscus:
-    repo: HatrixXXXXX/hatrixxxxxx.github.io # <gh-username>/<repo>
+    repo: HatrixXXX/hatrixxxx.github.io # <gh-username>/<repo>
     repo_id: R_kgDON53qQQ
     category: Comments
     category_id: DIC_kwDON53qQc4Cm_MZ

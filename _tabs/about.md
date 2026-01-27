@@ -5,7 +5,7 @@ order: 4
 ---
 
 2023 年寒假，我刷到杨硕大神的[机器人工程师学习计划](https://zhuanlan.zhihu.com/p/22266788)一文，可能是出于对机器人全栈工程师的憧憬，也可能是看到了机器人领域好多好多有意思的东西，也可能单纯是觉得徒手造个能跑能跳的机构很好玩儿，这篇文章让我两眼放光，备受鼓舞。(也是在那个时候决定了参加 RoboMaster 比赛，希望在实践中作相关的技术积累)
-![作者调试过的比赛机器人](https://cdn.jsdelivr.net/gh/HatrixXXXXX/Hatrix-s-Blog-Image/img/infantry.jpg)
+![作者调试过的比赛机器人](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/infantry.jpg)
 
 本科三年级结束的时候，我总结三年来的经历发到知乎上，这里也贴出链接：[本科这三年](https://zhuanlan.zhihu.com/p/1916584451808429500)，目前我已经找到自己为之愿意付出数年时间的领域，本站将会持续更新自己主线任务和支线任务上的：理论知识储备、项目实践经验、工具使用推荐等内容。
 
