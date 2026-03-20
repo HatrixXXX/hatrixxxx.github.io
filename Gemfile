@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# source "https://rubygems.org"
-source "https://gems.ruby-china.com/"
+source "https://rubygems.org"
+# source "https://gems.ruby-china.com/"
 
 gem "jekyll-theme-chirpy", "~> 7.2", ">= 7.2.4"
 gem "html-proofer", "~> 5.2.0", group: :test
