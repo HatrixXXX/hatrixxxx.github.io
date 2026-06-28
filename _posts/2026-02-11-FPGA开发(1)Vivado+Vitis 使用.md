@@ -1,6 +1,6 @@
 ---
 title: FPGA开发(1) Vivado + Vitis 使用
-description: <摘要>
+description: 记录 Vivado 与 Vitis 工程中的编译提速、OOC、ILA、XDC、Tcl、Block Design、ARM 核和常用 IP 配置。
 math: true
 mermaid: true
 image:
