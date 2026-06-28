@@ -1,16 +1,10 @@
 ---
-title: FPGA系列(3)
-description: Xilinx FPGA硬件资源
-author: Hatrix
-date: 2026-02-25 16:08:00 +0800
-categories: []
-tags: []
+title: Xilinx FPGA硬件资源
+description: <摘要>
 math: true
 mermaid: true
-pin: false
 image:
   path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/20240424100647039.png
-  alt: FPGA广泛用于硬件加速器的原型设计
 ---
 
 ## 基本单元
