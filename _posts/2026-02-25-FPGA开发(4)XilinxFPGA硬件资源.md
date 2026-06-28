@@ -1,6 +1,6 @@
 ---
 title: PGA开发(4) Xilinx FPGA硬件资源
-description: 归纳 Xilinx FPGA 的基本逻辑单元、存储、运算、时钟、IO 和互联资源。
+description: 归纳 Xilinx FPGA 的基本逻辑单元、存储、运算、时钟、IO 和互联资源
 math: true
 mermaid: true
 image:
