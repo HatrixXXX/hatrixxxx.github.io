@@ -122,10 +122,10 @@ comments:
     issue_term: # < url | pathname | title | ...>
   # Giscus options › https://giscus.app
   giscus:
-    repo: HatrixXXX/hatrixxxx.github.io # <gh-username>/<repo>
-    repo_id: R_kgDON53qQQ
+    repo: hatrixxxx/hatrixxxx.github.io # <gh-username>/<repo>
+    repo_id: R_kgDORB9GlQ
     category: Comments
-    category_id: DIC_kwDON53qQc4Cm_MZ
+    category_id: DIC_kwDORB9Glc4DACF_
     mapping: pathname # optional, default to 'pathname'
     strict: # optional, default to '0'
     input_position: # optional, default to 'bottom'
