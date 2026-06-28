@@ -4,7 +4,7 @@ description: <摘要>
 math: true
 mermaid: true
 image:
-  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Xilinx-T1-Telco-Accelerator-Cover111.png
+  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/c7e60454de8e3902967bf972fefd77ee.jpeg
 ---
 
 ## 基本单元
