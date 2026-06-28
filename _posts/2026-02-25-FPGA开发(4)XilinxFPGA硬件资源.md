@@ -1,10 +1,10 @@
 ---
-title: Xilinx FPGA硬件资源
+title: PGA开发(4) Xilinx FPGA硬件资源
 description: <摘要>
 math: true
 mermaid: true
 image:
-  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/c7e60454de8e3902967bf972fefd77ee.jpeg
+  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Xilinx-T1-Telco-Accelerator-Cover111.png
 ---
 
 ## 基本单元
