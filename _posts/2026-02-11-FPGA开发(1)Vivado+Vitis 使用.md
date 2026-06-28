@@ -4,7 +4,7 @@ description: <摘要>
 math: true
 mermaid: true
 image:
-  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/20240424100647039.png
+  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Screen-Shot-2019-10-03-at-5.31.06-PM.jpg
 ---
 
 vivado + vitis 是 Xilinx FPGA 配套的软件栈。vitis 前身叫 SDK，Xilinx 被 AMD 收购后重构为 vitis，两者在使用上大致相同。虽然 vivado 这头洪水猛兽跑得又慢还偶尔碰到疑似软件本身 bug 的情况，但这已经是所有 FPGA EDA 中最成熟的一个了，并且写写代码跑跑综合布局布线就能改电路结构，想想还是挺神奇挺有意思的。
