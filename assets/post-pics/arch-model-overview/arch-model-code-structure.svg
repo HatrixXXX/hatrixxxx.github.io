@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="1040" viewBox="0 0 980 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Arch Model code structure</title>
+  <desc id="desc">sipu_sw directory tree with arch model related module annotations.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#b7791f"/>
+    </marker>
+    <style>
+      .bg { fill: #0f172a; }
+      .panel { fill: #111827; stroke: #334155; stroke-width: 2; rx: 16; }
+      .root { fill: #86efac; font-family: Consolas, "SFMono-Regular", monospace; font-size: 28px; font-weight: 700; }
+      .item { fill: #93c5fd; font-family: Consolas, "SFMono-Regular", monospace; font-size: 26px; }
+      .muted { fill: #94a3b8; font-family: Consolas, "SFMono-Regular", monospace; font-size: 26px; }
+      .file { fill: #e5e7eb; font-family: Consolas, "SFMono-Regular", monospace; font-size: 26px; }
+      .ann { fill: #facc15; font-family: "Segoe UI", Arial, sans-serif; font-size: 25px; font-weight: 700; }
+      .arrow { stroke: #facc15; stroke-width: 4; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="980" height="1040"/>
+  <rect class="panel" x="34" y="34" width="912" height="972"/>
+  <text class="root" x="80" y="86">sipu_sw</text>
+
+  <text class="item" x="100" y="132">&gt; .pytest_cache</text>
+  <text class="item" x="100" y="176">&gt; .vscode</text>
+  <text class="item" x="100" y="220">&gt; andesysc</text>
+  <text class="item" x="100" y="264">&gt; arch_model</text>
+  <text class="item" x="100" y="308">&gt; compiler-toolchain-release</text>
+  <text class="item" x="100" y="352">&gt; ert</text>
+  <line class="arrow" x1="230" y1="344" x2="560" y2="344"/>
+  <text class="ann" x="585" y="353">RV firmware</text>
+
+  <text class="item" x="100" y="396">&gt; esl_model</text>
+  <text class="item" x="100" y="440">&gt; gcs</text>
+  <line class="arrow" x1="230" y1="432" x2="560" y2="432"/>
+  <text class="ann" x="585" y="441">GCS</text>
+
+  <text class="item" x="100" y="484">&gt; gitlab-ci</text>
+  <text class="item" x="100" y="528">&gt; libspike</text>
+  <line class="arrow" x1="260" y1="520" x2="560" y2="520"/>
+  <text class="ann" x="585" y="529">Spike</text>
+
+  <rect x="82" y="548" width="690" height="44" fill="#273244"/>
+  <text class="item" x="100" y="578">&gt; libtilecore</text>
+  <line class="arrow" x1="295" y1="570" x2="560" y2="570"/>
+  <text class="ann" x="585" y="579">TileCore Modules</text>
+
+  <text class="item" x="100" y="626">&gt; make</text>
+  <text class="item" x="100" y="670">&gt; si_kernel_wrapper</text>
+  <text class="item" x="100" y="714">&gt; si_sfu_math</text>
+  <line class="arrow" x1="315" y1="706" x2="560" y2="706"/>
+  <text class="ann" x="585" y="715">sfu math lib</text>
+
+  <text class="item" x="100" y="758">&gt; siformat</text>
+  <line class="arrow" x1="268" y1="750" x2="560" y2="750"/>
+  <text class="ann" x="585" y="759">general math lib</text>
+
+  <text class="item" x="100" y="802">&gt; sipu_common</text>
+  <text class="muted" x="100" y="846">&gt; sipu_sdk</text>
+  <text class="item" x="100" y="890">&gt; sipu_test</text>
+  <line class="arrow" x1="280" y1="882" x2="560" y2="882"/>
+  <text class="ann" x="585" y="891">Tests</text>
+
+  <text class="item" x="100" y="934">&gt; sirt</text>
+  <text class="item" x="100" y="978">&gt; systemc-2.3.4</text>
+  <text class="file" x="100" y="1018">.gitignore    .gitlab-ci.yml    .gitmodules</text>
+</svg>

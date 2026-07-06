@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1760" viewBox="0 0 960 1760" role="img" aria-labelledby="title desc">
+  <title id="title">Arch Model execution flow</title>
+  <desc id="desc">Test, Sirt, GCS-CP, CCS, BD, Spike and TileCore execution flow in the arch model.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#111827"/>
+    </marker>
+    <style>
+      .page { fill: #ffffff; }
+      .box { fill: #ede7ff; stroke: #111827; stroke-width: 4; rx: 10; }
+      .group { fill: none; stroke: #111827; stroke-width: 4; stroke-dasharray: 10 10; rx: 8; }
+      .arrow { stroke: #111827; stroke-width: 4; marker-end: url(#arrow); }
+      .both { stroke: #111827; stroke-width: 4; marker-end: url(#arrow); }
+      .label { fill: #111827; font-family: "Segoe UI", Arial, sans-serif; font-size: 30px; font-weight: 600; }
+      .group-label { fill: #111827; font-family: "Segoe UI", Arial, sans-serif; font-size: 28px; font-weight: 600; }
+      .text { fill: #111827; font-family: "Segoe UI", Arial, sans-serif; font-size: 24px; }
+    </style>
+  </defs>
+  <rect class="page" x="0" y="0" width="960" height="1760"/>
+
+  <rect class="box" x="330" y="35" width="300" height="75"/>
+  <text class="label" x="480" y="83" text-anchor="middle">Test</text>
+  <line class="arrow" x1="480" y1="112" x2="480" y2="148"/>
+
+  <rect class="box" x="300" y="150" width="360" height="195"/>
+  <text class="label" x="480" y="194" text-anchor="middle">Sirt</text>
+  <text class="text" x="330" y="240">- Allocate Resource</text>
+  <text class="text" x="330" y="282">- Launch Kernel</text>
+  <text class="text" x="330" y="324">- Create Dispatch Packet</text>
+  <line class="arrow" x1="480" y1="348" x2="480" y2="388"/>
+
+  <rect class="box" x="300" y="390" width="360" height="215"/>
+  <text class="label" x="480" y="435" text-anchor="middle">GCS-CP</text>
+  <text class="text" x="330" y="488">- Fetch and decode packet</text>
+  <text class="text" x="330" y="530">- Dispatch TBC</text>
+  <text class="text" x="330" y="572">- Update rb rptr and signal</text>
+  <line class="both" x1="480" y1="612" x2="480" y2="712"/>
+
+  <rect class="group" x="190" y="665" width="580" height="970"/>
+  <text class="group-label" x="215" y="708">PEC</text>
+
+  <rect class="box" x="300" y="740" width="360" height="230"/>
+  <text class="label" x="480" y="785" text-anchor="middle">CCS</text>
+  <text class="text" x="330" y="835">- Split TBC to TB</text>
+  <text class="text" x="330" y="875">- Select PE</text>
+  <text class="text" x="330" y="915">- Split TB to thread</text>
+  <text class="text" x="330" y="955">- Send TBC-Done to CPD</text>
+  <line class="both" x1="480" y1="982" x2="480" y2="1078"/>
+
+  <rect class="group" x="240" y="1035" width="480" height="540"/>
+  <text class="group-label" x="265" y="1078">PE</text>
+
+  <rect class="box" x="300" y="1105" width="360" height="200"/>
+  <text class="label" x="480" y="1150" text-anchor="middle">BD</text>
+  <text class="text" x="330" y="1200">- Config tcsr</text>
+  <text class="text" x="330" y="1240">- Send kernel start interrupt</text>
+  <text class="text" x="330" y="1280">- Send thread done to CCS</text>
+  <line class="both" x1="480" y1="1315" x2="480" y2="1368"/>
+
+  <rect class="box" x="300" y="1370" width="360" height="150"/>
+  <text class="label" x="480" y="1415" text-anchor="middle">Spike</text>
+  <text class="text" x="330" y="1462">- Execute RV kernel thread job</text>
+  <text class="text" x="330" y="1502">- Load extension lib</text>
+  <line class="arrow" x1="480" y1="1524" x2="480" y2="1568"/>
+
+  <rect class="box" x="300" y="1570" width="360" height="80"/>
+  <text class="label" x="480" y="1620" text-anchor="middle">TileCore</text>
+</svg>

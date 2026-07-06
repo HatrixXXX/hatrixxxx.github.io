@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 920" role="img" aria-labelledby="title desc">
+  <title id="title">SIPU top-level hardware architecture</title>
+  <desc id="desc">Clean redrawn SIPU architecture with two PEG groups, eight PEC clusters, thirty-two PEs, PCIe, GCS, C2C, GPIO, NIF and XBAR blocks.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+    </marker>
+    <style>
+      text { font-family: Arial, sans-serif; fill: #111827; }
+      .small { font-size: 16px; }
+      .label { font-size: 20px; font-weight: 700; }
+      .title { font-size: 26px; font-weight: 700; }
+      .pe { fill: #eef8ea; stroke: #7eb77f; stroke-width: 2; }
+      .pec { fill: #f8fafc; stroke: #64748b; stroke-width: 2.2; }
+      .xbar { fill: #86efac; stroke: #15803d; stroke-width: 2.5; }
+      .fabric { fill: none; stroke: #1d4ed8; stroke-width: 10; marker-end: url(#arrow); }
+      .fabric2 { fill: none; stroke: #16a34a; stroke-width: 12; marker-end: url(#arrow); marker-start: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1600" height="920" fill="#ffffff"/>
+  <text x="800" y="42" class="title" text-anchor="middle">SIPU top-level hardware architecture</text>
+
+  <rect x="36" y="70" width="120" height="76" fill="#e0ecff" stroke="#64748b" stroke-width="2"/>
+  <text x="96" y="106" class="small" text-anchor="middle">GPIO</text>
+  <text x="96" y="128" class="small" text-anchor="middle">&amp; MSCP</text>
+  <rect x="156" y="70" width="470" height="76" fill="#fff3cf" stroke="#64748b" stroke-width="2"/>
+  <text x="391" y="116" class="label" text-anchor="middle">PCIe x16</text>
+  <rect x="626" y="70" width="84" height="76" fill="#bdf4ff" stroke="#64748b" stroke-width="2"/>
+  <text x="668" y="116" class="label" text-anchor="middle">GCS</text>
+  <rect x="710" y="70" width="350" height="76" fill="#bde7ff" stroke="#64748b" stroke-width="2"/>
+  <text x="885" y="116" class="label" text-anchor="middle">C2C-U</text>
+  <rect x="1060" y="70" width="350" height="76" fill="#bde7ff" stroke="#64748b" stroke-width="2"/>
+  <text x="1235" y="116" class="label" text-anchor="middle">C2C-U</text>
+  <rect x="1410" y="70" width="150" height="76" fill="#e0ecff" stroke="#64748b" stroke-width="2"/>
+  <text x="1485" y="116" class="label" text-anchor="middle">GPIO</text>
+
+  <rect x="40" y="180" width="720" height="680" fill="#f8fafc" stroke="#1f2937" stroke-width="2.5"/>
+  <text x="400" y="214" class="title" text-anchor="middle">PEG0</text>
+  <rect x="840" y="180" width="720" height="680" fill="#f8fafc" stroke="#1f2937" stroke-width="2.5"/>
+  <text x="1200" y="214" class="title" text-anchor="middle">PEG1</text>
+
+  <g id="peg0">
+    <rect x="84" y="246" width="286" height="230" class="pec"/>
+    <text x="112" y="270" class="label">PEC0</text>
+    <rect x="112" y="296" width="100" height="62" class="pe"/><text x="162" y="334" class="small" text-anchor="middle">PE0</text>
+    <rect x="236" y="296" width="100" height="62" class="pe"/><text x="286" y="334" class="small" text-anchor="middle">PE1</text>
+    <rect x="112" y="382" width="100" height="62" class="pe"/><text x="162" y="420" class="small" text-anchor="middle">PE2</text>
+    <rect x="236" y="382" width="100" height="62" class="pe"/><text x="286" y="420" class="small" text-anchor="middle">PE3</text>
+
+    <rect x="430" y="246" width="286" height="230" class="pec"/>
+    <text x="458" y="270" class="label">PEC1</text>
+    <rect x="458" y="296" width="100" height="62" class="pe"/><text x="508" y="334" class="small" text-anchor="middle">PE4</text>
+    <rect x="582" y="296" width="100" height="62" class="pe"/><text x="632" y="334" class="small" text-anchor="middle">PE5</text>
+    <rect x="458" y="382" width="100" height="62" class="pe"/><text x="508" y="420" class="small" text-anchor="middle">PE6</text>
+    <rect x="582" y="382" width="100" height="62" class="pe"/><text x="632" y="420" class="small" text-anchor="middle">PE7</text>
+
+    <rect x="84" y="586" width="286" height="230" class="pec"/>
+    <text x="112" y="610" class="label">PEC2</text>
+    <rect x="112" y="636" width="100" height="62" class="pe"/><text x="162" y="674" class="small" text-anchor="middle">PE8</text>
+    <rect x="236" y="636" width="100" height="62" class="pe"/><text x="286" y="674" class="small" text-anchor="middle">PE9</text>
+    <rect x="112" y="722" width="100" height="62" class="pe"/><text x="162" y="760" class="small" text-anchor="middle">PE10</text>
+    <rect x="236" y="722" width="100" height="62" class="pe"/><text x="286" y="760" class="small" text-anchor="middle">PE11</text>
+
+    <rect x="430" y="586" width="286" height="230" class="pec"/>
+    <text x="458" y="610" class="label">PEC3</text>
+    <rect x="458" y="636" width="100" height="62" class="pe"/><text x="508" y="674" class="small" text-anchor="middle">PE12</text>
+    <rect x="582" y="636" width="100" height="62" class="pe"/><text x="632" y="674" class="small" text-anchor="middle">PE13</text>
+    <rect x="458" y="722" width="100" height="62" class="pe"/><text x="508" y="760" class="small" text-anchor="middle">PE14</text>
+    <rect x="582" y="722" width="100" height="62" class="pe"/><text x="632" y="760" class="small" text-anchor="middle">PE15</text>
+
+    <rect x="338" y="475" width="124" height="110" rx="8" class="xbar"/>
+    <text x="400" y="524" class="label" text-anchor="middle">XBAR</text>
+    <text x="400" y="552" class="label" text-anchor="middle">PEG0</text>
+    <rect x="352" y="218" width="96" height="34" rx="6" fill="#86efac" stroke="#15803d" stroke-width="2"/>
+    <text x="400" y="241" class="small" text-anchor="middle">NIF</text>
+    <path d="M 400 252 V 474" class="fabric"/>
+    <path d="M 370 530 H 250" class="fabric"/>
+    <path d="M 430 530 H 550" class="fabric"/>
+    <path d="M 370 560 H 250" class="fabric"/>
+    <path d="M 430 560 H 550" class="fabric"/>
+  </g>
+
+  <g id="peg1">
+    <rect x="884" y="246" width="286" height="230" class="pec"/>
+    <text x="912" y="270" class="label">PEC4</text>
+    <rect x="912" y="296" width="100" height="62" class="pe"/><text x="962" y="334" class="small" text-anchor="middle">PE16</text>
+    <rect x="1036" y="296" width="100" height="62" class="pe"/><text x="1086" y="334" class="small" text-anchor="middle">PE17</text>
+    <rect x="912" y="382" width="100" height="62" class="pe"/><text x="962" y="420" class="small" text-anchor="middle">PE18</text>
+    <rect x="1036" y="382" width="100" height="62" class="pe"/><text x="1086" y="420" class="small" text-anchor="middle">PE19</text>
+
+    <rect x="1230" y="246" width="286" height="230" class="pec"/>
+    <text x="1258" y="270" class="label">PEC5</text>
+    <rect x="1258" y="296" width="100" height="62" class="pe"/><text x="1308" y="334" class="small" text-anchor="middle">PE20</text>
+    <rect x="1382" y="296" width="100" height="62" class="pe"/><text x="1432" y="334" class="small" text-anchor="middle">PE21</text>
+    <rect x="1258" y="382" width="100" height="62" class="pe"/><text x="1308" y="420" class="small" text-anchor="middle">PE22</text>
+    <rect x="1382" y="382" width="100" height="62" class="pe"/><text x="1432" y="420" class="small" text-anchor="middle">PE23</text>
+
+    <rect x="884" y="586" width="286" height="230" class="pec"/>
+    <text x="912" y="610" class="label">PEC6</text>
+    <rect x="912" y="636" width="100" height="62" class="pe"/><text x="962" y="674" class="small" text-anchor="middle">PE24</text>
+    <rect x="1036" y="636" width="100" height="62" class="pe"/><text x="1086" y="674" class="small" text-anchor="middle">PE25</text>
+    <rect x="912" y="722" width="100" height="62" class="pe"/><text x="962" y="760" class="small" text-anchor="middle">PE26</text>
+    <rect x="1036" y="722" width="100" height="62" class="pe"/><text x="1086" y="760" class="small" text-anchor="middle">PE27</text>
+
+    <rect x="1230" y="586" width="286" height="230" class="pec"/>
+    <text x="1258" y="610" class="label">PEC7</text>
+    <rect x="1258" y="636" width="100" height="62" class="pe"/><text x="1308" y="674" class="small" text-anchor="middle">PE28</text>
+    <rect x="1382" y="636" width="100" height="62" class="pe"/><text x="1432" y="674" class="small" text-anchor="middle">PE29</text>
+    <rect x="1258" y="722" width="100" height="62" class="pe"/><text x="1308" y="760" class="small" text-anchor="middle">PE30</text>
+    <rect x="1382" y="722" width="100" height="62" class="pe"/><text x="1432" y="760" class="small" text-anchor="middle">PE31</text>
+
+    <rect x="1138" y="475" width="124" height="110" rx="8" class="xbar"/>
+    <text x="1200" y="524" class="label" text-anchor="middle">XBAR</text>
+    <text x="1200" y="552" class="label" text-anchor="middle">PEG1</text>
+    <rect x="1152" y="218" width="96" height="34" rx="6" fill="#86efac" stroke="#15803d" stroke-width="2"/>
+    <text x="1200" y="241" class="small" text-anchor="middle">NIF</text>
+    <path d="M 1200 252 V 474" class="fabric"/>
+    <path d="M 1170 530 H 1050" class="fabric"/>
+    <path d="M 1230 530 H 1350" class="fabric"/>
+    <path d="M 1170 560 H 1050" class="fabric"/>
+    <path d="M 1230 560 H 1350" class="fabric"/>
+  </g>
+
+  <path d="M 462 530 H 1138" class="fabric2"/>
+  <text x="800" y="510" class="small" text-anchor="middle">shared on-chip fabric / C2C path</text>
+  <text x="800" y="890" class="small" text-anchor="middle">2 PEGs -> 8 PECs -> 32 PEs; each PEC owns DRAM and each PE has local L2B.</text>
+</svg>

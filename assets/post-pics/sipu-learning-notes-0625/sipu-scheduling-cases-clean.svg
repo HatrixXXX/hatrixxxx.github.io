@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 980" role="img" aria-labelledby="title desc">
+  <title id="title">SIPU instruction scheduling cases</title>
+  <desc id="desc">Clean redrawn timing diagram for three load and matrix execution scheduling cases, showing WAR hazards, register expansion and latency hiding.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+    </marker>
+    <marker id="redArrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+    <style>
+      text { font-family: Arial, sans-serif; fill: #111827; }
+      .title { font-size: 26px; font-weight: 700; }
+      .label { font-size: 18px; font-weight: 700; }
+      .small { font-size: 14px; }
+      .lane { stroke: #1f2937; stroke-width: 2.2; marker-end: url(#arrow); }
+      .opLoad { fill: #e0f2fe; stroke: #0369a1; stroke-width: 2; }
+      .opMac { fill: #dcfce7; stroke: #15803d; stroke-width: 2; }
+      .wait { fill: none; stroke: #dc2626; stroke-width: 2.5; stroke-dasharray: 5 4; marker-end: url(#redArrow); }
+      .bubble { fill: #fee2e2; stroke: #dc2626; stroke-width: 2; stroke-dasharray: 6 4; }
+      .band1 { fill: #f8fafc; }
+      .band2 { fill: #eaf3ff; }
+      .band3 { fill: #ecfdf5; }
+    </style>
+  </defs>
+  <rect width="1500" height="980" fill="#ffffff"/>
+  <text x="750" y="42" class="title" text-anchor="middle">Load / TMAC scheduling cases</text>
+
+  <rect x="30" y="70" width="1440" height="260" class="band1" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="30" y="350" width="1440" height="260" class="band2" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="30" y="630" width="1440" height="290" class="band3" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <text x="75" y="102" class="label">case 1</text>
+  <text x="75" y="382" class="label">case 2</text>
+  <text x="75" y="662" class="label">case 3</text>
+
+  <text x="170" y="104" class="small">M4 load reuses tr4 / tr8</text>
+  <line x1="170" y1="138" x2="1320" y2="138" class="lane"/>
+  <rect x="190" y="118" width="130" height="40" rx="4" class="opLoad"/><text x="255" y="143" class="small" text-anchor="middle">ld.m4 tr4</text>
+  <rect x="350" y="118" width="130" height="40" rx="4" class="opLoad"/><text x="415" y="143" class="small" text-anchor="middle">ld.m4 tr8</text>
+  <path d="M 320 112 H 850" class="wait"/><text x="585" y="102" class="small" text-anchor="middle" fill="#dc2626">WAR hazard: wait until TMAC reads tr7</text>
+  <path d="M 480 166 H 875" class="wait"/><text x="685" y="190" class="small" text-anchor="middle" fill="#dc2626">WAR hazard: wait until TMAC reads tr11</text>
+  <rect x="900" y="118" width="130" height="40" rx="4" class="opLoad"/><text x="965" y="143" class="small" text-anchor="middle">ld.m4 tr4</text>
+  <rect x="1050" y="118" width="130" height="40" rx="4" class="opLoad"/><text x="1115" y="143" class="small" text-anchor="middle">ld.m4 tr8</text>
+
+  <line x1="170" y1="235" x2="1320" y2="235" class="lane"/>
+  <rect x="380" y="215" width="120" height="40" rx="4" class="opMac"/><text x="440" y="240" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="560" y="215" width="120" height="40" rx="4" class="opMac"/><text x="620" y="240" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="740" y="215" width="120" height="40" rx="4" class="opMac"/><text x="800" y="240" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="900" y="205" width="210" height="60" class="bubble"/><text x="1005" y="230" class="small" text-anchor="middle" fill="#dc2626">bubble</text><text x="1005" y="252" class="small" text-anchor="middle" fill="#dc2626">WAR hazard</text>
+  <rect x="1135" y="215" width="120" height="40" rx="4" class="opMac"/><text x="1195" y="240" class="small" text-anchor="middle">tmac exec</text>
+
+  <text x="170" y="384" class="small">Register expansion uses tr4/tr8 and tr20/tr24</text>
+  <line x1="170" y1="418" x2="1320" y2="418" class="lane"/>
+  <rect x="190" y="398" width="130" height="40" rx="4" class="opLoad"/><text x="255" y="423" class="small" text-anchor="middle">ld.m4 tr4</text>
+  <rect x="350" y="398" width="130" height="40" rx="4" class="opLoad"/><text x="415" y="423" class="small" text-anchor="middle">ld.m4 tr8</text>
+  <rect x="540" y="398" width="140" height="40" rx="4" class="opLoad"/><text x="610" y="423" class="small" text-anchor="middle">ld.m4 tr20</text>
+  <rect x="710" y="398" width="140" height="40" rx="4" class="opLoad"/><text x="780" y="423" class="small" text-anchor="middle">ld.m4 tr24</text>
+  <path d="M 320 392 H 780" class="wait"/><text x="555" y="382" class="small" text-anchor="middle" fill="#dc2626">wait only protects old register set</text>
+
+  <line x1="170" y1="515" x2="1320" y2="515" class="lane"/>
+  <rect x="330" y="495" width="120" height="40" rx="4" class="opMac"/><text x="390" y="520" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="500" y="495" width="120" height="40" rx="4" class="opMac"/><text x="560" y="520" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="670" y="495" width="120" height="40" rx="4" class="opMac"/><text x="730" y="520" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="840" y="495" width="120" height="40" rx="4" class="opMac"/><text x="900" y="520" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="1010" y="495" width="120" height="40" rx="4" class="opMac"/><text x="1070" y="520" class="small" text-anchor="middle">tmac exec</text>
+  <text x="780" y="580" class="small" text-anchor="middle">no TMAC bubble due to WAR hazard</text>
+
+  <text x="170" y="664" class="small">M1 loads and interleaving hide long-load latency</text>
+  <line x1="170" y1="708" x2="1320" y2="708" class="lane"/>
+  <rect x="190" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="245" y="713" class="small" text-anchor="middle">ld.m1 tr4</text>
+  <rect x="325" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="380" y="713" class="small" text-anchor="middle">ld.m1 tr5</text>
+  <rect x="460" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="515" y="713" class="small" text-anchor="middle">ld.m1 tr6</text>
+  <rect x="595" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="650" y="713" class="small" text-anchor="middle">ld.m1 tr7</text>
+  <rect x="760" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="815" y="713" class="small" text-anchor="middle">ld.m1 tr8</text>
+  <rect x="895" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="950" y="713" class="small" text-anchor="middle">ld.m1 tr9</text>
+  <rect x="1030" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="1085" y="713" class="small" text-anchor="middle">ld.m1 tr10</text>
+  <rect x="1165" y="688" width="110" height="40" rx="4" class="opLoad"/><text x="1220" y="713" class="small" text-anchor="middle">ld.m1 tr11</text>
+  <path d="M 385 666 H 775" class="wait"/><text x="580" y="654" class="small" text-anchor="middle" fill="#dc2626">WAR hazard waits for partial reads</text>
+  <path d="M 515 746 H 1260" class="wait"/><text x="888" y="770" class="small" text-anchor="middle" fill="#dc2626">load data ready before TMAC consumes it</text>
+
+  <line x1="170" y1="835" x2="1320" y2="835" class="lane"/>
+  <rect x="330" y="815" width="120" height="40" rx="4" class="opMac"/><text x="390" y="840" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="500" y="815" width="120" height="40" rx="4" class="opMac"/><text x="560" y="840" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="670" y="815" width="120" height="40" rx="4" class="opMac"/><text x="730" y="840" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="840" y="815" width="120" height="40" rx="4" class="opMac"/><text x="900" y="840" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="1010" y="815" width="120" height="40" rx="4" class="opMac"/><text x="1070" y="840" class="small" text-anchor="middle">tmac exec</text>
+  <rect x="1180" y="815" width="120" height="40" rx="4" class="opMac"/><text x="1240" y="840" class="small" text-anchor="middle">tmac exec</text>
+  <text x="780" y="900" class="small" text-anchor="middle">no TMAC bubble after register expansion and load/TMAC ratio balancing</text>
+</svg>

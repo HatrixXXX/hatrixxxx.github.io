@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1220" height="780" viewBox="0 0 1220 780" role="img" aria-labelledby="title desc">
+  <title id="title">VSCode launch.json for Arch Model debugging</title>
+  <desc id="desc">A clean launch.json snippet for debugging a tlsu arch model case with gdb in VSCode.</desc>
+  <style>
+    .bg { fill: #111827; }
+    .gutter { fill: #0b1120; }
+    .line { fill: #64748b; font-family: Consolas, "SFMono-Regular", monospace; font-size: 22px; }
+    .code { font-family: Consolas, "SFMono-Regular", monospace; font-size: 23px; }
+    .punct { fill: #cbd5e1; }
+    .key { fill: #7dd3fc; }
+    .str { fill: #fca5a5; }
+    .num { fill: #fde68a; }
+    .bool { fill: #93c5fd; }
+    .comment { fill: #86efac; }
+  </style>
+  <rect class="bg" x="0" y="0" width="1220" height="780" rx="18"/>
+  <rect class="gutter" x="0" y="0" width="88" height="780" rx="18"/>
+
+  <text class="line" x="34" y="40">1</text>
+  <text class="line" x="34" y="74">2</text>
+  <text class="line" x="34" y="108">3</text>
+  <text class="line" x="34" y="142">4</text>
+  <text class="line" x="34" y="176">5</text>
+  <text class="line" x="34" y="210">6</text>
+  <text class="line" x="34" y="244">7</text>
+  <text class="line" x="34" y="278">8</text>
+  <text class="line" x="34" y="312">9</text>
+  <text class="line" x="24" y="346">10</text>
+  <text class="line" x="24" y="380">11</text>
+  <text class="line" x="24" y="414">12</text>
+  <text class="line" x="24" y="448">13</text>
+  <text class="line" x="24" y="482">14</text>
+  <text class="line" x="24" y="516">15</text>
+  <text class="line" x="24" y="550">16</text>
+  <text class="line" x="24" y="584">17</text>
+  <text class="line" x="24" y="618">18</text>
+  <text class="line" x="24" y="652">19</text>
+  <text class="line" x="24" y="686">20</text>
+
+  <text class="code punct" x="115" y="40">{</text>
+  <text class="code" x="145" y="74"><tspan class="key">"version"</tspan><tspan class="punct">: </tspan><tspan class="str">"0.2.0"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="145" y="108"><tspan class="key">"configurations"</tspan><tspan class="punct">: [</tspan></text>
+  <text class="code punct" x="175" y="142">{</text>
+  <text class="code" x="205" y="176"><tspan class="key">"name"</tspan><tspan class="punct">: </tspan><tspan class="str">"(gdb) Launch"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="210"><tspan class="key">"type"</tspan><tspan class="punct">: </tspan><tspan class="str">"cppdbg"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="244"><tspan class="key">"request"</tspan><tspan class="punct">: </tspan><tspan class="str">"launch"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="278"><tspan class="key">"program"</tspan><tspan class="punct">: </tspan><tspan class="str">"/data/users/wangchenghui/work/proj/sipu_sw/</tspan></text>
+  <text class="code str" x="345" y="312">sipu_test/build/isa/tlsu/tlsu_tile_atomic_min"</text>
+  <text class="code" x="205" y="346"><tspan class="key">"args"</tspan><tspan class="punct">: [],</tspan></text>
+  <text class="code" x="205" y="380"><tspan class="key">"stopAtEntry"</tspan><tspan class="punct">: </tspan><tspan class="bool">false</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="414"><tspan class="key">"cwd"</tspan><tspan class="punct">: </tspan><tspan class="str">"${workspaceFolder}"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="448"><tspan class="key">"environment"</tspan><tspan class="punct">: [],</tspan></text>
+  <text class="code" x="205" y="482"><tspan class="key">"externalConsole"</tspan><tspan class="punct">: </tspan><tspan class="bool">false</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="516"><tspan class="key">"MIMode"</tspan><tspan class="punct">: </tspan><tspan class="str">"gdb"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="550"><tspan class="key">"miDebuggerPath"</tspan><tspan class="punct">: </tspan><tspan class="str">"/usr/bin/gdb"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="205" y="584"><tspan class="key">"setupCommands"</tspan><tspan class="punct">: [</tspan></text>
+  <text class="code" x="235" y="618"><tspan class="punct">{ </tspan><tspan class="key">"description"</tspan><tspan class="punct">: </tspan><tspan class="str">"Enable pretty-printing for gdb"</tspan><tspan class="punct">,</tspan></text>
+  <text class="code" x="265" y="652"><tspan class="key">"text"</tspan><tspan class="punct">: </tspan><tspan class="str">"-enable-pretty-printing"</tspan><tspan class="punct">, </tspan><tspan class="key">"ignoreFailures"</tspan><tspan class="punct">: </tspan><tspan class="bool">true</tspan><tspan class="punct"> }</tspan></text>
+  <text class="code punct" x="205" y="686">]</text>
+  <text class="code punct" x="175" y="720">}</text>
+  <text class="code punct" x="145" y="754">]</text>
+  <text class="code punct" x="115" y="770">}</text>
+</svg>

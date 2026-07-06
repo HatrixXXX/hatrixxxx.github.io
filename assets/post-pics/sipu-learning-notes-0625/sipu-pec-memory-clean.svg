@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" role="img" aria-labelledby="title desc">
+  <title id="title">SIPU PEC and memory organization</title>
+  <desc id="desc">Clean redrawn diagram showing four PEC clusters around an interleaved 16GB DRAM pool, with four PEs per PEC and 1MB L2B per PE.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+    </marker>
+    <style>
+      text { font-family: Arial, sans-serif; fill: #111827; }
+      .title { font-size: 26px; font-weight: 700; }
+      .label { font-size: 20px; font-weight: 700; }
+      .small { font-size: 16px; }
+      .pec { fill: #e8fff4; stroke: #0891b2; stroke-width: 4; }
+      .pe { fill: #fff76a; stroke: #a16207; stroke-width: 2; }
+      .l2b { fill: #86efac; stroke: #15803d; stroke-width: 1.6; }
+    </style>
+  </defs>
+  <rect width="1280" height="820" fill="#ffffff"/>
+  <text x="640" y="44" class="title" text-anchor="middle">PEC memory organization</text>
+
+  <rect x="540" y="120" width="200" height="600" rx="10" fill="#ffb45b" stroke="#c2410c" stroke-width="3"/>
+  <text x="640" y="388" class="title" text-anchor="middle">DRAM</text>
+  <text x="640" y="424" class="title" text-anchor="middle">16GB</text>
+  <text x="640" y="462" class="small" text-anchor="middle">4KB interleave</text>
+
+  <g transform="translate(60 110)">
+    <rect x="0" y="0" width="410" height="260" class="pec"/>
+    <text x="205" y="30" class="label" text-anchor="middle">PEC0</text>
+    <rect x="48" y="64" width="126" height="76" class="pe"/><text x="111" y="108" class="label" text-anchor="middle">PE</text><rect x="48" y="140" width="126" height="36" class="l2b"/><text x="111" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="236" y="64" width="126" height="76" class="pe"/><text x="299" y="108" class="label" text-anchor="middle">PE</text><rect x="236" y="140" width="126" height="36" class="l2b"/><text x="299" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="48" y="184" width="126" height="50" class="pe"/><text x="111" y="215" class="label" text-anchor="middle">PE</text>
+    <rect x="236" y="184" width="126" height="50" class="pe"/><text x="299" y="215" class="label" text-anchor="middle">PE</text>
+  </g>
+  <g transform="translate(810 110)">
+    <rect x="0" y="0" width="410" height="260" class="pec"/>
+    <text x="205" y="30" class="label" text-anchor="middle">PEC1</text>
+    <rect x="48" y="64" width="126" height="76" class="pe"/><text x="111" y="108" class="label" text-anchor="middle">PE</text><rect x="48" y="140" width="126" height="36" class="l2b"/><text x="111" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="236" y="64" width="126" height="76" class="pe"/><text x="299" y="108" class="label" text-anchor="middle">PE</text><rect x="236" y="140" width="126" height="36" class="l2b"/><text x="299" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="48" y="184" width="126" height="50" class="pe"/><text x="111" y="215" class="label" text-anchor="middle">PE</text>
+    <rect x="236" y="184" width="126" height="50" class="pe"/><text x="299" y="215" class="label" text-anchor="middle">PE</text>
+  </g>
+  <g transform="translate(60 460)">
+    <rect x="0" y="0" width="410" height="260" class="pec"/>
+    <text x="205" y="30" class="label" text-anchor="middle">PEC2</text>
+    <rect x="48" y="64" width="126" height="76" class="pe"/><text x="111" y="108" class="label" text-anchor="middle">PE</text><rect x="48" y="140" width="126" height="36" class="l2b"/><text x="111" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="236" y="64" width="126" height="76" class="pe"/><text x="299" y="108" class="label" text-anchor="middle">PE</text><rect x="236" y="140" width="126" height="36" class="l2b"/><text x="299" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="48" y="184" width="126" height="50" class="pe"/><text x="111" y="215" class="label" text-anchor="middle">PE</text>
+    <rect x="236" y="184" width="126" height="50" class="pe"/><text x="299" y="215" class="label" text-anchor="middle">PE</text>
+  </g>
+  <g transform="translate(810 460)">
+    <rect x="0" y="0" width="410" height="260" class="pec"/>
+    <text x="205" y="30" class="label" text-anchor="middle">PEC3</text>
+    <rect x="48" y="64" width="126" height="76" class="pe"/><text x="111" y="108" class="label" text-anchor="middle">PE</text><rect x="48" y="140" width="126" height="36" class="l2b"/><text x="111" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="236" y="64" width="126" height="76" class="pe"/><text x="299" y="108" class="label" text-anchor="middle">PE</text><rect x="236" y="140" width="126" height="36" class="l2b"/><text x="299" y="164" class="small" text-anchor="middle">L2B 1MB</text>
+    <rect x="48" y="184" width="126" height="50" class="pe"/><text x="111" y="215" class="label" text-anchor="middle">PE</text>
+    <rect x="236" y="184" width="126" height="50" class="pe"/><text x="299" y="215" class="label" text-anchor="middle">PE</text>
+  </g>
+
+  <path d="M 470 245 H 540" fill="none" stroke="#ef4444" stroke-width="7" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <path d="M 810 245 H 740" fill="none" stroke="#ef4444" stroke-width="7" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <path d="M 470 595 H 540" fill="none" stroke="#ef4444" stroke-width="7" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <path d="M 810 595 H 740" fill="none" stroke="#ef4444" stroke-width="7" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="640" y="778" class="small" text-anchor="middle">Each PEC contains 4 PEs; each PE owns 1MB L2B. Four PEC DRAM slices are interleaved as one 16GB global memory space.</text>
+</svg>
