@@ -24,75 +24,36 @@ git config --global https.proxy http://127.0.0.1:7890
 
 127.0.0.1:7890 是 Clash 在本机开放的代理入口，不是 GitHub 的地址，也不是远程代理节点的地址。这个代理配置的意思是，告诉 Git 访问 HTTP/HTTPS 远程仓库时，把网络请求先交给本机 Clash。如果设置代理后关闭 Clash，Git 仍会尝试连接 127.0.0.1:7890，这时由于 Git 已经被固定配置为必须经过这个本地代理，往往直接失败。SSH 使用另一套网络程序和协议，和这个配置无关。
 
-## HTTPS 和 SSH
-
-这俩是访问远程仓库时的两种网络通讯协议，不影响 Git 功能，区别只是连接及认证方式。 个人长期使用通常可以选择 SSH；临时环境、服务器受限网络或希望少配置时，HTTPS 更方便。已有仓库也可以用命令 `git remote set-url origin <your_address>` 随时切换，仓库的连接方式（HTTPS 或 SSH）保存在每个本地仓库的远程地址配置中。
-
-| 对比项       | HTTPS                            | SSH                           |
-| ------------ | -------------------------------- | ----------------------------- |
-| 地址格式     | https://github.com/user/repo.git | git@github.com: user/repo.git |
-| 加密方式     | HTTPS/TLS 加密                   | SSH 加密                      |
-| 克隆公开仓库 | 通常无需登录                     | 本机需配置 SSH key            |
-| 访问私有仓库 | Token、凭据管理器或网页登录授权  | SSH key                       |
-| 日常推送     | 需要凭据管理器保存认证           | 配好 key 后无需重复认证       |
-
-执行 `git push` 命令时，大致会经过：根据远程地址选择 SSH 或 HTTPS→ 自动取得 SSH 私钥或 HTTPS Token→ 远程平台根据凭据识别账户 → 检查该账户是否有仓库写权限 → 有权限的情况下完成项远程仓库的推送。
-
-HTTPS 在第一次推送的网页登录完成后，通常会由 Git Credential Manager、系统钥匙串或其它凭据助手保存 Token。SSH 需要在本机生成 SSH 密钥对，私钥留在本机，公钥添加到 GitHub、GitLab 或公司的 Git 服务器。SSH key 的管理，通常是一台机器一个，添加到 GitHub/GitLab 账户后，本台机器即可访问这个账户有权限的所有仓库。
-
-一台机器可以有多个账户以及多个 key，因此在访问远程仓库遇到权限问题时，需要确认远程仓库识别到了本地的哪个账户；HTTPS 的凭据同理，也需要确认凭据管理器当前缓存的是哪一个账户。仓库“有权限”只代表某个远程账户有权限；推送时远程服务器还要确认：你当前到底以哪个账户、哪把 SSH key 或哪份 HTTPS 凭据登录。
-
-SSH 认证主要有两个方向，SSH 私钥用于向服务器证明“我是谁”，known_hosts 保存的是本机曾经连接过的 SSH 服务器的身份信息，用来确认“对面的服务器是谁”，里面会写入 Github 的主机公钥。以后再次连接时，SSH 会对比服务器发来的公钥是否与 known_hosts 中保存的一致，不一致时会发出安全警告，这是为了防止中间人攻击，比如有人伪装成 GitHub 截获你的连接。
-
 ## git 工作流示意
 
 ![](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Git-Reference_Sheet.svg)
 
 这张图是 Git 最经典的一张工作流示意图，它描述了代码从你修改到提交到远程仓库的整个生命周期，以及几个最常用命令分别作用在哪一步。
 
-## 远程仓库名
+## 常用 git 命令
 
-执行 `git clone` 时，Git 通常自动把源仓库命名为 origin。远程仓库名只是当前本地仓库里的别名，不会改变服务器上的仓库名称。同一个本地仓库中的远程名称不能重复。除非有多个远程仓库，否则沿用 origin 最省事，因为部分脚本和文档默认使用这个名字。
+- `git init`
+- `git add`
+- `git commit`
+- `git remote add`
+- `git clone`
+- `git branch`
+- `git switch`
+- `git log`
+- `git status`
+- `git diff`
+- `git restore`
+- `git reset`
+- `git revert`
+- `git fetch`
+- `git merge`
+- `git rebase`
+- `git cherry-pick`
+- `git stash`
+- `git pull`
+- `git push`
 
-一个本地 Git 仓库可以配置多个远程仓库，origin 只是克隆时默认创建的第一个远程名称，并不是唯一允许的名字。使用命令 `git remote -v` 可以查看本地仓库配置的所有远程仓库。
-
-## checkout 和 switch
-
-这俩的效果都是，让 HEAD 指向选定的分支或提交，并把暂存区和工作目录切换到该分支对应的版本。checkout 和 switch 操作都是在本地已有的分支和提交之间切换，是纯本地操作；clone、fetch、pull 等操作才涉及从远程获取内容。
-
-对于一个已经存在的 master 分支：`git checkout master` 和 `git switch master` 的效果完全相同，都是让 HEAD 指向 master，并把暂存区和工作目录切换到该分支对应的版本。两者区别在于命令职责，`git switch` 是专用的分支切换命令，而 `git checkout` 除了切换分支外，还可以恢复文件，例如 `git checkout -- file.txt` 的效果是将 file.txt 恢复到暂存区的状态，`git checkout abc123 -- file.txt` 的效果是将 file.txt 恢复到 abc123 这次提交的状态。而现代 Git 专用的恢复文件命令是 `git restore`。另外，`git checkout <提交哈希> ` 会直接进入 detached HEAD；而 `git switch --detach <提交哈希>` 需要明确写 --detach，降低误操作概率。
-
-## 游离头问题
-
-HEAD 可以理解为 Git 的“当前位置指针”，用于指示现在检出的版本在哪里，以及指示新的提交应该添加到哪里。正常情况下创建新提交：提交前：HEAD -> master -> A，提交后：HEAD -> master -> B -> A（Git 提交的箭头是从新提交指向旧提交）。
-
-detached HEAD 即“分离头指针”，表示 HEAD 没有指向某个本地分支，而是直接指向某次提交，这在查看旧版本、运行测试时很常见。detached HEAD 的风险在于，如果在 detached HEAD 状态下创建提交，新提交不属于任何分支；切换走后，再想找到会比较麻烦。因此如果已经在 detached HEAD 状态下做了有用的提交，应先创建分支保存它：
-
-```
-git switch -c my-new-branch
-```
-
-这行命令的意思是：以当前提交为起点，创建名为 my-new-branch 的本地分支，并立即切换到该分支。
-
-## master 和 origin/master
-
-origin 是远程仓库地址的本地别名，本地 master 是实际开发和提交的本地分支，本地 origin/master 是本地保存的远程 master 状态记录，远程 master 是 GitHub 服务器上真正的 master。origin/master 通常被称为“远程分支”，但更准确地说，它是保存在本地的远程跟踪分支，记录你上次与远程通信时，远程 master 所在的位置，不是服务器上的实时分支。
-
-## commit amend
-
-`git commit` 可以加--amend 参数，表示用当前暂存区和新的提交信息，重新生成最近一次提交，替换原来的提交。
-
-```
-git commit --amend # 打开编辑器修改提交信息
-git commit --amend -m "正确的提交信息" # 直接指定新信息
-
-git add test.py
-git commit --amend --no-edit # 不修改提交信息，用于补充忘记提交的文件
-```
-
-另外，amend 只能修订当前 HEAD，修改更早的提交需要交互式 rebase。
-
-## 分支
+## branch
 
 分支本质上是对提交的一种会自动移动的标签。
 
@@ -102,7 +63,26 @@ git branch -r # 查看所有本地保存的远程跟踪分支
 git branch -a # 查看所有本地和本地保存的远程跟踪分支
 ```
 
-## 标签
+创建分支的命令如下，默认从HEAD创建
+
+```
+git branch <新分支名> # 只创建不切换
+git switch -c <新分支名> # 创建并切换，现代 Git 推荐的方式
+git checkout -c <新分支名> # 创建并切换，旧写法
+git switch -c <新分支名> master # 从指定分支创建
+git switch -c <新分支名> abc123 # 从指定提交创建
+```
+
+新分支默认只存在于本地，第一次推送时会在远程创建同名分支。
+
+删除分支的命令如下
+
+```
+git push origin --delete feature # 删除远程分支
+git branch -d feature # 删除本地分支
+```
+
+## tag
 
 tag 是 Git 中的固定标签，不会随着新提交而自动向前移动，通常用来给某个重要提交起一个容易记住的名字。
 
@@ -119,6 +99,26 @@ git push origin v1.0.0 # 推送指定标签
 git push origin --tags # 推送所有本地标签
 git push origin --delete v1.0.0 # 删除远程标签
 ```
+
+## commit amend
+
+`git commit` 可以加--amend 参数，表示用当前暂存区和新的提交信息，重新生成最近一次提交，替换原来的提交。
+
+```
+git commit --amend # 打开编辑器修改提交信息
+git commit --amend -m "正确的提交信息" # 直接指定新信息
+
+git add test.py
+git commit --amend --no-edit # 不修改提交信息，用于补充忘记提交的文件
+```
+
+另外，amend 只能修订当前 HEAD，修改更早的提交需要交互式 rebase。
+
+## checkout 和 switch
+
+这俩的效果都是，让 HEAD 指向选定的分支或提交，并把暂存区和工作目录切换到该分支对应的版本。checkout 和 switch 操作都是在本地已有的分支和提交之间切换，是纯本地操作；clone、fetch、pull 等操作才涉及从远程获取内容。
+
+对于一个已经存在的 master 分支：`git checkout master` 和 `git switch master` 的效果完全相同，都是让 HEAD 指向 master，并把暂存区和工作目录切换到该分支对应的版本。两者区别在于命令职责，`git switch` 是专用的分支切换命令，而 `git checkout` 除了切换分支外，还可以恢复文件，例如 `git checkout -- file.txt` 的效果是将 file.txt 恢复到暂存区的状态，`git checkout abc123 -- file.txt` 的效果是将 file.txt 恢复到 abc123 这次提交的状态。而现代 Git 专用的恢复文件命令是 `git restore`。另外，`git checkout <提交哈希> ` 会直接进入 detached HEAD；而 `git switch --detach <提交哈希>` 需要明确写 --detach，降低误操作概率。
 
 ## git log
 
@@ -163,15 +163,55 @@ git diff master feature # 比较两个分支
 
 ## git reset
 
-git reset 的作用是：把当前分支、暂存区，必要时还有工作目录，重置到指定提交的状态。针对提交来说，作用是移动当前分支的位置；针对文件来说，作用是重置暂存区，常用于取消 git add。
+git reset 的作用是：把当前分支、暂存区，必要时还有工作目录，重置到指定提交的状态。针对提交来说，作用是移动当前分支的位置；针对文件来说，作用是重置暂存区，常用于取消 `git add`。
 
-针对提交的 reset 命令格式为 `git reset [模式] <目标提交>`，常见模式有 soft、mixed、hard 三种。假设当前提交历史为：HEAD -> master -> C -> B -> A，执行 `git reset [mode] HEAD~1` 之后（HEAD~1 表示当前提交的上一个提交，也就是 B）的效果分别如下：
+针对提交的 reset 命令有三种模式，假设当前提交历史为
 
-- --soft：当前分支移动到目标提交，暂存区保持不变，工作目录保持不变。即 HEAD -> master -> B -> A，提交 C 不再属于 master 的当前历史，但 C 中的修改仍保留在暂存区，可以马上重新提交， 适合提交信息写错、提交内容需要重新组织等情况。
-- --mixed（默认模式）：当前分支移动到目标提交，暂存区重置到目标提交，工作目录保持不变。master 回到 B，C 中的修改仍留在工作目录，修改不再位于暂存区，需要重新 git add。
-- --hard：当前分支移动到目标提交，暂存区重置到目标提交，工作目录重置到目标提交。master 回到 B，暂存区恢复为 B，工作目录中的已跟踪文件恢复为 B，C 中的修改以及其他未提交的已跟踪文件修改都会被丢弃。
+```
+A <- B <- C master、HEAD
+```
 
-针对文件的 reset 命令格式为 `git reset -- file.txt`，这种写法不会移动分支，也不会修改工作目录文件，只会把 file.txt 从暂存区撤下来，相当于撤销了 `git add file.txt` 。不过现代 Git 推荐写成 `git restore --staged file.txt`，两者完全等价。取消全部暂存可以执行 `git reset`，这等价于 `git reset --mixed HEAD`，即当前分支不移动，只把整个暂存区恢复到 HEAD，工作目录修改仍保留。
+以reset上一次提交（HEAD~1 表示当前提交的上一个提交，也就是 B）为例
+
+```
+git reset --soft HEAD~1
+git reset --mixed HEAD~1
+git reset --hard HEAD~1
+```
+
+执行之后的提交历史都会变成
+
+```
+A <- B master、HEAD
+```
+
+三种模式的区别如下：
+
+- --soft：暂存区保持不变，工作目录保持不变。即提交 C 不再属于 master 的当前历史，但 C 中的修改仍保留在暂存区，可以马上重新提交， 适合提交信息写错、提交内容需要重新组织等情况。不过如果只是修改最近一次提交信息，通常直接使用 `git commit --amend` 更方便。
+- --mixed（默认模式）：暂存区重置到目标提交，工作目录保持不变。C 中的修改仍留在工作目录，修改不再位于暂存区，需要重新 git add。
+- --hard：暂存区重置到目标提交，工作目录重置到目标提交。master 回到 B，暂存区恢复为 B，工作目录中的已跟踪文件恢复为 B，C 中的修改以及其他未提交的已跟踪文件修改都会被丢弃。
+
+针对文件的 reset 命令为
+
+```
+git reset -- file.txt
+```
+
+这种写法不会移动分支，也不会修改工作目录文件，只会把 file.txt 从暂存区撤下来，相当于撤销了 `git add file.txt` 。不过现代 Git 推荐写成 `git restore --staged file.txt`，两者完全等价。
+
+取消全部暂存可以执行
+
+```
+git reset
+```
+
+或
+
+```
+git reset --mixed HEAD
+```
+
+两者完全等价，即当前分支不移动，只把整个暂存区恢复到 HEAD，工作目录修改仍保留。
 
 如果是尚未推送的本地提交或者纯个人开发，可以使用 `git reset`，否则如果是已推送到远程的提交，尤其是多人协作开发时，不要随便使用针对提交的 reset，这可能会破坏别人的提交历史，这种情况建议使用 `git revert`。
 
@@ -321,6 +361,80 @@ rebase 会逐个重新应用提交，和 merge 一样可能遇到冲突。
 
 另外，rebase 会改写提交历史，不要 rebase 已经推送且其他人可能基于它继续开发的提交，否则其他人的历史会与新历史不一致。因此，rebase 更适合整理尚未共享的本地提交，而 merge 适合共享历史。
 
+## git cherry-pick
+
+git cherry-pick 的作用是：选择某一个或几个已有提交，把这些提交引入的修改重新应用到当前分支，并生成新的提交，可以理解为“只挑需要的提交”。一个具体的例子如下
+
+假设提交历史是：
+
+```
+        C  master
+      /
+A -> B
+      \
+        D -> E feature
+```
+
+其中提交 E 修复了一个重要 bug。现在只想把 E 的修改带到 master，不想合并整个 feature。
+
+```
+git switch master
+git cherry-pick <E的提交哈希>
+```
+
+执行结果：
+
+```
+       C -> E'  master
+      /
+A -> B
+      \
+       D -> E   feature
+```
+
+原提交 E 仍然在 feature，master 上产生了新提交 E'。cherry-pick 不是复制整个 E 的项目快照，而是计算 E 的父提交 -> E 之间的修改，然后把这些修改应用到当前 HEAD 上。
+
+cherry-pick也可以挑选多个提交，通常按照从旧到新的顺序排列
+
+```
+git cherry-pick abc123 def456 789abcd
+git cherry-pick A..C # 挑选不包括 A 在内的从 A 到 C 的连续提交
+git cherry-pick A^..C # 挑选包括 A 在内的从 A 到 C 的连续提交，A^ 表示 A 的父提交
+```
+
+只把修改放入暂存区和工作目录，但暂时不提交。可以继续挑选其它提交，最后统一提交
+
+```
+git cherry-pick --no-commit abc123
+git cherry-pick -n abc123 # 简写
+```
+
+记录原提交来源，-x 会在新提交信息中增加类似内容：(cherry picked from commit abc123...)
+
+```
+git cherry-pick -x abc123
+```
+
+适合在不同发布分支之间移植修复，方便之后追踪来源。
+
+发生冲突时需要手动解决冲突，然后继续cherry-pick
+
+```
+git status
+# 手动解决冲突
+git add <已解决文件>
+git cherry-pick --continue
+```
+
+如果要取消：
+
+```
+git cherry-pick --skip # 取消当前正在挑选的提交
+git cherry-pick --abort # 取消整个cherry-pick
+```
+
+在一次cherry-pick了多个提交时，两种取消是有区别的。
+
 ## git stash
 
 git stash 的作用是：把尚未提交的修改临时收起来，让工作目录恢复到较干净的状态，之后再把修改取回来。假设当前状态是：HEAD 为已提交的版本 A，暂存区为已经 git add 的版本 B，工作目录为继续修改之后的版本 C。
@@ -362,6 +476,115 @@ git switch feature
 git stash pop
 ```
 
+## git pull
+
+git pull 的作用是：从远程仓库获取最新提交，并把它们整合到当前所在的本地分支，相当于 `git fetch` + `git merge`。
+
+假设本地当前位于master分支，基本用法是
+
+```
+git pull origin master
+```
+
+如果之前执行过`git pull -u origin master`，即指定过upstream（默认跟踪和比较的远程分支），后续可以直接执行`git pull`或`git push`
+
+如果当前位于 feature，执行
+
+```
+git pull origin master
+```
+
+这会把远程 master 整合进当前 feature，并不会自动切换到本地 master。
+
+若要更新本地 master，应执行
+
+```
+git switch master
+git pull origin master
+```
+
+git pull 能保留不冲突的本地修改，发生冲突时需要手动解决。
+
+## git push
+
+git push 的作用是：把本地已经创建的提交传输到远程仓库，并尝试更新远程分支或标签。`git push`只会推送已提交的内容，暂存区和储存区的修改不会被推送。基本用法是
+
+```
+git push origin master
+```
+
+这一命令实际上同时指定了远程分支和本地分支，`git push`的完整语法为
+
+```
+git push <远程仓库名> <本地分支>:<远程分支>
+git push origin master:master # 这是完整写法
+```
+
+当本地分支和远程分支同名时，Git允许省略冒号和远程目标，表示把本地 master 推送到 origin 的同名 master 分支。当只写一个分支名时，表示省略冒号和远程目标，即指定本地分支。所以即使当前位于 feature，该命令仍然推送本地 master。如果远程没有对应的同名分支，Git会创建它。
+
+`git push` 在远程含有本地不存在的提交历史时会发生冲突，需要手动解决。正常处理方式是先获取并整合
+
+```
+git fetch origin
+git rebase origin/master
+git push
+```
+
+或者使用 merge
+
+```
+git fetch origin
+git merge origin/master
+git push
+```
+
+如果因为 amend 或 rebase 有意改写了自己独占分支的历史，可以使用：
+
+```
+git push --force-with-lease
+```
+
+这是一种带安全检查的强制推送，它会先检查远程分支是否仍处于本地预期的位置，通常在 rebase、amend 或 reset 改写提交历史后使用。
+
+假设原来：
+
+```
+远程：A -> B -> C
+本地：A -> B -> C
+```
+
+执行 amend 或 rebase 后，本地提交被重新生成：
+
+```
+远程：A -> B -> C
+本地：A -> B' -> C'
+```
+
+因为本地历史不再包含远程的 C，普通推送会拒绝，此时可以执行：
+
+```
+git push --force-with-lease origin feature
+```
+
+Git会先检查：远程 feature 是否仍然位于我上次看到的位置。如果远程没有被其他人更新，允许强制改成：
+
+```
+A -> B' -> C'
+```
+
+如果其他人已经推送了 D：
+
+```
+远程实际状态： A -> B -> C -> D
+本地记录 origin/feature：A -> B' -> C'
+```
+
+Git发现远程实际位置和你预期的不一致，就会拒绝推送，以避免覆盖别人的 D。
+
+注意，`git push --force-with-lease`只适合于自己独占的功能分支，禁止在多人共同使用的 master/main 上随意强推。
+
+绝对禁止使用`git push --force`进行强行推送，尤其是在多人共同使用的 master/main 分支上，一般master/main的远程分支也会设置保护来禁止强制推送。
+
 ## 合并与冲突处理
 
 开始合并前最好先检查工作区是否干净，如果有会导致冲突的未提交修改，Git 就会拒绝合并，稳妥做法是先提交或暂存
@@ -378,9 +601,23 @@ Git 合并文件的方式是，找出两个分支的共同祖先，然后比较�
   <<<<<<< HEAD
   当前分支的内容
   =======
-  feature 分支的内容
+  传入分支的内容
   >>>>>>> feature
 ```
+
+在编辑器中还会提示选择保留”当前的更改“或“传入的更改”，两者具体所指的分支取决于当前所在的分支。
+
+- 当前的更改（Current Change）：当前检出的分支，也就是 HEAD 所在分支的内容
+- 传入的更改（Incoming Change）：正在合并进来的那个分支的内容
+
+例如
+
+```
+git switch master
+git merge feature
+```
+
+那么当前的更改指HEAD所在的master分支的更改，传入的更改指merge进来的feature分支的更改。
 
 冲突的处理流程如下：
 
@@ -391,62 +628,44 @@ git add <已解决冲突的文件>
 git merge --continue
 ```
 
-## git pull
+## 游离头问题
 
-git pull 的作用是：从远程仓库获取最新提交，并把它们整合到当前本地分支，相当于 `git fetch` + `git merge`。
+HEAD 可以理解为 Git 的“当前位置指针”，用于指示现在检出的版本在哪里，以及指示新的提交应该添加到哪里。正常情况下创建新提交：提交前：HEAD -> master -> A，提交后：HEAD -> master -> B -> A（Git 提交的箭头是从新提交指向旧提交）。
 
-upstream 是指某个本地分支默认跟踪和比较的远程分支
+detached HEAD 即“分离头指针”，表示 HEAD 没有指向某个本地分支，而是直接指向某次提交，这在查看旧版本、运行测试时很常见。detached HEAD 的风险在于，如果在 detached HEAD 状态下创建提交，新提交不属于任何分支；切换走后，再想找到会比较麻烦。因此如果已经在 detached HEAD 状态下做了有用的提交，应先创建分支保存它：
 
-如果当前分支已经设置了 upstream：
+```
+git switch -c my-new-branch
+```
 
-git pull
+这行命令的意思是：以当前提交为起点，创建名为 my-new-branch 的本地分支，并立即切换到该分支。
 
-例如之前执行过：
+## 远程仓库名
 
-git push -u origin master
+执行 `git clone` 时，Git 通常自动把源仓库命名为 origin。远程仓库名只是当前本地仓库里的别名，不会改变服务器上的仓库名称。同一个本地仓库中的远程名称不能重复。除非有多个远程仓库，否则沿用 origin 最省事，因为部分脚本和文档默认使用这个名字。
 
-Git 就知道当前本地 master 对应 origin/master。
+一个本地 Git 仓库可以配置多个远程仓库，origin 只是克隆时默认创建的第一个远程名称，并不是唯一允许的名字。使用命令 `git remote -v` 可以查看本地仓库配置的所有远程仓库。
 
-也可以明确指定远程和分支：
+## master 和 origin/master
 
-git pull origin master
+origin 是远程仓库地址的本地别名，本地 master 是实际开发和提交的本地分支，本地 origin/master 是本地保存的远程 master 状态记录，远程 master 是 GitHub 服务器上真正的 master。origin/master 通常被称为“远程分支”，但更准确地说，它是保存在本地的远程跟踪分支，记录你上次与远程通信时，远程 master 所在的位置，不是服务器上的实时分支。
 
-这表示获取 origin 的 master，然后整合进当前所在的本地分支。
+## HTTPS 和 SSH
 
-因此，如果当前位于 feature：
+这俩是访问远程仓库时的两种网络通讯协议，不影响 Git 功能，区别只是连接及认证方式。 个人长期使用通常可以选择 SSH；临时环境、服务器受限网络或希望少配置时，HTTPS 更方便。已有仓库也可以用命令 `git remote set-url origin <your_address>` 随时切换，仓库的连接方式（HTTPS 或 SSH）保存在每个本地仓库的远程地址配置中。
 
-git pull origin master
+| 对比项       | HTTPS                            | SSH                           |
+| ------------ | -------------------------------- | ----------------------------- |
+| 地址格式     | https://github.com/user/repo.git | git@github.com: user/repo.git |
+| 加密方式     | HTTPS/TLS 加密                   | SSH 加密                      |
+| 克隆公开仓库 | 通常无需登录                     | 本机需配置 SSH key            |
+| 访问私有仓库 | Token、凭据管理器或网页登录授权  | SSH key                       |
+| 日常推送     | 需要凭据管理器保存认证           | 配好 key 后无需重复认证       |
 
-它会把远程 master 整合进当前 feature，并不会自动切换到本地 master。要更新本地 master，应先执行：
+执行 `git push` 命令时，大致会经过：根据远程地址选择 SSH 或 HTTPS→ 自动取得 SSH 私钥或 HTTPS Token→ 远程平台根据凭据识别账户 → 检查该账户是否有仓库写权限 → 有权限的情况下完成项远程仓库的推送。
 
-git switch master
-git pull
+HTTPS 在第一次推送的网页登录完成后，通常会由 Git Credential Manager、系统钥匙串或其它凭据助手保存 Token。SSH 需要在本机生成 SSH 密钥对，私钥留在本机，公钥添加到 GitHub、GitLab 或公司的 Git 服务器。SSH key 的管理，通常是一台机器一个，添加到 GitHub/GitLab 账户后，本台机器即可访问这个账户有权限的所有仓库。
 
-git pull 有时能保留不冲突的本地修改，但如果远程变化可能覆盖它们，Git 会拒绝或产生冲突。稳妥做法是先提交，或者临时保存：
+一台机器可以有多个账户以及多个 key，因此在访问远程仓库遇到权限问题时，需要确认远程仓库识别到了本地的哪个账户；HTTPS 的凭据同理，也需要确认凭据管理器当前缓存的是哪一个账户。仓库“有权限”只代表某个远程账户有权限；推送时远程服务器还要确认：你当前到底以哪个账户、哪把 SSH key 或哪份 HTTPS 凭据登录。
 
-git stash push -u -m "拉取前临时保存"
-git pull
-git stash pop
-
-git push，可以加-u 参数设置本地分支的 upstream，后续如果 push / pull 到这个默认远程分支，只需要执行 `git push` / `git pull` 即可。
-
----
-
-## 常见 git 命令
-
-- `git init`：新建本地 git 仓库，没什么好说的
-- `git add <file_name>`：将本地修改添加到暂存区，可以 i 全部添加也可以以文件为单位添加
-- `git commit -m "<description>"`：将暂存区的修改提交到本地仓库
-- `git remote add <remote_repo_name> <remote_repo_address>`：添加远程仓库地址并进行命名，默认约定是 `origin`
-- `git push origin <branch_name>`：将本地仓库的修改提交到远程仓库
-- `git clone <remote_repo_address>`：克隆远程仓库到本地
-- `git switch <branch_name>`：切换到某个分支
-- `git restore <file_name>`：将某个文件的改动从暂存区取消
-- `git reset [mode] <target_commit>`：把当前分支 / 暂存区 / 工作目录，重置到指定提交的状态
-- `git revert <target_hash>`：反向应用某个提交引入的变化，达到抵消某次提交的效果
-
-- `git status`：
-- `git log`：查看提交日志
-- `git branch <branch_name>`
-- `git merge <branch_name>`
-- `git pull origin <branch_name>`
+SSH 认证主要有两个方向，SSH 私钥用于向服务器证明“我是谁”，known_hosts 保存的是本机曾经连接过的 SSH 服务器的身份信息，用来确认“对面的服务器是谁”，里面会写入 Github 的主机公钥。以后再次连接时，SSH 会对比服务器发来的公钥是否与 known_hosts 中保存的一致，不一致时会发出安全警告，这是为了防止中间人攻击，比如有人伪装成 GitHub 截获你的连接。
