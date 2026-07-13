@@ -30,6 +30,24 @@ git config --global https.proxy http://127.0.0.1:7890
 
 这张图是 Git 最经典的一张工作流示意图，它描述了代码从你修改到提交到远程仓库的整个生命周期，以及几个最常用命令分别作用在哪一步。
 
+协作开发的一种工作流如下
+
+```bash
+git clone <url> ## 克隆仓库
+git checkout -b <branch_name> ## 创建个人分支
+## 写代码
+git add <filename> ## 文件修改放入暂存区
+git commit -m "commit 内容" ## 提交 commit
+git push origin <branch_name> ## 个人分支提交到远程仓库
+
+git checkout master ## 切换到主分支
+git pull origin master ## 拉取主分支的更新
+git checkout <branch_name> ## 切换到个人分支
+git rebase master ## 将主分支的更新同步到个人分支 (如果有冲突需要手动解决)
+```
+
+[团队开发中的 GitFlow 工作流](https://blog.csdn.net/sunyctf/article/details/130587970)
+
 ## 常用 git 命令
 
 - `git init`
@@ -40,8 +58,10 @@ git config --global https.proxy http://127.0.0.1:7890
 - `git branch`
 - `git switch`
 - `git log`
+- `git reflog`
 - `git status`
 - `git diff`
+- `git blame`
 - `git restore`
 - `git reset`
 - `git revert`
@@ -52,6 +72,8 @@ git config --global https.proxy http://127.0.0.1:7890
 - `git stash`
 - `git pull`
 - `git push`
+- `git worktree`
+- `git bisect`
 
 ## branch
 
@@ -63,7 +85,7 @@ git branch -r # 查看所有本地保存的远程跟踪分支
 git branch -a # 查看所有本地和本地保存的远程跟踪分支
 ```
 
-创建分支的命令如下，默认从HEAD创建
+创建分支的命令如下，默认从 HEAD 创建
 
 ```
 git branch <新分支名> # 只创建不切换
@@ -102,7 +124,7 @@ git push origin --delete v1.0.0 # 删除远程标签
 
 ## commit amend
 
-`git commit` 可以加--amend 参数，表示用当前暂存区和新的提交信息，重新生成最近一次提交，替换原来的提交。
+`git commit` 可以加--amend 参数，表示用当前暂存区和新的提交信息，重新生成最近一次提交，替换原来的提交。用于已经 `git commit` 之后
 
 ```
 git commit --amend # 打开编辑器修改提交信息
@@ -131,7 +153,11 @@ git log 用于查看 Git 的提交历史，默认会从当前 HEAD 开始，沿�
 提交信息
 ```
 
-用 `git log` 命令可以查看当前本地和远程的各个分支分别处于哪个 commit 上，以及当前位于哪个分支，在哪个检出的版本上。注意 origin/master 只是最近一次 fetch/pull 后记录的远程状态，不一定代表服务器此刻的最新状态。常用简洁输出格式，每个提交显示一行：`git log --oneline`。
+用 `git log` 命令可以查看当前本地和远程的各个分支分别处于哪个 commit 上，以及当前位于哪个分支，在哪个检出的版本上。注意 origin/master 只是最近一次 fetch/pull 后记录的远程状态，不一定代表服务器此刻的最新状态。常用简洁输出格式，每个提交显示一行：`git log --oneline`。另外，执行 `git log` 之后终端会进入 less 查看器，按 q 键可以退出。
+
+## git reflog
+
+相较于只能看 commit 的 `git log`，`git reflog` 可以查看 HEAD 曾经去过哪里；这一功能可以用于修复 reset、rebase 等带来的 commit 遗失的情况。但 `git reflog` 本质上是记录本地引用的移动历史，不会记录远程仓库的历史，能恢复的也仅仅是本地仓库曾经 ref 过的 commit。
 
 ## git status
 
@@ -161,6 +187,10 @@ git diff <提交1> <提交2> # 比较两个提交
 git diff master feature # 比较两个分支
 ```
 
+## git blame
+
+可以看某个提交中某一行是谁写的，具体的用法用到再查吧，希望不要有用到这个命令的时候。
+
 ## git reset
 
 git reset 的作用是：把当前分支、暂存区，必要时还有工作目录，重置到指定提交的状态。针对提交来说，作用是移动当前分支的位置；针对文件来说，作用是重置暂存区，常用于取消 `git add`。
@@ -171,7 +201,7 @@ git reset 的作用是：把当前分支、暂存区，必要时还有工作目�
 A <- B <- C master、HEAD
 ```
 
-以reset上一次提交（HEAD~1 表示当前提交的上一个提交，也就是 B）为例
+以 reset 上一次提交（HEAD~1 表示当前提交的上一个提交，也就是 B）为例
 
 ```
 git reset --soft HEAD~1
@@ -394,7 +424,7 @@ A -> B
 
 原提交 E 仍然在 feature，master 上产生了新提交 E'。cherry-pick 不是复制整个 E 的项目快照，而是计算 E 的父提交 -> E 之间的修改，然后把这些修改应用到当前 HEAD 上。
 
-cherry-pick也可以挑选多个提交，通常按照从旧到新的顺序排列
+cherry-pick 也可以挑选多个提交，通常按照从旧到新的顺序排列
 
 ```
 git cherry-pick abc123 def456 789abcd
@@ -417,7 +447,7 @@ git cherry-pick -x abc123
 
 适合在不同发布分支之间移植修复，方便之后追踪来源。
 
-发生冲突时需要手动解决冲突，然后继续cherry-pick
+发生冲突时需要手动解决冲突，然后继续 cherry-pick
 
 ```
 git status
@@ -433,7 +463,7 @@ git cherry-pick --skip # 取消当前正在挑选的提交
 git cherry-pick --abort # 取消整个cherry-pick
 ```
 
-在一次cherry-pick了多个提交时，两种取消是有区别的。
+在一次 cherry-pick 了多个提交时，两种取消是有区别的。
 
 ## git stash
 
@@ -459,7 +489,7 @@ git stash show -p stash@{0} # 查看某一次具体的储藏内容
 ```
 git stash apply # 应用最新储藏，但保留储藏记录
 git stash apply stash@{1} # 应用指定储藏
-git stash pop # 将最新储藏的内容恢复到工作区，默认不恢复暂存区，成功后删除储藏记录
+git stash pop # 将最新储藏的内容恢复到工作区，默认不恢复暂存区（所有恢复出来的文件都是未暂存状态），成功后删除储藏记录
 git stash pop --index # 将最新储藏的内容恢复到工作区，并且恢复暂存区，成功后删除储藏记录
 git stash drop stash@{0} # 删除指定储藏
 ```
@@ -480,13 +510,13 @@ git stash pop
 
 git pull 的作用是：从远程仓库获取最新提交，并把它们整合到当前所在的本地分支，相当于 `git fetch` + `git merge`。
 
-假设本地当前位于master分支，基本用法是
+假设本地当前位于 master 分支，基本用法是
 
 ```
 git pull origin master
 ```
 
-如果之前执行过`git pull -u origin master`，即指定过upstream（默认跟踪和比较的远程分支），后续可以直接执行`git pull`或`git push`
+如果之前执行过 `git pull -u origin master`，即指定过 upstream（默认跟踪和比较的远程分支），后续可以直接执行 `git pull` 或 `git push`
 
 如果当前位于 feature，执行
 
@@ -507,20 +537,20 @@ git pull 能保留不冲突的本地修改，发生冲突时需要手动解决�
 
 ## git push
 
-git push 的作用是：把本地已经创建的提交传输到远程仓库，并尝试更新远程分支或标签。`git push`只会推送已提交的内容，暂存区和储存区的修改不会被推送。基本用法是
+git push 的作用是：把本地已经创建的提交传输到远程仓库，并尝试更新远程分支或标签。`git push` 只会推送已提交的内容，暂存区和储存区的修改不会被推送。基本用法是
 
 ```
 git push origin master
 ```
 
-这一命令实际上同时指定了远程分支和本地分支，`git push`的完整语法为
+这一命令实际上同时指定了远程分支和本地分支，`git push` 的完整语法为
 
 ```
 git push <远程仓库名> <本地分支>:<远程分支>
 git push origin master:master # 这是完整写法
 ```
 
-当本地分支和远程分支同名时，Git允许省略冒号和远程目标，表示把本地 master 推送到 origin 的同名 master 分支。当只写一个分支名时，表示省略冒号和远程目标，即指定本地分支。所以即使当前位于 feature，该命令仍然推送本地 master。如果远程没有对应的同名分支，Git会创建它。
+当本地分支和远程分支同名时，Git 允许省略冒号和远程目标，表示把本地 master 推送到 origin 的同名 master 分支。当只写一个分支名时，表示省略冒号和远程目标，即指定本地分支。所以即使当前位于 feature，该命令仍然推送本地 master。如果远程没有对应的同名分支，Git 会创建它。
 
 `git push` 在远程含有本地不存在的提交历史时会发生冲突，需要手动解决。正常处理方式是先获取并整合
 
@@ -566,7 +596,7 @@ git push --force-with-lease
 git push --force-with-lease origin feature
 ```
 
-Git会先检查：远程 feature 是否仍然位于我上次看到的位置。如果远程没有被其他人更新，允许强制改成：
+Git 会先检查：远程 feature 是否仍然位于我上次看到的位置。如果远程没有被其他人更新，允许强制改成：
 
 ```
 A -> B' -> C'
@@ -579,11 +609,55 @@ A -> B' -> C'
 本地记录 origin/feature：A -> B' -> C'
 ```
 
-Git发现远程实际位置和你预期的不一致，就会拒绝推送，以避免覆盖别人的 D。
+Git 发现远程实际位置和你预期的不一致，就会拒绝推送，以避免覆盖别人的 D。
 
-注意，`git push --force-with-lease`只适合于自己独占的功能分支，禁止在多人共同使用的 master/main 上随意强推。
+注意，`git push --force-with-lease` 只适合于自己独占的功能分支，禁止在多人共同使用的 master/main 上随意强推。
 
-绝对禁止使用`git push --force`进行强行推送，尤其是在多人共同使用的 master/main 分支上，一般master/main的远程分支也会设置保护来禁止强制推送。
+绝对禁止使用 `git push --force` 进行强行推送，尤其是在多人共同使用的 master/main 分支上，一般 master/main 的远程分支也会设置保护来禁止强制推送。
+
+## git worktree
+
+git worktree 可以同时把同一个 Git 仓库检出（checkout）到多个目录，每个目录可以处于不同的分支。比如当前在 main 分支，要同时开发一个新功能（feature 分支），修一个线上 bug（hotfix），又不想丢掉当前 main 分支中开发中的代码。可以执行
+
+```
+# 需要已有feature和hotfix分支
+git worktree add ../project-feature feature
+git worktree add ../project-hotfix hotfix
+```
+
+两个命令会分别在当前目录的上一级新建 project-feature 目录（处在 feature 分支）和新建 project-hotfix 目录（处在 hotfix 分支）。
+
+执行之后，几个目录共用一个.git，即 Git 的对象数据库（`.git/objects`）、提交历史等是共享的，因此通常只多占工作目录中文件的空间，而不会复制整个仓库历史。
+
+查看所有 worktree
+
+```
+git worktree list
+```
+
+新建不存在的分支
+
+```
+git worktree add -b feature/login ../login main # 从 main 创建 feature/login 分支，放在../login目录
+```
+
+删除 worktree，注意目录也会一起删除（要求工作区干净，否则 Git 会阻止删除）
+
+```
+git worktree remove ../login
+```
+
+另外，一个分支只能被一个 worktree 检出，Git 不允许同一个分支同时被多个 worktree 检出，以避免对同一分支在不同目录中进行互相不知情的修改。
+
+## git bisect
+
+用于二分法查找 bug，找到第一个坏 commit。Git 负责按二分法进行 commit 跳转，由人进行测试并将结果告诉 Git。
+
+```
+git bisect start
+git bisect bad
+git bisect good 1
+```
 
 ## 合并与冲突处理
 
@@ -617,7 +691,7 @@ git switch master
 git merge feature
 ```
 
-那么当前的更改指HEAD所在的master分支的更改，传入的更改指merge进来的feature分支的更改。
+那么当前的更改指 HEAD 所在的 master 分支的更改，传入的更改指 merge 进来的 feature 分支的更改。
 
 冲突的处理流程如下：
 
