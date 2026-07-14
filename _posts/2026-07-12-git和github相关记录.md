@@ -1,13 +1,11 @@
 ---
 title: git和github相关记录
-description: <摘要>
+description: 持续记录 git 和 github 使用过程中，之前没有注意过的点
 math: true
 mermaid: true
 image:
   path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Snipaste_2026-07-12_14-27-47.png
 ---
-
-持续记录 git 和 github 使用过程中，之前没有注意过的点。
 
 ## 初始化配置
 
