@@ -33,20 +33,28 @@ git config --global https.proxy http://127.0.0.1:7890
 协作开发的一种工作流如下
 
 ```bash
-git clone <url> ## 克隆仓库
-git checkout -b <branch_name> ## 创建个人分支
-## 写代码
-git add <filename> ## 文件修改放入暂存区
-git commit -m "commit 内容" ## 提交 commit
-git push origin <branch_name> ## 个人分支提交到远程仓库
+# 首先将协作仓库 fork 一份到自己名下
 
-git checkout master ## 切换到主分支
-git pull origin master ## 拉取主分支的更新
-git checkout <branch_name> ## 切换到个人分支
-git rebase master ## 将主分支的更新同步到个人分支 (如果有冲突需要手动解决)
+git clone <my_repo_url> # 克隆自己名下的仓库到本地
+git remote add upstream <cooperate_repo_url> # 添加协作的远程仓库
+git fetch upstream # 获取协作仓库的最新修改
+
+# 当前在 main 分支上维护，协作仓库更新后，需要同步到自己仓库
+git fetch upstream
+git switch main
+git merge upstream/main
+git push origin main
+
+# 当前在 featire 分支上开发新功能，协作仓库更新后，需要同步到自己仓库
+git fetch upstream
+git switch feature
+git rebase upstream/main
+git push --force-with-lease origin feature
 ```
 
-[团队开发中的 GitFlow 工作流](https://blog.csdn.net/sunyctf/article/details/130587970)
+另外，建议 main 分支尽量保持和协作仓库一致，自己的提交都放在 feature 分支，这样同步最干净，提 PR 时冲突也少。
+
+拓展阅读：[团队开发中的 GitFlow 工作流](https://blog.csdn.net/sunyctf/article/details/130587970)
 
 ## 常用 git 命令
 
