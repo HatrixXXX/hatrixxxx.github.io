@@ -32,3 +32,17 @@ test('accepts animated output only when timing is preserved and bytes shrink', (
   assert.equal(acceptAnimatedGif(source, { ...source, delay: [80, 80, 100] }, 1000, 700), false);
   assert.equal(acceptAnimatedGif(source, source, 1000, 1100), false);
 });
+
+test('replaces the same thumbnail destination safely on repeated conversion', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-convert-repeat-'));
+  const source = join(root, 'source.png');
+  const thumb = join(root, 'thumb.webp');
+  const pixels = Buffer.alloc(800 * 400 * 3, 127);
+  await sharp(pixels, { raw: { width: 800, height: 400, channels: 3 } }).png().toFile(source);
+  await createThumbnail(source, thumb);
+  await createThumbnail(source, thumb);
+  assert.deepEqual(
+    [(await sharp(thumb).metadata()).width, (await sharp(thumb).metadata()).height],
+    [640, 336]
+  );
+});

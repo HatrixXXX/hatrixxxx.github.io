@@ -40,14 +40,24 @@ export async function optimizeFull(source, destination) {
 
 export async function createThumbnail(source, destination) {
   await prepare(destination);
-  await sharp(source, { animated: false, pages: 1 }).rotate()
-    .resize(640, 336, { fit: 'cover', position: 'centre' })
-    .webp({ quality: 82, alphaQuality: 100, effort: 5 })
-    .toFile(destination);
-  const meta = await sharp(destination).metadata();
-  return {
-    adopted: true, sourceBytes: await size(source), outputBytes: await size(destination),
-    width: meta.width ?? 0, height: meta.height ?? 0,
-    format: meta.format ?? 'webp', reason: 'homepage-thumbnail'
-  };
+  const temp = `${destination}.tmp`;
+  try {
+    await sharp(source, { animated: false, pages: 1 }).rotate()
+      .resize(640, 336, { fit: 'cover', position: 'centre' })
+      .webp({ quality: 82, alphaQuality: 100, effort: 5 })
+      .toFile(temp);
+    const meta = await sharp(await readFile(temp)).metadata();
+    const sourceBytes = await size(source);
+    const outputBytes = await size(temp);
+    await rm(destination, { force: true });
+    await rename(temp, destination);
+    return {
+      adopted: true, sourceBytes, outputBytes,
+      width: meta.width ?? 0, height: meta.height ?? 0,
+      format: meta.format ?? 'webp', reason: 'homepage-thumbnail'
+    };
+  } catch (error) {
+    await rm(temp, { force: true }).catch(() => {});
+    throw error;
+  }
 }
