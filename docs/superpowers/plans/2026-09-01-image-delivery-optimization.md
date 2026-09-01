@@ -17,7 +17,7 @@
 - 输出只有比源文件小时才采用；未采用时继续使用原 URL。
 - 输出路径固定为 `img/optimized/<原文件名>.<原扩展名>.webp` 和 `img/thumbnails/<原文件名>.<原扩展名>.webp`。
 - manifest schema v3 记录源格式、源宽高和页数；动画高度使用单帧高度。
-- `audit` 和 `apply` 复用 manifest 中既有映射，只处理新增原图；相同输入的第二次 `apply` 不产生文件或 manifest 差异。
+- `audit` 和 `apply` 用 manifest 复核当前引用。历史源 URL、缺失缩略图和错误缩略图只做引用修复；只有新增原图编码。相同输入的第二次 `apply` 不产生文件或 manifest 差异。
 - 咖啡图保持 500×500，WebP 必须小于 70 KiB；PNG 保留作回退。
 - 图床新增文件先于博客链接发布；原图删除晚于博客线上验证。
 - 不清理 Git 历史，不更换 GitHub Pages 或 jsDelivr。
@@ -511,7 +511,7 @@ Create the manifest entry in `buildManifest` by grouping `scanReferences` by `re
 }
 ```
 
-动画的 `source.height` 和输出 `height` 都是单帧高度。`audit` 与 `apply` 读取已有 manifest，识别 `sourcePath`、已采用的 `full.path` 和 `thumbnail.path`；这些路径不再作为新源处理。只有首次出现的原图生成新 entry。
+动画的 `source.height` 和输出 `height` 都是单帧高度。`audit` 与 `apply` 读取已有 manifest，识别 `sourcePath`、已采用的 `full.path` 和 `thumbnail.path`。每条当前引用必须符合对应 entry 的完整图或缩略图用途；不符合时，audit 写入 `referenceRepairs`，apply 只改引用。只有首次出现的原图生成新 entry。
 
 Add this exact deletion selector to `tools/image-pipeline/manifest.mjs`:
 
@@ -534,7 +534,7 @@ export function pruneCandidates(manifest, currentRefs) {
 
 Implement `cli.mjs` with `parseArgs({ options: { 'blog-root': { type: 'string' }, 'image-root': { type: 'string' }, report: { type: 'string' }, 'confirm-prune': { type: 'boolean' } }, allowPositionals: true })`。The first positional must be `audit`, `apply` or `prune`; both roots must be absolute and exist。
 
-Use `execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' })` to require clean roots before `apply` or `prune`。`audit` calls `buildManifest` and writes only `report`。`apply` calls `buildManifest`, reuses current manifest mappings, converts only eligible new entries, updates references, and writes `tools/image-pipeline/manifest.json` only when its bytes change。`prune` requires `--report`。It validates schema v3, a full `publishedImageCommit`, and every adopted output against that commit; then it resolves and stats every candidate before any unlink。Without `--confirm-prune` it writes a dry-run report and deletes nothing。With confirmation it writes the final deletion result to the same report。The CLI never invokes `git push`。
+Use `execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' })` to require clean roots before `apply` or `prune`。`audit` calls `buildManifest`, reports reference repairs, and writes only `report`。`apply` converts eligible new entries and applies reference-only repairs, then writes `tools/image-pipeline/manifest.json` only when its bytes change。`prune` requires `--report`。Dry-run validates schema v3, the full `publishedImageCommit`, every adopted output and every candidate, then writes report schema v2 with both HEADs, manifest SHA-256, canonical candidates, total bytes and `planDigest`。`--confirm-prune` reads that existing plan, recomputes every binding, and refuses without deletion or report overwrite on any mismatch。The CLI never invokes `git push`。
 
 Append to `.gitignore`:
 
@@ -778,7 +778,7 @@ For every manifest output used by the blog, request the unversioned jsDelivr URL
 
 - [ ] **Step 2: Rescan migrated sources**
 
-Run `audit` again against the modified blog。It reuses the committed manifest mappings and does not add entries whose `sourcePath` is under `img/optimized/` or `img/thumbnails/`。Expected:
+Run `audit` again against the modified blog。It reuses the committed manifest mappings, does not add entries whose `sourcePath` is under `img/optimized/` or `img/thumbnails/`, and reports an empty `referenceRepairs` array。Expected:
 
 - every published cover has `image.thumbnail`;
 - adopted sources have zero references;
@@ -890,11 +890,11 @@ npm run images -- prune `
   --report reports/image-pipeline-final.json
 ```
 
-Expected: report contains the exact sorted paths, per-file bytes, total bytes, `mode: dry-run` and `status: planned`; no file is deleted。
+Expected: report schema v2 contains both full HEAD SHAs, manifest SHA-256, exact sorted paths, per-file bytes, total bytes, `planDigest`, `mode: dry-run` and `status: planned`; no file is deleted。Preserve this reviewed report unchanged until confirmation。
 
 - [ ] **Step 3: 确认报告后执行 prune**
 
-After explicit confirmation, rerun the same command with `--confirm-prune`。Before the first unlink, the command validates schema v3, the full `publishedImageCommit`, every adopted output in that commit, and every candidate path/size。Expected: only adopted, zero-reference source files are deleted; the report ends with `status: completed` and the exact deleted paths。
+After explicit confirmation, rerun the same command with `--confirm-prune` and the same report path。The command first validates the reviewed report, then recomputes blog/image HEADs, manifest hash, publication state and candidates。Any mismatch leaves the report and all sources untouched。When every binding matches, only adopted, zero-reference source files are deleted; the report keeps its original digest and ends with `status: completed` plus the exact deleted paths。
 
 - [ ] **Step 4: Verify before commit**
 

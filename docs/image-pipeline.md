@@ -32,7 +32,7 @@ npm run images -- audit `
   --report $AuditReport
 ```
 
-检查报告中的缺失源文件、输出路径冲突、引用位置和跳过原因。`audit` 不编码临时图片，报告只列来源字节数和转换资格，不预测输出大小。实际输出大小和节省量由 `apply` 写入 manifest。报告目录已被 Git 忽略，不要把审计报告当作 `tools/image-pipeline/manifest.json` 使用。
+检查报告中的缺失源文件、输出路径冲突、引用位置、跳过原因和 `referenceRepairs`。后一个数组核对当前引用是否仍使用 manifest 规定的完整图和缩略图：历史源 URL 被重新加入、发布封面缩略图缺失或错误时，报告会列出待修复文件和目标 URL。`audit` 不编码临时图片，报告只列来源字节数和转换资格，不预测输出大小。实际输出大小和节省量由 `apply` 写入 manifest。报告目录已被 Git 忽略，不要把审计报告当作 `tools/image-pipeline/manifest.json` 使用。
 
 ## apply：生成文件并迁移引用
 
@@ -51,7 +51,7 @@ if ($ImageChanges.Count -ne 0) {
 }
 ```
 
-`apply` 会读取现有 manifest，把已采用的完整图和缩略图映射回原图，只转换新增原图。所有既有 adopted outputs 必须通过路径、字节数、格式、尺寸和页数检查。输入没有变化时，重复执行不会改图片、博客文件或 manifest。
+`apply` 会读取现有 manifest，把当前每条引用与历史映射逐项核对。新增原图才进入转换；重新出现的历史源 URL 直接改回已有完整图，不重新编码。发布封面缺少缩略图或缩略图 URL 错误时，脚本使用已有映射修复 front matter。所有既有 adopted outputs 必须通过路径、字节数、格式、尺寸和页数检查。输入没有变化时，重复执行不会改图片、博客文件或 manifest。
 
 ```powershell
 npm run images -- apply `
@@ -166,7 +166,9 @@ npm run images -- prune `
   --report (Join-Path $BlogRoot 'reports\image-pipeline-prune.json')
 ```
 
-报告中的 `candidates` 按路径排序，逐项包含 `path` 和 `bytes`，`totalBytes` 是总字节数。dry-run 的 `mode` 为 `dry-run`，`status` 为 `planned`。核对报告并再次取得删除许可后，追加确认参数：
+dry-run 报告 schema 为 v2。`candidates` 按路径排序，逐项包含 `path` 和 `bytes`，`totalBytes` 是总字节数；`blogHead`、`imageHead` 和 `manifestSha256` 绑定生成计划时的两个工作树与 manifest。`planDigest` 覆盖这些字段、发布提交和候选集合。`mode` 为 `dry-run`，`status` 为 `planned`。
+
+把这份报告交给审批人核对。确认后使用同一路径和同一文件，不要重新生成或手工修改报告：
 
 ```powershell
 npm run images -- prune `
@@ -176,7 +178,7 @@ npm run images -- prune `
   --confirm-prune
 ```
 
-确认模式在完成全部预检后才开始删除。成功报告的 `status` 为 `completed`，`deleted` 列出实际删除路径。提交前检查图床差异，确认没有删除保留项或新输出。
+确认模式先验证报告自身的 schema、排序、总字节数和 digest，再重新计算两个 HEAD、manifest 哈希、发布提交及完整候选集合。任一字段变化都会退出，保留原报告且不删除文件。全部绑定相同时才开始删除；删除前不会覆盖已审阅计划。成功后 `status` 改为 `completed`，`planDigest` 保持不变，`deleted` 列出实际删除路径。提交前检查图床差异，确认没有删除保留项或新输出。
 
 ## 发布门禁
 

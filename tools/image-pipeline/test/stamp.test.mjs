@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import { stampPublishedImageCommit } from '../manifest.mjs';
+import { stampPublishedImageCommit, validateManifest } from '../manifest.mjs';
 
 function commitFixture(root, message) {
   execFileSync('git', ['add', '.'], { cwd: root });
@@ -114,4 +114,20 @@ test('rejects a committed blob that differs from the working output', async () =
     stampPublishedImageCommit(manifest, imageRoot, publishedCommit),
     new RegExp(`committed output does not match working file: ${outputPath}`, 'u')
   );
+});
+
+test('manifest validation rejects duplicate source paths', async () => {
+  const { manifest } = await createFixture();
+  manifest.entries.push(structuredClone(manifest.entries[0]));
+
+  assert.throws(() => validateManifest(manifest), /duplicate source path/u);
+});
+
+test('manifest validation rejects duplicate adopted output paths', async () => {
+  const { manifest } = await createFixture();
+  const duplicate = structuredClone(manifest.entries[0]);
+  duplicate.sourcePath = 'img/other.png';
+  manifest.entries.push(duplicate);
+
+  assert.throws(() => validateManifest(manifest), /duplicate adopted output path/u);
 });

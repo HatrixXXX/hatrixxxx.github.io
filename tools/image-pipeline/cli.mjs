@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -20,20 +21,32 @@ Commands:
   audit  Scan both repositories and write the required --report JSON file.
   apply  Require clean worktrees, create eligible WebP outputs, update references, and write the manifest.
   stamp  Verify adopted outputs at --image-commit and record the resolved commit in the manifest.
-  prune  Require clean worktrees and --report; dry-run unless --confirm-prune is supplied.
+  prune  Write a bound dry-run plan, or confirm an existing unchanged plan.
 
 Options:
   --blog-root <path>   Required absolute blog repository path.
   --image-root <path>  Required absolute image repository path.
   --report <path>      Required audit or prune JSON report path.
   --image-commit <id>  Required explicit image commit/ref for stamp; the resolved full SHA is stored.
-  --confirm-prune      Delete after prune preflight; without it prune is read-only.
+  --confirm-prune      Delete only when the existing --report still matches every binding.
   --help               Show this help text.
 `;
+
+const PRUNE_REPORT_SCHEMA_VERSION = 2;
+const FULL_SHA = /^[0-9a-f]{40}$/u;
+const SHA256 = /^[0-9a-f]{64}$/u;
 
 function requireClean(root) {
   const status = execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' });
   if (status.trim()) throw new Error(`worktree is not clean: ${root}`);
+}
+
+function gitHead(root) {
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+}
+
+function sha256(value) {
+  return createHash('sha256').update(value).digest('hex');
 }
 
 async function requireAbsoluteDirectory(option, value) {
@@ -86,34 +99,50 @@ async function createStagedOutputs(manifest, imageRoot, stagingRoot) {
 }
 
 async function prepareReferenceUpdates(manifest, blogRoot, pendingSources) {
-  const replacementByRawUrl = new Map();
   const updatesByFile = new Map();
+  const updateFor = (file) => {
+    const update = updatesByFile.get(file) ?? { replacements: new Map(), thumbnails: [] };
+    updatesByFile.set(file, update);
+    return update;
+  };
   for (const entry of manifest.entries) {
     if (!pendingSources.has(entry.sourcePath)) continue;
     if (entry.full.adopted) {
       for (const reference of entry.references) {
-        replacementByRawUrl.set(reference.rawUrl, entry.full.url);
-        updatesByFile.set(reference.file, updatesByFile.get(reference.file) ?? []);
+        updateFor(reference.file).replacements.set(reference.rawUrl, entry.full.url);
       }
     }
     if (!entry.thumbnail.adopted) continue;
     for (const reference of entry.references) {
       if (reference.scope !== 'published' || reference.kind !== 'cover') continue;
-      const updates = updatesByFile.get(reference.file) ?? [];
-      updates.push({
+      updateFor(reference.file).thumbnails.push({
         fullUrl: entry.full.adopted ? entry.full.url : reference.rawUrl,
         thumbnailUrl: entry.thumbnail.url
       });
-      updatesByFile.set(reference.file, updates);
+    }
+  }
+
+  for (const repair of manifest.referenceRepairs ?? []) {
+    const update = updateFor(repair.file);
+    if (repair.type === 'replace-reference') {
+      const existing = update.replacements.get(repair.fromUrl);
+      if (existing && existing !== repair.toUrl) {
+        throw new Error(`conflicting reference repair in ${repair.file}: ${repair.fromUrl}`);
+      }
+      update.replacements.set(repair.fromUrl, repair.toUrl);
+    } else if (repair.type === 'upsert-thumbnail') {
+      update.thumbnails.push({ fullUrl: repair.fullUrl, thumbnailUrl: repair.thumbnailUrl });
+    } else {
+      throw new Error(`unknown reference repair type: ${repair.type}`);
     }
   }
 
   const prepared = [];
-  for (const [file, thumbnailUpdates] of updatesByFile) {
+  for (const [file, { replacements, thumbnails }] of updatesByFile) {
     const path = await resolveSafePath(blogRoot, file, 'blog source');
     const source = await readFile(path, 'utf8');
-    let updated = applyReferenceMap(source, replacementByRawUrl);
-    for (const update of thumbnailUpdates) {
+    let updated = applyReferenceMap(source, replacements);
+    for (const update of thumbnails) {
       updated = upsertThumbnail(updated, update.fullUrl, update.thumbnailUrl);
     }
     if (updated !== source) prepared.push({ path, updated });
@@ -164,7 +193,11 @@ async function readExistingManifest(blogRoot) {
 async function runAudit(blogRoot, imageRoot, report) {
   if (!report) throw new Error('--report is required for audit');
   const previousManifest = await readExistingManifest(blogRoot);
-  await writeJson(report, await buildManifest(blogRoot, imageRoot, { previousManifest }));
+  const manifest = await buildManifest(blogRoot, imageRoot, { previousManifest });
+  await writeJson(report, {
+    ...manifest,
+    referenceRepairs: manifest.referenceRepairs ?? []
+  });
 }
 
 async function runApply(blogRoot, imageRoot) {
@@ -190,7 +223,8 @@ async function runApply(blogRoot, imageRoot) {
       : [];
     await installStagedOutputs(installations, imageRoot);
     await writeReferenceUpdates(updates);
-    await writeJsonIfChanged(outputManifest, manifest);
+    const { referenceRepairs, ...storedManifest } = manifest;
+    await writeJsonIfChanged(outputManifest, storedManifest);
   } finally {
     if (stagingRoot) await rm(stagingRoot, { recursive: true, force: true });
   }
@@ -203,11 +237,57 @@ async function runStamp(blogRoot, imageRoot, imageCommit) {
   await writeJson(outputManifest, await stampPublishedImageCommit(manifest, imageRoot, imageCommit));
 }
 
-async function runPrune(blogRoot, imageRoot, confirmPrune, report) {
-  if (!report) throw new Error('--report is required for prune');
-  requireClean(blogRoot);
-  requireClean(imageRoot);
-  const manifest = JSON.parse(await readFile(await manifestPath(blogRoot), 'utf8'));
+function pruneBinding(plan) {
+  return {
+    schemaVersion: plan.schemaVersion,
+    blogHead: plan.blogHead,
+    imageHead: plan.imageHead,
+    manifestSha256: plan.manifestSha256,
+    publishedImageCommit: plan.publishedImageCommit,
+    candidates: plan.candidates,
+    totalBytes: plan.totalBytes
+  };
+}
+
+function digestPruneBinding(plan) {
+  return sha256(JSON.stringify(pruneBinding(plan)));
+}
+
+function validateReviewedPrunePlan(plan) {
+  if (!plan || typeof plan !== 'object' || plan.schemaVersion !== PRUNE_REPORT_SCHEMA_VERSION) {
+    throw new Error(`prune report schemaVersion must be ${PRUNE_REPORT_SCHEMA_VERSION}`);
+  }
+  if (plan.mode !== 'dry-run' || plan.status !== 'planned') {
+    throw new Error('prune report must be an uncompleted dry-run plan');
+  }
+  if (!FULL_SHA.test(plan.blogHead ?? '') || !FULL_SHA.test(plan.imageHead ?? '') ||
+      !FULL_SHA.test(plan.publishedImageCommit ?? '') || !SHA256.test(plan.manifestSha256 ?? '') ||
+      !SHA256.test(plan.planDigest ?? '') || !Array.isArray(plan.candidates)) {
+    throw new Error('prune report binding fields are invalid');
+  }
+  const canonicalCandidates = [...plan.candidates]
+    .map(({ path, bytes }) => ({ path, bytes }))
+    .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  if (JSON.stringify(canonicalCandidates) !== JSON.stringify(plan.candidates) ||
+      canonicalCandidates.some(({ path, bytes }, index) => typeof path !== 'string' ||
+        !Number.isSafeInteger(bytes) || bytes < 0 ||
+        (index > 0 && canonicalCandidates[index - 1].path === path))) {
+    throw new Error('prune report candidates are not canonical');
+  }
+  if (!Number.isSafeInteger(plan.totalBytes) || plan.totalBytes < 0 ||
+      canonicalCandidates.reduce((sum, { bytes }) => sum + bytes, 0) !== plan.totalBytes) {
+    throw new Error('prune report totalBytes is invalid');
+  }
+  if (digestPruneBinding(plan) !== plan.planDigest) {
+    throw new Error('prune report planDigest does not match its bindings');
+  }
+  return plan;
+}
+
+async function buildPrunePlan(blogRoot, imageRoot) {
+  const manifestFile = await manifestPath(blogRoot);
+  const manifestText = await readFile(manifestFile, 'utf8');
+  const manifest = JSON.parse(manifestText);
   await validatePublishedManifest(manifest, imageRoot);
   const currentRefs = new Set((await scanReferences(blogRoot)).map(({ repoPath }) => repoPath));
   const candidates = pruneCandidates(manifest, currentRefs);
@@ -219,28 +299,61 @@ async function runPrune(blogRoot, imageRoot, confirmPrune, report) {
     resolvedCandidates.push({ path, bytes: info.size, absolute });
   }
   const plan = {
-    schemaVersion: 1,
-    mode: confirmPrune ? 'delete' : 'dry-run',
-    status: confirmPrune ? 'ready' : 'planned',
+    schemaVersion: PRUNE_REPORT_SCHEMA_VERSION,
+    mode: 'dry-run',
+    status: 'planned',
+    blogHead: gitHead(blogRoot),
+    imageHead: gitHead(imageRoot),
+    manifestSha256: sha256(manifestText),
     publishedImageCommit: manifest.publishedImageCommit,
     candidates: resolvedCandidates.map(({ path, bytes }) => ({ path, bytes })),
     totalBytes: resolvedCandidates.reduce((sum, { bytes }) => sum + bytes, 0)
   };
-  await writeJson(report, plan);
-  console.log(JSON.stringify(plan, null, 2));
-  if (!confirmPrune) return;
+  plan.planDigest = digestPruneBinding(plan);
+  return { plan, resolvedCandidates };
+}
 
-  const deleted = [];
-  try {
-    for (const { path, absolute } of resolvedCandidates) {
-      await unlink(absolute);
-      deleted.push(path);
+function assertSamePruneBinding(reviewed, current) {
+  for (const field of [
+    'schemaVersion', 'blogHead', 'imageHead', 'manifestSha256', 'publishedImageCommit',
+    'candidates', 'totalBytes', 'planDigest'
+  ]) {
+    if (JSON.stringify(reviewed[field]) !== JSON.stringify(current[field])) {
+      throw new Error(`prune plan binding mismatch: ${field}`);
     }
+  }
+}
+
+async function runPrune(blogRoot, imageRoot, confirmPrune, report) {
+  if (!report) throw new Error('--report is required for prune');
+  requireClean(blogRoot);
+  requireClean(imageRoot);
+
+  if (!confirmPrune) {
+    const { plan } = await buildPrunePlan(blogRoot, imageRoot);
+    await writeJson(report, plan);
+    console.log(JSON.stringify(plan, null, 2));
+    return;
+  }
+
+  let reviewed;
+  try {
+    reviewed = validateReviewedPrunePlan(JSON.parse(await readFile(report, 'utf8')));
   } catch (error) {
-    await writeJson(report, { ...plan, status: 'failed', deleted, error: error.message });
+    if (error.code === 'ENOENT') throw new Error('confirmed prune requires an existing reviewed --report');
     throw error;
   }
-  await writeJson(report, { ...plan, status: 'completed', deleted });
+  const { plan: current, resolvedCandidates } = await buildPrunePlan(blogRoot, imageRoot);
+  assertSamePruneBinding(reviewed, current);
+
+  const deleted = [];
+  for (const { path, absolute } of resolvedCandidates) {
+    await unlink(absolute);
+    deleted.push(path);
+  }
+  const completed = { ...reviewed, status: 'completed', deleted };
+  await writeJson(report, completed);
+  console.log(JSON.stringify(completed, null, 2));
 }
 
 async function main() {

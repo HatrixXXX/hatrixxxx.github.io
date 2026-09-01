@@ -42,13 +42,16 @@ export async function scanReferences(root) {
         const lineStart = text.lastIndexOf('\n', match.index) + 1;
         const lineEnd = text.indexOf('\n', match.index);
         const lineText = text.slice(lineStart, lineEnd < 0 ? text.length : lineEnd);
+        const frontmatterKind = /^\s+path\s*:/u.test(lineText)
+          ? 'cover'
+          : /^\s+thumbnail\s*:/u.test(lineText) ? 'thumbnail' : 'inline';
         refs.push({
           file,
           line: text.slice(0, match.index).split(/\r\n|\n|\r/u).length,
           rawUrl,
           repoPath,
           scope: scopeFor(file),
-          kind: firstFence > match.index && /^\s+path\s*:/u.test(lineText) ? 'cover' : 'inline',
+          kind: firstFence > match.index ? frontmatterKind : 'inline',
           offset: match.index
         });
       }

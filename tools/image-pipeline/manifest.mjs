@@ -75,6 +75,8 @@ export function validateManifest(manifest, { requirePublished = false } = {}) {
   if (requirePublished && !FULL_SHA.test(manifest.publishedImageCommit ?? '')) {
     throw new Error('manifest publishedImageCommit must be a full SHA');
   }
+  const sourcePaths = new Set();
+  const adoptedOutputPaths = new Set();
   for (const [index, entry] of manifest.entries.entries()) {
     if (typeof entry.sourcePath !== 'string' || !Number.isSafeInteger(entry.sourceBytes) ||
         entry.sourceBytes < 0 || !entry.source || typeof entry.source !== 'object' ||
@@ -86,6 +88,17 @@ export function validateManifest(manifest, { requirePublished = false } = {}) {
     }
     assertOutput(entry.full, `entry ${index} full output`);
     assertOutput(entry.thumbnail, `entry ${index} thumbnail output`);
+    if (sourcePaths.has(entry.sourcePath)) {
+      throw new Error(`duplicate source path: ${entry.sourcePath}`);
+    }
+    sourcePaths.add(entry.sourcePath);
+    for (const output of [entry.full, entry.thumbnail]) {
+      if (!output.adopted) continue;
+      if (adoptedOutputPaths.has(output.path)) {
+        throw new Error(`duplicate adopted output path: ${output.path}`);
+      }
+      adoptedOutputPaths.add(output.path);
+    }
   }
   return manifest;
 }
@@ -99,13 +112,51 @@ function previousPaths(manifest) {
       ...(entry.thumbnail.adopted ? [entry.thumbnail.path] : [])
     ]) {
       const existing = paths.get(path);
-      if (existing && existing !== entry.sourcePath) {
+      if (existing && existing.sourcePath !== entry.sourcePath) {
         throw new Error(`manifest path maps to multiple sources: ${path}`);
       }
-      paths.set(path, entry.sourcePath);
+      paths.set(path, entry);
     }
   }
   return paths;
+}
+
+function expectedFull(entry) {
+  return entry.full.adopted
+    ? { path: entry.full.path, url: entry.full.url }
+    : { path: entry.sourcePath, url: cdnUrl(entry.sourcePath) };
+}
+
+function replacementRepair(reference, entry, expected) {
+  if (reference.repoPath === expected.path && reference.rawUrl === expected.url) return null;
+  return {
+    type: 'replace-reference',
+    sourcePath: entry.sourcePath,
+    file: reference.file,
+    line: reference.line,
+    kind: reference.kind,
+    fromUrl: reference.rawUrl,
+    toUrl: expected.url
+  };
+}
+
+function thumbnailRepair(cover, thumbnail, entry, full) {
+  if (!entry.thumbnail.adopted) return null;
+  if (thumbnail?.repoPath === entry.thumbnail.path && thumbnail.rawUrl === entry.thumbnail.url) return null;
+  return {
+    type: 'upsert-thumbnail',
+    sourcePath: entry.sourcePath,
+    file: cover.file,
+    line: thumbnail?.line ?? cover.line,
+    fromUrl: thumbnail?.rawUrl ?? null,
+    fullUrl: full.url,
+    thumbnailUrl: entry.thumbnail.url
+  };
+}
+
+function sortRepairs(repairs) {
+  return repairs.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line ||
+    a.type.localeCompare(b.type) || (a.fromUrl ?? '').localeCompare(b.fromUrl ?? ''));
 }
 
 function rejectOutputCollisions(entries) {
@@ -127,17 +178,49 @@ export async function buildManifest(blogRoot, imageRoot, options = {}) {
   const knownPaths = previousManifest
     ? previousPaths(validateManifest(previousManifest))
     : new Map();
-  const grouped = new Map();
-  for (const reference of await scanReferences(blogRoot)) {
+  const scannedReferences = await scanReferences(blogRoot);
+  const referencesByFile = new Map();
+  for (const reference of scannedReferences) {
     await resolveSafePath(blogRoot, reference.file, 'blog source');
-    await resolveSafeImagePath(imageRoot, reference.repoPath);
-    if (knownPaths.has(reference.repoPath)) continue;
-    if (GENERATED_DIRECTORIES.some((directory) => reference.repoPath.startsWith(directory))) {
-      throw new Error(`referenced generated output is missing from manifest: ${reference.repoPath}`);
+    if (reference.kind !== 'thumbnail') {
+      await resolveSafeImagePath(imageRoot, reference.repoPath);
     }
-    const references = grouped.get(reference.repoPath) ?? [];
+    const references = referencesByFile.get(reference.file) ?? [];
     references.push(reference);
-    grouped.set(reference.repoPath, references);
+    referencesByFile.set(reference.file, references);
+  }
+
+  const grouped = new Map();
+  const repairs = [];
+  for (const [file, fileReferences] of referencesByFile) {
+    const covers = fileReferences.filter(({ kind }) => kind === 'cover');
+    const thumbnails = fileReferences.filter(({ kind }) => kind === 'thumbnail');
+    if (covers.length > 1) throw new Error(`image.path is ambiguous: ${file}`);
+    if (thumbnails.length > 1) throw new Error(`image.thumbnail is ambiguous: ${file}`);
+    const cover = covers[0];
+    const coverEntry = cover && knownPaths.get(cover.repoPath);
+
+    for (const reference of fileReferences.filter(({ kind }) => kind !== 'thumbnail')) {
+      const knownEntry = knownPaths.get(reference.repoPath);
+      if (knownEntry) {
+        const repair = replacementRepair(reference, knownEntry, expectedFull(knownEntry));
+        if (repair) repairs.push(repair);
+        continue;
+      }
+      if (GENERATED_DIRECTORIES.some((directory) => reference.repoPath.startsWith(directory))) {
+        throw new Error(`referenced generated output is missing from manifest: ${reference.repoPath}`);
+      }
+      const references = grouped.get(reference.repoPath) ?? [];
+      references.push(reference);
+      grouped.set(reference.repoPath, references);
+    }
+
+    if (coverEntry && cover.scope === 'published') {
+      const repair = thumbnailRepair(cover, thumbnails[0], coverEntry, expectedFull(coverEntry));
+      if (repair) repairs.push(repair);
+    } else if (thumbnails.length > 0 && !cover) {
+      throw new Error(`image.thumbnail has no image.path: ${file}`);
+    }
   }
 
   const entries = [];
@@ -172,8 +255,13 @@ export async function buildManifest(blogRoot, imageRoot, options = {}) {
   if (previousManifest) {
     await validateWorkingAdoptedOutputs(previousManifest, imageRoot, { readMetadata });
   }
-  if (previousManifest && entries.length === 0) {
+  const referenceRepairs = sortRepairs(repairs);
+  if (previousManifest && entries.length === 0 && referenceRepairs.length === 0) {
     return previousManifest;
+  }
+
+  if (previousManifest && entries.length === 0) {
+    return { ...previousManifest, referenceRepairs };
   }
 
   return {
@@ -183,7 +271,8 @@ export async function buildManifest(blogRoot, imageRoot, options = {}) {
     sourceImageCommit: commitAt(imageRoot),
     publishedImageCommit: null,
     entries: [...previousEntries, ...entries]
-      .sort(({ sourcePath: a }, { sourcePath: b }) => a.localeCompare(b))
+      .sort(({ sourcePath: a }, { sourcePath: b }) => a.localeCompare(b)),
+    referenceRepairs
   };
 }
 

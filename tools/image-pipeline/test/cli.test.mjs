@@ -38,6 +38,70 @@ async function pathExists(path) {
   }
 }
 
+async function createAppliedFixture() {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-cli-repair-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  const postPath = join(blogRoot, '_posts', 'cover.md');
+  const sourcePath = 'img/cover.png';
+  const sourceUrl = `${PREFIX}${sourcePath}`;
+  await mkdir(join(blogRoot, '_posts'), { recursive: true });
+  await mkdir(join(imageRoot, 'img'), { recursive: true });
+  await writeFile(postPath, `---\nimage:\n  path: ${sourceUrl}\n---\n![](${sourceUrl})\n`);
+  const pixels = Buffer.alloc(800 * 400 * 3);
+  for (let index = 0; index < pixels.length; index += 1) pixels[index] = (index * 31) % 251;
+  await sharp(pixels, { raw: { width: 800, height: 400, channels: 3 } })
+    .png({ compressionLevel: 0 }).toFile(join(imageRoot, sourcePath));
+  commitFixture(blogRoot);
+  commitFixture(imageRoot);
+  const applied = spawnSync(process.execPath, [
+    CLI, 'apply', '--blog-root', blogRoot, '--image-root', imageRoot
+  ], { encoding: 'utf8' });
+  assert.equal(applied.status, 0, applied.stderr);
+  commitChanges(imageRoot, 'generated outputs');
+  commitChanges(blogRoot, 'migrated references');
+  const manifestPath = join(blogRoot, 'tools', 'image-pipeline', 'manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const entry = manifest.entries[0];
+  return {
+    root, blogRoot, imageRoot, postPath, manifestPath,
+    sourcePath, sourceUrl, fullUrl: entry.full.url, thumbnailUrl: entry.thumbnail.url
+  };
+}
+
+async function auditFixture(fixture, name) {
+  const report = join(fixture.root, `${name}-audit.json`);
+  const result = spawnSync(process.execPath, [
+    CLI, 'audit', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot, '--report', report
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(await readFile(report, 'utf8'));
+}
+
+async function applyFixture(fixture) {
+  const beforeManifest = await readFile(fixture.manifestPath, 'utf8');
+  const result = spawnSync(process.execPath, [
+    CLI, 'apply', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(await readFile(fixture.manifestPath, 'utf8'), beforeManifest);
+  assert.equal(worktreeStatus(fixture.imageRoot), '');
+}
+
+async function commitRepairAndAssertNoop(fixture, message) {
+  commitChanges(fixture.blogRoot, message);
+  const manifestBefore = await readFile(fixture.manifestPath, 'utf8');
+  const modifiedBefore = (await stat(fixture.manifestPath)).mtimeMs;
+  const result = spawnSync(process.execPath, [
+    CLI, 'apply', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(await readFile(fixture.manifestPath, 'utf8'), manifestBefore);
+  assert.equal((await stat(fixture.manifestPath)).mtimeMs, modifiedBefore);
+  assert.equal(worktreeStatus(fixture.blogRoot), '');
+  assert.equal(worktreeStatus(fixture.imageRoot), '');
+}
+
 async function createStampFixture() {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-cli-stamp-'));
   const blogRoot = join(root, 'blog');
@@ -175,6 +239,12 @@ test('a second identical apply is a byte-for-byte clean no-op', async () => {
   const manifestPath = join(blogRoot, 'tools', 'image-pipeline', 'manifest.json');
   const manifestBefore = await readFile(manifestPath, 'utf8');
   const manifestModifiedBefore = (await stat(manifestPath)).mtimeMs;
+  const auditReport = join(root, 'current-audit.json');
+  const audit = spawnSync(process.execPath, [
+    CLI, 'audit', '--blog-root', blogRoot, '--image-root', imageRoot, '--report', auditReport
+  ], { encoding: 'utf8' });
+  assert.equal(audit.status, 0, audit.stderr);
+  assert.deepEqual(JSON.parse(await readFile(auditReport, 'utf8')).referenceRepairs, []);
 
   const second = spawnSync(process.execPath, [CLI, 'apply', '--blog-root', blogRoot, '--image-root', imageRoot], {
     encoding: 'utf8'
@@ -185,6 +255,69 @@ test('a second identical apply is a byte-for-byte clean no-op', async () => {
   assert.equal((await stat(manifestPath)).mtimeMs, manifestModifiedBefore);
   assert.equal(worktreeStatus(blogRoot), '');
   assert.equal(worktreeStatus(imageRoot), '');
+});
+
+test('apply repairs a reintroduced adopted source URL without reconversion', async () => {
+  const fixture = await createAppliedFixture();
+  const migrated = await readFile(fixture.postPath, 'utf8');
+  await writeFile(fixture.postPath, migrated.replace(`![](${fixture.fullUrl})`, `![](${fixture.sourceUrl})`));
+  commitChanges(fixture.blogRoot, 'reintroduce source URL');
+
+  const audit = await auditFixture(fixture, 'reintroduced');
+  assert.ok(audit.referenceRepairs.some((repair) => repair.type === 'replace-reference' &&
+    repair.kind === 'inline' && repair.fromUrl === fixture.sourceUrl && repair.toUrl === fixture.fullUrl));
+
+  await applyFixture(fixture);
+  assert.doesNotMatch(await readFile(fixture.postPath, 'utf8'), new RegExp(fixture.sourceUrl, 'u'));
+  await commitRepairAndAssertNoop(fixture, 'repair source URL');
+});
+
+test('apply restores a missing thumbnail from the existing mapping', async () => {
+  const fixture = await createAppliedFixture();
+  const migrated = await readFile(fixture.postPath, 'utf8');
+  await writeFile(fixture.postPath, migrated.replace(`  thumbnail: ${fixture.thumbnailUrl}\n`, ''));
+  commitChanges(fixture.blogRoot, 'remove thumbnail');
+
+  const audit = await auditFixture(fixture, 'missing-thumbnail');
+  assert.ok(audit.referenceRepairs.some((repair) => repair.type === 'upsert-thumbnail' &&
+    repair.file === '_posts/cover.md' && repair.thumbnailUrl === fixture.thumbnailUrl));
+
+  await applyFixture(fixture);
+  assert.match(await readFile(fixture.postPath, 'utf8'), new RegExp(`thumbnail: ${fixture.thumbnailUrl}`, 'u'));
+  await commitRepairAndAssertNoop(fixture, 'restore thumbnail');
+});
+
+test('apply corrects a wrong thumbnail from the existing mapping', async () => {
+  const fixture = await createAppliedFixture();
+  const wrongThumbnail = `${PREFIX}img/does-not-exist.png`;
+  const migrated = await readFile(fixture.postPath, 'utf8');
+  await writeFile(fixture.postPath, migrated.replace(fixture.thumbnailUrl, wrongThumbnail));
+  commitChanges(fixture.blogRoot, 'set wrong thumbnail');
+
+  const audit = await auditFixture(fixture, 'wrong-thumbnail');
+  assert.ok(audit.referenceRepairs.some((repair) => repair.type === 'upsert-thumbnail' &&
+    repair.fromUrl === wrongThumbnail && repair.thumbnailUrl === fixture.thumbnailUrl));
+
+  await applyFixture(fixture);
+  assert.match(await readFile(fixture.postPath, 'utf8'), new RegExp(`thumbnail: ${fixture.thumbnailUrl}`, 'u'));
+  await commitRepairAndAssertNoop(fixture, 'correct thumbnail');
+});
+
+test('apply repairs a new post that reuses a previously adopted source', async () => {
+  const fixture = await createAppliedFixture();
+  const reusedPost = join(fixture.blogRoot, '_posts', 'reuse.md');
+  await writeFile(reusedPost, `---\nimage:\n  path: ${fixture.sourceUrl}\n---\n![](${fixture.sourceUrl})\n`);
+  commitChanges(fixture.blogRoot, 'reuse known source');
+
+  const audit = await auditFixture(fixture, 'reused-source');
+  assert.equal(audit.entries.filter(({ sourcePath }) => sourcePath === fixture.sourcePath).length, 1);
+  assert.equal(audit.referenceRepairs.filter(({ file }) => file === '_posts/reuse.md').length, 3);
+
+  await applyFixture(fixture);
+  const repaired = await readFile(reusedPost, 'utf8');
+  assert.equal(repaired.match(new RegExp(fixture.fullUrl, 'gu')).length, 2);
+  assert.match(repaired, new RegExp(`thumbnail: ${fixture.thumbnailUrl}`, 'u'));
+  await commitRepairAndAssertNoop(fixture, 'repair reused source');
 });
 
 async function createPruneFixture({ missingSecondSource = false } = {}) {
@@ -261,8 +394,13 @@ test('prune without confirmation writes an exact dry-run report and deletes noth
 
   assert.equal(result.status, 0, result.stderr);
   const plan = JSON.parse(await readFile(report, 'utf8'));
+  assert.equal(plan.schemaVersion, 2);
   assert.equal(plan.mode, 'dry-run');
   assert.equal(plan.status, 'planned');
+  assert.equal(plan.blogHead, execFileSync('git', ['rev-parse', 'HEAD'], { cwd: blogRoot, encoding: 'utf8' }).trim());
+  assert.equal(plan.imageHead, execFileSync('git', ['rev-parse', 'HEAD'], { cwd: imageRoot, encoding: 'utf8' }).trim());
+  assert.match(plan.manifestSha256, /^[0-9a-f]{64}$/u);
+  assert.match(plan.planDigest, /^[0-9a-f]{64}$/u);
   assert.deepEqual(plan.candidates, [
     { path: 'img/a.png', bytes: 14 },
     { path: 'img/b.png', bytes: 14 }
@@ -272,16 +410,93 @@ test('prune without confirmation writes an exact dry-run report and deletes noth
   assert.equal(await pathExists(join(imageRoot, 'img', 'b.png')), true);
 });
 
-test('prune preflights every candidate before deleting the first file', async () => {
-  const { blogRoot, imageRoot, report } = await createPruneFixture({ missingSecondSource: true });
+async function writePrunePlan(fixture) {
+  const result = spawnSync(process.execPath, [
+    CLI, 'prune', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot,
+    '--report', fixture.report
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return readFile(fixture.report, 'utf8');
+}
+
+async function assertPruneSourcesExist(imageRoot) {
+  assert.equal(await pathExists(join(imageRoot, 'img', 'a.png')), true);
+  assert.equal(await pathExists(join(imageRoot, 'img', 'b.png')), true);
+}
+
+test('confirmed prune deletes only from the reviewed bound plan and preserves its digest', async () => {
+  const fixture = await createPruneFixture();
+  const planned = JSON.parse(await writePrunePlan(fixture));
 
   const result = spawnSync(process.execPath, [
-    CLI, 'prune', '--blog-root', blogRoot, '--image-root', imageRoot,
-    '--report', report, '--confirm-prune'
+    CLI, 'prune', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot,
+    '--report', fixture.report, '--confirm-prune'
+  ], { encoding: 'utf8' });
+
+  assert.equal(result.status, 0, result.stderr);
+  const completed = JSON.parse(await readFile(fixture.report, 'utf8'));
+  assert.equal(completed.status, 'completed');
+  assert.match(completed.planDigest, /^[0-9a-f]{64}$/u);
+  assert.equal(completed.planDigest, planned.planDigest);
+  assert.deepEqual(completed.deleted, ['img/a.png', 'img/b.png']);
+  assert.equal(await pathExists(join(fixture.imageRoot, 'img', 'a.png')), false);
+  assert.equal(await pathExists(join(fixture.imageRoot, 'img', 'b.png')), false);
+});
+
+test('confirmed prune rejects a changed HEAD without overwriting the reviewed plan', async () => {
+  const fixture = await createPruneFixture();
+  const reviewedPlan = await writePrunePlan(fixture);
+  await writeFile(join(fixture.blogRoot, 'review-marker.txt'), 'changed head');
+  commitChanges(fixture.blogRoot, 'change reviewed blog head');
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'prune', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot,
+    '--report', fixture.report, '--confirm-prune'
   ], { encoding: 'utf8' });
 
   assert.notEqual(result.status, 0);
-  assert.equal(await pathExists(join(imageRoot, 'img', 'a.png')), true);
+  assert.match(result.stderr, /blogHead/u);
+  assert.equal(await readFile(fixture.report, 'utf8'), reviewedPlan);
+  await assertPruneSourcesExist(fixture.imageRoot);
+});
+
+test('confirmed prune rejects a changed manifest without deleting or overwriting the plan', async () => {
+  const fixture = await createPruneFixture();
+  const reviewedPlan = await writePrunePlan(fixture);
+  const manifestPath = join(fixture.blogRoot, 'tools', 'image-pipeline', 'manifest.json');
+  execFileSync('git', ['update-index', '--assume-unchanged', 'tools/image-pipeline/manifest.json'], {
+    cwd: fixture.blogRoot
+  });
+  await writeFile(manifestPath, `${await readFile(manifestPath, 'utf8')}\n`);
+  assert.equal(worktreeStatus(fixture.blogRoot), '');
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'prune', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot,
+    '--report', fixture.report, '--confirm-prune'
+  ], { encoding: 'utf8' });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /manifestSha256/u);
+  assert.equal(await readFile(fixture.report, 'utf8'), reviewedPlan);
+  await assertPruneSourcesExist(fixture.imageRoot);
+});
+
+test('confirmed prune rejects changed candidates without deleting or overwriting the plan', async () => {
+  const fixture = await createPruneFixture();
+  const reviewedPlan = await writePrunePlan(fixture);
+  execFileSync('git', ['update-index', '--assume-unchanged', 'img/a.png'], { cwd: fixture.imageRoot });
+  await writeFile(join(fixture.imageRoot, 'img', 'a.png'), 'a-source-bytes-changed');
+  assert.equal(worktreeStatus(fixture.imageRoot), '');
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'prune', '--blog-root', fixture.blogRoot, '--image-root', fixture.imageRoot,
+    '--report', fixture.report, '--confirm-prune'
+  ], { encoding: 'utf8' });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /candidates|totalBytes|planDigest/u);
+  assert.equal(await readFile(fixture.report, 'utf8'), reviewedPlan);
+  await assertPruneSourcesExist(fixture.imageRoot);
 });
 
 test('audit rejects a linked root before writing a report for an empty repository', async (t) => {
