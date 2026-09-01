@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIResponse } from '@playwright/test';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -52,9 +52,15 @@ test('all legacy slugs resolve, including the spaced slug clicked from paginatio
   const slugs = await legacySlugs();
   expect(slugs).toHaveLength(40);
 
-  const responses = await Promise.all(
-    slugs.map(async (slug) => ({ slug, response: await request.get(`/posts/${slug}/`) }))
-  );
+  const responses: Array<{ slug: string; response: APIResponse }> = [];
+  for (let offset = 0; offset < slugs.length; offset += 4) {
+    const batch = slugs.slice(offset, offset + 4);
+    responses.push(
+      ...(await Promise.all(
+        batch.map(async (slug) => ({ slug, response: await request.get(`/posts/${slug}/`) }))
+      ))
+    );
+  }
   for (const { slug, response } of responses) {
     expect(response.status(), slug).toBe(200);
   }
