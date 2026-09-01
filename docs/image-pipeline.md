@@ -66,7 +66,7 @@ npm run images -- apply `
 - 博客引用改为采用的完整图 URL，并在发布封面下增加 `image.thumbnail`；
 - 结果写入 `tools/image-pipeline/manifest.json`。
 
-manifest schema v3 用两个字段区分提交：`sourceImageCommit` 是 apply 前读取原图时的图床快照，`publishedImageCommit` 在 apply 后保持 `null`。每个 entry 的 `source` 记录格式、宽高和页数；动画高度是单帧高度。输出提交发布并通过 `stamp` 校验后，`publishedImageCommit` 才会写入完整 SHA。
+manifest schema v3 用两个字段区分提交：`sourceImageCommit` 是 apply 前读取原图时的图床快照，`publishedImageCommit` 在 apply 后保持 `null`。每个 entry 的 `source` 记录格式、宽高和页数；动画高度是单帧高度。输出提交发布并通过 `stamp` 校验后，`publishedImageCommit` 才会写入完整 SHA。真实删除完成后，顶层 `prune` 保存删除状态、图床提交、备份分支、删除数量和字节数，以及已审阅计划的 digest。
 
 输出路径只保留源文件名，不保留源目录。脚本会拒绝同名输出冲突。完整图只有在尺寸、动画元数据和文件大小检查通过时才会采用；否则博客继续引用原图，原因记录在 manifest 中。
 
@@ -76,6 +76,7 @@ manifest schema v3 用两个字段区分提交：`sourceImageCommit` 是 apply �
 
 当前迁移使用以下快照：
 
+- `backup/pre-original-prune-20260902`：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606`，保存删除旧原图前的完整图床；
 - `backup/pre-image-optimization-20260901`：`caf983fb140c110416eb3f4042fefd05d1929369`，保存优化前的图床；
 - `backup/pre-image-cleanup-20260901`：`e15c25684e1f90a634b33a18f64857d2792317a0`，保存更早的清理前状态。
 
@@ -83,6 +84,7 @@ manifest schema v3 用两个字段区分提交：`sourceImageCommit` 是 apply �
 
 ```powershell
 git -C $ImageRoot ls-remote --heads origin `
+  refs/heads/backup/pre-original-prune-20260902 `
   refs/heads/backup/pre-image-optimization-20260901 `
   refs/heads/backup/pre-image-cleanup-20260901
 ```
@@ -200,7 +202,7 @@ if (-not $BlogMigrationCommit) { throw '找不到博客迁移提交' }
 git -C $BlogRoot revert $BlogMigrationCommit
 ```
 
-如已运行 `prune`，先从优化前备份分支恢复 manifest 批准删除的原图。这个命令只恢复源路径，不覆盖 `img/optimized/` 和 `img/thumbnails/`。
+如已运行 `prune`，先从原图删除前备份分支恢复 manifest 批准删除的原图。这个命令只恢复源路径，不覆盖 `img/optimized/` 和 `img/thumbnails/`。
 
 ```powershell
 $ImageChanges = @(git -C $ImageRoot status --porcelain)
@@ -208,9 +210,9 @@ if ($ImageChanges.Count -ne 0) {
   $ImageChanges
   throw '恢复原图前图床工作树必须干净'
 }
-$BackupRef = 'refs/heads/backup/pre-image-optimization-20260901'
+$BackupRef = 'refs/heads/backup/pre-original-prune-20260902'
 git -C $ImageRoot fetch origin `
-  "${BackupRef}:refs/remotes/origin/backup/pre-image-optimization-20260901"
+  "${BackupRef}:refs/remotes/origin/backup/pre-original-prune-20260902"
 $PipelineManifest = Get-Content -Raw -Encoding UTF8 `
   (Join-Path $BlogRoot 'tools\image-pipeline\manifest.json') | ConvertFrom-Json
 $RestorePaths = @(
@@ -219,7 +221,7 @@ $RestorePaths = @(
     ForEach-Object { $_.sourcePath }
 )
 git -C $ImageRoot restore `
-  --source origin/backup/pre-image-optimization-20260901 `
+  --source origin/backup/pre-original-prune-20260902 `
   -- $RestorePaths
 git -C $ImageRoot diff --stat
 ```
