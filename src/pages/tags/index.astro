@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content';
+import HeroBanner from '@/components/HeroBanner.astro';
+import ProfileSidebar from '@/components/ProfileSidebar.astro';
+import WaveDivider from '@/components/WaveDivider.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { buildTaxonomy, sortPosts, type PostEntry } from '@/lib/content';
+import { tagPath } from '@/lib/urls';
+
+const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+const categories = buildTaxonomy(posts, 'category');
+const tags = [...buildTaxonomy(posts, 'tags').entries()];
+---
+
+<BaseLayout title="标签">
+  <HeroBanner title="标签" subtitle="按关键词浏览文章" image="/images/default-cover.svg" compact />
+  <WaveDivider />
+  <main class="index-main container with-sidebar">
+    <section class="tag-list" aria-label="文章标签">
+      {tags.map(([tag, tagPosts]) => (
+        <a data-tag-link href={tagPath(tag)}>{tag}<span>{tagPosts.length}</span></a>
+      ))}
+    </section>
+    <aside><ProfileSidebar postCount={posts.length} categoryCount={categories.size} tagCount={tags.length} /></aside>
+  </main>
+</BaseLayout>
+
+<style>
+  .index-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 290px); gap: clamp(1.5rem, 3vw, 2.5rem); padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .tag-list { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.7rem; }
+  .tag-list a { display: inline-flex; align-items: center; gap: 0.45rem; border: 1px solid var(--color-line); border-radius: 999px; padding: 0.55rem 0.85rem; background: var(--color-surface); transition: border-color 160ms ease, color 160ms ease; }
+  .tag-list a:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .tag-list span { color: var(--color-muted); font-size: 0.75rem; }
+  @media (max-width: 1024px) { .index-main { grid-template-columns: minmax(0, 1fr); } aside { order: -1; } }
+</style>

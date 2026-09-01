@@ -1,0 +1,36 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import EmptyState from '@/components/EmptyState.astro';
+import HeroBanner from '@/components/HeroBanner.astro';
+import WaveDivider from '@/components/WaveDivider.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const projects: CollectionEntry<'projects'>[] = await getCollection('projects');
+---
+
+<BaseLayout title="作品">
+  <HeroBanner title="作品" subtitle="项目与实验记录" image="/images/default-cover.svg" compact />
+  <WaveDivider />
+  <main class="projects-main container">
+    {projects.length === 0 ? (
+      <EmptyState title="作品内容还没添加" description="新的项目与实验记录会陆续整理到这里。" />
+    ) : (
+      <section class="project-grid" aria-label="作品列表">
+        {projects.map((project) => (
+          <article>
+            <h2>{project.data.title}</h2>
+            <p>{project.data.description}</p>
+          </article>
+        ))}
+      </section>
+    )}
+  </main>
+</BaseLayout>
+
+<style>
+  .projects-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+  article { border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1.5rem; background: var(--color-surface); box-shadow: var(--shadow-panel); }
+  h2 { margin: 0; color: #fff; }
+  p { margin-bottom: 0; color: var(--color-muted); }
+</style>

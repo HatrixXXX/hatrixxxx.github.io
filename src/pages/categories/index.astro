@@ -1,0 +1,40 @@
+---
+import { getCollection } from 'astro:content';
+import HeroBanner from '@/components/HeroBanner.astro';
+import ProfileSidebar from '@/components/ProfileSidebar.astro';
+import WaveDivider from '@/components/WaveDivider.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { buildTaxonomy, sortPosts, type PostEntry } from '@/lib/content';
+import { categoryPath } from '@/lib/urls';
+
+const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+const categories = [...buildTaxonomy(posts, 'category').entries()];
+const tagCount = buildTaxonomy(posts, 'tags').size;
+---
+
+<BaseLayout title="分类">
+  <HeroBanner title="分类" subtitle="按主题浏览文章" image="/images/default-cover.svg" compact />
+  <WaveDivider />
+  <main class="index-main container with-sidebar">
+    <section class="taxonomy-grid" aria-label="文章分类">
+      {categories.map(([category, categoryPosts]) => (
+        <a class="taxonomy-card" href={categoryPath(category)}>
+          <h2>{category}</h2>
+          <span>{categoryPosts.length} 篇文章</span>
+        </a>
+      ))}
+    </section>
+    <aside><ProfileSidebar postCount={posts.length} categoryCount={categories.length} tagCount={tagCount} /></aside>
+  </main>
+</BaseLayout>
+
+<style>
+  .index-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 290px); gap: clamp(1.5rem, 3vw, 2.5rem); padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .taxonomy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .taxonomy-card { display: block; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1.5rem; background: var(--color-surface); box-shadow: var(--shadow-panel); transition: border-color 160ms ease, transform 160ms ease; }
+  .taxonomy-card:hover { border-color: var(--color-accent); color: var(--color-accent); transform: translateY(-2px); }
+  h2 { margin: 0; color: #fff; font-size: 1.2rem; overflow-wrap: anywhere; }
+  span { display: block; margin-top: 0.5rem; color: var(--color-muted); font-size: 0.85rem; }
+  @media (max-width: 1024px) { .index-main { grid-template-columns: minmax(0, 1fr); } aside { order: -1; } }
+  @media (max-width: 600px) { .taxonomy-grid { grid-template-columns: minmax(0, 1fr); } }
+</style>
