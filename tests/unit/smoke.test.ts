@@ -6,8 +6,8 @@ describe('Astro project bootstrap', () => {
     expect(readFileSync('public/CNAME', 'utf8').trim()).toBe('hatrix.site');
   });
 
-  it('defines a static build command', () => {
+  it('runs image preflight before the static build', () => {
     const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-    expect(pkg.scripts.build).toBe('astro build');
+    expect(pkg.scripts.build).toBe('tsx scripts/check-images.ts && astro build');
   });
 });

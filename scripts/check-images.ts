@@ -6,14 +6,14 @@ import matter from 'gray-matter';
 const DEFAULT_CONCURRENCY = 12;
 const REQUEST_TIMEOUT_MS = 10_000;
 const JSD_DELIVR_HOST = 'cdn.jsdelivr.net';
-const IMAGE_EXTENSION = /\.(?:avif|gif|jpe?g|png|svg|webp)(?:$|[?#])/i;
+const IMAGE_EXTENSION = /\.(?:avif|gif|jpe?g|png|svg|webp)(?:$|[?#]|![A-Za-z0-9._-]+(?:$|[?#]))/i;
 
 export interface ImageCheckResult {
   ok: Set<string>;
   failed: Map<string, string>;
 }
 
-interface ImageSources {
+export interface ImageSources {
   urls: string[];
   coverUrls: Set<string>;
 }
@@ -49,6 +49,9 @@ export function extractImageUrls(markdown: string): string[] {
   for (const match of markdown.matchAll(/!\[[^\]]*\]\((https:\/\/cdn\.jsdelivr\.net\/[^\s)]+)(?:\s+[^)]*)?\)/g)) {
     add(match[1]);
   }
+  for (const match of markdown.matchAll(/!\[[^\]]*\]\(\s*<(https:\/\/cdn\.jsdelivr\.net\/[^>\r\n]+)>\s*(?:[^)]*)\)/g)) {
+    add(match[1]);
+  }
   for (const match of markdown.matchAll(/<img\b[^>]*?\bsrc=["'](https:\/\/cdn\.jsdelivr\.net\/[^"']+)["'][^>]*>/gi)) {
     add(match[1]);
   }
@@ -68,7 +71,7 @@ async function markdownFiles(directory: string): Promise<string[]> {
   return files.flat();
 }
 
-async function collectImageSources(postsDirectory: string): Promise<ImageSources> {
+export async function collectImageSources(postsDirectory: string): Promise<ImageSources> {
   const urls: string[] = [];
   const seen = new Set<string>();
   const coverUrls = new Set<string>();
@@ -135,7 +138,7 @@ export async function checkImages(urls: string[], concurrency = DEFAULT_CONCURRE
 }
 
 async function writeReport(reportPath: string, total: number, result: ImageCheckResult, coverUrls: Set<string>): Promise<string[]> {
-  const coverFailures = [...result.failed.keys()].filter((url) => coverUrls.has(url));
+  const coverFailures = coverFailuresFor(result, coverUrls);
   const report: ImageCheckReport = {
     checkedAt: new Date().toISOString(),
     total,
@@ -146,6 +149,11 @@ async function writeReport(reportPath: string, total: number, result: ImageCheck
   await mkdir(dirname(reportPath), { recursive: true });
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
   return coverFailures;
+}
+
+/** Returns failed URLs that are article covers and therefore block the production build. */
+export function coverFailuresFor(result: ImageCheckResult, coverUrls: ReadonlySet<string>): string[] {
+  return [...result.failed.keys()].filter((url) => coverUrls.has(url));
 }
 
 async function main(): Promise<void> {
