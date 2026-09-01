@@ -849,6 +849,8 @@ git status --short
 
 Expected: all commands PASS; only intentional branch commits remain。
 
+If the local runtime cannot execute Jekyll or htmlproofer, record that gap instead of treating Node tests as a substitute。The feature-branch CI must run both commands before release, and the clean-browser checks in Task 8 remain mandatory before any real prune。
+
 - [ ] **Step 3: Sync docs before GitHub operations**
 
 Invoke `neat-freak`。Reconcile the design, this plan, `docs/image-pipeline.md`, existing Astro image plan and actual manifest。Do not add history narration to root instructions。
