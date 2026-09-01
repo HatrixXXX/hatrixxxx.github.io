@@ -18,3 +18,21 @@ test('coffee loader is small, preloaded and high priority', async () => {
   assert.match(coffeeFallback[0], /fetchpriority="high"/u);
   assert.match(layout, /cake\.png[^>]+loading="lazy"[^>]+fetchpriority="low"/u);
 });
+
+test('loader keeps a valid main document scaffold', async () => {
+  const layout = await readFile('_layouts/default.html', 'utf8');
+  const count = (pattern) => layout.match(pattern)?.length ?? 0;
+
+  assert.match(
+    layout,
+    /<body>[\s\S]*<div class="loading-container"[^>]*>[\s\S]*<div class="main-container" style="display: none">/u
+  );
+  assert.equal(count(/<body(?:\s[^>]*)?>/gu), 1);
+  assert.equal(count(/<\/body>/gu), 1);
+  assert.equal(count(/<\/html>/gu), 1);
+  assert.doesNotMatch(layout, /<\/script>\/body>/u);
+  assert.match(
+    layout,
+    /<script src="\/assets\/js\/loading-animation\.js"><\/script>\s*<\/body>\s*<\/html>\s*$/u
+  );
+});
