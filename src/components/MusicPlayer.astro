@@ -24,6 +24,10 @@ const isEmpty = playlist.length === 0;
     <span>音量</span>
     <input type="range" min="0" max="1" step="0.05" value="0.7" data-player-volume />
   </label>
+  <div class="player-progress">
+    <progress aria-label="播放进度" aria-valuenow="0" value="0" max="1">0%</progress>
+    <span>0:00 / 0:00</span>
+  </div>
 </aside>
 
 <style>
@@ -94,6 +98,26 @@ const isEmpty = playlist.length === 0;
   .volume-control {
     align-items: center;
     gap: 0.45rem;
+  }
+
+  .player-progress {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .player-progress progress {
+    height: 4px;
+    min-width: 0;
+    flex: 1;
+    accent-color: var(--color-accent);
+  }
+
+  .player-progress span {
+    color: #9298a1;
+    font-size: 0.7rem;
+    white-space: nowrap;
   }
 
   input {

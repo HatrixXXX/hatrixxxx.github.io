@@ -24,7 +24,13 @@ async function searchIndex(): Promise<MiniSearch<SearchDocument>> {
         return index;
       });
   }
-  return indexPromise;
+  const activePromise = indexPromise;
+  try {
+    return await activePromise;
+  } catch (error) {
+    if (indexPromise === activePromise) indexPromise = undefined;
+    throw error;
+  }
 }
 
 async function openSearch(): Promise<void> {

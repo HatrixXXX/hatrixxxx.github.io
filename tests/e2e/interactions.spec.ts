@@ -21,9 +21,32 @@ test('search loads its index once, limits results and closes with Escape', async
   await expect(searchbox).toBeHidden();
 
   await page.getByRole('link', { name: '归档', exact: true }).click();
+  await expect(page.locator('[data-archive-total]')).toHaveText('40');
   await page.keyboard.press('Control+K');
   await expect(page.getByRole('searchbox', { name: '搜索文章' })).toBeFocused();
   expect(indexRequests).toBe(1);
+});
+
+test('search retries after the first index request fails', async ({ page }) => {
+  let attempts = 0;
+  await page.route('**/search-index.json', async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '[]' });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto('/');
+  await page.keyboard.press('Control+K');
+  await expect(page.locator('[data-search-status]')).toHaveText('搜索索引暂时无法载入');
+  await page.keyboard.press('Escape');
+
+  await page.keyboard.press('Control+K');
+  await page.getByRole('searchbox', { name: '搜索文章' }).fill('FPGA');
+  await expect(page.locator('[data-search-result]').first()).toBeVisible();
+  expect(attempts).toBe(2);
 });
 
 test('stored theme is applied and one click toggles it after client navigation', async ({ page }) => {
@@ -77,6 +100,15 @@ test('PhotoSwipe is requested only when an article image is activated', async ({
   expect(lightboxRequests).not.toEqual([]);
 });
 
+test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
+  await page.goto('/posts/本科数学大杂烩/');
+  const image = page.locator('article img').first();
+  await image.focus();
+  await expect(image).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.pswp')).toBeVisible();
+});
+
 test('empty music player persists without constructing Audio or requesting media', async ({ page }) => {
   const mediaRequests: string[] = [];
   page.on('request', (request) => {
@@ -102,6 +134,11 @@ test('empty music player persists without constructing Audio or requesting media
   await expect(player.getByRole('button', { name: '上一首' })).toBeDisabled();
   await expect(player.getByRole('button', { name: '播放' })).toBeDisabled();
   await expect(player.getByRole('button', { name: '下一首' })).toBeDisabled();
+  await expect(player.getByRole('progressbar', { name: '播放进度' })).toHaveAttribute(
+    'aria-valuenow',
+    '0'
+  );
+  await expect(player.getByText('0:00 / 0:00')).toBeVisible();
   await player.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
 
   await page.getByRole('link', { name: '归档', exact: true }).click();

@@ -18,7 +18,11 @@ describe('Astro project tooling', () => {
   it('starts the Playwright server through the project package manager', () => {
     expect(playwrightConfig.webServer).toMatchObject({
       command: 'corepack pnpm dev --host 127.0.0.1',
-      env: expect.objectContaining({ ASTRO_DEV_BACKGROUND: '0' })
+      env: { ASTRO_DEV_BACKGROUND: '0' }
     });
+  });
+
+  it('keeps the static-heavy Playwright suite on one worker', () => {
+    expect(playwrightConfig.workers).toBe(1);
   });
 });
