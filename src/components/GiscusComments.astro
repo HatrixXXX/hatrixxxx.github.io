@@ -40,7 +40,11 @@ const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
       script.dataset.lang = 'zh-CN';
       script.crossOrigin = 'anonymous';
       script.async = true;
+      script.addEventListener('load', () => {
+        status.hidden = true;
+      });
       script.addEventListener('error', () => {
+        status.hidden = false;
         status.textContent = '评论暂时无法加载，正文内容不受影响';
       });
       section.append(script);

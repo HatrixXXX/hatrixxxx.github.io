@@ -15,7 +15,21 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
 {
   headings.length > 0 && (
     <aside class="toc" data-table-of-contents>
-      <details open>
+      <div class="toc-desktop" data-toc-desktop>
+        <h2>目录</h2>
+        <nav aria-label="文章目录">
+          <ol>
+            {headings.map((heading) => (
+              <li data-depth={heading.depth}>
+                <a href={`#${heading.slug}`} data-toc-link={heading.slug}>
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </div>
+      <details class="toc-mobile" data-toc-mobile open>
         <summary>目录</summary>
         <nav aria-label="文章目录">
           <ol>
@@ -48,14 +62,24 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
     box-shadow: var(--shadow-panel);
   }
 
-  details {
+  .toc-desktop,
+  .toc-mobile {
     padding: 1rem 1.1rem;
   }
 
+  .toc-mobile {
+    display: none;
+  }
+
+  h2,
   summary {
+    margin: 0;
     color: #fff;
     font-size: 0.94rem;
     font-weight: 800;
+  }
+
+  summary {
     cursor: pointer;
   }
 
@@ -93,23 +117,20 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
     color: var(--color-accent);
   }
 
-  @media (min-width: 1025px) {
-    summary {
-      cursor: default;
-      list-style: none;
-    }
-
-    summary::-webkit-details-marker {
-      display: none;
-    }
-  }
-
   @media (max-width: 1024px) {
     .toc {
       position: static;
       grid-column: 1;
       grid-row: 1;
       max-height: none;
+    }
+
+    .toc-desktop {
+      display: none;
+    }
+
+    .toc-mobile {
+      display: block;
     }
   }
 </style>

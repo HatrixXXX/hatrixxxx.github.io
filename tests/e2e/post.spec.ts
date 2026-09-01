@@ -97,6 +97,54 @@ test('post layout has no mobile horizontal overflow', async ({ page }) => {
   expect(sizes.scroll).toBe(sizes.client);
 });
 
+test('Giscus success clears loading state and remounts once after client navigation', async ({
+  page
+}) => {
+  await page.route('https://giscus.app/client.js', (route) =>
+    route.fulfill({
+      contentType: 'application/javascript',
+      body: `
+        const section = document.currentScript?.closest('[data-giscus-comments]');
+        const iframe = document.createElement('iframe');
+        iframe.className = 'giscus-frame';
+        section?.append(iframe);
+      `
+    })
+  );
+
+  await page.goto('/posts/本科数学大杂烩/');
+  await expect(page.locator('[data-giscus-status]')).toBeHidden();
+  await expect(page.locator('script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+  await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
+
+  await page.locator('[data-adjacent-posts] a').first().click();
+  await expect(page.locator('article[data-post]')).toBeVisible();
+  await expect(page.locator('[data-giscus-status]')).toBeHidden();
+  await expect(page.locator('script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+  await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
+});
+
+test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/posts/本科数学大杂烩/');
+
+  const desktopToc = page.locator('[data-toc-desktop]');
+  const mobileToc = page.locator('details[data-toc-mobile]');
+  await expect(desktopToc).toBeVisible();
+  await expect(desktopToc.locator('details')).toHaveCount(0);
+  await expect(desktopToc.locator('a').first()).toBeVisible();
+  await expect(mobileToc).toBeHidden();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(desktopToc).toBeHidden();
+  await expect(mobileToc).toBeVisible();
+  await expect(mobileToc).toHaveAttribute('open', '');
+  await mobileToc.locator('summary').click();
+  await expect(mobileToc).not.toHaveAttribute('open', '');
+  await expect(mobileToc.locator('nav')).toBeHidden();
+});
+
 test('Giscus failure degrades comments without hiding the article', async ({ page }) => {
   await page.route('https://giscus.app/client.js', (route) => route.abort());
   await page.goto('/posts/本科数学大杂烩/');
