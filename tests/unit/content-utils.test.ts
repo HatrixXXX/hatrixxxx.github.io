@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { buildArchives, buildTaxonomy, getAdjacentPosts, paginatePosts, sortPosts, type PostEntry } from '../../src/lib/content';
-import { toSearchDocument } from '../../src/lib/search';
+import * as search from '../../src/lib/search';
+
+const markdownToPlainText = (search as typeof search & {
+  markdownToPlainText?: (markdown: string, maxLength?: number) => string;
+}).markdownToPlainText;
 
 const post = (id: string, date: string, category = '软件工程与工具', tags = ['Git']) => ({
   id,
@@ -64,7 +68,7 @@ describe('content utilities', () => {
 
   it('serializes a post into a searchable document', () => {
     const source = { ...post('FPGA', '2026-02-03'), body: 'a'.repeat(2501) } as PostEntry & { body: string };
-    const document = toSearchDocument(source);
+    const document = search.toSearchDocument(source);
     expect(document).toMatchObject({
       id: 'FPGA',
       url: '/posts/FPGA/',
@@ -75,5 +79,20 @@ describe('content utilities', () => {
     });
     expect(document.text).toContain('FPGA description for FPGA 软件工程与工具 Git');
     expect(document.text.endsWith('a'.repeat(2000))).toBe(true);
+  });
+
+  it('normalizes Markdown into searchable plain text', () => {
+    expect(markdownToPlainText).toBeTypeOf('function');
+    if (!markdownToPlainText) return;
+
+    expect(markdownToPlainText(`## Heading\n\n**strong** and *emphasis* with \`inline code\`.\n\n[Link label](https://example.com) ![image alt](image.png)\n\n\`\`\`ts\nconst value = 1;\n\`\`\`\n\n<my_repo_url> <span>HTML</span>`))
+      .toBe('Heading strong and emphasis with inline code. Link label image alt const value = 1; HTML');
+  });
+
+  it('collapses whitespace and truncates normalized search text', () => {
+    expect(markdownToPlainText).toBeTypeOf('function');
+    if (!markdownToPlainText) return;
+
+    expect(markdownToPlainText(' first\n\n second\tthird ', 12)).toBe('first second');
   });
 });

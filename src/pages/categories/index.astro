@@ -3,12 +3,17 @@ import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
+import { POST_CATEGORIES } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { buildTaxonomy, sortPosts, type PostEntry } from '@/lib/content';
 import { categoryPath } from '@/lib/urls';
 
 const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
-const categories = [...buildTaxonomy(posts, 'category').entries()];
+const taxonomy = buildTaxonomy(posts, 'category');
+const categories = POST_CATEGORIES.map((category) => ({
+  category,
+  posts: taxonomy.get(category) ?? []
+}));
 const tagCount = buildTaxonomy(posts, 'tags').size;
 ---
 
@@ -17,7 +22,7 @@ const tagCount = buildTaxonomy(posts, 'tags').size;
   <WaveDivider />
   <main class="index-main container with-sidebar">
     <section class="taxonomy-grid" aria-label="文章分类">
-      {categories.map(([category, categoryPosts]) => (
+      {categories.map(({ category, posts: categoryPosts }) => (
         <a class="taxonomy-card" href={categoryPath(category)}>
           <h2>{category}</h2>
           <span>{categoryPosts.length} 篇文章</span>
