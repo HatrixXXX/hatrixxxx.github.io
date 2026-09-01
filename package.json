@@ -21,6 +21,8 @@
     "lint:scss": "stylelint _sass/**/*.scss",
     "lint:fix:scss": "npm run lint:scss -- --fix",
     "test": "npm run lint:scss",
+    "test:images": "node --test tools/image-pipeline/test/*.test.mjs",
+    "images": "node tools/image-pipeline/cli.mjs",
     "prepare": "husky"
   },
   "dependencies": {
