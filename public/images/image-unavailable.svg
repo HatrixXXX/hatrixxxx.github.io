@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Image unavailable</title>
+  <desc id="desc">The original remote image could not be loaded.</desc>
+  <rect width="800" height="450" fill="#1b2230"/>
+  <path d="M225 310l105-120 75 82 57-62 113 100H225z" fill="#53647d"/>
+  <circle cx="312" cy="142" r="35" fill="#91a3bd"/>
+  <text x="400" y="385" fill="#dce5f0" font-family="system-ui, sans-serif" font-size="28" text-anchor="middle">Image unavailable</text>
+</svg>
