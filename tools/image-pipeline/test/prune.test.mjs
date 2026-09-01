@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,6 +52,25 @@ test('rejects generated output collisions before an apply can write files', asyn
   await writeFile(join(blogRoot, '_posts', 'two.md'), `---\nimage:\n  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/two/duplicate.png\n---\n`);
 
   await assert.rejects(buildManifest(blogRoot, imageRoot), /generated output collision/u);
+});
+
+test('rejects a symlinked image source', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-manifest-symlink-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  const source = join(root, 'outside.png');
+  await mkdir(join(blogRoot, '_posts'), { recursive: true });
+  await mkdir(join(imageRoot, 'img'), { recursive: true });
+  await sharp({ create: { width: 2, height: 2, channels: 3, background: 'red' } }).png().toFile(source);
+  try {
+    await symlink(source, join(imageRoot, 'img', 'cover.png'), 'file');
+  } catch (error) {
+    if (error.code === 'EPERM') t.skip('symlinks require Windows developer mode or elevated privileges');
+    else throw error;
+  }
+  await writeFile(join(blogRoot, '_posts', 'cover.md'), `---\nimage:\n  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/cover.png\n---\n`);
+
+  await assert.rejects(buildManifest(blogRoot, imageRoot), /symbolic link/u);
 });
 
 test('CLI help lists the guarded migration commands and options', () => {

@@ -1,8 +1,8 @@
 import { stat } from 'node:fs/promises';
-import { resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import sharp from 'sharp';
 import { fullOutputPath, thumbnailOutputPath, cdnUrl } from './paths.mjs';
+import { resolveSafeImagePath, resolveSafePath } from './safe-paths.mjs';
 import { scanReferences } from './scan.mjs';
 
 const FULL_FORMATS = new Set(['png', 'jpeg', 'gif', 'bmp']);
@@ -17,15 +17,6 @@ function commitAt(root) {
   } catch {
     return null;
   }
-}
-
-function sourceWithinImageDirectory(imageRoot, sourcePath) {
-  const imageDirectory = resolve(imageRoot, 'img');
-  const source = resolve(imageRoot, sourcePath);
-  if (!source.startsWith(`${imageDirectory}${sep}`)) {
-    throw new Error(`unsafe image source path: ${sourcePath}`);
-  }
-  return source;
 }
 
 function outputFor(outputPath, eligible, reason) {
@@ -55,6 +46,7 @@ function rejectOutputCollisions(entries) {
 export async function buildManifest(blogRoot, imageRoot) {
   const grouped = new Map();
   for (const reference of await scanReferences(blogRoot)) {
+    await resolveSafePath(blogRoot, reference.file, 'blog source');
     const references = grouped.get(reference.repoPath) ?? [];
     references.push(reference);
     grouped.set(reference.repoPath, references);
@@ -62,7 +54,7 @@ export async function buildManifest(blogRoot, imageRoot) {
 
   const entries = [];
   for (const [sourcePath, references] of [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    const source = sourceWithinImageDirectory(imageRoot, sourcePath);
+    const source = await resolveSafeImagePath(imageRoot, sourcePath);
     const sourceBytes = (await stat(source)).size;
     const metadata = await sharp(source, { animated: true }).metadata();
     const fullEligible = FULL_FORMATS.has(metadata.format);

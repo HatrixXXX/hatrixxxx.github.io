@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, resolve, sep } from 'node:path';
+import { mkdir, mkdtemp, readFile, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { createThumbnail, optimizeFull } from './convert.mjs';
 import { buildManifest, pruneCandidates } from './manifest.mjs';
 import { scanReferences } from './scan.mjs';
+import { assertSafeRoot, resolveSafeImagePath, resolveSafePath } from './safe-paths.mjs';
 import { applyReferenceMap, upsertThumbnail } from './update.mjs';
 
 const HELP = `Usage:
@@ -35,20 +36,6 @@ async function requireAbsoluteDirectory(option, value) {
   return path;
 }
 
-function resolveImagePath(imageRoot, repoPath) {
-  const imageDirectory = resolve(imageRoot, 'img');
-  const path = resolve(imageRoot, repoPath);
-  if (!path.startsWith(`${imageDirectory}${sep}`)) throw new Error(`unsafe image path: ${repoPath}`);
-  return path;
-}
-
-function resolveBlogFile(blogRoot, file) {
-  const root = resolve(blogRoot);
-  const path = resolve(root, file);
-  if (!path.startsWith(`${root}${sep}`)) throw new Error(`unsafe blog file path: ${file}`);
-  return path;
-}
-
 async function writeJson(path, value) {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
@@ -63,19 +50,23 @@ function saveConversion(target, conversion) {
   target.format = conversion.format;
 }
 
-async function createOutputs(manifest, imageRoot) {
+async function stagedOutputPath(stagingRoot, outputPath) {
+  return resolveSafePath(stagingRoot, outputPath, 'staged output', { allowMissing: true });
+}
+
+async function createStagedOutputs(manifest, imageRoot, stagingRoot) {
   for (const entry of manifest.entries) {
-    const source = resolveImagePath(imageRoot, entry.sourcePath);
+    const source = await resolveSafeImagePath(imageRoot, entry.sourcePath);
     if (entry.full.reason === 'eligible') {
-      saveConversion(entry.full, await optimizeFull(source, resolveImagePath(imageRoot, entry.full.path)));
+      saveConversion(entry.full, await optimizeFull(source, await stagedOutputPath(stagingRoot, entry.full.path)));
     }
     if (entry.thumbnail.reason === 'eligible') {
-      saveConversion(entry.thumbnail, await createThumbnail(source, resolveImagePath(imageRoot, entry.thumbnail.path)));
+      saveConversion(entry.thumbnail, await createThumbnail(source, await stagedOutputPath(stagingRoot, entry.thumbnail.path)));
     }
   }
 }
 
-async function updateReferences(manifest, blogRoot) {
+async function prepareReferenceUpdates(manifest, blogRoot) {
   const replacementByRawUrl = new Map();
   const updatesByFile = new Map();
   for (const entry of manifest.entries) {
@@ -97,19 +88,47 @@ async function updateReferences(manifest, blogRoot) {
     }
   }
 
+  const prepared = [];
   for (const [file, thumbnailUpdates] of updatesByFile) {
-    const path = resolveBlogFile(blogRoot, file);
+    const path = await resolveSafePath(blogRoot, file, 'blog source');
     const source = await readFile(path, 'utf8');
     let updated = applyReferenceMap(source, replacementByRawUrl);
     for (const update of thumbnailUpdates) {
       updated = upsertThumbnail(updated, update.fullUrl, update.thumbnailUrl);
     }
-    if (updated !== source) await writeFile(path, updated);
+    if (updated !== source) prepared.push({ path, updated });
+  }
+  return prepared;
+}
+
+async function prepareOutputInstallations(manifest, imageRoot, stagingRoot) {
+  const installations = [];
+  for (const entry of manifest.entries) {
+    for (const output of [entry.full, entry.thumbnail]) {
+      if (!output.adopted) continue;
+      const staged = await resolveSafePath(stagingRoot, output.path, 'staged output');
+      const destination = await resolveSafeImagePath(imageRoot, output.path, { allowMissing: true });
+      installations.push({ staged, destination, outputPath: output.path });
+    }
+  }
+  return installations;
+}
+
+async function installStagedOutputs(installations, imageRoot) {
+  for (const { staged, destination, outputPath } of installations) {
+    await mkdir(dirname(destination), { recursive: true });
+    const checkedDestination = await resolveSafeImagePath(imageRoot, outputPath, { allowMissing: true });
+    await rm(checkedDestination, { force: true });
+    await rename(staged, checkedDestination);
   }
 }
 
-function manifestPath(blogRoot) {
-  return resolve(blogRoot, 'tools', 'image-pipeline', 'manifest.json');
+async function writeReferenceUpdates(updates) {
+  for (const { path, updated } of updates) await writeFile(path, updated);
+}
+
+async function manifestPath(blogRoot, options) {
+  return resolveSafePath(blogRoot, join('tools', 'image-pipeline', 'manifest.json'), 'manifest', options);
 }
 
 async function runAudit(blogRoot, imageRoot, report) {
@@ -120,21 +139,35 @@ async function runAudit(blogRoot, imageRoot, report) {
 async function runApply(blogRoot, imageRoot) {
   requireClean(blogRoot);
   requireClean(imageRoot);
-  const manifest = await buildManifest(blogRoot, imageRoot);
-  await createOutputs(manifest, imageRoot);
-  await updateReferences(manifest, blogRoot);
-  await writeJson(manifestPath(blogRoot), manifest);
+  await assertSafeRoot(blogRoot, 'blog root');
+  await assertSafeRoot(imageRoot, 'image root');
+  let stagingRoot;
+  try {
+    const manifest = await buildManifest(blogRoot, imageRoot);
+    stagingRoot = await mkdtemp(join(imageRoot, '.image-pipeline-staging-'));
+    await createStagedOutputs(manifest, imageRoot, stagingRoot);
+    const updates = await prepareReferenceUpdates(manifest, blogRoot);
+    const installations = await prepareOutputInstallations(manifest, imageRoot, stagingRoot);
+    const outputManifest = await manifestPath(blogRoot, { allowMissing: true });
+    await installStagedOutputs(installations, imageRoot);
+    await writeReferenceUpdates(updates);
+    await writeJson(outputManifest, manifest);
+  } finally {
+    if (stagingRoot) await rm(stagingRoot, { recursive: true, force: true });
+  }
 }
 
 async function runPrune(blogRoot, imageRoot, confirmPrune) {
   if (!confirmPrune) throw new Error('prune requires --confirm-prune');
   requireClean(blogRoot);
   requireClean(imageRoot);
-  const manifest = JSON.parse(await readFile(manifestPath(blogRoot), 'utf8'));
+  await assertSafeRoot(blogRoot, 'blog root');
+  await assertSafeRoot(imageRoot, 'image root');
+  const manifest = JSON.parse(await readFile(await manifestPath(blogRoot), 'utf8'));
   const currentRefs = new Set((await scanReferences(blogRoot)).map(({ repoPath }) => repoPath));
   const candidates = pruneCandidates(manifest, currentRefs);
   console.log(JSON.stringify(candidates, null, 2));
-  for (const sourcePath of candidates) await unlink(resolveImagePath(imageRoot, sourcePath));
+  for (const sourcePath of candidates) await unlink(await resolveSafeImagePath(imageRoot, sourcePath));
 }
 
 async function main() {
