@@ -1,6 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import astroConfig from '../../astro.config';
 import playwrightConfig from '../../playwright.config';
+
+const PINNED_IMAGE_PATH =
+  '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**';
 
 describe('Astro project tooling', () => {
   it('does not retain the removed commitlint hook', () => {
@@ -19,6 +23,34 @@ describe('Astro project tooling', () => {
     expect(tsconfig.include).toContain('src/**/*.ts');
     expect(tsconfig.include).toContain('tests/**/*.ts');
     expect(tsconfig.include).toContain('scripts/**/*.ts');
+  });
+
+  it('allows only the pinned image repository path', () => {
+    expect(astroConfig.image?.remotePatterns).toEqual([
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname: PINNED_IMAGE_PATH
+      }
+    ]);
+  });
+
+  it('does not retain legacy toolchain ignore entries', () => {
+    const entries = readFileSync('.gitignore', 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'));
+
+    expect(entries).not.toEqual(expect.arrayContaining([
+      '.bundle',
+      'vendor',
+      'Gemfile.lock',
+      '.jekyll-cache',
+      '.jekyll-metadata',
+      '_site',
+      '*.gem',
+      '_sass/vendors'
+    ]));
   });
 
   it('starts the Playwright server through the project package manager', () => {

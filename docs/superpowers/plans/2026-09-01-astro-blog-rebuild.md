@@ -1254,7 +1254,7 @@ Measure-Command { pnpm check:images }
 Measure-Command { pnpm build }
 ```
 
-Final calibration: the migrated posts contain 254 unique URLs, all pinned to immutable image-repository commit `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`; future same-repository references must also include an immutable ref. The inventory guard excludes unpublished drafts. The production implementation optimizes post-list `cover` images through Astro/Sharp, while inline jsDelivr images remain CDN-backed with `loading="lazy"` and `decoding="async"`. A clean build must still finish within 8 minutes.
+Final calibration: the migrated posts contain 254 unique URLs, all pinned to immutable image-repository commit `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`; Astro authorizes only that commit's `/img/**`. Future same-repository references must include an immutable ref, and changing the ref requires an explicit remote-pattern plus inventory-test update. The inventory guard excludes unpublished drafts. The production implementation optimizes post-list `cover` images through Astro/Sharp, while inline jsDelivr images remain CDN-backed with `loading="lazy"` and `decoding="async"`. A clean build must still finish within 8 minutes.
 
 - [ ] **Step 5: 提交**
 

@@ -172,7 +172,7 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 ## 9. 图片方案
 
 - 不复制整个图床仓库。
-- 已发布文章的同源图片全部使用带 `@85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 的 jsDelivr URL；新增引用也必须固定到不可变 commit。`src/drafts/` 不参与发布 inventory。
+- 已发布文章的同源图片全部使用带 `@85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 的 jsDelivr URL；Astro 只授权该提交的 `/img/**`。新增引用也必须固定到不可变 commit，更换 ref 时同步修改 remote pattern 与 inventory 测试。`src/drafts/` 不参与发布 inventory。
 - `pnpm build` 先检查 254 个被引用的 URL，并生成不提交 Git 的检查报告。
 - 在 Astro 中授权现有 jsDelivr 域名。文章列表题图由 Astro 图片管线和 Sharp 生成响应式 WebP，并复用 `.astro/` 缓存。
 - 正文远程图片预检后保留 jsDelivr 地址，输出 `loading="lazy"` 和 `decoding="async"`，避免把 254 张正文资源全部纳入构建转换。

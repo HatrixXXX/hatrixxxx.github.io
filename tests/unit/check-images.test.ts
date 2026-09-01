@@ -123,7 +123,7 @@ describe('remote image checking', () => {
 });
 
 describe('remark image status', () => {
-  it('leaves a successful remote Markdown image node to Astro', () => {
+  it('renders a successful remote Markdown raster image as a lazy native image', () => {
     const imageUrl = 'https://cdn.jsdelivr.net/diagram.png';
     const tree = {
       type: 'root',
@@ -133,11 +133,9 @@ describe('remark image status', () => {
     remarkImageStatus(new Set())(tree);
 
     expect(tree.children[0]).toMatchObject({
-      type: 'image',
-      url: imageUrl,
-      alt: 'diagram <overview>'
+      type: 'html',
+      value: '<img src="https://cdn.jsdelivr.net/diagram.png" loading="lazy" decoding="async" alt="diagram &lt;overview&gt;">'
     });
-    expect(tree.children[0]).not.toHaveProperty('data');
   });
 
   it('replaces a failed image while preserving its alt text and original URL', () => {
@@ -242,11 +240,9 @@ describe('remark image status', () => {
       remarkImageStatus(new Set([failedUrl]))(tree);
 
       expect(tree.children[0]).toMatchObject({
-        type: 'image',
-        url: failedUrl,
-        alt: 'animated'
+        type: 'html',
+        value: `<img src="${failedUrl}" loading="lazy" decoding="async" alt="animated">`
       });
-      expect(tree.children[0]).not.toHaveProperty('data');
     }
   );
 });

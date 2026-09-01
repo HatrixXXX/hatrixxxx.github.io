@@ -120,7 +120,7 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 254 个去重后的 jsDelivr 图片 URL。现有发布文章全部固定到图床仓库提交 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`，不会随默认分支删改而漂移。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL。
+文章共引用 254 个去重后的 jsDelivr 图片 URL。现有发布文章全部固定到图床仓库提交 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`，不会随默认分支删改而漂移。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；如果改用新提交，要同时更新 `astro.config.ts` 的精确 `/img/**` 规则和图片 inventory 测试。
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。两篇 `src/drafts/` 草稿不参与发布和图片 inventory，因此没有机械改写其中的历史链接。
 

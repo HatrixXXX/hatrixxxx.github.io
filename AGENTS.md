@@ -35,7 +35,7 @@ corepack pnpm test:e2e
 - 文章正文属于用户内容。除非任务明确要求，不改写正文；分类、标签和 schema 调整也要保持旧 URL。
 - 文章分类只能使用 `src/config/site.ts` 中的六个值。`series` 与 `seriesOrder` 必须成对出现。
 - 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。
-- 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。草稿不参与 inventory。
+- 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。草稿不参与 inventory。
 - Playwright 有 59 项检查和 21 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 

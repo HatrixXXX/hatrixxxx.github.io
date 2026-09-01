@@ -1,35 +1,22 @@
-# Bundler cache
-.bundle
-vendor
-Gemfile.lock
-
-# Jekyll cache
-.jekyll-cache
-.jekyll-metadata
-_site
-
-# RubyGems
-*.gem
-
-# NPM dependencies
+# Dependencies
 node_modules
-package-lock.json
+.pnpm-store/
+
+# Astro output and cache
+dist/
+.astro/
+
+# Test and audit output
+playwright-report/
+test-results/
+reports/
+
+# Agent work files
+.superpowers/
 
 # IDE configurations
-.idea
+.idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/tasks.json
-
-# Misc
-_sass/vendors
-# assets/js/dist
-lark_docs
-.superpowers/
-dist/
-.astro/
-.pnpm-store/
-playwright-report/
-test-results/
-reports/
