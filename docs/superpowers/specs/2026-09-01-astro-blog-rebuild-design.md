@@ -17,8 +17,8 @@
 - 文章包含数学公式、Mermaid、代码块和大量图片。
 - 文章没有稳定的分类和标签元数据，也没有作品集合。
 - 非标准 `_draft` 目录中有两篇未发布草稿。它们不会生成页面，但清理旧站前要迁入 `src/drafts/` 保存。
-- 文章引用 252 张外部图片，全部来自 `cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/`。
-- 图床仓库约 280 MB，共 1020 个文件；不能整仓复制进博客。
+- 博客源码有 280 处图床引用，对应 278 条不同路径，全部来自 `cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/`。
+- 图床清理后的 `master` 有 278 张图片，约 88.28 MiB，另有 1 个 PDF；不能整仓复制进博客。
 - 自定义域名写在 `CNAME`，站点地址为 `https://hatrix.site`。
 - 现有 Bing 站点验证码继续写入页面 metadata。
 - Giscus 使用 pathname 映射。旧文章 URL 发生变化会切断现有讨论串。
@@ -127,6 +127,7 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 - `pubDate`
 - `updatedDate`，可选
 - `cover`
+- `thumbnail`，可选；首页卡片优先使用
 - `category`
 - `tags`
 - `series`，可选
@@ -172,13 +173,13 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 ## 9. 图片方案
 
 - 不复制整个图床仓库。
-- 构建前检查 252 个被引用的 URL，生成可追踪的检查报告。
-- 在 Astro 中授权现有 jsDelivr 域名，构建时处理可用的远程图片并缓存结果。
-- 首页和文章题图预加载；正文图片使用懒加载和异步解码。
-- GIF 和 SVG 保持原格式，避免动画或矢量信息丢失。
+- Astro 迁移前先执行 `2026-09-01-image-delivery-optimization-design.md` 定义的独立图片管线，文章 front matter 同时保留完整 `cover` 和首页 `thumbnail` URL。
+- 构建前从实际内容提取远程 URL，生成可追踪的检查报告；不硬编码图片数量。
+- Astro 授权现有 jsDelivr 域名，但不重复转换已经优化的远程图片。
+- 首页只加载 640×336 WebP 缩略图；文章题图使用优化后的完整图，正文图片使用懒加载和异步解码。
+- 未转换的 GIF 和 SVG 保持原格式，避免动画或矢量信息丢失。
 - 失效图片替换为本地占位图，并保留原始 alt 文本和源 URL 供排查。
-- GitHub Actions 缓存 Astro 图片处理目录。
-- 干净构建若超过 8 分钟，只处理文章题图；正文图片继续使用 jsDelivr，并保留懒加载。这样给 GitHub Pages 的 10 分钟部署上限留出余量。
+- 图片压缩和图床清理不放进普通 Astro Pages 构建，避免构建过程修改另一个仓库或依赖原图下载。
 
 ## 10. 交互与性能
 
