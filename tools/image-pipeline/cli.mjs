@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { createThumbnail, optimizeFull } from './convert.mjs';
@@ -11,6 +11,7 @@ import {
   validatePublishedManifest
 } from './manifest.mjs';
 import { scanReferences } from './scan.mjs';
+import { executePruneDeletion } from './prune-executor.mjs';
 import { assertSafeRoot, resolveSafeImagePath, resolveSafePath } from './safe-paths.mjs';
 import { applyReferenceMap, upsertThumbnail } from './update.mjs';
 
@@ -346,13 +347,7 @@ async function runPrune(blogRoot, imageRoot, confirmPrune, report) {
   const { plan: current, resolvedCandidates } = await buildPrunePlan(blogRoot, imageRoot);
   assertSamePruneBinding(reviewed, current);
 
-  const deleted = [];
-  for (const { path, absolute } of resolvedCandidates) {
-    await unlink(absolute);
-    deleted.push(path);
-  }
-  const completed = { ...reviewed, status: 'completed', deleted };
-  await writeJson(report, completed);
+  const completed = await executePruneDeletion(reviewed, resolvedCandidates, report);
   console.log(JSON.stringify(completed, null, 2));
 }
 
