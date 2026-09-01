@@ -27,3 +27,9 @@ _sass/vendors
 # assets/js/dist
 lark_docs
 .superpowers/
+dist/
+.astro/
+.pnpm-store/
+playwright-report/
+test-results/
+reports/
