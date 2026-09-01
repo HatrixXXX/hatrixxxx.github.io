@@ -25,4 +25,11 @@ describe('Astro project tooling', () => {
   it('keeps the static-heavy Playwright suite on one worker', () => {
     expect(playwrightConfig.workers).toBe(1);
   });
+
+  it('uses project-specific snapshots without platform suffixes', () => {
+    expect(playwrightConfig.snapshotPathTemplate).toBe(
+      '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}'
+    );
+    expect(playwrightConfig.snapshotPathTemplate).not.toContain('platform');
+  });
 });

@@ -51,9 +51,25 @@ test('desktop and mobile navigation and table of contents match their viewport',
 
   if (isMobile) {
     const toggle = page.getByRole('button', { name: '切换导航栏' });
-    await toggle.click();
+    await toggle.focus();
+    await expect(toggle).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('[data-mobile-menu]')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    const mobileToc = page.locator('details[data-toc-mobile]');
+    const tocSummary = mobileToc.locator('summary');
+    await tocSummary.focus();
+    await expect(tocSummary).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(mobileToc).not.toHaveAttribute('open', '');
+    await page.keyboard.press('Space');
+    await expect(mobileToc).toHaveAttribute('open', '');
 
     const targets = page.locator(
       '[data-site-header] button:visible, [data-mobile-menu] a:visible, [data-toc-mobile] summary:visible'

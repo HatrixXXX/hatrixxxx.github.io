@@ -61,16 +61,17 @@ for (const path of routes) {
     expect(metrics.duplicateVisibleCardLinks).toBe(0);
     if (path === '/') expect(metrics.visiblePostCards).toBe(6);
 
+    const randomFooter = page.locator('[data-footer-random]');
+    await expect(randomFooter).toHaveAttribute('data-test-seed', 'playwright-fixed');
+    await expect(randomFooter.locator('li')).toHaveCount(10);
+
     const snapshotName = path === '/' ? 'home.png' : `${path.replaceAll('/', '_')}.png`;
     await expect(page).toHaveScreenshot(snapshotName, {
       fullPage: true,
       animations: 'disabled',
       timeout: path.startsWith('/posts/') ? 300_000 : 20_000,
       maxDiffPixels: path.startsWith('/posts/') ? 2_000 : 0,
-      mask: [
-        page.locator('section[aria-labelledby="footer-random-heading"]'),
-        page.locator('[data-giscus-comments]')
-      ],
+      mask: [page.locator('[data-giscus-comments]')],
       maskColor: '#252a33'
     });
   });

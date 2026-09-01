@@ -7,7 +7,8 @@ import { postPath } from '@/lib/urls';
 const year = new Date().getFullYear();
 const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
 const newestPosts = posts.slice(0, 10);
-const buildDate = new Date().toISOString().slice(0, 10);
+const isPlaywrightTest = process.env.PLAYWRIGHT_TEST === '1';
+const buildDate = isPlaywrightTest ? 'playwright-fixed' : new Date().toISOString().slice(0, 10);
 let seed = 0;
 for (const character of buildDate) seed = (seed * 31 + character.charCodeAt(0)) >>> 0;
 const shuffledPosts = [...posts];
@@ -29,7 +30,11 @@ const randomPosts = shuffledPosts.slice(0, 10);
       </div>
     </div>
 
-    <section aria-labelledby="footer-random-heading">
+    <section
+      aria-labelledby="footer-random-heading"
+      data-footer-random
+      data-test-seed={isPlaywrightTest ? buildDate : undefined}
+    >
       <h2 id="footer-random-heading">随机文章</h2>
       <ul>
         {randomPosts.map((post) => (
