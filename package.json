@@ -11,7 +11,6 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:e2e": "playwright test",
-    "migrate:posts": "tsx scripts/migration/migrate-posts.ts",
     "check:images": "tsx scripts/check-images.ts",
     "check:site": "tsx scripts/check-built-site.ts"
   },

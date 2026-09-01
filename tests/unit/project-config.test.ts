@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import playwrightConfig from '../../playwright.config';
 
@@ -7,12 +7,18 @@ describe('Astro project tooling', () => {
     expect(existsSync('.husky/commit-msg')).toBe(false);
   });
 
+  it('keeps only the active GitHub automation files', () => {
+    expect(readdirSync('.github').sort()).toEqual(['dependabot.yml', 'workflows']);
+    expect(readdirSync('.github/workflows').sort()).toEqual(['pages-deploy.yml']);
+  });
+
   it('limits TypeScript checking to the Astro project', () => {
     const tsconfig = JSON.parse(readFileSync('tsconfig.json', 'utf8'));
 
     expect(tsconfig.include).toContain('src/**/*.astro');
-    expect(tsconfig.exclude).toContain('assets');
-    expect(tsconfig.exclude).toContain('_javascript');
+    expect(tsconfig.include).toContain('src/**/*.ts');
+    expect(tsconfig.include).toContain('tests/**/*.ts');
+    expect(tsconfig.include).toContain('scripts/**/*.ts');
   });
 
   it('starts the Playwright server through the project package manager', () => {

@@ -4,7 +4,7 @@ description: 归纳 Xilinx FPGA 的基本逻辑单元、存储、运算、时钟
 pubDate: '2026-02-25'
 updatedDate: '2026-06-28T23:15:08+08:00'
 cover: >-
-  https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/c7e60454de8e3902967bf972fefd77ee.jpeg
+  https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/c7e60454de8e3902967bf972fefd77ee.jpeg
 category: FPGA 与数字系统
 tags:
   - FPGA

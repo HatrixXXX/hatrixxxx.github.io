@@ -16,6 +16,12 @@ export default defineConfig({
         protocol: 'https',
         hostname: 'cdn.jsdelivr.net',
         pathname: '/gh/HatrixXXX/Hatrix-s-Blog-Image/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/**'
       }
     ]
   },

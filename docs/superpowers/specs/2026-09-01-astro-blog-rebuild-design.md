@@ -10,19 +10,19 @@
 
 本次重构先解决博客结构、内容迁移和基础交互。音乐播放器与作品页只搭好可扩展的空壳。3D 场景留到后续功能迭代。
 
-## 2. 已知现状
+## 2. 迁移前现状与最终校准
 
 - 现有技术栈为 Jekyll、Chirpy 7.2.4、Ruby 和一套主题资产构建脚本。
 - 仓库有 40 篇 Markdown 文章，URL 形式为 `/posts/<文章名>/`。
 - 文章包含数学公式、Mermaid、代码块和大量图片。
 - 文章没有稳定的分类和标签元数据，也没有作品集合。
 - 非标准 `_draft` 目录中有两篇未发布草稿。它们不会生成页面，但清理旧站前要迁入 `src/drafts/` 保存。
-- 文章引用 252 张外部图片，全部来自 `cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/`。
+- 最终迁移内容共有 254 个去重后的外部图片 URL，全部来自 `cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/`。
 - 图床仓库约 280 MB，共 1020 个文件；不能整仓复制进博客。
-- 自定义域名写在 `CNAME`，站点地址为 `https://hatrix.site`。
+- 迁移前自定义域名写在根目录 `CNAME`；Astro 站以 `public/CNAME` 为唯一来源，构建后复制到 `dist/CNAME`。
 - 现有 Bing 站点验证码继续写入页面 metadata。
 - Giscus 使用 pathname 映射。旧文章 URL 发生变化会切断现有讨论串。
-- 当前工作树在 `master`，线上部署流程仍然可用。
+- 迁移启动时对照仓库位于 `master`，Astro 重构在独立 worktree 中完成。
 
 ## 3. 范围
 
@@ -172,13 +172,13 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 ## 9. 图片方案
 
 - 不复制整个图床仓库。
-- 构建前检查 252 个被引用的 URL，生成可追踪的检查报告。
-- 在 Astro 中授权现有 jsDelivr 域名，构建时处理可用的远程图片并缓存结果。
-- 首页和文章题图预加载；正文图片使用懒加载和异步解码。
+- `pnpm build` 先检查 254 个被引用的 URL，并生成不提交 Git 的检查报告。
+- 在 Astro 中授权现有 jsDelivr 域名。文章列表题图由 Astro 图片管线和 Sharp 生成响应式 WebP，并复用 `.astro/` 缓存。
+- 正文远程图片预检后保留 jsDelivr 地址，输出 `loading="lazy"` 和 `decoding="async"`，避免把 254 张正文资源全部纳入构建转换。
 - GIF 和 SVG 保持原格式，避免动画或矢量信息丢失。
 - 失效图片替换为本地占位图，并保留原始 alt 文本和源 URL 供排查。
 - GitHub Actions 缓存 Astro 图片处理目录。
-- 干净构建若超过 8 分钟，只处理文章题图；正文图片继续使用 jsDelivr，并保留懒加载。这样给 GitHub Pages 的 10 分钟部署上限留出余量。
+- 当前实现只转换题图，正文图片继续使用 jsDelivr；构建门禁仍要求总时长少于 8 分钟。
 
 ## 10. 交互与性能
 
@@ -209,12 +209,12 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 保留：
 
 - Git 历史和远程配置
-- `CNAME`
+- `public/CNAME`
 - 迁移后的文章
 - `src/drafts/` 中保留的两篇未发布草稿
 - 有效头像、favicon 和个人图片
 - 社交链接、站点验证信息和 Giscus 参数
-- 仍适用的许可证和仓库说明
+- 历史许可与来源通过 Git 历史追溯；根目录不声明新站源码或文章的开源许可
 
 删除或替换：
 
@@ -229,10 +229,9 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 
 ## 13. 开发方式
 
-- 当前仓库继续停留在可运行的 Jekyll 状态，用于内容和页面对照。
-- 设计文档确认后创建功能分支和独立 Git worktree。
-- Astro 重构在 worktree 中完成，不推送、不部署，也不改远端 Pages 设置。
-- 完成后提供构建结果和本地预览供确认，再决定是否合并和部署。
+- 重构期间让对照仓库保持可运行，用于核对内容和页面。
+- Astro 代码在 `feature/astro-blog-rebuild` worktree 中完成；旧主题只保留到新站通过构建、链接和视觉验证。
+- 本分支不推送、不部署，也不改远端 Pages 设置。后续是否合并和部署由用户另行决定。
 
 ## 14. 验证
 
@@ -256,10 +255,11 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 
 ### 14.3 完成标准
 
-- 40 篇文章全部生成，正文没有丢失。
+- 40 篇文章全部生成，两篇草稿保存在 `src/drafts/`，正文没有丢失。
 - 旧文章路径可访问，内部链接没有 404。
-- `CNAME` 和 GitHub Pages 构建产物正确。
+- `public/CNAME` 与 `dist/CNAME` 内容一致，GitHub Pages 构建产物正确。
 - 桌面和移动端结构与参考站保持同一视觉语言，不包含参考站的超长空白和移动端重复内容问题。
 - 干净构建少于 8 分钟，发布目录小于 1 GB。
+- 静态构建生成 80 个 HTML 页面；Playwright 共 59 项检查和 21 张 Windows 视觉基线，快照名不含平台后缀。Pages workflow 不运行视觉套件。
 - 旧 Jekyll 文件在新站验证通过后清理完毕。
 - 音乐和作品页面在无数据时表现正常。

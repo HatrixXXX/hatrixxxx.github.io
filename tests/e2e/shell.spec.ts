@@ -8,7 +8,7 @@ test('home shell exposes reference layout landmarks', async ({ page }) => {
   await expect(page.locator('footer[data-site-footer]')).toBeVisible();
 });
 
-test('favicon metadata is valid without Jekyll processing', async ({ request }) => {
+test('favicon metadata is valid in static output', async ({ request }) => {
   const manifestResponse = await request.get('/site.webmanifest');
   expect(manifestResponse.ok()).toBe(true);
   const manifest = await manifestResponse.json();

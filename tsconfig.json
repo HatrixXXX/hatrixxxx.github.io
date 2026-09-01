@@ -12,19 +12,5 @@
     "scripts/**/*.ts",
     "astro.config.ts",
     "vitest.config.ts"
-  ],
-  "exclude": [
-    "_data",
-    "_draft",
-    "_includes",
-    "_javascript",
-    "_layouts",
-    "_plugins",
-    "_posts",
-    "_sass",
-    "_tabs",
-    "assets",
-    "purgecss.js",
-    "rollup.config.js"
   ]
 }

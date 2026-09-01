@@ -13,7 +13,7 @@
 - 执行前必须调用 `superpowers:using-git-worktrees`，从当前 `master` 创建 `feature/astro-blog-rebuild` worktree；不得在对照用的旧站目录中直接重写。
 - 实现和修复遵循 `karpathy-guidelines` 与 `superpowers:test-driven-development`：先写失败测试，再写最小实现。
 - 输出必须是纯静态站点；不得增加服务器、数据库、上传、下载中心或对象存储。
-- 保留 `CNAME`、`https://hatrix.site`、Giscus 参数和全部 `/posts/<文章名>/` 地址。
+- 保留 `public/CNAME`、`https://hatrix.site`、Giscus 参数和全部 `/posts/<文章名>/` 地址。
 - 迁移 40 篇文章，正文不改写；只补充分类、标签、系列和日期等元数据。
 - 音乐列表与作品集合首版为空，不放演示假数据。
 - 不引入 3D 依赖。后续 3D 页面通过独立客户端岛接入。
@@ -30,7 +30,7 @@
 - `astro.config.ts`、`tsconfig.json`、`src/content.config.ts`：Astro、Markdown、TypeScript 和内容 schema。
 - `src/config/site.ts`：站名、域名、作者、社交链接和 Giscus 参数。
 - `src/content/posts/`：迁移后的 40 篇文章。
-- `src/content/projects/.gitkeep`：允许为空的作品集合。
+- `src/content/projects/`：允许为空的作品集合；首次添加作品时创建目录。
 - `src/drafts/`：从非标准 `_draft` 目录保留的两篇未发布草稿，不参与构建。
 - `src/data/playlist.ts`：有类型约束的空播放列表。
 - `src/lib/content.ts`：排序、分页、归档、分类、标签、系列和上下篇。
@@ -41,7 +41,6 @@
 - `src/pages/`：所有静态路由、RSS、站点地图辅助端点和搜索索引。
 - `src/styles/tokens.css`、`global.css`、`prose.css`：颜色、尺寸、响应式布局和正文样式。
 - `src/scripts/`：浏览器端主题、菜单、目录、Mermaid、灯箱和播放器逻辑。
-- `scripts/migration/`：文章迁移和分类规则。
 - `scripts/check-images.ts`、`scripts/check-built-site.ts`：图片预检和构建产物检查。
 - `tests/unit/`、`tests/e2e/`：Vitest 与 Playwright。
 - `.github/workflows/pages-deploy.yml`：Node/Astro Pages 部署。
@@ -226,7 +225,7 @@ git commit -m "build: bootstrap Astro project"
 - Create: `src/config/site.ts`
 - Create: `src/content.config.ts`
 - Create: `src/types/content.ts`
-- Create: `src/content/projects/.gitkeep`
+- The projects collection may stay absent while empty; create `src/content/projects/` with the first real entry.
 - Create: `src/data/playlist.ts`
 - Create: `tests/unit/content-schema.test.ts`
 
@@ -1255,7 +1254,7 @@ Measure-Command { pnpm check:images }
 Measure-Command { pnpm build }
 ```
 
-Expected: image report counts 252 unique URLs; clean build completes under 8 minutes. If it exceeds 8 minutes, change the plugin to optimize only `cover` images and leave inline jsDelivr URLs with `loading="lazy"` and `decoding="async"`, then rerun the same measurement.
+Final calibration: the migrated posts contain 254 unique URLs. The production implementation optimizes post-list `cover` images through Astro/Sharp, while inline jsDelivr images remain CDN-backed with `loading="lazy"` and `decoding="async"`. A clean build must still finish within 8 minutes.
 
 - [ ] **Step 5: 提交**
 
@@ -1349,7 +1348,7 @@ Expected: snapshots generated for all required routes/viewports. Review them aga
 
 Run: `pnpm test:e2e`
 
-Expected: PASS in all three projects; no duplicate mobile content or oversized blank region.
+Expected: PASS in all three projects; no duplicate mobile content or oversized blank region. Final suite: 59 Playwright cases and 21 Windows-generated snapshots. Snapshot names are platform-neutral; the Pages workflow intentionally does not run the visual suite.
 
 ```bash
 git add playwright.config.ts tests/e2e src/styles src/components src/layouts src/pages
@@ -1411,7 +1410,7 @@ Workflow jobs:
 2. setup Node 24 and pnpm cache。
 3. `pnpm install --frozen-lockfile`。
 4. restore/cache `.astro` image cache。
-5. `pnpm test:run`、`pnpm check`、`pnpm check:images`、`pnpm build`、`pnpm check:site`。
+5. `pnpm test:run`、`pnpm check`、`pnpm build`、`pnpm check:site`；`pnpm build` 自动先运行 `check:images`。
 6. upload `dist` with `actions/upload-pages-artifact`。
 7. deploy with `actions/deploy-pages` only on `master` pushes or manual dispatch; pull requests run build but skip deploy。
 
@@ -1439,7 +1438,8 @@ git commit -m "ci: deploy Astro site to GitHub Pages"
 - Delete: old `purgecss.js`, `rollup.config.js` and theme build configuration no longer referenced
 - Modify: `README.md`
 - Delete: root `CNAME` after confirming `public/CNAME` is tracked and produces `dist/CNAME`
-- Preserve: `public/CNAME`, `LICENSE`, migrated `src/content/posts/`, `src/drafts/`, used avatar/favicons and design/plan docs
+- Delete: root `LICENSE` because it only covers the removed Cotes/Chirpy theme and would misstate the new Astro repository's licensing
+- Preserve: `public/CNAME`, migrated `src/content/posts/`, `src/drafts/`, used avatar/favicons and design/plan docs
 
 **Interfaces:**
 - Produces: 只含 Astro 源码、内容、测试和 Pages 工作流的干净仓库。
@@ -1482,7 +1482,7 @@ pnpm check:site
 pnpm test:e2e
 ```
 
-Expected: all commands PASS; `rg -n "jekyll|chirpy|bundle exec|Gemfile" package.json astro.config.ts .github README.md src tests` finds no active Jekyll build references except migration history in docs.
+Expected: all commands PASS. `rg -n "jekyll|chirpy|bundle exec|Gemfile" package.json astro.config.ts .github README.md tests` finds no active legacy build references. Matches under the preserved “博客搭建” article and unpublished draft are historical content, not build configuration, and remain unchanged.
 
 - [ ] **Step 5: 检查性能和差异**
 
