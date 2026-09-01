@@ -4,6 +4,17 @@
   "blogCommit": "dafe44cc57b99190f835e1f8ded0e87c955caf73",
   "sourceImageCommit": "caf983fb140c110416eb3f4042fefd05d1929369",
   "publishedImageCommit": "85bc7b2b63bcf294f1079a98edf79ee1c9f41606",
+  "prune": {
+    "status": "completed",
+    "completedAt": "2026-09-02T04:30:02+08:00",
+    "blogCommit": "e0e44edc4f2c3b7823f00e6ef8997ededc04e56e",
+    "imageCommit": "3a0381f656adf5ce2f4bd14cd3e9c936597db97c",
+    "backupBranch": "backup/pre-original-prune-20260902",
+    "backupCommit": "85bc7b2b63bcf294f1079a98edf79ee1c9f41606",
+    "deletedCount": 249,
+    "deletedBytes": 82721044,
+    "planDigest": "485d65cfd7b0ee7173645537f33cd78572c347bb46ac3eac109c0c6c4f3caff2"
+  },
   "entries": [
     {
       "sourcePath": "img/0_F6yCHV2ctleCNqiu.webp",
