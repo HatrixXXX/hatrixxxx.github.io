@@ -21,7 +21,7 @@ layout: compress
      <!-- 加载动画 -->
   <div class="loading-container" style="display: block">
     <div class="light-animation animation" style="display: none">
-      <img src="/assets/img/cake.png" alt="蛋糕图片" class="cake-img floating-img" />
+      <img src="/assets/img/cake.png" alt="蛋糕图片" class="cake-img floating-img" width="500" height="500" loading="lazy" decoding="async" fetchpriority="low" />
       <div class="light-progress-text progress-text">
         正在给蛋糕浇上蜂蜜
         <span class="light-loading-dots loading-dots">
@@ -34,7 +34,11 @@ layout: compress
     </div>
 
     <div class="dark-animation animation" style="display: flex">
-      <img src="/assets/img/coffee.png" alt="咖啡图片" class="coffee-img floating-img" />
+      <picture>
+        <source srcset="/assets/img/coffee.webp" type="image/webp">
+        <img src="/assets/img/coffee.png" alt="咖啡图片" class="coffee-img floating-img"
+             width="500" height="500" loading="eager" decoding="sync" fetchpriority="high">
+      </picture>
       <div class="dark-progress-text progress-text">
         正在将巧克力泡入咖啡
         <span class="dark-loading-dots loading-dots">
@@ -46,9 +50,8 @@ layout: compress
       <div class="dark-progress-bar progress-bar"></div>
     </div>
   </div>
-    </div>
-  </div>
-ntainer" style="display: none">
+
+    <div class="main-container" style="display: none">
       {% include sidebar.html lang=lang %}
 
       <div id="main-wrapper" class="d-flex justify-content-center">
@@ -126,8 +129,7 @@ ntainer" style="display: none">
       document.addEventListener('visibilitychange', handleVisibilityChange);
       handleVisibilityChange();
     </script>
-      <!-- 加载动画 -->
-    <script src="/assets/js/loading-animation.js"></script>/body>
-</html>
+    <!-- 加载动画 -->
+    <script src="/assets/js/loading-animation.js"></script>
   </body>
 </html>

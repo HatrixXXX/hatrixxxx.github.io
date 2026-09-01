@@ -21,6 +21,8 @@
     "lint:scss": "stylelint _sass/**/*.scss",
     "lint:fix:scss": "npm run lint:scss -- --fix",
     "test": "npm run lint:scss",
+    "test:images": "node --test tools/image-pipeline/test/*.test.mjs",
+    "images": "node tools/image-pipeline/cli.mjs",
     "prepare": "husky"
   },
   "dependencies": {
@@ -46,8 +48,9 @@
     "purgecss": "^8.0.0",
     "rollup": "^4.62.2",
     "semantic-release": "^25.0.5",
-    "stylelint": "^17.14.0",
-    "stylelint-config-standard-scss": "^17.0.0"
+    "sharp": "0.34.3",
+    "stylelint": "16.10.0",
+    "stylelint-config-standard-scss": "13.1.0"
   },
   "prettier": {
     "trailingComma": "none"

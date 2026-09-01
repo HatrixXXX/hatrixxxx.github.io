@@ -4,14 +4,15 @@ description: 归纳 Xilinx FPGA 的基本逻辑单元、存储、运算、时钟
 math: true
 mermaid: true
 image:
-  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/c7e60454de8e3902967bf972fefd77ee.jpeg
+  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/c7e60454de8e3902967bf972fefd77ee.jpeg.webp
+  thumbnail: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/thumbnails/c7e60454de8e3902967bf972fefd77ee.jpeg.webp
 ---
 
 ## 基本单元
 
 Xilinx FPGA 以可配置逻辑块 CLB 为基本逻辑资源单元。每个 CLB 中包含若干 Slices。最基本的 Slice 包含查找表 LUT 和触发器 Flip-Flop 资源。LUT 是存储真值表的介质，也可用作分布式 RAM 作为快速高效的 on-chip memory。LUT 由 MUX 树和 SRAM 构成，工作时由输入信号控制 MUX 树，从 SRAM 配置位中选中一个值输出。以四输入的 LUT 为例，使用 15 个 MUX2 分为四层（8-4-2-1）来实现十六选一的结构，SRAM 中存储 16 个位对应应该存储的二进制值即可。
 
-![image-20260130105849542](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/image-20260130105849542.png)
+![image-20260130105849542](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/image-20260130105849542.png.webp)
 
 今天的 Xilinx FPGA 中，除了上述基本单元之外，还集成了 IO Blocks（输入输出物理接口）、嵌入式 Block RAM（存储资源）、PLL（高速时钟信号）、Global Clock Buffers（时钟布线资源）、DSP Blocks（数字信号处理）、SERDES（高速接口）、CPU（硬核处理器）、NPU（硬核 AI 推理）以及配套的多路选择器 Mux、进位链 Carry Chain、局部互联资源等。集成这些硬核单元设计出这样的架构，是基于解决实际问题和成本效率综合考量后，高度优化的结果。
 
@@ -26,7 +27,7 @@ Block RAM（BRAM）是 FPGA 中固化的硬件存储单元，固定容量为 18K
 - RAM 和 ROM 中任意一个存储单元都可以在相同时间内被访问，硬件上由存储单元阵列 + 地址译码器 + 读写电路构成；ROM 由 RAM 配合要预先写入的 coe 文件实现。
 - FIFO 是先进先出队列存储器，内部常用环形缓冲区的结构，由 RAM+读写指针实现。FIFO 没有地址的概念，写入只能写到队尾，读出只能从队首读取，硬件自动维护顺序，读写顺序固定。读写对象为内部读写指针指向的存储单元，读写时操作指针位置，由 full、empty 信号进行数据流控制。根据读写时钟是否相同分为同步 FIFO 和异步 FIFO。FIFO 的容量一般比较小，广泛用于数据的缓存、平衡异步时钟域之间的速度差、流式数据接口缓存等。
 
-![ca1b47bf78fa4ca5a4c538dece109eaf](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/ca1b47bf78fa4ca5a4c538dece109eaf.jpeg)
+![ca1b47bf78fa4ca5a4c538dece109eaf](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/ca1b47bf78fa4ca5a4c538dece109eaf.jpeg.webp)
 
 这些逻辑存储结构的实现原理了解即可，Xilinx 对它们均提供了成熟的 IP 供开发者使用。RAM 和 ROM 的 IP 有 Distributed Memory Generator 和 Block Memory Generator 两个，区别在于使用的 FPGA 资源不同，由 Distributed Memory Generator 生成的 RAM/ROM Core 占用的资源是 CLB 中的 LUT；而由 Block Memory Generator 生成的 RAM/ROM Core 占用的资源是专用的存储资源 Block Memory。FIFO 的 IP 有 FIFO Generator，实现资源分时钟域和存储资源两方面，时钟域有同步和异步之分，存储资源可选 BlockRAM、Distributed RAM、Shift Reg、Built-in FIFO。
 
@@ -42,7 +43,7 @@ DSP 单元是专用于做高速运算的硬件资源，对乘法和累加操作�
 
 时钟管理模块 CMT（Clock Management Tiles）是专用于产生/处理/分发时钟的硬件资源，提供了时钟合成、倾斜矫正和过滤抖动等功能，用于将外部时钟转化为 FPGA 可用的高质量时钟，CMT 中包含 PLL（Phase Lock Loop） 、MMCM（Mixed Mode Clock Manager）和 Clock Buffers。常见用法是 MMCM 调幅 + PLL 调相。
 
-![](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/20250928134917750.png)
+![](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/20250928134917750.png.webp)
 
 PLL 通过锁相机制使输出时钟和输入时钟相位一致，可实现分频和倍频，缺点是相位控制粒度有限。MMCM 比 PLL 功能更强，可实现分数分频/倍频和更精准的相移。MMCM 或 PLL 输出的是原始时钟信号，不能直接裸信号使用且不能走普通的布线逻辑，而需要经过专用的 buffer 电路并接入全局或区域时钟网络。buffer 电路的作用是提高驱动能力并保证延迟均衡。时钟如果走普通布线逻辑会导致延迟和 skew 无法保证，会导致严重的同步问题。时钟倾斜 skew 是指同一个时钟信号到达不同触发器的时间差。如果 skew 太大，可能导致 setup/hold 时间被破坏而引起数据寄存错误。
 
@@ -62,7 +63,7 @@ FPGA 芯片的管脚被划分为多个 IO Bank，每个 Bank 有一组外部供�
 
 FPGA 内部有大量可编程的互连资源，包含可编程布线网络和可编程交换开关，逻辑单元之间的信号通过这些布线网络和开关连接，称为布线逻辑 （routing fabric），结构如图。
 
-![image-20260130111515246](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/image-20260130111515246.png)
+![image-20260130111515246](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/image-20260130111515246.png.webp)
 
 普通布线逻辑指通用的互连通道，用来传数据/控制信号。它们延迟大、路径长短不一、受布线工具优化影响。时钟信号需要使用专用的时钟 buffer 和时钟布线网络来控制 skew。
 

@@ -54,7 +54,7 @@ refactor: true
         {% assign card_body_col = '12' %}
 
         {% if post.image %}
-          {% assign src = post.image.path | default: post.image %}
+          {% assign src = post.image.thumbnail | default: post.image.path | default: post.image %}
           {% unless src contains '//' %}
             {% assign src = post.media_subpath | append: '/' | append: src | replace: '//', '/' %}
           {% endunless %}

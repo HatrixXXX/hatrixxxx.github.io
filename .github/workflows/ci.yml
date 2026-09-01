@@ -49,5 +49,17 @@ jobs:
       - name: Build Assets
         run: npm i && npm run build
 
+      - name: Test Image Pipeline
+        run: npm run test:images
+
       - name: Test Site
         run: bash tools/test.sh
+
+      - name: Upload Site Preview
+        if: matrix.ruby == '3.3'
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-preview
+          path: _site
+          if-no-files-found: error
+          retention-days: 1

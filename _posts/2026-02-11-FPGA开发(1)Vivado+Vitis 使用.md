@@ -4,7 +4,8 @@ description: 记录 Vivado 与 Vitis 工程中的编译提速、OOC、ILA、XDC�
 math: true
 mermaid: true
 image:
-  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Screen-Shot-2019-10-03-at-5.31.06-PM.jpg
+  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/Screen-Shot-2019-10-03-at-5.31.06-PM.jpg.webp
+  thumbnail: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/thumbnails/Screen-Shot-2019-10-03-at-5.31.06-PM.jpg.webp
 ---
 
 vivado + vitis 是 Xilinx FPGA 配套的软件栈。vitis 前身叫 SDK，Xilinx 被 AMD 收购后重构为 vitis，两者在使用上大致相同。虽然 vivado 这头洪水猛兽跑得又慢还偶尔碰到疑似软件本身 bug 的情况，但这已经是所有 FPGA EDA 中最成熟的一个了，并且写写代码跑跑综合布局布线就能改电路结构，想想还是挺神奇挺有意思的。
@@ -72,7 +73,7 @@ set_property BOARD_PIN "some_pin_name" [get_ports <port_name>]
 
 vivado 是靠 tcl 工作的，GUI 界面是 tcl 的壳子，界面上的每一步操作都等价于在后台执行 tcl 命令。就像命令行和图像界面的关系一样，tcl 脚本的意义在于构建自动化的工程流程（创建工程、添加源文件、生成 IP、设置约束、综合实现、生成比特流、导出硬件），一些应用 tcl 的例子比如工程版本复现、批量生成 IP、根据顶层端口生成约束文件、多版本代码自动测试、不同优化性能下比较性能、快速验证多个参数组合的效果。
 
-<img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/5929c64f323640d711c9a186c2f9583d.png" style="zoom:50%;" alt=""/>
+<img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/5929c64f323640d711c9a186c2f9583d.png.webp" style="zoom:50%;" alt=""/>
 
 Xilinx Tcl Store 是一个开源共享的 tcl 脚本库，其中有一些实用的 tcl 脚本，相当于 vivado 的插件系统，可以扩展 vivado 设计套件的核心功能。在 tcl store 中点击可以查看每个脚本支持的 tcl 命令。可以基于 tcl 脚本创建工程，Tools 选项卡中可以运行 tcl 脚本文件，也可以直接在 tcl console 中交互式运行 tcl 命令。Xilinx 官方关于 tcl 的文档为 UG894 和 UG835。
 
@@ -84,7 +85,7 @@ vivado 可以创建 RTL Project 和 Post-synthesis Project，RTL Project 是最�
 
 Block Design 是 vivado 里的图形化硬件系统设计方式。可以创建多个 bd 文件用于封装多个子系统。Open Block Design 可以选择打开项目中的某一个 Block Design。Generate Output Products 可以选择为某一个 Block Design 内的各个 IP Core 生成 HDL 底层实现文件，修改 BD 中的 IP 时需要重新执行。Create HDL Wrapper 是给 BD 生成一个顶层 HDL 文件，让综合器将 BD 当作一个普通 IP 来使用，生成的 Wrapper 就是综合/仿真时的入口文件，生成时可以选择让 vivado 自动维护，修改 BD 时自动更新。通常先 Generate Output Products，再 Create HDL Wrapper。绑定引脚时以 Wrapper 中的声明为准。
 
-<img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Snipaste_2025-11-18_17-58-51.png" style="zoom: 80%;" alt=""/>
+<img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/Snipaste_2025-11-18_17-58-51.png.webp" style="zoom: 80%;" alt=""/>
 
 ## 设计规范检查
 

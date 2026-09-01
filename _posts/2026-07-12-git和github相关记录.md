@@ -4,7 +4,8 @@ description: 持续记录 git 和 github 使用过程中，之前没有注意过
 math: true
 mermaid: true
 image:
-  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Snipaste_2026-07-12_14-27-47.png
+  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/optimized/Snipaste_2026-07-12_14-27-47.png.webp
+  thumbnail: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/thumbnails/Snipaste_2026-07-12_14-27-47.png.webp
 ---
 
 ## 初始化配置
