@@ -1,0 +1,95 @@
+---
+import { SITE } from '@/config/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer data-site-footer class="site-footer">
+  <div class="footer-inner container">
+    <div class="identity">
+      <img src={SITE.author.avatar} alt={`${SITE.author.name} 的头像`} width="48" height="48" loading="lazy" />
+      <div>
+        <strong>{SITE.title}</strong>
+        <p>{SITE.description}</p>
+      </div>
+    </div>
+    <nav aria-label="社交链接">
+      {SITE.socials.map((social) => (
+        <a href={social.url} target="_blank" rel="me noreferrer">{social.label}</a>
+      ))}
+    </nav>
+    <small>© {year} {SITE.author.name}</small>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-line);
+    background: var(--color-surface);
+    color: var(--color-muted);
+  }
+
+  .footer-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 2rem;
+    align-items: center;
+    padding-block: 2rem;
+  }
+
+  .identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .identity img {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  strong {
+    color: var(--color-text);
+  }
+
+  p {
+    margin: 0.15rem 0 0;
+    font-size: 0.84rem;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  nav a {
+    font-size: 0.86rem;
+    transition: color 160ms ease;
+  }
+
+  nav a:hover {
+    color: var(--color-accent);
+  }
+
+  small {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 768px) {
+    .footer-inner {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .identity,
+    nav {
+      justify-content: center;
+    }
+  }
+</style>

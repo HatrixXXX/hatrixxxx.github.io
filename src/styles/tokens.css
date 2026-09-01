@@ -1,0 +1,15 @@
+:root {
+  --color-bg: #161a20;
+  --color-surface: #1d2229;
+  --color-surface-raised: #242a32;
+  --color-text: #d8d9dc;
+  --color-muted: #9298a1;
+  --color-accent: #ff8fa6;
+  --color-accent-strong: #ff6f91;
+  --color-line: rgb(255 255 255 / 10%);
+  --shadow-panel: 0 16px 40px rgb(0 0 0 / 28%);
+  --content-width: 1180px;
+  --reading-width: 780px;
+  --header-height: 56px;
+  --radius-card: 12px;
+}
