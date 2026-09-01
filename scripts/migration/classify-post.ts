@@ -36,6 +36,8 @@ const TAG_RULES: Array<[string, RegExp]> = [
   ['Linux', /Linux|Bash/i],
   ['Git', /git|github/i],
   ['数学', /数学/i],
+  ['设计模式', /设计模式/i],
+  ['计算机组成', /计算机组成/i],
   ['博客', /博客搭建/i],
   ['资源整理', /工具箱|杂货铺/i]
 ];

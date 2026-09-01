@@ -38,3 +38,25 @@
 plugin API is deprecated, `src/content/projects` is empty, and legacy article
 math contains KaTeX-incompatible input. No article body was changed to silence
 these warnings.
+
+## Reviewer follow-up: non-empty tags
+
+- RED: `corepack pnpm vitest run tests/unit/classify-post.test.ts` exited 1:
+  `设计模式简介` and `计算机组成结构` each produced `[]` instead of their
+  required precise tags.
+- GREEN: the same focused command exited 0: 1 file, 9 tests passed after adding
+  the deterministic `设计模式` and `计算机组成` tag rules.
+- Regenerated with `corepack pnpm migrate:posts`.
+- Full migration verification reported: 40 source posts and 40 migrated posts;
+  2 source drafts and 2 copied drafts; `bodyMismatches: []`,
+  `draftByteMismatches: []`, and `emptyTagPosts: []`.
+- `corepack pnpm test:run` exited 0: 5 files, 17 tests passed.
+- `corepack pnpm check` exited 0 and its Astro diagnostic summary was
+  `0 errors`, `0 warnings`, `0 hints`; `corepack pnpm build` exited 0.
+
+The diagnostic summary counts only Astro's analysed file diagnostics. It does
+not count CLI logger messages emitted before that summary. In the follow-up
+check/build output, those separate messages were the deprecated Markdown-plugin
+API notice and the empty `src/content/projects` glob warning; neither is an
+Astro diagnostic warning. Article bodies and existing frontmatter values were
+not changed to suppress either message.

@@ -16,4 +16,11 @@ describe('post classification', () => {
   it('extracts numbered series order', () => {
     expect(seriesFor('画板子系列(2)个人规范')).toEqual({ name: '画板子系列', order: 2 });
   });
+
+  it.each([
+    ['设计模式简介', '设计模式'],
+    ['计算机组成结构', '计算机组成']
+  ])('assigns %s a precise tag', (title, tag) => {
+    expect(classifyPost(title).tags).toContain(tag);
+  });
 });
