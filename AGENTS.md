@@ -14,7 +14,7 @@ corepack pnpm check:site
 corepack pnpm test:e2e
 ```
 
-`build` 已包含图片预检。图片检查需要访问 jsDelivr；如果本机只允许通过代理联网，Node 24 进程还需要启用环境代理。
+`build` 已包含图片预检。图片检查需要访问 jsDelivr；`build` 和 `check:images` 会自动启用 Node 24 的环境代理支持，本机只需提供标准的 `HTTPS_PROXY` 配置。
 
 ## 目录边界
 

@@ -28,7 +28,7 @@ pnpm check:site
 pnpm test:e2e
 ```
 
-`pnpm build` 会先运行远程图片预检，再生成静态站点。只想检查图片时，可单独运行 `pnpm check:images`。
+`pnpm build` 会先运行远程图片预检，再生成静态站点。只想检查图片时，可单独运行 `pnpm check:images`。这两个命令会自动启用 Node 的环境代理支持；本机需要代理联网时，保留标准的 `HTTPS_PROXY` 配置即可。
 
 ## 内容目录
 

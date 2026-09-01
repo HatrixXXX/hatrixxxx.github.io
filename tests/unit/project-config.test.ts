@@ -7,6 +7,17 @@ const PINNED_IMAGE_PATH =
   '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**';
 
 describe('Astro project tooling', () => {
+  it('enables Node environment proxy support for image checks and the entire build', () => {
+    const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+
+    expect(packageJson.scripts['check:images']).toBe(
+      'cross-env NODE_USE_ENV_PROXY=1 tsx scripts/check-images.ts'
+    );
+    expect(packageJson.scripts.build).toBe(
+      'cross-env-shell NODE_USE_ENV_PROXY=1 "tsx scripts/check-images.ts && astro build"'
+    );
+  });
+
   it('does not retain the removed commitlint hook', () => {
     expect(existsSync('.husky/commit-msg')).toBe(false);
   });
