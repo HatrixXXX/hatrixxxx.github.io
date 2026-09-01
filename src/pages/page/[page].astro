@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import Pagination from '@/components/Pagination.astro';
 import PostList from '@/components/PostList.astro';
@@ -7,16 +8,38 @@ import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { buildTaxonomy, paginatePosts, sortPosts, type PostEntry } from '@/lib/content';
+import { buildTaxonomy, paginatePosts, sortPosts, type Page, type PostEntry } from '@/lib/content';
 
-const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
-const page = paginatePosts(posts, 1, 6);
+interface Props {
+  page: Page<PostEntry>;
+  posts: PostEntry[];
+}
+
+export const getStaticPaths = (async () => {
+  const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+  const total = paginatePosts(posts, 1, 6).total;
+
+  return Array.from({ length: total - 1 }, (_, index) => {
+    const current = index + 2;
+    return {
+      params: { page: String(current) },
+      props: { page: paginatePosts(posts, current, 6), posts }
+    };
+  });
+}) satisfies GetStaticPaths;
+
+const { page, posts } = Astro.props;
 const categoryCount = buildTaxonomy(posts, 'category').size;
 const tagCount = buildTaxonomy(posts, 'tags').size;
 ---
 
-<BaseLayout title={SITE.title}>
-  <HeroBanner title={SITE.title} subtitle={SITE.tagline} image="/images/default-cover.svg" />
+<BaseLayout title={`文章列表 · 第 ${page.current} 页`}>
+  <HeroBanner
+    title={`文章列表 · 第 ${page.current} 页`}
+    subtitle={SITE.tagline}
+    image="/images/default-cover.svg"
+    compact
+  />
   <WaveDivider />
   <main class="home-main container with-sidebar">
     <div class="home-feed">
