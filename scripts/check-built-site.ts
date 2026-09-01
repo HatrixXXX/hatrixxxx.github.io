@@ -36,6 +36,15 @@ async function filesIn(directory: string): Promise<string[]> {
   return files.flat();
 }
 
+async function filesInOrEmpty(directory: string, errors: string[], error: string): Promise<string[]> {
+  try {
+    return await filesIn(directory);
+  } catch {
+    errors.push(error);
+    return [];
+  }
+}
+
 function decodePathname(pathname: string): string | undefined {
   try {
     return decodeURIComponent(pathname);
@@ -96,7 +105,7 @@ export async function inspectBuiltSite(
   const errors: string[] = [];
   let outputBytes = 0;
   let checkedLinks = 0;
-  const files = await filesIn(root);
+  const files = await filesInOrEmpty(root, errors, `Unable to read built site directory: ${root}`);
 
   for (const file of files) outputBytes += (await stat(file)).size;
   if (outputBytes >= MAX_OUTPUT_BYTES) errors.push(`Built site is ${outputBytes} bytes; limit is ${MAX_OUTPUT_BYTES} bytes.`);
@@ -144,16 +153,6 @@ export async function inspectBuiltSite(
   return { errors, outputBytes, checkedLinks };
 }
 
-async function expectedPostRoutes(postsDirectory: string): Promise<string[]> {
-  const routes: string[] = [];
-  for (const file of await filesIn(postsDirectory)) {
-    if (!/\.mdx?$/i.test(file)) continue;
-    const { data } = matter(await readFile(file, 'utf8'));
-    if (typeof data.legacySlug === 'string') routes.push(`/posts/${data.legacySlug}/`);
-  }
-  return routes;
-}
-
 function markdownImageUrls(markdown: string): string[] {
   const urls = new Set<string>();
   for (const match of markdown.matchAll(/!\[[^\]]*\]\((https:\/\/cdn\.jsdelivr\.net\/[^\s)]+)(?:\s+[^)]*)?\)/g)) {
@@ -162,6 +161,9 @@ function markdownImageUrls(markdown: string): string[] {
   for (const match of markdown.matchAll(/!\[[^\]]*\]\(\s*<(https:\/\/cdn\.jsdelivr\.net\/[^>\r\n]+)>\s*(?:[^)]*)\)/g)) {
     urls.add(match[1]);
   }
+  for (const match of markdown.matchAll(/<img\b[^>]*\ssrc=(['"])(https:\/\/cdn\.jsdelivr\.net\/[^'"]+)\1[^>]*>/gi)) {
+    urls.add(match[2]);
+  }
   return [...urls];
 }
 
@@ -169,16 +171,33 @@ function escapeAttribute(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasNativeImageTag(html: string, url: string): boolean {
+  const escapedUrl = escapeRegex(escapeAttribute(url));
+  const imageTags = html.match(new RegExp(`<img\\b[^>]*\\bsrc=(["'])${escapedUrl}\\1[^>]*>`, 'gi')) ?? [];
+  return imageTags.some(
+    (tag) => /\sloading=(["'])lazy\1/i.test(tag) && /\sdecoding=(["'])async\1/i.test(tag)
+  );
+}
+
 async function nativeMarkdownImageErrors(root: string, postsDirectory: string): Promise<string[]> {
   const errors: string[] = [];
-  for (const file of await filesIn(postsDirectory)) {
+  for (const file of await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`)) {
     if (!/\.mdx?$/i.test(file)) continue;
     const { content, data } = matter(await readFile(file, 'utf8'));
     if (typeof data.legacySlug !== 'string') continue;
-    const postOutput = await readFile(join(root, 'posts', data.legacySlug, 'index.html'), 'utf8');
+    let postOutput: string;
+    try {
+      postOutput = await readFile(join(root, 'posts', data.legacySlug, 'index.html'), 'utf8');
+    } catch {
+      errors.push(`Missing Markdown image output for post route: /posts/${data.legacySlug}/`);
+      continue;
+    }
     for (const url of markdownImageUrls(content)) {
-      const expectedImage = `<img src="${escapeAttribute(url)}" loading="lazy" decoding="async"`;
-      if (!postOutput.includes(expectedImage)) {
+      if (!hasNativeImageTag(postOutput, url)) {
         errors.push(`Markdown image was optimized instead of emitted as a native image: ${url}`);
       }
     }
@@ -186,26 +205,44 @@ async function nativeMarkdownImageErrors(root: string, postsDirectory: string): 
   return errors;
 }
 
-async function main(): Promise<void> {
-  const projectRoot = process.cwd();
-  const routes = await expectedPostRoutes(resolve(projectRoot, 'src/content/posts'));
+export async function inspectProjectBuiltSite(projectRoot: string): Promise<BuiltSiteCheckResult> {
+  const errors: string[] = [];
+  const postsDirectory = resolve(projectRoot, 'src/content/posts');
+  const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
+  const routes: string[] = [];
+  for (const file of postFiles) {
+    if (!/\.mdx?$/i.test(file)) continue;
+    const { data } = matter(await readFile(file, 'utf8'));
+    if (typeof data.legacySlug === 'string') routes.push(`/posts/${data.legacySlug}/`);
+  }
+  if (routes.length !== 40 || new Set(routes).size !== 40) {
+    errors.push(`Expected 40 unique legacy post routes, found ${new Set(routes).size}.`);
+  }
+
   const distPath = resolve(projectRoot, 'dist');
-  const errors = routes.length === 40 && new Set(routes).size === 40
-    ? []
-    : [`Expected 40 unique legacy post routes, found ${new Set(routes).size}.`];
-  const generatedPostCount = (await filesIn(join(distPath, 'posts')))
+  const postOutputFiles = await filesInOrEmpty(
+    join(distPath, 'posts'),
+    errors,
+    'Missing generated posts directory: /posts/'
+  );
+  const generatedPostCount = postOutputFiles
     .filter((file) => /^[^/]+\/index\.html$/.test(relative(join(distPath, 'posts'), file).replaceAll('\\', '/')))
     .length;
   if (generatedPostCount !== 40) errors.push(`Expected 40 generated post routes, found ${generatedPostCount}.`);
+
   const result = await inspectBuiltSite(distPath, routes, {
     sourceCnamePath: resolve(projectRoot, 'public/CNAME')
   });
-  errors.push(...result.errors);
-  errors.push(...(await nativeMarkdownImageErrors(distPath, resolve(projectRoot, 'src/content/posts'))));
+  errors.push(...result.errors, ...(await nativeMarkdownImageErrors(distPath, postsDirectory)));
+  return { ...result, errors };
+}
 
-  console.log(`Checked ${generatedPostCount} generated post routes, ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);
-  if (errors.length > 0) {
-    for (const error of errors) console.error(error);
+async function main(): Promise<void> {
+  const result = await inspectProjectBuiltSite(process.cwd());
+
+  console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);
+  if (result.errors.length > 0) {
+    for (const error of result.errors) console.error(error);
     process.exitCode = 1;
   }
 }

@@ -18,16 +18,30 @@ type ImageNode = {
 
 function replaceFailedHtmlImages(value: string, failedUrls: ReadonlySet<string>): string {
   return value.replace(/<img\b[^>]*>/gi, (tag) => {
-    const source = tag.match(/\bsrc=(["'])([^"']+)\1/i);
-    if (!source || !failedUrls.has(source[2]) || UNSUPPORTED_EXTENSION.test(source[2])) return tag;
+    const source = tag.match(/\ssrc=(["'])([^"']+)\1/i);
+    if (!source || !REMOTE_IMAGE_URL.test(source[2])) return tag;
+    if (!failedUrls.has(source[2]) || UNSUPPORTED_EXTENSION.test(source[2])) return nativeImageTag(tag);
 
     const originalUrl = source[2];
     const placeholderSource = `src=${source[1]}${PLACEHOLDER_URL}${source[1]}`;
-    return `${tag.replace(source[0], placeholderSource).replace(/\sdata-original-src=(["'])[^"']*\1/i, '')}`.replace(
-      '>',
-      ` data-original-src=${source[1]}${originalUrl}${source[1]}>`
+    return appendImageAttributes(
+      tag.replace(source[0], ` ${placeholderSource}`).replace(/\sdata-original-src=(["'])[^"']*\1/i, ''),
+      [`data-original-src=${source[1]}${escapeAttribute(originalUrl)}${source[1]}`]
     );
   });
+}
+
+function nativeImageTag(tag: string): string {
+  const additions = [
+    /\sloading(?:\s|=|>|\/)/i.test(tag) ? '' : 'loading="lazy"',
+    /\sdecoding(?:\s|=|>|\/)/i.test(tag) ? '' : 'decoding="async"'
+  ].filter(Boolean);
+  return appendImageAttributes(tag, additions);
+}
+
+function appendImageAttributes(tag: string, attributes: string[]): string {
+  if (attributes.length === 0) return tag;
+  return tag.replace(/(\s*\/?>)$/, ` ${attributes.join(' ')}$1`);
 }
 
 function escapeAttribute(value: string): string {

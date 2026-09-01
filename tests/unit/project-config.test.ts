@@ -32,4 +32,13 @@ describe('Astro project tooling', () => {
     );
     expect(playwrightConfig.snapshotPathTemplate).not.toContain('platform');
   });
+
+  it('limits Pages write permissions to the deployment job', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8');
+    const workflowPermissions = workflow.match(/^permissions:\r?\n((?:  .+\r?\n)+)/m)?.[1];
+    const deployJob = workflow.slice(workflow.indexOf('\n  deploy:'));
+
+    expect(workflowPermissions).toBe('  contents: read\n');
+    expect(deployJob).toContain('    permissions:\n      pages: write\n      id-token: write\n');
+  });
 });

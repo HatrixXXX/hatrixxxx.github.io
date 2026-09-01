@@ -170,6 +170,55 @@ describe('remark image status', () => {
     });
   });
 
+  it('keeps the original URL attribute inside a self-closing failed raw HTML image', () => {
+    const failedUrl = 'https://cdn.jsdelivr.net/missing.png';
+    const tree = {
+      type: 'root',
+      children: [{ type: 'html', value: `<img src="${failedUrl}" alt="diagram" />` }]
+    };
+
+    remarkImageStatus(new Set([failedUrl]))(tree);
+
+    expect(tree.children[0]).toMatchObject({
+      value: '<img src="/images/image-unavailable.svg" alt="diagram" data-original-src="https://cdn.jsdelivr.net/missing.png" />'
+    });
+  });
+
+  it('normalizes a successful CMOS-style raw HTML image without dropping attributes', () => {
+    const imageUrl = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/20250619232906716.png';
+    const tree = {
+      type: 'root',
+      children: [{
+        type: 'html',
+        value: `<img src="${imageUrl}" alt="CMOS sensor" class="diagram" style="zoom:50%;" data-source="CMOS" />`
+      }]
+    };
+
+    const transformer = remarkImageStatus(new Set());
+    transformer(tree);
+    transformer(tree);
+
+    expect(tree.children[0]).toMatchObject({
+      value: `<img src="${imageUrl}" alt="CMOS sensor" class="diagram" style="zoom:50%;" data-source="CMOS" loading="lazy" decoding="async" />`
+    });
+  });
+
+  it('adds lazy loading to successful raw HTML GIF and SVG images without replacing them', () => {
+    const tree = {
+      type: 'root',
+      children: [{
+        type: 'html',
+        value: '<img src="https://cdn.jsdelivr.net/diagram.gif" alt="animation"><img src="https://cdn.jsdelivr.net/diagram.svg" alt="vector" decoding="sync">'
+      }]
+    };
+
+    remarkImageStatus(new Set())(tree);
+
+    expect(tree.children[0]).toMatchObject({
+      value: '<img src="https://cdn.jsdelivr.net/diagram.gif" alt="animation" loading="lazy" decoding="async"><img src="https://cdn.jsdelivr.net/diagram.svg" alt="vector" decoding="sync" loading="lazy">'
+    });
+  });
+
   it.each(['https://cdn.jsdelivr.net/missing.gif', 'https://cdn.jsdelivr.net/missing.svg'])(
     'keeps unsupported image format %s as a native remote image',
     (failedUrl) => {

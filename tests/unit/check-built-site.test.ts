@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { inspectBuiltSite } from '../../scripts/check-built-site';
+import { inspectBuiltSite, inspectProjectBuiltSite } from '../../scripts/check-built-site';
 
 async function writeSiteFile(root: string, relativePath: string, contents = ''): Promise<void> {
   const target = join(root, ...relativePath.split('/'));
@@ -44,4 +44,23 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
   const result = await inspectBuiltSite(root, [postRoute]);
 
   expect(result.errors).toEqual([]);
+});
+
+it('aggregates missing post output errors without throwing', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
+  await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'src/content/posts/example.md', '---\nlegacySlug: absent\n---\n');
+  await writeSiteFile(root, 'dist/index.html');
+  await writeSiteFile(root, 'dist/404.html');
+  await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'dist/rss.xml');
+  await writeSiteFile(root, 'dist/search-index.json', '[]');
+  await writeSiteFile(root, 'dist/sitemap-0.xml');
+
+  await expect(inspectProjectBuiltSite(root)).resolves.toMatchObject({
+    errors: expect.arrayContaining([
+      expect.stringContaining('Missing generated posts directory'),
+      expect.stringContaining('/posts/absent/')
+    ])
+  });
 });
