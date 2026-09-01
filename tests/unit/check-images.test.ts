@@ -110,6 +110,21 @@ describe('remote image checking', () => {
 });
 
 describe('remark image status', () => {
+  it('renders a successful remote Markdown raster image as a lazy native image', () => {
+    const imageUrl = 'https://cdn.jsdelivr.net/diagram.png';
+    const tree = {
+      type: 'root',
+      children: [{ type: 'image', url: imageUrl, alt: 'diagram <overview>' }]
+    };
+
+    remarkImageStatus(new Set())(tree);
+
+    expect(tree.children[0]).toMatchObject({
+      type: 'html',
+      value: '<img src="https://cdn.jsdelivr.net/diagram.png" loading="lazy" decoding="async" alt="diagram &lt;overview&gt;">'
+    });
+  });
+
   it('replaces a failed image while preserving its alt text and original URL', () => {
     const failedUrl = 'https://cdn.jsdelivr.net/missing.png';
     const tree = {
@@ -156,13 +171,16 @@ describe('remark image status', () => {
   });
 
   it.each(['https://cdn.jsdelivr.net/missing.gif', 'https://cdn.jsdelivr.net/missing.svg'])(
-    'does not replace unsupported image format %s',
+    'keeps unsupported image format %s as a native remote image',
     (failedUrl) => {
       const tree = { type: 'root', children: [{ type: 'image', url: failedUrl, alt: 'animated' }] };
 
       remarkImageStatus(new Set([failedUrl]))(tree);
 
-      expect(tree.children[0]).toMatchObject({ url: failedUrl, alt: 'animated' });
+      expect(tree.children[0]).toMatchObject({
+        type: 'html',
+        value: `<img src="${failedUrl}" loading="lazy" decoding="async" alt="animated">`
+      });
     }
   );
 });

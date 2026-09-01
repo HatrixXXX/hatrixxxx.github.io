@@ -18,7 +18,7 @@ const tagCount = buildTaxonomy(posts, 'tags').size;
 <BaseLayout title={SITE.title}>
   <HeroBanner title={SITE.title} subtitle={SITE.tagline} image="/images/default-cover.svg" />
   <WaveDivider />
-  <main class="home-main container with-sidebar">
+  <main id="articles" class="home-main container with-sidebar">
     <div class="home-feed">
       <PostList posts={page.items} />
       <Pagination current={page.current} total={page.total} basePath="/page/" />

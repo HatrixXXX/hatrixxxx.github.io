@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 const PLACEHOLDER_URL = '/images/image-unavailable.svg';
 const UNSUPPORTED_EXTENSION = /\.(?:gif|svg)(?:$|[?#])/i;
+const REMOTE_IMAGE_URL = /^https?:\/\//i;
 let cachedFailedUrls: Set<string> | undefined;
 let warnedAboutMissingReport = false;
 
@@ -29,6 +30,14 @@ function replaceFailedHtmlImages(value: string, failedUrls: ReadonlySet<string>)
   });
 }
 
+function escapeAttribute(value: string): string {
+  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+function nativeImageHtml(url: string, alt: string | null | undefined): string {
+  return `<img src="${escapeAttribute(url)}" loading="lazy" decoding="async" alt="${escapeAttribute(alt ?? '')}">`;
+}
+
 function failedUrlsFromReport(): Set<string> {
   if (cachedFailedUrls) return cachedFailedUrls;
 
@@ -50,13 +59,22 @@ function failedUrlsFromReport(): Set<string> {
 }
 
 function visit(node: ImageNode, failedUrls: ReadonlySet<string>): void {
-  if (node.type === 'image' && node.url && failedUrls.has(node.url) && !UNSUPPORTED_EXTENSION.test(node.url)) {
+  if (node.type === 'image' && node.url && REMOTE_IMAGE_URL.test(node.url)) {
     const originalUrl = node.url;
-    node.url = PLACEHOLDER_URL;
-    node.data = {
-      ...node.data,
-      hProperties: { ...node.data?.hProperties, 'data-original-src': originalUrl }
-    };
+    const isReplaceableFailure = failedUrls.has(originalUrl) && !UNSUPPORTED_EXTENSION.test(originalUrl);
+    if (isReplaceableFailure) {
+      node.url = PLACEHOLDER_URL;
+      node.data = {
+        ...node.data,
+        hProperties: { ...node.data?.hProperties, 'data-original-src': originalUrl }
+      };
+    } else {
+      node.type = 'html';
+      node.value = nativeImageHtml(originalUrl, node.alt);
+      delete node.url;
+      delete node.alt;
+      delete node.data;
+    }
   }
   if (node.type === 'html' && node.value) node.value = replaceFailedHtmlImages(node.value, failedUrls);
   for (const child of node.children ?? []) visit(child, failedUrls);

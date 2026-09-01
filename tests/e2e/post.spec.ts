@@ -44,6 +44,13 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
   );
 });
 
+test('article navigation targets the home article feed', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByRole('link', { name: '文章' }).first()).toHaveAttribute('href', '/#articles');
+  await expect(page.locator('main#articles')).toBeVisible();
+});
+
 test('all legacy slugs resolve, including the spaced slug clicked from pagination', async ({
   page,
   request
