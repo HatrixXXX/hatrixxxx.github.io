@@ -1,11 +1,14 @@
 import { stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
-import { inputPixelLimitReason, readSourceMetadata } from './animated.mjs';
+import { animatedFrameHeight, inputPixelLimitReason, readSourceMetadata } from './animated.mjs';
 import { fullOutputPath, thumbnailOutputPath, cdnUrl } from './paths.mjs';
 import { resolveSafeImagePath, resolveSafePath } from './safe-paths.mjs';
 import { scanReferences } from './scan.mjs';
 
 const FULL_FORMATS = new Set(['png', 'jpeg', 'gif', 'bmp']);
+const GENERATED_DIRECTORIES = ['img/optimized/', 'img/thumbnails/'];
+const FULL_SHA = /^[0-9a-f]{40}$/u;
+export const MANIFEST_SCHEMA_VERSION = 3;
 
 function commitAt(root) {
   try {
@@ -29,11 +32,87 @@ function outputFor(outputPath, eligible, reason) {
   };
 }
 
+function sourceMetadata(metadata) {
+  return {
+    format: metadata.format ?? 'unknown',
+    width: metadata.width ?? 0,
+    height: animatedFrameHeight(metadata),
+    pages: Math.max(metadata.pages ?? 1, 1)
+  };
+}
+
+function assertOutput(output, label) {
+  if (!output || typeof output !== 'object') throw new Error(`manifest ${label} is missing`);
+  if (typeof output.path !== 'string' || typeof output.url !== 'string' ||
+      typeof output.adopted !== 'boolean' || typeof output.reason !== 'string') {
+    throw new Error(`manifest ${label} fields are incomplete`);
+  }
+  if (output.adopted && (!Number.isSafeInteger(output.outputBytes) || output.outputBytes < 0)) {
+    throw new Error(`manifest ${label} outputBytes is invalid`);
+  }
+  if (output.adopted && (typeof output.format !== 'string' ||
+      !Number.isSafeInteger(output.width) || output.width < 1 ||
+      !Number.isSafeInteger(output.height) || output.height < 1 ||
+      !Number.isSafeInteger(output.pages) || output.pages < 1)) {
+    throw new Error(`manifest ${label} metadata is invalid`);
+  }
+}
+
+export function validateManifest(manifest, { requirePublished = false } = {}) {
+  if (!manifest || typeof manifest !== 'object' || manifest.schemaVersion !== MANIFEST_SCHEMA_VERSION) {
+    throw new Error(`manifest schemaVersion must be ${MANIFEST_SCHEMA_VERSION}`);
+  }
+  if (!Array.isArray(manifest.entries) || !Object.hasOwn(manifest, 'sourceImageCommit') ||
+      !Object.hasOwn(manifest, 'publishedImageCommit')) {
+    throw new Error('manifest top-level fields are incomplete');
+  }
+  if (manifest.sourceImageCommit !== null && !FULL_SHA.test(manifest.sourceImageCommit)) {
+    throw new Error('manifest sourceImageCommit must be null or a full SHA');
+  }
+  if (manifest.publishedImageCommit !== null && !FULL_SHA.test(manifest.publishedImageCommit)) {
+    throw new Error('manifest publishedImageCommit must be null or a full SHA');
+  }
+  if (requirePublished && !FULL_SHA.test(manifest.publishedImageCommit ?? '')) {
+    throw new Error('manifest publishedImageCommit must be a full SHA');
+  }
+  for (const [index, entry] of manifest.entries.entries()) {
+    if (typeof entry.sourcePath !== 'string' || !Number.isSafeInteger(entry.sourceBytes) ||
+        entry.sourceBytes < 0 || !entry.source || typeof entry.source !== 'object' ||
+        typeof entry.source.format !== 'string' || !Number.isSafeInteger(entry.source.width) ||
+        entry.source.width < 1 || !Number.isSafeInteger(entry.source.height) || entry.source.height < 1 ||
+        !Number.isSafeInteger(entry.source.pages) || entry.source.pages < 1 ||
+        !Array.isArray(entry.references)) {
+      throw new Error(`manifest entry ${index} fields are incomplete`);
+    }
+    assertOutput(entry.full, `entry ${index} full output`);
+    assertOutput(entry.thumbnail, `entry ${index} thumbnail output`);
+  }
+  return manifest;
+}
+
+function previousPaths(manifest) {
+  const paths = new Map();
+  for (const entry of manifest.entries) {
+    for (const path of [
+      entry.sourcePath,
+      ...(entry.full.adopted ? [entry.full.path] : []),
+      ...(entry.thumbnail.adopted ? [entry.thumbnail.path] : [])
+    ]) {
+      const existing = paths.get(path);
+      if (existing && existing !== entry.sourcePath) {
+        throw new Error(`manifest path maps to multiple sources: ${path}`);
+      }
+      paths.set(path, entry.sourcePath);
+    }
+  }
+  return paths;
+}
+
 function rejectOutputCollisions(entries) {
   const sourcesByOutputPath = new Map();
   for (const { sourcePath, full, thumbnail } of entries) {
     for (const output of [full, thumbnail]) {
-      if (output.reason !== 'eligible') continue;
+      if (output.reason !== 'eligible' && !output.adopted) continue;
       const existing = sourcesByOutputPath.get(output.path);
       if (existing && existing !== sourcePath) {
         throw new Error(`generated output collision: ${output.path} from ${existing} and ${sourcePath}`);
@@ -44,10 +123,18 @@ function rejectOutputCollisions(entries) {
 }
 
 export async function buildManifest(blogRoot, imageRoot, options = {}) {
-  const { readMetadata = readSourceMetadata } = options;
+  const { readMetadata = readSourceMetadata, previousManifest = null } = options;
+  const knownPaths = previousManifest
+    ? previousPaths(validateManifest(previousManifest))
+    : new Map();
   const grouped = new Map();
   for (const reference of await scanReferences(blogRoot)) {
     await resolveSafePath(blogRoot, reference.file, 'blog source');
+    await resolveSafeImagePath(imageRoot, reference.repoPath);
+    if (knownPaths.has(reference.repoPath)) continue;
+    if (GENERATED_DIRECTORIES.some((directory) => reference.repoPath.startsWith(directory))) {
+      throw new Error(`referenced generated output is missing from manifest: ${reference.repoPath}`);
+    }
     const references = grouped.get(reference.repoPath) ?? [];
     references.push(reference);
     grouped.set(reference.repoPath, references);
@@ -65,6 +152,7 @@ export async function buildManifest(blogRoot, imageRoot, options = {}) {
     entries.push({
       sourcePath,
       sourceBytes,
+      source: sourceMetadata(metadata),
       references,
       full: outputFor(
         fullOutputPath(sourcePath),
@@ -78,15 +166,24 @@ export async function buildManifest(blogRoot, imageRoot, options = {}) {
       )
     });
   }
-  rejectOutputCollisions(entries);
+  const previousEntries = previousManifest?.entries ?? [];
+  rejectOutputCollisions([...previousEntries, ...entries]);
+
+  if (previousManifest) {
+    await validateWorkingAdoptedOutputs(previousManifest, imageRoot, { readMetadata });
+  }
+  if (previousManifest && entries.length === 0) {
+    return previousManifest;
+  }
 
   return {
-    schemaVersion: 2,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
     blogCommit: commitAt(blogRoot),
     sourceImageCommit: commitAt(imageRoot),
     publishedImageCommit: null,
-    entries
+    entries: [...previousEntries, ...entries]
+      .sort(({ sourcePath: a }, { sourcePath: b }) => a.localeCompare(b))
   };
 }
 
@@ -104,17 +201,13 @@ function resolveCommit(imageRoot, imageCommit) {
 }
 
 function adoptedOutputs(manifest) {
-  if (manifest.schemaVersion !== 2) throw new Error('manifest schemaVersion must be 2');
-  if (!Object.hasOwn(manifest, 'sourceImageCommit') || !Object.hasOwn(manifest, 'publishedImageCommit')) {
-    throw new Error('manifest commit fields are incomplete');
-  }
+  validateManifest(manifest);
   return manifest.entries.flatMap(({ full, thumbnail }) => [full, thumbnail]).filter(({ adopted }) => adopted);
 }
 
-export async function stampPublishedImageCommit(manifest, imageRoot, imageCommit) {
-  const outputs = adoptedOutputs(manifest);
-  const resolvedCommit = resolveCommit(imageRoot, imageCommit);
-  for (const output of outputs) {
+export async function validateWorkingAdoptedOutputs(manifest, imageRoot, options = {}) {
+  const { readMetadata = readSourceMetadata } = options;
+  for (const output of adoptedOutputs(manifest)) {
     if (!output.path.startsWith('img/optimized/') && !output.path.startsWith('img/thumbnails/')) {
       throw new Error(`invalid adopted output path: ${output.path}`);
     }
@@ -123,7 +216,27 @@ export async function stampPublishedImageCommit(manifest, imageRoot, imageCommit
     if (localBytes !== output.outputBytes) {
       throw new Error(`working output byte count does not match manifest: ${output.path}`);
     }
+    const metadata = await readMetadata(localPath);
+    const actual = {
+      format: metadata.format ?? 'unknown',
+      width: metadata.width ?? 0,
+      height: animatedFrameHeight(metadata),
+      pages: Math.max(metadata.pages ?? 1, 1)
+    };
+    for (const key of ['format', 'width', 'height', 'pages']) {
+      if (output[key] !== actual[key]) {
+        throw new Error(`working output ${key} does not match manifest: ${output.path}`);
+      }
+    }
+  }
+}
 
+export async function stampPublishedImageCommit(manifest, imageRoot, imageCommit) {
+  const outputs = adoptedOutputs(manifest);
+  const resolvedCommit = resolveCommit(imageRoot, imageCommit);
+  await validateWorkingAdoptedOutputs(manifest, imageRoot);
+  for (const output of outputs) {
+    const localPath = await resolveSafeImagePath(imageRoot, output.path);
     let committedBlob;
     try {
       committedBlob = execFileSync('git', ['rev-parse', '--verify', `${resolvedCommit}:${output.path}`], {
@@ -150,6 +263,12 @@ export async function stampPublishedImageCommit(manifest, imageRoot, imageCommit
     }
   }
   return { ...manifest, publishedImageCommit: resolvedCommit };
+}
+
+export async function validatePublishedManifest(manifest, imageRoot) {
+  validateManifest(manifest, { requirePublished: true });
+  await stampPublishedImageCommit(manifest, imageRoot, manifest.publishedImageCommit);
+  return manifest;
 }
 
 export function pruneCandidates(manifest, currentRefs) {

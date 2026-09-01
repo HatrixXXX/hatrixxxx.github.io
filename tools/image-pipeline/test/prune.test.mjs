@@ -30,10 +30,13 @@ test('builds eligible output records from an uncommitted fixture', async () => {
 
   const manifest = await buildManifest(blogRoot, imageRoot);
 
-  assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.schemaVersion, 3);
   assert.equal(manifest.blogCommit, null);
   assert.equal(manifest.sourceImageCommit, null);
   assert.equal(manifest.publishedImageCommit, null);
+  assert.deepEqual(manifest.entries[0].source, {
+    format: 'png', width: 2, height: 2, pages: 1
+  });
   assert.deepEqual(manifest.entries.map(({ sourcePath, full, thumbnail }) => ({
     sourcePath, full: full.reason, thumbnail: thumbnail.reason
   })), [{ sourcePath: 'img/cover.png', full: 'eligible', thumbnail: 'eligible' }]);

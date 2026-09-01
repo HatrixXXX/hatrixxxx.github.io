@@ -1,6 +1,6 @@
 # 图像迁移管线
 
-这套脚本扫描 `_posts`、`_draft` 和 `_tabs` 中的 jsDelivr 图床链接。`audit` 只生成报告；`apply` 生成 WebP、改写博客引用并写入 manifest；`prune` 删除已经迁移且不再被引用的原图。
+这套脚本扫描 `_posts`、`_draft` 和 `_tabs` 中的 jsDelivr 图床链接。`audit` 只生成报告；`apply` 生成 WebP、改写博客引用并写入 manifest；`prune` 默认生成删除计划，收到明确确认后才删除原图。
 
 ## 环境与路径
 
@@ -32,7 +32,7 @@ npm run images -- audit `
   --report $AuditReport
 ```
 
-检查报告中的缺失源文件、输出路径冲突、引用位置和跳过原因。报告目录已被 Git 忽略，不要把审计报告当作 `tools/image-pipeline/manifest.json` 使用。
+检查报告中的缺失源文件、输出路径冲突、引用位置和跳过原因。`audit` 不编码临时图片，报告只列来源字节数和转换资格，不预测输出大小。实际输出大小和节省量由 `apply` 写入 manifest。报告目录已被 Git 忽略，不要把审计报告当作 `tools/image-pipeline/manifest.json` 使用。
 
 ## apply：生成文件并迁移引用
 
@@ -51,7 +51,7 @@ if ($ImageChanges.Count -ne 0) {
 }
 ```
 
-当前实现用于从原图引用状态执行一次迁移，不会跳过已经位于 `img/optimized/` 或 `img/thumbnails/` 的引用。迁移后的工作树不能直接再次执行 `apply`，否则会产生 `.webp.webp` 的二次输出。先审阅 `audit` 报告，并确认待迁移内容仍引用原图。
+`apply` 会读取现有 manifest，把已采用的完整图和缩略图映射回原图，只转换新增原图。所有既有 adopted outputs 必须通过路径、字节数、格式、尺寸和页数检查。输入没有变化时，重复执行不会改图片、博客文件或 manifest。
 
 ```powershell
 npm run images -- apply `
@@ -66,7 +66,7 @@ npm run images -- apply `
 - 博客引用改为采用的完整图 URL，并在发布封面下增加 `image.thumbnail`；
 - 结果写入 `tools/image-pipeline/manifest.json`。
 
-manifest schema v2 用两个字段区分提交：`sourceImageCommit` 是 apply 前读取原图时的图床快照，`publishedImageCommit` 在 apply 后保持 `null`。输出提交发布并通过 `stamp` 校验后，后一个字段才会写入完整 SHA。
+manifest schema v3 用两个字段区分提交：`sourceImageCommit` 是 apply 前读取原图时的图床快照，`publishedImageCommit` 在 apply 后保持 `null`。每个 entry 的 `source` 记录格式、宽高和页数；动画高度是单帧高度。输出提交发布并通过 `stamp` 校验后，`publishedImageCommit` 才会写入完整 SHA。
 
 输出路径只保留源文件名，不保留源目录。脚本会拒绝同名输出冲突。完整图只有在尺寸、动画元数据和文件大小检查通过时才会采用；否则博客继续引用原图，原因记录在 manifest 中。
 
@@ -151,7 +151,7 @@ finally {
 
 ## prune：删除无引用原图
 
-`prune` 是删除命令，没有 dry-run 模式。只有博客迁移已经部署、线上引用检查通过、备份分支指针核对无误并得到明确删除许可后，才运行它。两个工作树仍须干净。
+`prune` 要求两个工作树干净，并要求 `--report`。不传 `--confirm-prune` 时只做预检并写 dry-run 报告。预检包括 manifest schema v3、完整的 `publishedImageCommit`、该提交中的全部 adopted outputs，以及每个候选源文件的安全路径和字节数。任一项失败都不会删除文件。
 
 ```powershell
 $BlogChanges = @(git -C $BlogRoot status --porcelain)
@@ -163,10 +163,20 @@ if ($BlogChanges.Count -ne 0 -or $ImageChanges.Count -ne 0) {
 npm run images -- prune `
   --blog-root $BlogRoot `
   --image-root $ImageRoot `
+  --report (Join-Path $BlogRoot 'reports\image-pipeline-prune.json')
+```
+
+报告中的 `candidates` 按路径排序，逐项包含 `path` 和 `bytes`，`totalBytes` 是总字节数。dry-run 的 `mode` 为 `dry-run`，`status` 为 `planned`。核对报告并再次取得删除许可后，追加确认参数：
+
+```powershell
+npm run images -- prune `
+  --blog-root $BlogRoot `
+  --image-root $ImageRoot `
+  --report (Join-Path $BlogRoot 'reports\image-pipeline-prune.json') `
   --confirm-prune
 ```
 
-脚本读取已提交的 manifest，重新扫描博客，只删除 `full.adopted` 为 `true` 且当前零引用的 `sourcePath`。删除列表会打印到终端。提交前检查图床差异，确认没有删除保留项或新输出。
+确认模式在完成全部预检后才开始删除。成功报告的 `status` 为 `completed`，`deleted` 列出实际删除路径。提交前检查图床差异，确认没有删除保留项或新输出。
 
 ## 回滚
 

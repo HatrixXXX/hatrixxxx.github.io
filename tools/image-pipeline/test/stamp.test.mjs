@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import sharp from 'sharp';
 import { stampPublishedImageCommit } from '../manifest.mjs';
 
 function commitFixture(root, message) {
@@ -17,21 +18,44 @@ async function createFixture() {
   execFileSync('git', ['init', '--quiet'], { cwd: imageRoot });
   execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: imageRoot });
   execFileSync('git', ['config', 'user.name', 'Image Pipeline Test'], { cwd: imageRoot });
+  execFileSync('git', ['config', 'core.autocrlf', 'false'], { cwd: imageRoot });
   await writeFile(join(imageRoot, '.gitkeep'), '');
   const sourceCommit = commitFixture(imageRoot, 'source');
   const outputPath = 'img/optimized/cover.png.webp';
   await mkdir(join(imageRoot, 'img', 'optimized'), { recursive: true });
-  await writeFile(join(imageRoot, outputPath), 'published-output');
+  await sharp({ create: { width: 2, height: 2, channels: 3, background: 'red' } })
+    .webp().toFile(join(imageRoot, outputPath));
   const outputBytes = (await stat(join(imageRoot, outputPath))).size;
   const publishedCommit = commitFixture(imageRoot, 'outputs');
   const manifest = {
-    schemaVersion: 2,
+    schemaVersion: 3,
+    generatedAt: '2026-09-02T00:00:00.000Z',
+    blogCommit: null,
     sourceImageCommit: sourceCommit,
     publishedImageCommit: null,
     entries: [{
       sourcePath: 'img/cover.png',
-      full: { adopted: true, path: outputPath, outputBytes },
-      thumbnail: { adopted: false, path: 'img/thumbnails/cover.png.webp', outputBytes: null }
+      sourceBytes: 1,
+      source: { format: 'png', width: 2, height: 2, pages: 1 },
+      references: [],
+      full: {
+        adopted: true,
+        path: outputPath,
+        url: `https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/${outputPath}`,
+        outputBytes,
+        reason: 'smaller',
+        width: 2,
+        height: 2,
+        pages: 1,
+        format: 'webp'
+      },
+      thumbnail: {
+        adopted: false,
+        path: 'img/thumbnails/cover.png.webp',
+        url: 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/thumbnails/cover.png.webp',
+        outputBytes: null,
+        reason: 'not-published-cover'
+      }
     }]
   };
   return { imageRoot, manifest, outputPath, publishedCommit, sourceCommit };
@@ -67,7 +91,7 @@ test('rejects schema v1 with an ambiguous imageCommit field', async () => {
 
   await assert.rejects(
     stampPublishedImageCommit(legacyManifest, imageRoot, publishedCommit),
-    /manifest schemaVersion must be 2/u
+    /manifest schemaVersion must be 3/u
   );
 });
 
@@ -82,7 +106,9 @@ test('rejects a commit that does not contain an adopted output', async () => {
 
 test('rejects a committed blob that differs from the working output', async () => {
   const { imageRoot, manifest, outputPath, publishedCommit } = await createFixture();
-  await writeFile(join(imageRoot, outputPath), 'different-output');
+  const changed = await readFile(join(imageRoot, outputPath));
+  changed[changed.length - 1] ^= 1;
+  await writeFile(join(imageRoot, outputPath), changed);
 
   await assert.rejects(
     stampPublishedImageCommit(manifest, imageRoot, publishedCommit),

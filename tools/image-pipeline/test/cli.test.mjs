@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, stat, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, stat, symlink, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,9 +14,28 @@ function commitFixture(root) {
   execFileSync('git', ['init', '--quiet'], { cwd: root });
   execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
   execFileSync('git', ['config', 'user.name', 'Image Pipeline Test'], { cwd: root });
+  execFileSync('git', ['config', 'core.autocrlf', 'false'], { cwd: root });
+  return commitChanges(root, 'fixture');
+}
+
+function commitChanges(root, message) {
   execFileSync('git', ['add', '.'], { cwd: root });
-  execFileSync('git', ['commit', '--quiet', '-m', 'fixture'], { cwd: root });
+  execFileSync('git', ['commit', '--quiet', '-m', message], { cwd: root });
   return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+}
+
+function worktreeStatus(root) {
+  return execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' });
+}
+
+async function pathExists(path) {
+  try {
+    await stat(path);
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
 }
 
 async function createStampFixture() {
@@ -26,21 +45,44 @@ async function createStampFixture() {
   const outputPath = 'img/optimized/cover.png.webp';
   await mkdir(join(blogRoot, 'tools', 'image-pipeline'), { recursive: true });
   await mkdir(join(imageRoot, 'img', 'optimized'), { recursive: true });
-  await writeFile(join(imageRoot, outputPath), 'published-output');
+  await sharp({ create: { width: 2, height: 2, channels: 3, background: 'red' } })
+    .webp().toFile(join(imageRoot, outputPath));
   commitFixture(imageRoot);
   const imageCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
     cwd: imageRoot,
     encoding: 'utf8'
   }).trim();
   const manifestPath = join(blogRoot, 'tools', 'image-pipeline', 'manifest.json');
+  const outputBytes = (await stat(join(imageRoot, outputPath))).size;
   const manifest = {
-    schemaVersion: 2,
-    sourceImageCommit: null,
+    schemaVersion: 3,
+    generatedAt: '2026-09-02T00:00:00.000Z',
+    blogCommit: null,
+    sourceImageCommit: imageCommit,
     publishedImageCommit: null,
     entries: [{
       sourcePath: 'img/cover.png',
-      full: { adopted: true, path: outputPath, outputBytes: 16 },
-      thumbnail: { adopted: false, path: 'img/thumbnails/cover.png.webp', outputBytes: null }
+      sourceBytes: 1,
+      source: { format: 'png', width: 2, height: 2, pages: 1 },
+      references: [],
+      full: {
+        adopted: true,
+        path: outputPath,
+        url: `${PREFIX}${outputPath}`,
+        outputBytes,
+        reason: 'smaller',
+        width: 2,
+        height: 2,
+        pages: 1,
+        format: 'webp'
+      },
+      thumbnail: {
+        adopted: false,
+        path: 'img/thumbnails/cover.png.webp',
+        url: `${PREFIX}img/thumbnails/cover.png.webp`,
+        outputBytes: null,
+        reason: 'not-published-cover'
+      }
     }]
   };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -107,6 +149,139 @@ test('apply validates every output parent before installing any staged output', 
   assert.notEqual(result.status, 0);
   assert.equal(await readFile(join(blogRoot, '_posts', 'cover.md'), 'utf8'), post);
   await assert.rejects(stat(join(imageRoot, 'img', 'optimized')), { code: 'ENOENT' });
+});
+
+test('a second identical apply is a byte-for-byte clean no-op', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-cli-double-apply-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  const sourceUrl = `${PREFIX}img/cover.png`;
+  await mkdir(join(blogRoot, '_posts'), { recursive: true });
+  await mkdir(join(imageRoot, 'img'), { recursive: true });
+  await writeFile(join(blogRoot, '_posts', 'cover.md'), `---\nimage:\n  path: ${sourceUrl}\n---\n![](${sourceUrl})\n`);
+  const pixels = Buffer.alloc(800 * 400 * 3);
+  for (let index = 0; index < pixels.length; index += 1) pixels[index] = (index * 31) % 251;
+  await sharp(pixels, { raw: { width: 800, height: 400, channels: 3 } })
+    .png({ compressionLevel: 0 }).toFile(join(imageRoot, 'img', 'cover.png'));
+  commitFixture(blogRoot);
+  commitFixture(imageRoot);
+
+  const first = spawnSync(process.execPath, [CLI, 'apply', '--blog-root', blogRoot, '--image-root', imageRoot], {
+    encoding: 'utf8'
+  });
+  assert.equal(first.status, 0, first.stderr);
+  commitChanges(imageRoot, 'generated outputs');
+  commitChanges(blogRoot, 'migrated references');
+  const manifestPath = join(blogRoot, 'tools', 'image-pipeline', 'manifest.json');
+  const manifestBefore = await readFile(manifestPath, 'utf8');
+  const manifestModifiedBefore = (await stat(manifestPath)).mtimeMs;
+
+  const second = spawnSync(process.execPath, [CLI, 'apply', '--blog-root', blogRoot, '--image-root', imageRoot], {
+    encoding: 'utf8'
+  });
+
+  assert.equal(second.status, 0, second.stderr);
+  assert.equal(await readFile(manifestPath, 'utf8'), manifestBefore);
+  assert.equal((await stat(manifestPath)).mtimeMs, manifestModifiedBefore);
+  assert.equal(worktreeStatus(blogRoot), '');
+  assert.equal(worktreeStatus(imageRoot), '');
+});
+
+async function createPruneFixture({ missingSecondSource = false } = {}) {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-cli-prune-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  const manifestPath = join(blogRoot, 'tools', 'image-pipeline', 'manifest.json');
+  const report = join(root, 'prune-report.json');
+  await mkdir(join(blogRoot, '_posts'), { recursive: true });
+  await mkdir(join(blogRoot, 'tools', 'image-pipeline'), { recursive: true });
+  await mkdir(join(imageRoot, 'img', 'optimized'), { recursive: true });
+  const entries = [];
+  for (const name of ['a', 'b']) {
+    const sourcePath = `img/${name}.png`;
+    const outputPath = `img/optimized/${name}.png.webp`;
+    const source = `${name}-source-bytes`;
+    await writeFile(join(imageRoot, sourcePath), source);
+    await sharp({ create: { width: 1, height: 1, channels: 3, background: name === 'a' ? 'red' : 'blue' } })
+      .webp().toFile(join(imageRoot, outputPath));
+    const outputBytes = (await stat(join(imageRoot, outputPath))).size;
+    entries.push({
+      sourcePath,
+      sourceBytes: Buffer.byteLength(source),
+      source: { format: 'png', width: 1, height: 1, pages: 1 },
+      references: [],
+      full: {
+        path: outputPath,
+        url: `${PREFIX}${outputPath}`,
+        adopted: true,
+        outputBytes,
+        reason: 'smaller',
+        width: 1,
+        height: 1,
+        pages: 1,
+        format: 'webp'
+      },
+      thumbnail: {
+        path: `img/thumbnails/${name}.png.webp`,
+        url: `${PREFIX}img/thumbnails/${name}.png.webp`,
+        adopted: false,
+        outputBytes: null,
+        reason: 'not-published-cover'
+      }
+    });
+  }
+  await writeFile(join(blogRoot, '_posts', 'images.md'), entries.map(({ full }) => `![](${full.url})`).join('\n'));
+  commitFixture(imageRoot);
+  const publishedImageCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: imageRoot,
+    encoding: 'utf8'
+  }).trim();
+  if (missingSecondSource) {
+    await unlink(join(imageRoot, 'img', 'b.png'));
+    commitChanges(imageRoot, 'remove second source');
+  }
+  await writeFile(manifestPath, `${JSON.stringify({
+    schemaVersion: 3,
+    generatedAt: '2026-09-02T00:00:00.000Z',
+    blogCommit: null,
+    sourceImageCommit: publishedImageCommit,
+    publishedImageCommit,
+    entries
+  }, null, 2)}\n`);
+  commitFixture(blogRoot);
+  return { blogRoot, imageRoot, report };
+}
+
+test('prune without confirmation writes an exact dry-run report and deletes nothing', async () => {
+  const { blogRoot, imageRoot, report } = await createPruneFixture();
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'prune', '--blog-root', blogRoot, '--image-root', imageRoot, '--report', report
+  ], { encoding: 'utf8' });
+
+  assert.equal(result.status, 0, result.stderr);
+  const plan = JSON.parse(await readFile(report, 'utf8'));
+  assert.equal(plan.mode, 'dry-run');
+  assert.equal(plan.status, 'planned');
+  assert.deepEqual(plan.candidates, [
+    { path: 'img/a.png', bytes: 14 },
+    { path: 'img/b.png', bytes: 14 }
+  ]);
+  assert.equal(plan.totalBytes, 28);
+  assert.equal(await pathExists(join(imageRoot, 'img', 'a.png')), true);
+  assert.equal(await pathExists(join(imageRoot, 'img', 'b.png')), true);
+});
+
+test('prune preflights every candidate before deleting the first file', async () => {
+  const { blogRoot, imageRoot, report } = await createPruneFixture({ missingSecondSource: true });
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'prune', '--blog-root', blogRoot, '--image-root', imageRoot,
+    '--report', report, '--confirm-prune'
+  ], { encoding: 'utf8' });
+
+  assert.notEqual(result.status, 0);
+  assert.equal(await pathExists(join(imageRoot, 'img', 'a.png')), true);
 });
 
 test('audit rejects a linked root before writing a report for an empty repository', async (t) => {

@@ -3,7 +3,12 @@ import { mkdir, mkdtemp, readFile, rename, rm, stat, unlink, writeFile } from 'n
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { createThumbnail, optimizeFull } from './convert.mjs';
-import { buildManifest, pruneCandidates, stampPublishedImageCommit } from './manifest.mjs';
+import {
+  buildManifest,
+  pruneCandidates,
+  stampPublishedImageCommit,
+  validatePublishedManifest
+} from './manifest.mjs';
 import { scanReferences } from './scan.mjs';
 import { assertSafeRoot, resolveSafeImagePath, resolveSafePath } from './safe-paths.mjs';
 import { applyReferenceMap, upsertThumbnail } from './update.mjs';
@@ -15,14 +20,14 @@ Commands:
   audit  Scan both repositories and write the required --report JSON file.
   apply  Require clean worktrees, create eligible WebP outputs, update references, and write the manifest.
   stamp  Verify adopted outputs at --image-commit and record the resolved commit in the manifest.
-  prune  Require clean worktrees and --confirm-prune before deleting adopted, unreferenced source images.
+  prune  Require clean worktrees and --report; dry-run unless --confirm-prune is supplied.
 
 Options:
   --blog-root <path>   Required absolute blog repository path.
   --image-root <path>  Required absolute image repository path.
-  --report <path>      Required audit report path.
+  --report <path>      Required audit or prune JSON report path.
   --image-commit <id>  Required explicit image commit/ref for stamp; the resolved full SHA is stored.
-  --confirm-prune      Required acknowledgement before prune deletes any source image.
+  --confirm-prune      Delete after prune preflight; without it prune is read-only.
   --help               Show this help text.
 `;
 
@@ -43,12 +48,24 @@ async function writeJson(path, value) {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+async function writeJsonIfChanged(path, value) {
+  const content = `${JSON.stringify(value, null, 2)}\n`;
+  try {
+    if (await readFile(path, 'utf8') === content) return;
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, content);
+}
+
 function saveConversion(target, conversion) {
   target.adopted = conversion.adopted;
   target.outputBytes = conversion.outputBytes;
   target.reason = conversion.reason;
   target.width = conversion.width;
   target.height = conversion.height;
+  target.pages = conversion.pages;
   target.format = conversion.format;
 }
 
@@ -68,10 +85,11 @@ async function createStagedOutputs(manifest, imageRoot, stagingRoot) {
   }
 }
 
-async function prepareReferenceUpdates(manifest, blogRoot) {
+async function prepareReferenceUpdates(manifest, blogRoot, pendingSources) {
   const replacementByRawUrl = new Map();
   const updatesByFile = new Map();
   for (const entry of manifest.entries) {
+    if (!pendingSources.has(entry.sourcePath)) continue;
     if (entry.full.adopted) {
       for (const reference of entry.references) {
         replacementByRawUrl.set(reference.rawUrl, entry.full.url);
@@ -103,11 +121,11 @@ async function prepareReferenceUpdates(manifest, blogRoot) {
   return prepared;
 }
 
-async function prepareOutputInstallations(manifest, imageRoot, stagingRoot) {
+async function prepareOutputInstallations(manifest, imageRoot, stagingRoot, pendingOutputs) {
   const installations = [];
   for (const entry of manifest.entries) {
     for (const output of [entry.full, entry.thumbnail]) {
-      if (!output.adopted) continue;
+      if (!output.adopted || !pendingOutputs.has(output.path)) continue;
       const staged = await resolveSafePath(stagingRoot, output.path, 'staged output');
       const destination = await resolveSafeImagePath(imageRoot, output.path, { allowMissing: true });
       installations.push({ staged, destination, outputPath: output.path });
@@ -133,9 +151,20 @@ async function manifestPath(blogRoot, options) {
   return resolveSafePath(blogRoot, join('tools', 'image-pipeline', 'manifest.json'), 'manifest', options);
 }
 
+async function readExistingManifest(blogRoot) {
+  const path = await manifestPath(blogRoot, { allowMissing: true });
+  try {
+    return JSON.parse(await readFile(path, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 async function runAudit(blogRoot, imageRoot, report) {
   if (!report) throw new Error('--report is required for audit');
-  await writeJson(report, await buildManifest(blogRoot, imageRoot));
+  const previousManifest = await readExistingManifest(blogRoot);
+  await writeJson(report, await buildManifest(blogRoot, imageRoot, { previousManifest }));
 }
 
 async function runApply(blogRoot, imageRoot) {
@@ -143,15 +172,25 @@ async function runApply(blogRoot, imageRoot) {
   requireClean(imageRoot);
   let stagingRoot;
   try {
-    const manifest = await buildManifest(blogRoot, imageRoot);
-    stagingRoot = await mkdtemp(join(imageRoot, '.image-pipeline-staging-'));
-    await createStagedOutputs(manifest, imageRoot, stagingRoot);
-    const updates = await prepareReferenceUpdates(manifest, blogRoot);
-    const installations = await prepareOutputInstallations(manifest, imageRoot, stagingRoot);
+    const previousManifest = await readExistingManifest(blogRoot);
+    const manifest = await buildManifest(blogRoot, imageRoot, { previousManifest });
+    const pendingEntries = manifest.entries.filter(({ full, thumbnail }) =>
+      full.reason === 'eligible' || thumbnail.reason === 'eligible');
+    const pendingSources = new Set(pendingEntries.map(({ sourcePath }) => sourcePath));
+    const pendingOutputs = new Set(pendingEntries.flatMap(({ full, thumbnail }) => [full, thumbnail])
+      .filter(({ reason }) => reason === 'eligible').map(({ path }) => path));
     const outputManifest = await manifestPath(blogRoot, { allowMissing: true });
+    if (pendingOutputs.size > 0) {
+      stagingRoot = await mkdtemp(join(imageRoot, '.image-pipeline-staging-'));
+      await createStagedOutputs(manifest, imageRoot, stagingRoot);
+    }
+    const updates = await prepareReferenceUpdates(manifest, blogRoot, pendingSources);
+    const installations = pendingOutputs.size > 0
+      ? await prepareOutputInstallations(manifest, imageRoot, stagingRoot, pendingOutputs)
+      : [];
     await installStagedOutputs(installations, imageRoot);
     await writeReferenceUpdates(updates);
-    await writeJson(outputManifest, manifest);
+    await writeJsonIfChanged(outputManifest, manifest);
   } finally {
     if (stagingRoot) await rm(stagingRoot, { recursive: true, force: true });
   }
@@ -164,15 +203,44 @@ async function runStamp(blogRoot, imageRoot, imageCommit) {
   await writeJson(outputManifest, await stampPublishedImageCommit(manifest, imageRoot, imageCommit));
 }
 
-async function runPrune(blogRoot, imageRoot, confirmPrune) {
-  if (!confirmPrune) throw new Error('prune requires --confirm-prune');
+async function runPrune(blogRoot, imageRoot, confirmPrune, report) {
+  if (!report) throw new Error('--report is required for prune');
   requireClean(blogRoot);
   requireClean(imageRoot);
   const manifest = JSON.parse(await readFile(await manifestPath(blogRoot), 'utf8'));
+  await validatePublishedManifest(manifest, imageRoot);
   const currentRefs = new Set((await scanReferences(blogRoot)).map(({ repoPath }) => repoPath));
   const candidates = pruneCandidates(manifest, currentRefs);
-  console.log(JSON.stringify(candidates, null, 2));
-  for (const sourcePath of candidates) await unlink(await resolveSafeImagePath(imageRoot, sourcePath));
+  const resolvedCandidates = [];
+  for (const path of candidates) {
+    const absolute = await resolveSafeImagePath(imageRoot, path);
+    const info = await stat(absolute);
+    if (!info.isFile()) throw new Error(`prune candidate is not a file: ${path}`);
+    resolvedCandidates.push({ path, bytes: info.size, absolute });
+  }
+  const plan = {
+    schemaVersion: 1,
+    mode: confirmPrune ? 'delete' : 'dry-run',
+    status: confirmPrune ? 'ready' : 'planned',
+    publishedImageCommit: manifest.publishedImageCommit,
+    candidates: resolvedCandidates.map(({ path, bytes }) => ({ path, bytes })),
+    totalBytes: resolvedCandidates.reduce((sum, { bytes }) => sum + bytes, 0)
+  };
+  await writeJson(report, plan);
+  console.log(JSON.stringify(plan, null, 2));
+  if (!confirmPrune) return;
+
+  const deleted = [];
+  try {
+    for (const { path, absolute } of resolvedCandidates) {
+      await unlink(absolute);
+      deleted.push(path);
+    }
+  } catch (error) {
+    await writeJson(report, { ...plan, status: 'failed', deleted, error: error.message });
+    throw error;
+  }
+  await writeJson(report, { ...plan, status: 'completed', deleted });
 }
 
 async function main() {
@@ -203,7 +271,7 @@ async function main() {
   if (command === 'audit') await runAudit(blogRoot, imageRoot, report);
   else if (command === 'apply') await runApply(blogRoot, imageRoot);
   else if (command === 'stamp') await runStamp(blogRoot, imageRoot, values['image-commit']);
-  else await runPrune(blogRoot, imageRoot, values['confirm-prune']);
+  else await runPrune(blogRoot, imageRoot, values['confirm-prune'], report);
 }
 
 main().catch((error) => {

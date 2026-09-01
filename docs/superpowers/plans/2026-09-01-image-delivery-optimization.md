@@ -16,6 +16,8 @@
 - SVG、已有 WebP 和 AVIF 默认不转完整图；SVG 和 GIF 封面仍可生成静态缩略图。
 - 输出只有比源文件小时才采用；未采用时继续使用原 URL。
 - 输出路径固定为 `img/optimized/<原文件名>.<原扩展名>.webp` 和 `img/thumbnails/<原文件名>.<原扩展名>.webp`。
+- manifest schema v3 记录源格式、源宽高和页数；动画高度使用单帧高度。
+- `audit` 和 `apply` 复用 manifest 中既有映射，只处理新增原图；相同输入的第二次 `apply` 不产生文件或 manifest 差异。
 - 咖啡图保持 500×500，WebP 必须小于 70 KiB；PNG 保留作回退。
 - 图床新增文件先于博客链接发布；原图删除晚于博客线上验证。
 - 不清理 Git 历史，不更换 GitHub Pages 或 jsDelivr。
@@ -494,17 +496,22 @@ Create the manifest entry in `buildManifest` by grouping `scanReferences` by `re
 
 ```js
 {
-  schemaVersion: 1,
+  schemaVersion: 3,
   generatedAt: new Date().toISOString(),
   blogCommit,
-  imageCommit,
+  sourceImageCommit,
+  publishedImageCommit: null,
   entries: [{
-    sourcePath, sourceBytes, references,
-    full: { path, url, adopted, outputBytes, reason },
-    thumbnail: { path, url, adopted, outputBytes, reason }
+    sourcePath, sourceBytes,
+    source: { format, width, height, pages },
+    references,
+    full: { path, url, adopted, outputBytes, reason, width, height, pages, format },
+    thumbnail: { path, url, adopted, outputBytes, reason, width, height, pages, format }
   }]
 }
 ```
+
+动画的 `source.height` 和输出 `height` 都是单帧高度。`audit` 与 `apply` 读取已有 manifest，识别 `sourcePath`、已采用的 `full.path` 和 `thumbnail.path`；这些路径不再作为新源处理。只有首次出现的原图生成新 entry。
 
 Add this exact deletion selector to `tools/image-pipeline/manifest.mjs`:
 
@@ -527,7 +534,7 @@ export function pruneCandidates(manifest, currentRefs) {
 
 Implement `cli.mjs` with `parseArgs({ options: { 'blog-root': { type: 'string' }, 'image-root': { type: 'string' }, report: { type: 'string' }, 'confirm-prune': { type: 'boolean' } }, allowPositionals: true })`。The first positional must be `audit`, `apply` or `prune`; both roots must be absolute and exist。
 
-Use `execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' })` to require clean roots before `apply` or `prune`。`audit` calls `buildManifest` and writes only `report`。`apply` calls `buildManifest`, runs `optimizeFull` for eligible entries and `createThumbnail` for eligible covers, creates an exact raw-URL replacement map for adopted full outputs, groups references by file, updates only those files, calls `upsertThumbnail` for published covers, and writes `tools/image-pipeline/manifest.json`。`prune` refuses to run without `--confirm-prune`, reads that manifest, rescans the blog, calculates `pruneCandidates`, prints the sorted list, resolves each path under the checked image root, and calls `unlink` once per path。The CLI never invokes `git push`。
+Use `execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' })` to require clean roots before `apply` or `prune`。`audit` calls `buildManifest` and writes only `report`。`apply` calls `buildManifest`, reuses current manifest mappings, converts only eligible new entries, updates references, and writes `tools/image-pipeline/manifest.json` only when its bytes change。`prune` requires `--report`。It validates schema v3, a full `publishedImageCommit`, and every adopted output against that commit; then it resolves and stats every candidate before any unlink。Without `--confirm-prune` it writes a dry-run report and deletes nothing。With confirmation it writes the final deletion result to the same report。The CLI never invokes `git push`。
 
 Append to `.gitignore`:
 
@@ -710,17 +717,19 @@ npm run images -- audit `
   --report reports/image-pipeline-audit.json
 ```
 
-Expected: every reference resolves to an image-repo file; no output files or source files change。
+Expected: every reference resolves to an image-repo file; no output files or source files change。The report lists source bytes and eligibility, but does not claim projected compression bytes because audit does not encode images。
 
 - [ ] **Step 2: Review audit before writes**
 
-Check that all output paths start with `img/optimized/` or `img/thumbnails/`。Summarize source MiB, projected output MiB, adopted full images, retained originals, thumbnails and GIF decisions。Open at least ten samples: largest PNG, largest JPEG, transparent image, text screenshot, SVG thumbnail and each used GIF。
+Check that all output paths start with `img/optimized/` or `img/thumbnails/`。Summarize source MiB, eligible full images, retained originals, eligible thumbnails and GIF decisions。Do not report projected output MiB from audit。Open at least ten samples: largest PNG, largest JPEG, transparent image, text screenshot, SVG thumbnail and each used GIF。
 
 Expected: no ambiguous path, output collision or missing source。
 
 - [ ] **Step 3: Apply generation without pruning**
 
 Run the same command with `apply`。Expected: optimized files and thumbnails appear in the image worktree; blog references and `image.thumbnail` fields update in the blog worktree; no source image is deleted。
+
+Commit the generated outputs and blog migration in their respective worktrees, then run the same `apply` command again。Expected: manifest bytes do not change and both worktrees remain clean。
 
 - [ ] **Step 4: Verify generated assets**
 
@@ -769,7 +778,7 @@ For every manifest output used by the blog, request the unversioned jsDelivr URL
 
 - [ ] **Step 2: Rescan migrated sources**
 
-Run `audit` again against the modified blog。Expected:
+Run `audit` again against the modified blog。It reuses the committed manifest mappings and does not add entries whose `sourcePath` is under `img/optimized/` or `img/thumbnails/`。Expected:
 
 - every published cover has `image.thumbnail`;
 - adopted sources have zero references;
@@ -870,23 +879,26 @@ Expected: deployed HTML references existing optimized files; coffee preload work
 
 Show the exact delete count and MiB, the deployed blog commit, image additions commit, and backup branch SHA。Do not infer confirmation from the earlier design approval。
 
-- [ ] **Step 2: Run prune**
+- [ ] **Step 2: 生成 dry-run 报告**
 
 ```powershell
 npm run images -- prune `
   --blog-root E:\CollegeData\hatrixxxx.github.io-image-optimization `
   --image-root E:\CollegeData\Hatrix-s-Blog-Image-optimization `
-  --report reports/image-pipeline-final.json `
-  --confirm-prune
+  --report reports/image-pipeline-final.json
 ```
 
-Expected: only adopted, zero-reference source files are deleted。Optimized files, thumbnails, retained originals and the PDF remain。
+Expected: report contains the exact sorted paths, per-file bytes, total bytes, `mode: dry-run` and `status: planned`; no file is deleted。
 
-- [ ] **Step 3: Verify before commit**
+- [ ] **Step 3: 确认报告后执行 prune**
+
+After explicit confirmation, rerun the same command with `--confirm-prune`。Before the first unlink, the command validates schema v3, the full `publishedImageCommit`, every adopted output in that commit, and every candidate path/size。Expected: only adopted, zero-reference source files are deleted; the report ends with `status: completed` and the exact deleted paths。
+
+- [ ] **Step 4: Verify before commit**
 
 Run the audit against deployed-source content and the pruned image tree。Request every referenced image through GitHub raw and jsDelivr。Expected: zero missing references; delete set exactly matches manifest approval。
 
-- [ ] **Step 4: Commit and push prune**
+- [ ] **Step 5: Commit and push prune**
 
 ```bash
 git add -A img
@@ -895,6 +907,6 @@ git commit -m "perf: remove superseded source images"
 
 Verify the backup branch still points to the pre-optimization commit。After the user-authorized push, verify remote `master`, total image MiB and all live URLs。Then update the manifest prune status in the blog worktree as a separate documentation change; do not stage a blog path from the image worktree。
 
-- [ ] **Step 5: Final report**
+- [ ] **Step 6: Final report**
 
 Report coffee bytes, homepage cold-load image bytes, full-image source/output MiB, deleted MiB, retained formats, image-repo commits, blog commit, backup branch and rollback instructions。

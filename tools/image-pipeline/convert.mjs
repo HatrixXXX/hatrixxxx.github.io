@@ -47,7 +47,8 @@ export async function optimizeFull(source, destination, options = {}) {
   }
   return {
     adopted, sourceBytes, outputBytes,
-    width: outputMeta.width ?? 0, height: outputMeta.height ?? 0,
+    width: outputMeta.width ?? 0, height: animatedFrameHeight(outputMeta),
+    pages: Math.max(outputMeta.pages ?? 1, 1),
     format: outputMeta.format ?? 'webp', reason: adopted ? 'smaller' : 'not-smaller-or-animation-changed'
   };
 }
@@ -68,6 +69,7 @@ export async function createThumbnail(source, destination) {
     return {
       adopted: true, sourceBytes, outputBytes,
       width: meta.width ?? 0, height: meta.height ?? 0,
+      pages: Math.max(meta.pages ?? 1, 1),
       format: meta.format ?? 'webp', reason: 'homepage-thumbnail'
     };
   } catch (error) {
