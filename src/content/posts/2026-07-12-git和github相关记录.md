@@ -4,7 +4,7 @@ description: 持续记录 git 和 github 使用过程中，之前没有注意过
 pubDate: '2026-07-12'
 updatedDate: '2026-07-14T23:27:52+08:00'
 cover: >-
-  https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Snipaste_2026-07-12_14-27-47.png
+  https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/Snipaste_2026-07-12_14-27-47.png
 category: 软件工程与工具
 tags:
   - Git
@@ -31,7 +31,7 @@ git config --global https.proxy http://127.0.0.1:7890
 
 ## git 工作流示意
 
-![](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/Git-Reference_Sheet.svg)
+![](https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/Git-Reference_Sheet.svg)
 
 这张图是 Git 最经典的一张工作流示意图，它描述了代码从你修改到提交到远程仓库的整个生命周期，以及几个最常用命令分别作用在哪一步。
 

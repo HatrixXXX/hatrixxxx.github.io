@@ -50,7 +50,7 @@ title: 示例文章
 description: 用一句话说明文章内容
 pubDate: 2026-09-02
 updatedDate: 2026-09-03
-cover: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/example.png
+cover: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png
 category: 软件工程与工具
 tags:
   - Astro
@@ -120,7 +120,9 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 254 个去重后的 jsDelivr 图片 URL。构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
+文章共引用 254 个去重后的 jsDelivr 图片 URL。现有发布文章全部固定到图床仓库提交 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`，不会随默认分支删改而漂移。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL。
+
+构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。两篇 `src/drafts/` 草稿不参与发布和图片 inventory，因此没有机械改写其中的历史链接。
 
 文章列表的 `cover` 由 Astro 的图片管线和 Sharp 生成 WebP、`srcset` 与尺寸信息。正文远程图片通过预检后仍使用 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
 

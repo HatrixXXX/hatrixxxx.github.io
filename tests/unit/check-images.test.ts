@@ -2,12 +2,25 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkImages, collectImageSources, coverFailuresFor, extractImageUrls } from '../../scripts/check-images';
 import remarkImageStatus from '../../src/plugins/remark-image-status';
 
+const IMAGE_REPOSITORY = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image';
+const IMAGE_REPOSITORY_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
+const IMMUTABLE_IMAGE_PREFIX = `${IMAGE_REPOSITORY}@${IMAGE_REPOSITORY_REF}/`;
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
 describe('remote image checking', () => {
+  it('pins the complete published image inventory to the immutable repository commit', async () => {
+    const sources = await collectImageSources('src/content/posts');
+    const blogImageUrls = sources.urls.filter((url) => url.startsWith(IMAGE_REPOSITORY));
+    const unpinned = blogImageUrls.filter((url) => !url.startsWith(IMMUTABLE_IMAGE_PREFIX));
+
+    expect(blogImageUrls).toHaveLength(254);
+    expect(unpinned).toHaveLength(0);
+  });
+
   it('deduplicates jsDelivr Markdown and HTML image URLs', () => {
     const markdown = [
       '![](https://cdn.jsdelivr.net/a.png)',
@@ -35,7 +48,7 @@ describe('remote image checking', () => {
   });
 
   it('includes the transformed cover from the real post source', async () => {
-    const transformedCover = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/994.jpg!list1x.v2';
+    const transformedCover = `${IMMUTABLE_IMAGE_PREFIX}img/994.jpg!list1x.v2`;
     const sources = await collectImageSources('src/content/posts');
 
     expect(sources.coverUrls.has(transformedCover)).toBe(true);
@@ -43,7 +56,7 @@ describe('remote image checking', () => {
   });
 
   it('marks an unavailable transformed cover as a build-blocking cover failure', async () => {
-    const transformedCover = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/994.jpg!list1x.v2';
+    const transformedCover = `${IMMUTABLE_IMAGE_PREFIX}img/994.jpg!list1x.v2`;
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })));
 
     const result = await checkImages([transformedCover], 12);
@@ -110,7 +123,7 @@ describe('remote image checking', () => {
 });
 
 describe('remark image status', () => {
-  it('renders a successful remote Markdown raster image as a lazy native image', () => {
+  it('leaves a successful remote Markdown image node to Astro', () => {
     const imageUrl = 'https://cdn.jsdelivr.net/diagram.png';
     const tree = {
       type: 'root',
@@ -120,9 +133,11 @@ describe('remark image status', () => {
     remarkImageStatus(new Set())(tree);
 
     expect(tree.children[0]).toMatchObject({
-      type: 'html',
-      value: '<img src="https://cdn.jsdelivr.net/diagram.png" loading="lazy" decoding="async" alt="diagram &lt;overview&gt;">'
+      type: 'image',
+      url: imageUrl,
+      alt: 'diagram <overview>'
     });
+    expect(tree.children[0]).not.toHaveProperty('data');
   });
 
   it('replaces a failed image while preserving its alt text and original URL', () => {
@@ -144,7 +159,7 @@ describe('remark image status', () => {
   });
 
   it('replaces the angle-bracket Markdown destination from the real post', () => {
-    const failedUrl = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/servlet%20(1).png';
+    const failedUrl = `${IMMUTABLE_IMAGE_PREFIX}img/servlet%20(1).png`;
     const tree = { type: 'root', children: [{ type: 'image', url: failedUrl, alt: '' }] };
 
     remarkImageStatus(new Set([failedUrl]))(tree);
@@ -185,7 +200,7 @@ describe('remark image status', () => {
   });
 
   it('normalizes a successful CMOS-style raw HTML image without dropping attributes', () => {
-    const imageUrl = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/20250619232906716.png';
+    const imageUrl = `${IMMUTABLE_IMAGE_PREFIX}img/20250619232906716.png`;
     const tree = {
       type: 'root',
       children: [{
@@ -227,9 +242,11 @@ describe('remark image status', () => {
       remarkImageStatus(new Set([failedUrl]))(tree);
 
       expect(tree.children[0]).toMatchObject({
-        type: 'html',
-        value: `<img src="${failedUrl}" loading="lazy" decoding="async" alt="animated">`
+        type: 'image',
+        url: failedUrl,
+        alt: 'animated'
       });
+      expect(tree.children[0]).not.toHaveProperty('data');
     }
   );
 });

@@ -48,10 +48,6 @@ function escapeAttribute(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-function nativeImageHtml(url: string, alt: string | null | undefined): string {
-  return `<img src="${escapeAttribute(url)}" loading="lazy" decoding="async" alt="${escapeAttribute(alt ?? '')}">`;
-}
-
 function failedUrlsFromReport(): Set<string> {
   if (cachedFailedUrls) return cachedFailedUrls;
 
@@ -82,12 +78,6 @@ function visit(node: ImageNode, failedUrls: ReadonlySet<string>): void {
         ...node.data,
         hProperties: { ...node.data?.hProperties, 'data-original-src': originalUrl }
       };
-    } else {
-      node.type = 'html';
-      node.value = nativeImageHtml(originalUrl, node.alt);
-      delete node.url;
-      delete node.alt;
-      delete node.data;
     }
   }
   if (node.type === 'html' && node.value) node.value = replaceFailedHtmlImages(node.value, failedUrls);
