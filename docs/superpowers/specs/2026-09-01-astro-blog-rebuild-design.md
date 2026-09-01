@@ -16,9 +16,11 @@
 - 仓库有 40 篇 Markdown 文章，URL 形式为 `/posts/<文章名>/`。
 - 文章包含数学公式、Mermaid、代码块和大量图片。
 - 文章没有稳定的分类和标签元数据，也没有作品集合。
+- 非标准 `_draft` 目录中有两篇未发布草稿。它们不会生成页面，但清理旧站前要迁入 `src/drafts/` 保存。
 - 文章引用 252 张外部图片，全部来自 `cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/`。
 - 图床仓库约 280 MB，共 1020 个文件；不能整仓复制进博客。
 - 自定义域名写在 `CNAME`，站点地址为 `https://hatrix.site`。
+- 现有 Bing 站点验证码继续写入页面 metadata。
 - Giscus 使用 pathname 映射。旧文章 URL 发生变化会切断现有讨论串。
 - 当前工作树在 `master`，线上部署流程仍然可用。
 
@@ -29,6 +31,7 @@
 - Astro 静态输出和 GitHub Pages 部署。
 - 首页、文章页、归档、分类、标签、作品、关于和 404 页面。
 - 40 篇文章迁移，正文不改写。
+- 两篇未发布草稿原样保存，不进入 Content Collection。
 - 文章分类、标签和系列元数据补全。
 - 数学公式、Mermaid、代码高亮、图片灯箱和文章目录。
 - Giscus 评论、RSS、站点地图、SEO 元数据和社交分享信息。
@@ -208,6 +211,7 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 - Git 历史和远程配置
 - `CNAME`
 - 迁移后的文章
+- `src/drafts/` 中保留的两篇未发布草稿
 - 有效头像、favicon 和个人图片
 - 社交链接、站点验证信息和 Giscus 参数
 - 仍适用的许可证和仓库说明
