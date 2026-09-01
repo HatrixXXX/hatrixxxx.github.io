@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
@@ -45,4 +45,27 @@ test('replaces the same thumbnail destination safely on repeated conversion', as
     [(await sharp(thumb).metadata()).width, (await sharp(thumb).metadata()).height],
     [640, 336]
   );
+});
+
+test('skips oversized animated full conversion without creating output', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-convert-skip-'));
+  const source = join(root, 'source.gif');
+  const full = join(root, 'full.webp');
+  await sharp({ create: { width: 4, height: 4, channels: 3, background: 'red' } }).gif().toFile(source);
+
+  const result = await optimizeFull(source, full, {
+    readMetadata: async () => ({
+      format: 'gif',
+      width: 854,
+      height: 480,
+      pages: 753,
+      loop: 0,
+      delay: Array(753).fill(50)
+    })
+  });
+
+  assert.equal(result.adopted, false);
+  assert.equal(result.outputBytes, null);
+  assert.equal(result.reason, 'input-pixel-limit');
+  await assert.rejects(stat(full), /ENOENT/u);
 });

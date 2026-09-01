@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
-import sharp from 'sharp';
+import { inputPixelLimitReason, readSourceMetadata } from './animated.mjs';
 import { fullOutputPath, thumbnailOutputPath, cdnUrl } from './paths.mjs';
 import { resolveSafeImagePath, resolveSafePath } from './safe-paths.mjs';
 import { scanReferences } from './scan.mjs';
@@ -43,7 +43,8 @@ function rejectOutputCollisions(entries) {
   }
 }
 
-export async function buildManifest(blogRoot, imageRoot) {
+export async function buildManifest(blogRoot, imageRoot, options = {}) {
+  const { readMetadata = readSourceMetadata } = options;
   const grouped = new Map();
   for (const reference of await scanReferences(blogRoot)) {
     await resolveSafePath(blogRoot, reference.file, 'blog source');
@@ -56,8 +57,10 @@ export async function buildManifest(blogRoot, imageRoot) {
   for (const [sourcePath, references] of [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     const source = await resolveSafeImagePath(imageRoot, sourcePath);
     const sourceBytes = (await stat(source)).size;
-    const metadata = await sharp(source, { animated: true }).metadata();
-    const fullEligible = FULL_FORMATS.has(metadata.format);
+    const metadata = await readMetadata(source);
+    const fullReason = FULL_FORMATS.has(metadata.format)
+      ? inputPixelLimitReason(metadata)
+      : `unsupported-format:${metadata.format ?? 'unknown'}`;
     const thumbnailEligible = references.some(({ scope, kind }) => scope === 'published' && kind === 'cover');
     entries.push({
       sourcePath,
@@ -65,8 +68,8 @@ export async function buildManifest(blogRoot, imageRoot) {
       references,
       full: outputFor(
         fullOutputPath(sourcePath),
-        fullEligible,
-        `unsupported-format:${metadata.format ?? 'unknown'}`
+        fullReason === null,
+        fullReason ?? 'eligible'
       ),
       thumbnail: outputFor(
         thumbnailOutputPath(sourcePath),

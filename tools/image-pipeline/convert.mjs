@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, rm, stat, unlink } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import sharp from 'sharp';
+import { animatedFrameHeight, inputPixelLimitReason, readSourceMetadata } from './animated.mjs';
 
 async function size(path) { return (await stat(path)).size; }
 async function prepare(path) { await mkdir(dirname(path), { recursive: true }); }
@@ -12,11 +13,24 @@ export function acceptAnimatedGif(source, output, sourceBytes, outputBytes) {
     outputBytes < sourceBytes;
 }
 
-export async function optimizeFull(source, destination) {
+export async function optimizeFull(source, destination, options = {}) {
+  const { readMetadata = readSourceMetadata } = options;
+  const sourceMeta = await readMetadata(source);
+  const sourceBytes = await size(source);
+  const blockReason = inputPixelLimitReason(sourceMeta);
+  if (blockReason) {
+    return {
+      adopted: false,
+      sourceBytes,
+      outputBytes: null,
+      width: sourceMeta.width ?? 0,
+      height: animatedFrameHeight(sourceMeta),
+      format: sourceMeta.format ?? 'unknown',
+      reason: blockReason
+    };
+  }
   await prepare(destination);
   const temp = `${destination}.tmp`;
-  const sourceMeta = await sharp(source, { animated: true }).metadata();
-  const sourceBytes = await size(source);
   const animated = (sourceMeta.pages ?? 1) > 1;
   let pipeline = sharp(source, { animated }).rotate();
   if ((sourceMeta.width ?? 0) > 1920) pipeline = pipeline.resize({ width: 1920, withoutEnlargement: true });

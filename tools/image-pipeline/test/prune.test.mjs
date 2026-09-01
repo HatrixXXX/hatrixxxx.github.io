@@ -37,6 +37,37 @@ test('builds eligible output records from an uncommitted fixture', async () => {
   })), [{ sourcePath: 'img/cover.png', full: 'eligible', thumbnail: 'eligible' }]);
 });
 
+test('marks oversized animated GIFs as retained during audit instead of aborting', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-manifest-gif-limit-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  await mkdir(join(blogRoot, '_posts'), { recursive: true });
+  await mkdir(join(imageRoot, 'img'), { recursive: true });
+  await sharp({ create: { width: 2, height: 2, channels: 3, background: 'red' } })
+    .gif().toFile(join(imageRoot, 'img', 'oversized.gif'));
+  await writeFile(join(blogRoot, '_posts', 'cover.md'), `---\nimage:\n  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/oversized.gif\n---\n`);
+
+  const manifest = await buildManifest(blogRoot, imageRoot, {
+    readMetadata: async () => ({
+      format: 'gif',
+      width: 854,
+      height: 480,
+      pages: 753,
+      loop: 0,
+      delay: Array(753).fill(50)
+    })
+  });
+
+  assert.deepEqual(
+    manifest.entries.map(({ sourcePath, full, thumbnail }) => ({
+      sourcePath,
+      full: full.reason,
+      thumbnail: thumbnail.reason
+    })),
+    [{ sourcePath: 'img/oversized.gif', full: 'input-pixel-limit', thumbnail: 'eligible' }]
+  );
+});
+
 test('rejects generated output collisions before an apply can write files', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-manifest-collision-'));
   const blogRoot = join(root, 'blog');
