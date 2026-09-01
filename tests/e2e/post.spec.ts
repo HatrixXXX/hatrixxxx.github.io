@@ -110,10 +110,12 @@ test('Giscus success clears loading state and remounts once after client navigat
     route.fulfill({
       contentType: 'application/javascript',
       body: `
-        const section = document.currentScript?.closest('[data-giscus-comments]');
-        const iframe = document.createElement('iframe');
-        iframe.className = 'giscus-frame';
-        section?.append(iframe);
+        (() => {
+          const section = document.currentScript?.closest('[data-giscus-comments]');
+          const iframe = document.createElement('iframe');
+          iframe.className = 'giscus-frame';
+          section?.append(iframe);
+        })();
       `
     })
   );

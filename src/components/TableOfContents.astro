@@ -80,6 +80,9 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
   }
 
   summary {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
     cursor: pointer;
   }
 

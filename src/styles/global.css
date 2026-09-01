@@ -73,10 +73,6 @@ select {
   .reading-container {
     width: min(calc(100% - 32px), var(--content-width));
   }
-
-  body {
-    font-size: 15px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -84,8 +80,8 @@ select {
   *::before,
   *::after {
     scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
+    animation-duration: 0s !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0s !important;
   }
 }

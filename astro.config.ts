@@ -8,6 +8,7 @@ export default defineConfig({
   site: 'https://hatrix.site',
   output: 'static',
   trailingSlash: 'always',
+  devToolbar: { enabled: process.env.PLAYWRIGHT_TEST !== '1' },
   integrations: [sitemap()],
   image: {
     remotePatterns: [
