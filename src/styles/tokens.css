@@ -13,3 +13,14 @@
   --header-height: 56px;
   --radius-card: 12px;
 }
+
+:root[data-theme='light'] {
+  --color-bg: #f7f7f9;
+  --color-surface: #fff;
+  --color-surface-raised: #eceef2;
+  --color-text: #30343b;
+  --color-muted: #676d78;
+  --color-line: rgb(22 26 32 / 12%);
+  --shadow-panel: 0 16px 40px rgb(30 35 42 / 14%);
+  --color-heading: #161a20;
+}

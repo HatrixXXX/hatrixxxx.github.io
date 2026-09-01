@@ -27,18 +27,22 @@ const links = [
       </ul>
     </nav>
 
-    <button
-      class="menu-toggle"
-      type="button"
-      aria-label="打开导航菜单"
-      aria-controls="mobile-menu"
-      aria-expanded="false"
-      data-menu-toggle
-    >
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
+    <div class="header-actions">
+      <button class="header-action" type="button" aria-label="搜索文章" data-open-search>⌕</button>
+      <button class="header-action" type="button" aria-label="切换主题" data-theme-toggle>◐</button>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-label="切换导航栏"
+        aria-controls="mobile-menu"
+        aria-expanded="false"
+        data-menu-toggle
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
   </div>
 
   <nav id="mobile-menu" class="mobile-nav" aria-label="移动端导航" data-mobile-menu hidden>
@@ -49,26 +53,6 @@ const links = [
     </ul>
   </nav>
 </header>
-
-<script>
-  function bindMenu() {
-    const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
-    const menu = document.querySelector<HTMLElement>('[data-mobile-menu]');
-
-    if (!toggle || !menu || toggle.dataset.bound === 'true') return;
-    toggle.dataset.bound = 'true';
-
-    toggle.addEventListener('click', () => {
-      const expanded = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', String(!expanded));
-      toggle.setAttribute('aria-label', expanded ? '打开导航菜单' : '关闭导航菜单');
-      menu.hidden = expanded;
-    });
-  }
-
-  bindMenu();
-  document.addEventListener('astro:page-load', bindMenu);
-</script>
 
 <style>
   .site-header {
@@ -134,18 +118,36 @@ const links = [
     color: var(--color-accent);
   }
 
-  .menu-toggle,
-  .mobile-nav {
-    display: none;
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
   }
 
+  .header-action,
   .menu-toggle {
     width: 42px;
     height: 42px;
     border: 0;
     border-radius: 50%;
     background: rgb(17 20 25 / 56%);
+    color: #fff;
     cursor: pointer;
+  }
+
+  .header-action:hover,
+  .menu-toggle:hover {
+    background: rgb(255 255 255 / 14%);
+    color: var(--color-accent);
+  }
+
+  .menu-toggle,
+  .mobile-nav {
+    display: none;
+  }
+
+  .menu-toggle {
+    padding: 0;
   }
 
   .menu-toggle span {

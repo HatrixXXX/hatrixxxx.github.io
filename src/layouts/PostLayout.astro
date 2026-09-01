@@ -118,6 +118,7 @@ const canonicalPath = postPath(post.data.legacySlug);
 
   .post-hero-overlay {
     background: linear-gradient(to bottom, rgb(10 12 16 / 45%), rgb(22 26 32 / 94%));
+    pointer-events: none;
   }
 
   .post-hero-content {
@@ -125,6 +126,15 @@ const canonicalPath = postPath(post.data.legacySlug);
     z-index: 1;
     padding-block: calc(var(--header-height) + 3rem) 4rem;
     text-align: center;
+    pointer-events: none;
+  }
+
+  .post-hero-content :global(a) {
+    pointer-events: auto;
+  }
+
+  article :global(img[data-lightbox-image]) {
+    cursor: zoom-in;
   }
 
   h1 {

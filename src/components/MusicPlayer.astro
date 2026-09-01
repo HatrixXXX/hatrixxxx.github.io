@@ -1,0 +1,113 @@
+---
+import { playlist } from '@/data/playlist';
+
+const isEmpty = playlist.length === 0;
+---
+
+<aside
+  class="music-player"
+  aria-label="音乐播放器"
+  data-music-player
+  data-empty={String(isEmpty)}
+  transition:persist="music-player"
+>
+  <div class="track-copy">
+    <strong>{isEmpty ? '歌单待添加' : playlist[0]?.title}</strong>
+    <span>{isEmpty ? '播放器已就绪' : playlist[0]?.artist}</span>
+  </div>
+  <div class="player-controls" aria-label="播放控制">
+    <button type="button" aria-label="上一首" disabled={isEmpty}>‹</button>
+    <button type="button" aria-label="播放" disabled={isEmpty}>▶</button>
+    <button type="button" aria-label="下一首" disabled={isEmpty}>›</button>
+  </div>
+  <label class="volume-control">
+    <span>音量</span>
+    <input type="range" min="0" max="1" step="0.05" value="0.7" data-player-volume />
+  </label>
+</aside>
+
+<style>
+  .music-player {
+    position: fixed;
+    z-index: 25;
+    right: 1rem;
+    bottom: 1rem;
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) auto auto;
+    gap: 0.9rem;
+    align-items: center;
+    width: min(calc(100% - 2rem), 500px);
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    padding: 0.7rem 0.85rem;
+    background: rgb(29 34 41 / 94%);
+    color: #d8d9dc;
+    box-shadow: var(--shadow-panel);
+    backdrop-filter: blur(12px);
+  }
+
+  .track-copy,
+  .volume-control {
+    display: flex;
+  }
+
+  .track-copy {
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .track-copy strong,
+  .track-copy span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track-copy strong {
+    font-size: 0.85rem;
+  }
+
+  .track-copy span,
+  .volume-control span {
+    color: #9298a1;
+    font-size: 0.7rem;
+  }
+
+  .player-controls {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 50%;
+    background: #242a32;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .volume-control {
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  input {
+    width: 76px;
+    accent-color: var(--color-accent);
+  }
+
+  @media (max-width: 600px) {
+    .music-player {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .volume-control {
+      display: none;
+    }
+  }
+</style>
