@@ -139,8 +139,6 @@ async function runAudit(blogRoot, imageRoot, report) {
 async function runApply(blogRoot, imageRoot) {
   requireClean(blogRoot);
   requireClean(imageRoot);
-  await assertSafeRoot(blogRoot, 'blog root');
-  await assertSafeRoot(imageRoot, 'image root');
   let stagingRoot;
   try {
     const manifest = await buildManifest(blogRoot, imageRoot);
@@ -161,8 +159,6 @@ async function runPrune(blogRoot, imageRoot, confirmPrune) {
   if (!confirmPrune) throw new Error('prune requires --confirm-prune');
   requireClean(blogRoot);
   requireClean(imageRoot);
-  await assertSafeRoot(blogRoot, 'blog root');
-  await assertSafeRoot(imageRoot, 'image root');
   const manifest = JSON.parse(await readFile(await manifestPath(blogRoot), 'utf8'));
   const currentRefs = new Set((await scanReferences(blogRoot)).map(({ repoPath }) => repoPath));
   const candidates = pruneCandidates(manifest, currentRefs);
@@ -190,6 +186,8 @@ async function main() {
   }
   const blogRoot = await requireAbsoluteDirectory('--blog-root', values['blog-root']);
   const imageRoot = await requireAbsoluteDirectory('--image-root', values['image-root']);
+  await assertSafeRoot(blogRoot, 'blog root');
+  await assertSafeRoot(imageRoot, 'image root');
   const report = values.report && resolve(values.report);
 
   if (command === 'audit') await runAudit(blogRoot, imageRoot, report);

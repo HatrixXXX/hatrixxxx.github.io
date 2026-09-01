@@ -79,3 +79,29 @@ test('apply validates every output parent before installing any staged output', 
   assert.equal(await readFile(join(blogRoot, '_posts', 'cover.md'), 'utf8'), post);
   await assert.rejects(stat(join(imageRoot, 'img', 'optimized')), { code: 'ENOENT' });
 });
+
+test('audit rejects a linked root before writing a report for an empty repository', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-cli-linked-root-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  const linkedBlogRoot = join(root, 'linked-blog');
+  const report = join(root, 'reports', 'audit.json');
+  await mkdir(blogRoot);
+  await mkdir(imageRoot);
+  try {
+    await symlink(blogRoot, linkedBlogRoot, process.platform === 'win32' ? 'junction' : 'dir');
+  } catch (error) {
+    if (error.code === 'EPERM') {
+      t.skip('symlinks require Windows developer mode or elevated privileges');
+      return;
+    }
+    throw error;
+  }
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'audit', '--blog-root', linkedBlogRoot, '--image-root', imageRoot, '--report', report
+  ], { encoding: 'utf8' });
+
+  assert.notEqual(result.status, 0);
+  await assert.rejects(stat(report), { code: 'ENOENT' });
+});
