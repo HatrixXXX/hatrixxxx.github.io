@@ -37,6 +37,23 @@ test('builds eligible output records from an uncommitted fixture', async () => {
   })), [{ sourcePath: 'img/cover.png', full: 'eligible', thumbnail: 'eligible' }]);
 });
 
+test('rejects generated output collisions before an apply can write files', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-manifest-collision-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  await mkdir(join(blogRoot, '_posts'), { recursive: true });
+  await mkdir(join(imageRoot, 'img', 'one'), { recursive: true });
+  await mkdir(join(imageRoot, 'img', 'two'), { recursive: true });
+  for (const directory of ['one', 'two']) {
+    await sharp({ create: { width: 2, height: 2, channels: 3, background: 'red' } })
+      .png().toFile(join(imageRoot, 'img', directory, 'duplicate.png'));
+  }
+  await writeFile(join(blogRoot, '_posts', 'one.md'), `---\nimage:\n  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/one/duplicate.png\n---\n`);
+  await writeFile(join(blogRoot, '_posts', 'two.md'), `---\nimage:\n  path: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/two/duplicate.png\n---\n`);
+
+  await assert.rejects(buildManifest(blogRoot, imageRoot), /generated output collision/u);
+});
+
 test('CLI help lists the guarded migration commands and options', () => {
   const output = execFileSync(process.execPath, [fileURLToPath(new URL('../cli.mjs', import.meta.url)), '--help'], {
     encoding: 'utf8'

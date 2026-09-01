@@ -38,6 +38,20 @@ function outputFor(outputPath, eligible, reason) {
   };
 }
 
+function rejectOutputCollisions(entries) {
+  const sourcesByOutputPath = new Map();
+  for (const { sourcePath, full, thumbnail } of entries) {
+    for (const output of [full, thumbnail]) {
+      if (output.reason !== 'eligible') continue;
+      const existing = sourcesByOutputPath.get(output.path);
+      if (existing && existing !== sourcePath) {
+        throw new Error(`generated output collision: ${output.path} from ${existing} and ${sourcePath}`);
+      }
+      sourcesByOutputPath.set(output.path, sourcePath);
+    }
+  }
+}
+
 export async function buildManifest(blogRoot, imageRoot) {
   const grouped = new Map();
   for (const reference of await scanReferences(blogRoot)) {
@@ -69,6 +83,7 @@ export async function buildManifest(blogRoot, imageRoot) {
       )
     });
   }
+  rejectOutputCollisions(entries);
 
   return {
     schemaVersion: 1,
