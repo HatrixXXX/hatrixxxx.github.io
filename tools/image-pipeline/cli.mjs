@@ -3,23 +3,25 @@ import { mkdir, mkdtemp, readFile, rename, rm, stat, unlink, writeFile } from 'n
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { createThumbnail, optimizeFull } from './convert.mjs';
-import { buildManifest, pruneCandidates } from './manifest.mjs';
+import { buildManifest, pruneCandidates, stampPublishedImageCommit } from './manifest.mjs';
 import { scanReferences } from './scan.mjs';
 import { assertSafeRoot, resolveSafeImagePath, resolveSafePath } from './safe-paths.mjs';
 import { applyReferenceMap, upsertThumbnail } from './update.mjs';
 
 const HELP = `Usage:
-  npm run images -- <audit|apply|prune> --blog-root <absolute path> --image-root <absolute path> [--report <path>] [--confirm-prune]
+  npm run images -- <audit|apply|stamp|prune> --blog-root <absolute path> --image-root <absolute path> [options]
 
 Commands:
   audit  Scan both repositories and write the required --report JSON file.
   apply  Require clean worktrees, create eligible WebP outputs, update references, and write the manifest.
+  stamp  Verify adopted outputs at --image-commit and record the resolved commit in the manifest.
   prune  Require clean worktrees and --confirm-prune before deleting adopted, unreferenced source images.
 
 Options:
   --blog-root <path>   Required absolute blog repository path.
   --image-root <path>  Required absolute image repository path.
   --report <path>      Required audit report path.
+  --image-commit <id>  Required explicit image commit/ref for stamp; the resolved full SHA is stored.
   --confirm-prune      Required acknowledgement before prune deletes any source image.
   --help               Show this help text.
 `;
@@ -155,6 +157,13 @@ async function runApply(blogRoot, imageRoot) {
   }
 }
 
+async function runStamp(blogRoot, imageRoot, imageCommit) {
+  if (!imageCommit) throw new Error('--image-commit is required for stamp');
+  const outputManifest = await manifestPath(blogRoot);
+  const manifest = JSON.parse(await readFile(outputManifest, 'utf8'));
+  await writeJson(outputManifest, await stampPublishedImageCommit(manifest, imageRoot, imageCommit));
+}
+
 async function runPrune(blogRoot, imageRoot, confirmPrune) {
   if (!confirmPrune) throw new Error('prune requires --confirm-prune');
   requireClean(blogRoot);
@@ -176,13 +185,14 @@ async function main() {
       'blog-root': { type: 'string' },
       'image-root': { type: 'string' },
       report: { type: 'string' },
+      'image-commit': { type: 'string' },
       'confirm-prune': { type: 'boolean' }
     },
     allowPositionals: true
   });
   const command = positionals[0];
-  if (!['audit', 'apply', 'prune'].includes(command) || positionals.length !== 1) {
-    throw new Error('command must be exactly one of: audit, apply, prune');
+  if (!['audit', 'apply', 'stamp', 'prune'].includes(command) || positionals.length !== 1) {
+    throw new Error('command must be exactly one of: audit, apply, stamp, prune');
   }
   const blogRoot = await requireAbsoluteDirectory('--blog-root', values['blog-root']);
   const imageRoot = await requireAbsoluteDirectory('--image-root', values['image-root']);
@@ -192,6 +202,7 @@ async function main() {
 
   if (command === 'audit') await runAudit(blogRoot, imageRoot, report);
   else if (command === 'apply') await runApply(blogRoot, imageRoot);
+  else if (command === 'stamp') await runStamp(blogRoot, imageRoot, values['image-commit']);
   else await runPrune(blogRoot, imageRoot, values['confirm-prune']);
 }
 

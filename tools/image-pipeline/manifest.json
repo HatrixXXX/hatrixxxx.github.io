@@ -1,8 +1,9 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "generatedAt": "2026-09-01T17:32:32.845Z",
   "blogCommit": "dafe44cc57b99190f835e1f8ded0e87c955caf73",
-  "imageCommit": "caf983fb140c110416eb3f4042fefd05d1929369",
+  "sourceImageCommit": "caf983fb140c110416eb3f4042fefd05d1929369",
+  "publishedImageCommit": "85bc7b2b63bcf294f1079a98edf79ee1c9f41606",
   "entries": [
     {
       "sourcePath": "img/0_F6yCHV2ctleCNqiu.webp",

@@ -16,6 +16,35 @@ function commitFixture(root) {
   execFileSync('git', ['config', 'user.name', 'Image Pipeline Test'], { cwd: root });
   execFileSync('git', ['add', '.'], { cwd: root });
   execFileSync('git', ['commit', '--quiet', '-m', 'fixture'], { cwd: root });
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+}
+
+async function createStampFixture() {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-cli-stamp-'));
+  const blogRoot = join(root, 'blog');
+  const imageRoot = join(root, 'images');
+  const outputPath = 'img/optimized/cover.png.webp';
+  await mkdir(join(blogRoot, 'tools', 'image-pipeline'), { recursive: true });
+  await mkdir(join(imageRoot, 'img', 'optimized'), { recursive: true });
+  await writeFile(join(imageRoot, outputPath), 'published-output');
+  commitFixture(imageRoot);
+  const imageCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: imageRoot,
+    encoding: 'utf8'
+  }).trim();
+  const manifestPath = join(blogRoot, 'tools', 'image-pipeline', 'manifest.json');
+  const manifest = {
+    schemaVersion: 2,
+    sourceImageCommit: null,
+    publishedImageCommit: null,
+    entries: [{
+      sourcePath: 'img/cover.png',
+      full: { adopted: true, path: outputPath, outputBytes: 16 },
+      thumbnail: { adopted: false, path: 'img/thumbnails/cover.png.webp', outputBytes: null }
+    }]
+  };
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  return { blogRoot, imageRoot, imageCommit, manifestPath };
 }
 
 test('apply leaves blogs and final outputs untouched when a later frontmatter update is invalid', async () => {
@@ -104,4 +133,29 @@ test('audit rejects a linked root before writing a report for an empty repositor
 
   assert.notEqual(result.status, 0);
   await assert.rejects(stat(report), { code: 'ENOENT' });
+});
+
+test('stamp records an explicitly validated image commit', async () => {
+  const { blogRoot, imageRoot, imageCommit, manifestPath } = await createStampFixture();
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'stamp', '--blog-root', blogRoot, '--image-root', imageRoot, '--image-commit', imageCommit
+  ], { encoding: 'utf8' });
+
+  assert.equal(result.status, 0, result.stderr);
+  const stamped = JSON.parse(await readFile(manifestPath, 'utf8'));
+  assert.equal(stamped.publishedImageCommit, imageCommit);
+});
+
+test('stamp without --image-commit fails without changing the manifest', async () => {
+  const { blogRoot, imageRoot, manifestPath } = await createStampFixture();
+  const before = await readFile(manifestPath, 'utf8');
+
+  const result = spawnSync(process.execPath, [
+    CLI, 'stamp', '--blog-root', blogRoot, '--image-root', imageRoot
+  ], { encoding: 'utf8' });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /--image-commit is required for stamp/u);
+  assert.equal(await readFile(manifestPath, 'utf8'), before);
 });

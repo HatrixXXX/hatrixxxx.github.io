@@ -66,6 +66,8 @@ npm run images -- apply `
 - 博客引用改为采用的完整图 URL，并在发布封面下增加 `image.thumbnail`；
 - 结果写入 `tools/image-pipeline/manifest.json`。
 
+manifest schema v2 用两个字段区分提交：`sourceImageCommit` 是 apply 前读取原图时的图床快照，`publishedImageCommit` 在 apply 后保持 `null`。输出提交发布并通过 `stamp` 校验后，后一个字段才会写入完整 SHA。
+
 输出路径只保留源文件名，不保留源目录。脚本会拒绝同名输出冲突。完整图只有在尺寸、动画元数据和文件大小检查通过时才会采用；否则博客继续引用原图，原因记录在 manifest 中。
 
 ## 发布顺序与远程检查
@@ -85,15 +87,31 @@ git -C $ImageRoot ls-remote --heads origin `
   refs/heads/backup/pre-image-cleanup-20260901
 ```
 
+图床新增提交发布后，从远端默认分支读取完整 SHA，再执行 stamp。stamp 会逐个检查 adopted output 的路径、字节数和 Git blob；校验未全部通过时不会改 manifest。
+
+```powershell
+$PublishedImageCommit = ((git -C $ImageRoot ls-remote origin refs/heads/master) -split '\s+')[0]
+if ($PublishedImageCommit -notmatch '^[0-9a-f]{40}$') {
+  throw '无法读取图床远端 master 的完整提交 SHA'
+}
+npm run images -- stamp `
+  --blog-root $BlogRoot `
+  --image-root $ImageRoot `
+  --image-commit $PublishedImageCommit
+```
+
 jsDelivr 的无版本 URL 跟随默认分支，分支缓存可能晚于 GitHub。固定 commit URL 不随分支移动，应先用它确认文件，再检查无版本 URL。不要在无版本 URL 尚未返回新文件时部署博客引用。
 
-下面的 PowerShell 会 GET manifest 中所有已采用输出，并检查状态码、媒体类型和响应字节数。`$ImageCommit` 必须是已经发布到图床远端的新增文件提交。
+下面的 PowerShell 会 GET manifest 中所有已采用输出，并检查状态码、媒体类型和响应字节数。固定 URL 只使用 stamp 写入的 `publishedImageCommit`；字段为空或格式错误时立即停止。
 
 ```powershell
 Add-Type -AssemblyName System.Net.Http
-$ImageCommit = (git -C $ImageRoot rev-parse HEAD).Trim()
 $ManifestPath = Join-Path $BlogRoot 'tools\image-pipeline\manifest.json'
 $PipelineManifest = Get-Content -Raw -Encoding UTF8 $ManifestPath | ConvertFrom-Json
+$ImageCommit = [string]$PipelineManifest.publishedImageCommit
+if ($ImageCommit -notmatch '^[0-9a-f]{40}$') {
+  throw 'manifest.publishedImageCommit 缺失或不是完整 SHA；先运行 stamp'
+}
 $HttpClient = [System.Net.Http.HttpClient]::new()
 
 try {
@@ -155,6 +173,11 @@ npm run images -- prune `
 如果尚未运行 `prune`，原图仍在图床。先定位迁移提交，在博客工作树生成 revert 提交；审阅并发布该提交后，博客会重新引用原图。
 
 ```powershell
+$BlogChanges = @(git -C $BlogRoot status --porcelain)
+if ($BlogChanges.Count -ne 0) {
+  $BlogChanges
+  throw 'revert 前博客工作树必须干净'
+}
 $BlogMigrationCommit = (git -C $BlogRoot log -1 --format=%H `
   --grep='^perf: migrate blog images to optimized variants$').Trim()
 if (-not $BlogMigrationCommit) { throw '找不到博客迁移提交' }
@@ -164,6 +187,11 @@ git -C $BlogRoot revert $BlogMigrationCommit
 如已运行 `prune`，先从优化前备份分支恢复 manifest 批准删除的原图。这个命令只恢复源路径，不覆盖 `img/optimized/` 和 `img/thumbnails/`。
 
 ```powershell
+$ImageChanges = @(git -C $ImageRoot status --porcelain)
+if ($ImageChanges.Count -ne 0) {
+  $ImageChanges
+  throw '恢复原图前图床工作树必须干净'
+}
 $BackupRef = 'refs/heads/backup/pre-image-optimization-20260901'
 git -C $ImageRoot fetch origin `
   "${BackupRef}:refs/remotes/origin/backup/pre-image-optimization-20260901"
