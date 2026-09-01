@@ -1,0 +1,107 @@
+import { expect, test } from '@playwright/test';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+const postsDirectory = join(process.cwd(), 'src', 'content', 'posts');
+
+async function legacySlugs(): Promise<string[]> {
+  const files = (await readdir(postsDirectory)).filter((file) => file.endsWith('.md'));
+  return Promise.all(
+    files.map(async (file) => {
+      const source = await readFile(join(postsDirectory, file), 'utf8');
+      const slug = source.match(/^legacySlug:\s*(.+)$/m)?.[1]?.trim();
+      if (!slug) throw new Error(`Missing legacySlug in ${file}`);
+      return slug;
+    })
+  );
+}
+
+test('legacy post route renders enhanced article content', async ({ page }) => {
+  const response = await page.goto('/posts/本科数学大杂烩/');
+  expect(response?.status()).toBe(200);
+  await expect(page.locator('article[data-post] h1')).toContainText('本科数学');
+  await expect(page.locator('.katex').first()).toBeVisible();
+
+  const firstTocLink = page.locator('[data-table-of-contents] a').first();
+  await expect(firstTocLink).toHaveAttribute('href', /^#.+/);
+  const firstHeadingId = (await firstTocLink.getAttribute('href'))?.slice(1);
+  await expect(page.locator(`#${firstHeadingId}`)).toBeAttached();
+
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    new URL('/posts/本科数学大杂烩/', 'https://hatrix.site').href
+  );
+  const giscus = page.locator('script[src="https://giscus.app/client.js"]');
+  await expect(giscus).toHaveAttribute('data-repo', 'hatrixxxx/hatrixxxx.github.io');
+  await expect(giscus).toHaveAttribute('data-repo-id', 'R_kgDORB9GlQ');
+  await expect(giscus).toHaveAttribute('data-category', 'Comments');
+  await expect(giscus).toHaveAttribute('data-category-id', 'DIC_kwDORB9Glc4DACF_');
+  await expect(giscus).toHaveAttribute('data-mapping', 'pathname');
+  await expect(giscus).toHaveAttribute('data-strict', '0');
+  await expect(page.locator('[data-adjacent-posts] a').first()).toHaveAttribute(
+    'href',
+    /^\/posts\//
+  );
+});
+
+test('all legacy slugs resolve, including the spaced slug clicked from pagination', async ({
+  page,
+  request
+}) => {
+  test.setTimeout(120_000);
+  const slugs = await legacySlugs();
+  expect(slugs).toHaveLength(40);
+
+  const responses = await Promise.all(
+    slugs.map(async (slug) => ({ slug, response: await request.get(`/posts/${slug}/`) }))
+  );
+  for (const { slug, response } of responses) {
+    expect(response.status(), slug).toBe(200);
+  }
+
+  await page.goto('/page/3/');
+  const spacedSlugLink = page
+    .locator('a[href="/posts/FPGA开发(1)Vivado+Vitis 使用/"]')
+    .first();
+  await spacedSlugLink.click();
+  await expect(page).toHaveURL(
+    new RegExp(`${encodeURI('/posts/FPGA开发(1)Vivado+Vitis 使用/').replace(/[+()]/g, '\\$&')}$`)
+  );
+  await expect(page.locator('article[data-post] h1')).toContainText('Vivado + Vitis');
+});
+
+test('Mermaid loader renders targets on astro page-load', async ({ page }) => {
+  await page.goto('/posts/FPGA开发(3)AXI协议/');
+  await expect(page.locator('.language-mermaid')).toHaveCount(0);
+
+  await page.locator('.prose').evaluate((prose) => {
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    code.className = 'language-mermaid';
+    code.textContent = 'flowchart LR\n  A --> B';
+    pre.append(code);
+    prose.append(pre);
+    document.dispatchEvent(new Event('astro:page-load'));
+  });
+
+  await expect(page.locator('[data-mermaid] svg, .mermaid svg').first()).toBeAttached();
+});
+
+test('post layout has no mobile horizontal overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/posts/本科数学大杂烩/');
+  const sizes = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    client: document.documentElement.clientWidth
+  }));
+  expect(sizes.scroll).toBe(sizes.client);
+});
+
+test('Giscus failure degrades comments without hiding the article', async ({ page }) => {
+  await page.route('https://giscus.app/client.js', (route) => route.abort());
+  await page.goto('/posts/本科数学大杂烩/');
+  await expect(page.locator('[data-giscus-status]')).toHaveText(
+    '评论暂时无法加载，正文内容不受影响'
+  );
+  await expect(page.locator('article[data-post] .prose')).toBeVisible();
+});

@@ -12,16 +12,18 @@ interface Props {
   description?: string;
   image?: string;
   bodyClass?: string;
+  canonicalPath?: string;
 }
 
 const {
   title,
   description = SITE.description,
   image = '/images/default-cover.svg',
-  bodyClass
+  bodyClass,
+  canonicalPath
 } = Astro.props;
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
-const canonical = new URL(Astro.url.pathname, SITE.url);
+const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
 const socialImage = new URL(image, SITE.url);
 ---
 
