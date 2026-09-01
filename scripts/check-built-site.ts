@@ -5,9 +5,15 @@ import matter from 'gray-matter';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 const SITE_ORIGIN = 'https://hatrix.site';
+const EXPECTED_LOCAL_LINKS = 4653;
 
 export interface BuiltSiteCheckOptions {
   sourceCnamePath?: string;
+  expectedLocalLinks?: number;
+}
+
+export interface ProjectBuiltSiteCheckOptions {
+  expectedLocalLinks?: number;
 }
 
 export interface BuiltSiteCheckResult {
@@ -150,6 +156,10 @@ export async function inspectBuiltSite(
     }
   }
 
+  if (options.expectedLocalLinks !== undefined && checkedLinks !== options.expectedLocalLinks) {
+    errors.push(`Expected ${options.expectedLocalLinks} local links, found ${checkedLinks}.`);
+  }
+
   return { errors, outputBytes, checkedLinks };
 }
 
@@ -205,7 +215,10 @@ async function nativeMarkdownImageErrors(root: string, postsDirectory: string): 
   return errors;
 }
 
-export async function inspectProjectBuiltSite(projectRoot: string): Promise<BuiltSiteCheckResult> {
+export async function inspectProjectBuiltSite(
+  projectRoot: string,
+  options: ProjectBuiltSiteCheckOptions = {}
+): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
   const postsDirectory = resolve(projectRoot, 'src/content/posts');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
@@ -231,14 +244,17 @@ export async function inspectProjectBuiltSite(projectRoot: string): Promise<Buil
   if (generatedPostCount !== 40) errors.push(`Expected 40 generated post routes, found ${generatedPostCount}.`);
 
   const result = await inspectBuiltSite(distPath, routes, {
-    sourceCnamePath: resolve(projectRoot, 'public/CNAME')
+    sourceCnamePath: resolve(projectRoot, 'public/CNAME'),
+    expectedLocalLinks: options.expectedLocalLinks
   });
   errors.push(...result.errors, ...(await nativeMarkdownImageErrors(distPath, postsDirectory)));
   return { ...result, errors };
 }
 
 async function main(): Promise<void> {
-  const result = await inspectProjectBuiltSite(process.cwd());
+  const result = await inspectProjectBuiltSite(process.cwd(), {
+    expectedLocalLinks: EXPECTED_LOCAL_LINKS
+  });
 
   console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);
   if (result.errors.length > 0) {

@@ -58,7 +58,7 @@
 - TypeScript 严格模式。
 - pnpm 和锁文件。
 - Astro Content Collections 管理文章和作品。
-- Astro View Transitions 管理页面切换，并通过 `transition:persist` 保留播放器状态。
+- Astro View Transitions 管理页面切换，并通过 `transition:persist` 保留播放器状态。空歌单播放器位于页脚后的普通文档流；歌单非空时才固定在页面右下角。
 - 样式以 Astro scoped CSS 和全局 CSS 变量为主。Tailwind、SCSS、jQuery 和前端组件框架没有禁用；只有出现明确收益或现成依赖时才引入。
 - 普通交互优先使用原生 TypeScript。后续 3D 页面可独立使用 Three.js、Babylon.js、React Three Fiber 或其他客户端方案。
 

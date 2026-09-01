@@ -85,8 +85,8 @@ describe('content utilities', () => {
     expect(markdownToPlainText).toBeTypeOf('function');
     if (!markdownToPlainText) return;
 
-    expect(markdownToPlainText(`## Heading\n\n**strong** and *emphasis* with \`inline code\`.\n\n[Link label](https://example.com) ![image alt](image.png)\n\n\`\`\`ts\nconst value = 1;\n\`\`\`\n\n<my_repo_url> <span>HTML</span>`))
-      .toBe('Heading strong and emphasis with inline code. Link label image alt const value = 1; HTML');
+    expect(markdownToPlainText(`## Heading\n\n**strong** and *emphasis* with \`inline code\`.\n\n[Link label](https://example.com) ![image alt](image.png)\n\n\`\`\`ts\nconst value = 1;\n\`\`\`\n\n<my_repo_url> <span>HTML</span> <!-- hidden -->`))
+      .toBe('Heading strong and emphasis with inline code. Link label image alt const value = 1; <my_repo_url> HTML');
   });
 
   it('collapses whitespace and truncates normalized search text', () => {

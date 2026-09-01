@@ -116,7 +116,7 @@ export const playlist: readonly Track[] = [
 ];
 ```
 
-`id`、`title`、`artist` 和 `src` 必填，`cover` 可省略。播放列表保持空数组时，播放器不会创建 `Audio` 对象，也不会请求音频文件。
+`id`、`title`、`artist` 和 `src` 必填，`cover` 可省略。播放列表为空时，播放器位于页脚后的普通文档流，不会创建 `Audio` 对象或请求音频文件；列表有曲目后才固定在页面右下角。
 
 ## 图片策略
 
@@ -134,10 +134,12 @@ export const playlist: readonly Track[] = [
 | `pnpm check` | Astro 与 TypeScript 诊断 |
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检与 80 页静态构建 |
-| `pnpm check:site` | 旧文章路由、CNAME、站内链接和发布体积 |
+| `pnpm check:site` | 旧文章路由、CNAME、4653 条站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 59 项；其中 21 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
+
+新增或删除页面、导航项等内容后，如果站内链接总量发生了合理变化，先核对构建产物，再同步更新 `scripts/check-built-site.ts` 中的期望值；未更新时 `pnpm check:site` 会失败。
 
 ## 部署
 

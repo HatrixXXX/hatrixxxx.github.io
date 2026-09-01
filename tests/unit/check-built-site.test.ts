@@ -46,6 +46,22 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
   expect(result.errors).toEqual([]);
 });
 
+it('reports when the local link inventory is one below the expected count', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-site-'));
+
+  await writeSiteFile(root, 'index.html', '<a href="/404.html">not found</a>');
+  await writeSiteFile(root, '404.html');
+  await writeSiteFile(root, 'CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'rss.xml', '<rss/>');
+  await writeSiteFile(root, 'sitemap-0.xml', '<urlset/>');
+  await writeSiteFile(root, 'search-index.json', '[]');
+
+  const result = await inspectBuiltSite(root, [], { expectedLocalLinks: 2 });
+
+  expect(result.checkedLinks).toBe(1);
+  expect(result.errors).toContain('Expected 2 local links, found 1.');
+});
+
 it('aggregates missing post output errors without throwing', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');

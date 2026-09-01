@@ -50,6 +50,12 @@ const isEmpty = playlist.length === 0;
     backdrop-filter: blur(12px);
   }
 
+  .music-player[data-empty='true'] {
+    position: static;
+    width: min(calc(100% - 2rem), 500px);
+    margin: 1rem auto;
+  }
+
   .track-copy,
   .volume-control {
     display: flex;

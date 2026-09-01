@@ -110,9 +110,32 @@ test('post layout has no mobile horizontal overflow', async ({ page }) => {
   expect(sizes.scroll).toBe(sizes.client);
 });
 
-test('Giscus success clears loading state and remounts once after client navigation', async ({
+test('Giscus follows theme changes and remounts once after client navigation', async ({
   page
 }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.route('https://giscus.app/theme-probe', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: `
+        <!doctype html>
+        <html data-message-count="0">
+          <body>
+            <script>
+              addEventListener('message', (event) => {
+                const theme = event.data?.giscus?.setConfig?.theme;
+                if (theme !== 'light' && theme !== 'dark') return;
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.dataset.messageCount = String(
+                  Number(document.documentElement.dataset.messageCount) + 1
+                );
+              });
+            <\/script>
+          </body>
+        </html>
+      `
+    })
+  );
   await page.route('https://giscus.app/client.js', (route) =>
     route.fulfill({
       contentType: 'application/javascript',
@@ -121,6 +144,7 @@ test('Giscus success clears loading state and remounts once after client navigat
           const section = document.currentScript?.closest('[data-giscus-comments]');
           const iframe = document.createElement('iframe');
           iframe.className = 'giscus-frame';
+          iframe.src = 'https://giscus.app/theme-probe';
           section?.append(iframe);
         })();
       `
@@ -129,14 +153,31 @@ test('Giscus success clears loading state and remounts once after client navigat
 
   await page.goto('/posts/本科数学大杂烩/');
   await expect(page.locator('[data-giscus-status]')).toBeHidden();
-  await expect(page.locator('script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+  const script = page.locator('script[src="https://giscus.app/client.js"]');
+  await expect(script).toHaveCount(1);
+  await expect(script).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
+  const frameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
+  await expect(frameHtml).toHaveAttribute('data-message-count', '0');
+
+  await page.getByRole('button', { name: '切换主题' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(frameHtml).toHaveAttribute('data-theme', 'dark');
+  await expect(frameHtml).toHaveAttribute('data-message-count', '1');
 
   await page.locator('[data-adjacent-posts] a').first().click();
   await expect(page.locator('article[data-post]')).toBeVisible();
   await expect(page.locator('[data-giscus-status]')).toBeHidden();
-  await expect(page.locator('script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+  await expect(script).toHaveCount(1);
+  await expect(script).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
+  const remountedFrameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
+  await expect(remountedFrameHtml).toHaveAttribute('data-message-count', '0');
+
+  await page.getByRole('button', { name: '切换主题' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(remountedFrameHtml).toHaveAttribute('data-theme', 'light');
+  await expect(remountedFrameHtml).toHaveAttribute('data-message-count', '1');
 });
 
 test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ page }) => {

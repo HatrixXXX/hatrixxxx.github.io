@@ -36,7 +36,7 @@ const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
       script.dataset.reactionsEnabled = '1';
       script.dataset.emitMetadata = '0';
       script.dataset.inputPosition = 'top';
-      script.dataset.theme = 'dark';
+      script.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
       script.dataset.lang = 'zh-CN';
       script.crossOrigin = 'anonymous';
       script.async = true;

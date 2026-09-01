@@ -45,7 +45,7 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
   const search = await searchResponse.json();
   expect(search).toHaveLength(40);
   for (const document of search) {
-    expect(document.text).not.toMatch(/<\/?[a-z][^>]*>|```|!\[|\]\([^)]*\)/i);
+    expect(document.text).not.toMatch(/<\/?[A-Za-z][A-Za-z0-9-]*(?:\s[^<>]*?)?\s*\/?>|<!--[\s\S]*?-->|```|!\[|\]\([^)]*\)/);
   }
 });
 
