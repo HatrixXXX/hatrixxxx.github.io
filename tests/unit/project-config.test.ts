@@ -83,8 +83,8 @@ describe('Astro project tooling', () => {
   });
 
   it('limits Pages write permissions to the deployment job', () => {
-    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8');
-    const workflowPermissions = workflow.match(/^permissions:\r?\n((?:  .+\r?\n)+)/m)?.[1];
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+    const workflowPermissions = workflow.match(/^permissions:\n((?:  .+\n)+)/m)?.[1];
     const deployJob = workflow.slice(workflow.indexOf('\n  deploy:'));
 
     expect(workflowPermissions).toBe('  contents: read\n');
