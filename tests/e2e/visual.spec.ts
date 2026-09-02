@@ -4,8 +4,6 @@ const routes = [
   '/',
   '/posts/本科数学大杂烩/',
   '/archives/',
-  '/categories/',
-  '/tags/',
   '/projects/',
   '/404.html'
 ];
