@@ -5,6 +5,7 @@ import SiteHeader from '@/components/SiteHeader.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
 import SearchOverlay from '@/components/SearchOverlay.astro';
 import ThemeTransition from '@/components/ThemeTransition.astro';
+import SakanaCharacters from '@/components/SakanaCharacters.astro';
 import { SITE } from '@/config/site';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
@@ -70,6 +71,7 @@ const socialImage = new URL(image, SITE.url);
     <SiteHeader />
     <slot />
     <SiteFooter />
+    <SakanaCharacters />
     <ThemeTransition />
     <SearchOverlay />
     <MusicPlayer />

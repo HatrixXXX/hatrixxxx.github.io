@@ -1,0 +1,67 @@
+import { expect, test } from '@playwright/test';
+
+async function readSakanaLayout(page: import('@playwright/test').Page) {
+  return page.locator('[data-sakana-layer]').evaluate((layer) => {
+    const left = layer.querySelector<HTMLElement>('[data-sakana-anchor="left"]');
+    const right = layer.querySelector<HTMLElement>('[data-sakana-anchor="right"]');
+    const mirror = layer.querySelector<HTMLElement>('[data-sakana-mirror]');
+    if (!left || !right || !mirror) throw new Error('Sakana anchors are missing');
+
+    const rect = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height
+      };
+    };
+
+    return {
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      layerZIndex: getComputedStyle(layer).zIndex,
+      mirrorTransform: getComputedStyle(mirror).transform,
+      left: rect(left),
+      right: rect(right)
+    };
+  });
+}
+
+test('renders mirrored and responsive mounts without horizontal overflow', async ({ page }) => {
+  await page.goto('/');
+
+  const layer = page.locator('[data-sakana-layer]');
+  await expect(layer).toHaveCount(1);
+  await expect(layer).toHaveAttribute('aria-hidden', 'true');
+  await expect(layer.locator('[data-sakana-anchor]')).toHaveCount(2);
+  await expect(layer.locator('[data-sakana-mount="chisato"]')).toHaveCount(1);
+  await expect(layer.locator('[data-sakana-mount="takina"]')).toHaveCount(1);
+
+  const desktop = await readSakanaLayout(page);
+  expect(desktop.layerZIndex).toBe('15');
+  expect(desktop.mirrorTransform).toBe('matrix(-1, 0, 0, 1, 0, 0)');
+  expect(desktop.scrollWidth).toBe(desktop.viewportWidth);
+  expect(desktop.left.left).toBeCloseTo(0, 1);
+  expect(desktop.left.bottom).toBeCloseTo(desktop.viewportHeight, 1);
+  expect(desktop.left.width).toBeCloseTo(250, 1);
+  expect(desktop.left.height).toBeCloseTo(400, 1);
+  expect(desktop.right.right).toBeCloseTo(desktop.viewportWidth, 1);
+  expect(desktop.right.bottom).toBeCloseTo(desktop.viewportHeight, 1);
+  expect(desktop.right.width).toBeCloseTo(250, 1);
+  expect(desktop.right.height).toBeCloseTo(400, 1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await readSakanaLayout(page);
+  expect(mobile.scrollWidth).toBe(mobile.viewportWidth);
+  expect(mobile.left.left).toBeCloseTo(0, 1);
+  expect(mobile.left.bottom).toBeCloseTo(844, 1);
+  expect(mobile.left.width).toBeCloseTo(160, 1);
+  expect(mobile.left.height).toBeCloseTo(256, 1);
+  expect(mobile.right.right).toBeCloseTo(390, 1);
+  expect(mobile.right.bottom).toBeCloseTo(844, 1);
+  expect(mobile.right.width).toBeCloseTo(160, 1);
+  expect(mobile.right.height).toBeCloseTo(256, 1);
+});
