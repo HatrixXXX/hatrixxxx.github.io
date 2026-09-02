@@ -8,7 +8,7 @@ export const POST_CATEGORIES = [
 ] as const;
 
 export const SITE = {
-  title: "Hatrix's 窝",
+  title: "Hatrixの窝",
   tagline: '轻松即单纯，速成即精准',
   description: '技术研发、学习记录与作品展示',
   url: 'https://hatrix.site',
