@@ -7,9 +7,7 @@
   transition:persist="sakana-characters"
 >
   <div class="sakana-anchor" data-sakana-anchor="left">
-    <div class="sakana-mirror" data-sakana-mirror>
-      <div class="sakana-box" data-sakana-mount="chisato"></div>
-    </div>
+    <div class="sakana-box" data-sakana-mount="chisato"></div>
   </div>
   <div class="sakana-anchor" data-sakana-anchor="right">
     <div class="sakana-box" data-sakana-mount="takina"></div>
@@ -36,7 +34,7 @@
   }
 
   [data-sakana-anchor='left'] {
-    left: 0;
+    left: -50px;
     transform-origin: left bottom;
   }
 
@@ -45,15 +43,33 @@
     transform-origin: right bottom;
   }
 
-  [data-sakana-mirror] {
-    width: 100%;
-    height: 100%;
+  [data-sakana-mount='chisato'] .sakana-character {
+    background-size: 0 0 !important;
+  }
+
+  [data-sakana-mount='chisato'] .sakana-character::before {
+    position: absolute;
+    inset: 0;
+    background-image: inherit;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    content: '';
+    pointer-events: none;
     transform: scaleX(-1);
+  }
+
+  [data-sakana-layer] .sakana-bed {
+    display: none !important;
   }
 
   @media (max-width: 480px) {
     [data-sakana-anchor] {
       --sakana-scale: 0.32;
+    }
+
+    [data-sakana-anchor='left'] {
+      left: -32px;
     }
   }
 
