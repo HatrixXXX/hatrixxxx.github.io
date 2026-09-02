@@ -13,8 +13,10 @@
 - 使用 Node 24 和 Corepack 管理的 pnpm。
 - 保持 Astro 纯静态输出，不增加服务端代码、数据库或运行时 CDN。
 - 使用官方 `itorr/sakana` 对应的 `sakana@1.0.8`，版本精确固定。
-- 千束固定在左下并水平镜像；泷奈固定在右下且不镜像；禁止角色切换和自动甩动。
+- 千束固定在左下，只有人物位图水平镜像，拖动方向与偏转方向一致；泷奈固定在右下且不镜像；禁止角色切换和自动甩动。
 - 桌面和平板缩放为 `0.5`；视口宽度不超过 `480px` 时缩放为 `0.32`，手机端仍显示两人。
+- 千束锚点在桌面和平板左移 `50px`，手机端左移 `32px`；人物主体贴住视口左边但不裁切。
+- 两个 `.sakana-bed` 都隐藏，只保留连接杆和人物。
 - 角色层使用 `z-index: 15`，低于导航、搜索、播放器和主题全屏动效。
 - 初始配置为 `r: 0`、`y: 0`、`scale: 1`、`canSwitchCharacter: false`。
 - 普通模式启用原有拖拽和音效；`prefers-reduced-motion: reduce` 下暂停动画、静音并禁止拖拽。
@@ -26,7 +28,7 @@
 
 ## File Map
 
-- Create `src/components/SakanaCharacters.astro`: 两个挂载点、镜像包装层、固定定位和响应式样式。
+- Create `src/components/SakanaCharacters.astro`: 两个挂载点、千束位图镜像、固定定位和响应式样式。
 - Create `src/scripts/sakana.ts`: 空闲加载、实例初始化、导航去重和减少动态效果状态。
 - Create `src/types/sakana.d.ts`: 当前功能实际使用的 `sakana` 类型。
 - Create `tests/e2e/sakana.spec.ts`: 角色、方向、位置、拖拽、锁定和导航持久化测试。
@@ -634,7 +636,277 @@ git commit -m "feat: respect reduced motion for sakana"
 
 ---
 
-### Task 4: Stabilize visual coverage and documentation counts
+### Task 4: Keep mirrored Chisato aligned with pointer movement
+
+**Files:**
+- Modify: `src/components/SakanaCharacters.astro`
+- Modify: `tests/e2e/sakana.spec.ts`
+
+**Interfaces:**
+- Consumes: Task 2 动态生成的 `.sakana-character`、`.sakana-bed` 和两个固定角色 mount。
+- Produces: 千束背景位图的 `::before` 镜像；承载物理 `transform` 的 `.sakana-character` 不再处于反射坐标系。
+- Produces: 桌面/平板 `left: -50px`、手机 `left: -32px`，两个底座 `display: none`。
+
+- [ ] **Step 1: Replace the layout probe with final artwork and offset checks**
+
+将 `tests/e2e/sakana.spec.ts` 中的 `readSakanaLayout` 替换为：
+
+```ts
+async function readSakanaLayout(page: import('@playwright/test').Page) {
+  return page.locator('[data-sakana-layer]').evaluate((layer) => {
+    const left = layer.querySelector<HTMLElement>('[data-sakana-anchor="left"]');
+    const right = layer.querySelector<HTMLElement>('[data-sakana-anchor="right"]');
+    const chisato = layer.querySelector<HTMLElement>(
+      '[data-sakana-mount="chisato"] .sakana-character'
+    );
+    const takina = layer.querySelector<HTMLElement>(
+      '[data-sakana-mount="takina"] .sakana-character'
+    );
+    const beds = [...layer.querySelectorAll<HTMLElement>('.sakana-bed')];
+    if (!left || !right || !chisato || !takina || beds.length !== 2) {
+      throw new Error('Sakana layout is incomplete');
+    }
+
+    const rect = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height
+      };
+    };
+
+    return {
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      layerZIndex: getComputedStyle(layer).zIndex,
+      chisatoArtworkTransform: getComputedStyle(chisato, '::before').transform,
+      takinaArtworkTransform: getComputedStyle(takina, '::before').transform,
+      bedDisplays: beds.map((bed) => getComputedStyle(bed).display),
+      left: rect(left),
+      right: rect(right),
+      chisato: rect(chisato)
+    };
+  });
+}
+```
+
+将第一个测试替换为：
+
+```ts
+test('renders mirrored artwork and responsive mounts without horizontal overflow', async ({ page }) => {
+  await page.goto('/');
+
+  const layer = page.locator('[data-sakana-layer]');
+  await expect(layer).toHaveCount(1);
+  await expect(layer).toHaveAttribute('aria-hidden', 'true');
+  await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
+  await expect(layer.locator('[data-sakana-anchor]')).toHaveCount(2);
+  await expect(layer.locator('[data-sakana-mount="chisato"]')).toHaveCount(1);
+  await expect(layer.locator('[data-sakana-mount="takina"]')).toHaveCount(1);
+
+  const desktop = await readSakanaLayout(page);
+  expect(desktop.layerZIndex).toBe('15');
+  expect(desktop.chisatoArtworkTransform).toBe('matrix(-1, 0, 0, 1, 0, 0)');
+  expect(desktop.takinaArtworkTransform).toBe('none');
+  expect(desktop.bedDisplays).toEqual(['none', 'none']);
+  expect(desktop.scrollWidth).toBe(desktop.viewportWidth);
+  expect(desktop.left.left).toBeCloseTo(-50, 1);
+  expect(desktop.left.bottom).toBeCloseTo(desktop.viewportHeight, 1);
+  expect(desktop.left.width).toBeCloseTo(250, 1);
+  expect(desktop.left.height).toBeCloseTo(400, 1);
+  expect(desktop.chisato.left).toBeCloseTo(0, 1);
+  expect(desktop.right.right).toBeCloseTo(desktop.viewportWidth, 1);
+  expect(desktop.right.bottom).toBeCloseTo(desktop.viewportHeight, 1);
+  expect(desktop.right.width).toBeCloseTo(250, 1);
+  expect(desktop.right.height).toBeCloseTo(400, 1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await readSakanaLayout(page);
+  expect(mobile.scrollWidth).toBe(mobile.viewportWidth);
+  expect(mobile.left.left).toBeCloseTo(-32, 1);
+  expect(mobile.left.bottom).toBeCloseTo(844, 1);
+  expect(mobile.left.width).toBeCloseTo(160, 1);
+  expect(mobile.left.height).toBeCloseTo(256, 1);
+  expect(mobile.chisato.left).toBeCloseTo(0, 1);
+  expect(mobile.right.right).toBeCloseTo(390, 1);
+  expect(mobile.right.bottom).toBeCloseTo(844, 1);
+  expect(mobile.right.width).toBeCloseTo(160, 1);
+  expect(mobile.right.height).toBeCloseTo(256, 1);
+});
+```
+
+- [ ] **Step 2: Require both generated bases to stay hidden**
+
+在初始化与导航测试中，用以下断言替换两个底座的 `dispatchEvent('click')` 和重复角色断言：
+
+```ts
+  await expect(chisato.locator('.sakana-bed')).toBeHidden();
+  await expect(takina.locator('.sakana-bed')).toBeHidden();
+```
+
+保留 `data-can-switch-character` 不为 `true` 的断言，继续验证角色被锁定。
+
+- [ ] **Step 3: Make drag direction observable in both horizontal directions**
+
+将拖拽测试替换为：
+
+```ts
+test('dragging Chisato follows the pointer and moves only that instance', async ({ page }) => {
+  for (const deltaX of [60, -60]) {
+    await page.goto('/');
+    const layer = page.locator('[data-sakana-layer]');
+    await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
+
+    const chisato = layer.locator('[data-sakana-mount="chisato"] .sakana-character');
+    const takina = layer.locator('[data-sakana-mount="takina"] .sakana-character');
+    const initialTakinaStyle = await takina.getAttribute('style');
+    const initialBox = await chisato.boundingBox();
+    if (!initialBox) throw new Error('Chisato is not visible');
+    const initialCenterX = initialBox.x + initialBox.width / 2;
+    const centerY = initialBox.y + initialBox.height / 2;
+
+    await page.mouse.move(initialCenterX, centerY);
+    await page.mouse.down();
+    await page.mouse.move(initialCenterX + deltaX, centerY - initialBox.height * 0.15);
+
+    const draggedStyle = await chisato.getAttribute('style');
+    const draggedBox = await chisato.boundingBox();
+    if (!draggedBox) throw new Error('Chisato disappeared while dragging');
+    const visualDeltaX = draggedBox.x + draggedBox.width / 2 - initialCenterX;
+    expect(Math.sign(visualDeltaX)).toBe(Math.sign(deltaX));
+    expect(await takina.getAttribute('style')).toBe(initialTakinaStyle);
+
+    await page.mouse.up();
+    await expect.poll(() => chisato.getAttribute('style')).not.toBe(draggedStyle);
+  }
+});
+```
+
+- [ ] **Step 4: Run the Sakana tests and observe the three regressions**
+
+Run:
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/sakana.spec.ts --project=desktop-1440
+```
+
+Expected: FAIL because the left anchor is still at `0`, both bases are visible, the artwork pseudo-element is not mirrored, and a rightward drag produces a negative visual delta under the whole-widget mirror.
+
+- [ ] **Step 5: Mirror only the bitmap, hide bases and shift Chisato left**
+
+将 `src/components/SakanaCharacters.astro` 替换为：
+
+```astro
+<aside
+  class="sakana-layer"
+  data-sakana-layer
+  data-sakana-state=""
+  data-sakana-motion=""
+  aria-hidden="true"
+  transition:persist="sakana-characters"
+>
+  <div class="sakana-anchor" data-sakana-anchor="left">
+    <div class="sakana-box" data-sakana-mount="chisato"></div>
+  </div>
+  <div class="sakana-anchor" data-sakana-anchor="right">
+    <div class="sakana-box" data-sakana-mount="takina"></div>
+  </div>
+</aside>
+
+<style is:global>
+  [data-sakana-layer] {
+    position: fixed;
+    z-index: 15;
+    inset: 0;
+    overflow: clip;
+    pointer-events: none;
+  }
+
+  [data-sakana-anchor] {
+    --sakana-scale: 0.5;
+    position: absolute;
+    bottom: 0;
+    width: 500px;
+    height: 800px;
+    pointer-events: none;
+    transform: scale(var(--sakana-scale));
+  }
+
+  [data-sakana-anchor='left'] {
+    left: -50px;
+    transform-origin: left bottom;
+  }
+
+  [data-sakana-anchor='right'] {
+    right: 0;
+    transform-origin: right bottom;
+  }
+
+  [data-sakana-mount='chisato'] .sakana-character {
+    background-size: 0 0 !important;
+  }
+
+  [data-sakana-mount='chisato'] .sakana-character::before {
+    position: absolute;
+    inset: 0;
+    background-image: inherit;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    content: '';
+    pointer-events: none;
+    transform: scaleX(-1);
+  }
+
+  [data-sakana-layer] .sakana-bed {
+    display: none !important;
+  }
+
+  @media (max-width: 480px) {
+    [data-sakana-anchor] {
+      --sakana-scale: 0.32;
+    }
+
+    [data-sakana-anchor='left'] {
+      left: -32px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-sakana-layer] .sakana-character,
+    [data-sakana-layer] .sakana-bed {
+      pointer-events: none !important;
+    }
+  }
+</style>
+```
+
+- [ ] **Step 6: Run focused behavior and type checks**
+
+Run:
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/sakana.spec.ts --project=desktop-1440
+corepack pnpm exec playwright test tests/e2e/accessibility.spec.ts --project=desktop-1440
+corepack pnpm check
+```
+
+Expected: 3 Sakana tests and 3 accessibility tests pass; Astro reports 0 errors.
+
+- [ ] **Step 7: Commit the corrected mirror interaction**
+
+```powershell
+git add -- src/components/SakanaCharacters.astro tests/e2e/sakana.spec.ts
+git commit -m "fix: align mirrored sakana drag direction"
+```
+
+---
+
+### Task 5: Stabilize visual coverage and documentation counts
 
 **Files:**
 - Modify: `tests/e2e/visual.spec.ts:16-23`
@@ -725,13 +997,13 @@ git commit -m "test: cover dual sakana visuals"
 
 ---
 
-### Task 5: Run the completion gates and keep a local preview open
+### Task 6: Run the completion gates and keep a local preview open
 
 **Files:**
 - Verify only; do not add `dist/`, `.astro/`, `reports/`, `test-results/` or Playwright traces.
 
 **Interfaces:**
-- Consumes: all implementation and tests from Tasks 1-4.
+- Consumes: all implementation and tests from Tasks 1-5.
 - Produces: command evidence for every acceptance criterion and a local preview at `http://127.0.0.1:4321/`.
 
 - [ ] **Step 1: Run unit and type checks**
