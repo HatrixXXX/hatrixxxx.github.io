@@ -28,6 +28,7 @@
     "reading-time": "^1.5.0",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
+    "sakana": "1.0.8",
     "sharp": "^0.35.4"
   },
   "devDependencies": {

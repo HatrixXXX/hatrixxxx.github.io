@@ -65,3 +65,41 @@ test('renders mirrored and responsive mounts without horizontal overflow', async
   expect(mobile.right.width).toBeCloseTo(160, 1);
   expect(mobile.right.height).toBeCloseTo(256, 1);
 });
+
+test('initializes locked roles once and persists them across client navigation', async ({ page }) => {
+  const remoteSakanaRequests: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (
+      url.hostname !== '127.0.0.1' &&
+      (url.pathname.toLowerCase().includes('sakana') || url.hostname === 'lab.magiconch.com')
+    ) {
+      remoteSakanaRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/');
+  const layer = page.locator('[data-sakana-layer]');
+  await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
+  await expect(layer).toHaveAttribute('data-sakana-motion', 'full');
+
+  const chisato = layer.locator('[data-sakana-mount="chisato"]');
+  const takina = layer.locator('[data-sakana-mount="takina"]');
+  await expect(chisato.locator('.sakana-character')).toHaveAttribute('data-character', 'chisato');
+  await expect(takina.locator('.sakana-character')).toHaveAttribute('data-character', 'takina');
+  await expect(layer.locator('canvas')).toHaveCount(2);
+  await expect(chisato).not.toHaveAttribute('data-can-switch-character', 'true');
+  await expect(takina).not.toHaveAttribute('data-can-switch-character', 'true');
+
+  await chisato.locator('.sakana-bed').dispatchEvent('click');
+  await takina.locator('.sakana-bed').dispatchEvent('click');
+  await expect(chisato.locator('.sakana-character')).toHaveAttribute('data-character', 'chisato');
+  await expect(takina.locator('.sakana-character')).toHaveAttribute('data-character', 'takina');
+
+  await layer.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
+  await page.getByRole('link', { name: '归档', exact: true }).click();
+  await expect(page).toHaveURL(/\/archives\/$/);
+  await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-persist-probe', 'same-node');
+  await expect(page.locator('[data-sakana-layer] canvas')).toHaveCount(2);
+  expect(remoteSakanaRequests).toEqual([]);
+});
