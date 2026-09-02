@@ -1,5 +1,7 @@
 # Final review 修复报告
 
+> 历史记录：本文数值对应 `feature/astro-blog-rebuild` 当时的提交；当前页面、链接和测试数量以根目录 README 与 AGENTS 为准。
+
 ## 状态与提交
 
 - 状态：完成

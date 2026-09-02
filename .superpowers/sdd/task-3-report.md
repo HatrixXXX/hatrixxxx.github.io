@@ -1,5 +1,7 @@
 # Task 3 migration report
 
+> 历史记录：本文描述的是最初迁移结果；文章分类与标签后来由 `docs/superpowers/specs/2026-09-03-remove-taxonomy-design.md` 废止。
+
 ## RED / GREEN evidence
 
 - RED: `corepack pnpm vitest run tests/unit/classify-post.test.ts tests/unit/migrate-posts.test.ts`

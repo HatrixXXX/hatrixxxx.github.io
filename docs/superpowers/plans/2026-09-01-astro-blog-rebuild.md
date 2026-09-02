@@ -1,5 +1,7 @@
 # Astro 个人博客重构 Implementation Plan
 
+> 历史说明：本文档中的文章分类与标签设计已由 `2026-09-03-remove-taxonomy-design.md` 废止。其余内容仍作为当时的设计与实施记录保留。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在不改变 GitHub Pages、自定义域名和旧文章 URL 的前提下，将现有 Jekyll/Chirpy 博客重写为参考 linn-ylz.com 视觉结构的 Astro 静态站点，并迁移 40 篇文章。

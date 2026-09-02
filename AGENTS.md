@@ -32,14 +32,14 @@ corepack pnpm test:e2e
 
 - 保持纯静态输出，不增加服务器、数据库、上传、下载中心或对象存储。
 - 保留全部 `/posts/<legacySlug>/` 路径和 Giscus pathname 映射。
-- 文章正文属于用户内容。除非任务明确要求，不改写正文；分类、标签和 schema 调整也要保持旧 URL。
-- 文章分类只能使用 `src/config/site.ts` 中的六个值。`series` 与 `seriesOrder` 必须成对出现。
+- 文章正文属于用户内容。除非任务明确要求，不改写正文；schema 调整也要保持旧 URL。
+- `series` 与 `seriesOrder` 必须成对出现。
 - 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。空歌单播放器位于普通文档流，只有非空歌单才固定在页面右下角。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。草稿不参与 inventory。
-- Playwright 有 63 项检查和 21 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
+- Playwright 有 55 项检查和 15 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
 - 若视觉差异只出现在含远程图片的文章，先核对 `reports/image-check.json`。临时失败恢复后应重跑 `check:images`、清理 `.astro` 并执行 `astro sync`，不要直接更新视觉基线。
 - 主题切换继续使用 `hatrix-theme`，并同步 Giscus。全屏动效由 `ThemeTransition.astro` 和 `theme.ts` 管理；减少动态效果时必须直接切换，不能显示过渡层。Giscus 深色主题源码位于 `src/styles/giscus-dark.css`：开发环境内联，生产构建输出带 hash 的 HTTPS CSS；不要用宿主页面 CSS 覆盖 iframe 内部样式。
-- `check:site` 固定校验 4653 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 2564 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 ## 禁止事项
@@ -57,3 +57,5 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-01-astro-blog-rebuild.md`：任务拆分、测试设计和实现顺序。
 - `docs/superpowers/specs/2026-09-02-theme-transition-design.md`：日夜切换动效、无障碍和性能边界。
 - `docs/superpowers/plans/2026-09-02-theme-transition.md`：主题切换动效的实现与验证记录。
+- `docs/superpowers/specs/2026-09-03-remove-taxonomy-design.md`：删除文章分类与标签后的架构约束。
+- `docs/superpowers/plans/2026-09-03-remove-taxonomy.md`：分类与标签删除步骤和验证记录。
