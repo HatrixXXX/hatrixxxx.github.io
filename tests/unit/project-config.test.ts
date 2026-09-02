@@ -22,6 +22,20 @@ describe('Astro project tooling', () => {
     expect(existsSync('.husky/commit-msg')).toBe(false);
   });
 
+  it('documents the Sakana license and noncommercial illustration restriction', () => {
+    const path = 'public/third-party-notices.txt';
+    expect(existsSync(path)).toBe(true);
+    if (!existsSync(path)) return;
+
+    const notice = readFileSync(path, 'utf8');
+    expect(notice).toContain('Sakana 1.0.8');
+    expect(notice).toContain('MIT License');
+    expect(notice).toContain('Copyright (c) 2022 卜卜口');
+    expect(notice).toContain('package.json declares "license": "ISC"');
+    expect(notice).toContain('non-commercial webpages only');
+    expect(notice).toContain('大伏アオ');
+  });
+
   it('keeps only the active GitHub automation files', () => {
     expect(readdirSync('.github').sort()).toEqual(['dependabot.yml', 'workflows']);
     expect(readdirSync('.github/workflows').sort()).toEqual(['pages-deploy.yml']);

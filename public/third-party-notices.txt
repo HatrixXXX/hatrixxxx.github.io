@@ -1,0 +1,50 @@
+Third-party notices
+===================
+
+Sakana 1.0.8
+------------
+Project: https://github.com/itorr/sakana
+Package: https://www.npmjs.com/package/sakana/v/1.0.8
+
+The LICENSE file shipped with sakana@1.0.8 and the upstream repository both
+contain the MIT License reproduced below.
+The package's package.json declares "license": "ISC".
+This notice records that metadata conflict and preserves the
+complete LICENSE text included by the distributor; it does not resolve or
+reinterpret the upstream licensing metadata.
+
+MIT License
+
+Copyright (c) 2022 卜卜口
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Character illustrations
+-----------------------
+Illustrator: 大伏アオ / @blue00f4
+Profile: https://twitter.com/blue00f4
+Pixiv: https://pixiv.me/aoiroblue1340
+Source statements:
+https://twitter.com/blue00f4/status/1551887529615687680
+https://twitter.com/blue00f4/status/1552066743853813760
+
+The Sakana README states that the two bundled character illustrations were
+authorized for use on non-commercial webpages only. Hatrix Blog may distribute
+and display them only while the site remains non-commercial. Recheck permission
+before any commercial use or redistribution outside this site.

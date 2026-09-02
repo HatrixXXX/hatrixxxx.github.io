@@ -122,7 +122,7 @@ export const playlist: readonly Track[] = [
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检与 51 页静态构建 |
 | `pnpm check:site` | 旧文章路由、CNAME、2564 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 55 项；其中 15 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 59 项；其中 15 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 
@@ -145,3 +145,5 @@ Three.js、Babylon.js 等 3D 依赖不能进入公共布局或普通页面的首
 ## 许可证
 
 当前站点源码与文章未另行授予开源许可；历史 Chirpy 许可和来源可从 Git 历史追溯。
+
+本站使用 `sakana@1.0.8` 显示千束和泷奈。代码许可、上游元数据冲突、画师来源及插画非商业使用条件见 [`public/third-party-notices.txt`](public/third-party-notices.txt)。只要站点继续分发这两张插画，就必须保持非商业用途。

@@ -121,7 +121,8 @@ export async function inspectBuiltSite(
     requiredFile(root, '404.html', errors),
     requiredFile(root, 'CNAME', errors),
     requiredFile(root, 'rss.xml', errors),
-    requiredFile(root, 'search-index.json', errors)
+    requiredFile(root, 'search-index.json', errors),
+    requiredFile(root, 'third-party-notices.txt', errors)
   ]);
   if (!files.some((file) => /^sitemap(?:-.*)?\.xml$/i.test(relative(root, file)))) {
     errors.push('Missing sitemap output.');

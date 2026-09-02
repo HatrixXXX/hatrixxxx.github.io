@@ -40,10 +40,25 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
   await writeSiteFile(root, 'rss.xml', '<rss/>');
   await writeSiteFile(root, 'sitemap-0.xml', '<urlset/>');
   await writeSiteFile(root, 'search-index.json', '[]');
+  await writeSiteFile(root, 'third-party-notices.txt', 'Sakana notice');
 
   const result = await inspectBuiltSite(root, [postRoute]);
 
   expect(result.errors).toEqual([]);
+});
+
+it('requires the third-party notice in built output', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-site-'));
+  await writeSiteFile(root, 'index.html');
+  await writeSiteFile(root, '404.html');
+  await writeSiteFile(root, 'CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'rss.xml', '<rss/>');
+  await writeSiteFile(root, 'sitemap-0.xml', '<urlset/>');
+  await writeSiteFile(root, 'search-index.json', '[]');
+
+  const result = await inspectBuiltSite(root, []);
+
+  expect(result.errors).toContain('Missing required output: /third-party-notices.txt');
 });
 
 it('reports when the local link inventory is one below the expected count', async () => {
