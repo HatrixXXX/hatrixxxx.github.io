@@ -43,12 +43,12 @@
 
   .theme-transition.is-active {
     pointer-events: auto;
-    animation: theme-transition-enter 160ms ease-out both;
+    animation: theme-transition-enter 200ms ease-out both;
   }
 
   .theme-transition.is-leaving {
     pointer-events: none;
-    animation: theme-transition-leave 240ms ease-in both;
+    animation: theme-transition-leave 200ms ease-in both;
   }
 
   .theme-transition__night,
@@ -63,11 +63,11 @@
   }
 
   [data-from-theme='light'][data-to-theme='dark'] .theme-transition__night {
-    animation: theme-transition-night-in 2.6s ease both;
+    animation: theme-transition-night-in 2s 410ms ease both;
   }
 
   [data-from-theme='dark'][data-to-theme='light'] .theme-transition__night {
-    animation: theme-transition-night-out 2.6s ease both;
+    animation: theme-transition-night-out 2s 410ms ease both;
   }
 
   .theme-transition__stars {
@@ -91,35 +91,37 @@
   }
 
   .theme-transition__orbit {
-    position: absolute;
+    position: fixed;
     z-index: 2;
-    inset: 0;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    transform-origin: center bottom;
   }
 
-  .is-active .theme-transition__sun,
-  .is-active .theme-transition__moon {
-    animation: theme-transition-celestial-track 2.6s cubic-bezier(0.66, 0, 0.34, 1) both;
+  .is-active .theme-transition__orbit {
+    animation: theme-transition-celestial-track 2s cubic-bezier(0.7, 0, 0, 1) both;
   }
 
   .theme-transition__sun,
   .theme-transition__moon {
     position: absolute;
-    top: 12%;
-    left: 0;
+    top: 32%;
+    left: 55%;
     display: block;
     border-radius: 50%;
-    transform: translate(-50%, -50%);
   }
 
   .theme-transition__sun {
-    width: clamp(28px, 2.2vw, 42px);
+    width: 40px;
     aspect-ratio: 1;
     background: #ffe98a;
     box-shadow: 0 0 34px rgb(255 233 138 / 85%);
   }
 
   .theme-transition__moon {
-    width: clamp(23px, 1.7vw, 32px);
+    width: 24px;
     aspect-ratio: 1;
     overflow: hidden;
     background: #f7f5e9;
@@ -269,9 +271,8 @@
   }
 
   @keyframes theme-transition-celestial-track {
-    0% { transform: translate(calc(-50% - 8vw), calc(-50% + 20vh)); }
-    35%, 65% { transform: translate(calc(-50% + 50vw), calc(-50% - 6vh)); }
-    100% { transform: translate(calc(-50% + 108vw), calc(-50% + 20vh)); }
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   @keyframes theme-transition-cat-rise {

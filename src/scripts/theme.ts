@@ -1,9 +1,9 @@
 const STORAGE_KEY = 'hatrix-theme';
 type Theme = 'dark' | 'light';
 
-const THEME_APPLY_DELAY_MS = 220;
-const THEME_LEAVE_DELAY_MS = 2_620;
-const THEME_TRANSITION_END_MS = 2_900;
+const THEME_APPLY_DELAY_MS = 410;
+const THEME_LEAVE_DELAY_MS = 2_910;
+const THEME_TRANSITION_END_MS = 3_110;
 let transitionLocked = false;
 let transitionTimers: number[] = [];
 

@@ -127,24 +127,40 @@ test('theme transition runs once and persists the destination theme', async ({ p
   await expect(toggle).toBeDisabled();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-  const celestial = await overlay.locator('.theme-transition__sun').evaluate((element) => {
-    const effect = element.getAnimations()[0]?.effect;
+  const celestial = await overlay.locator('.theme-transition__orbit').evaluate((element) => {
+    const animation = element.getAnimations()[0];
+    const effect = animation?.effect;
     if (!(effect instanceof KeyframeEffect)) return null;
+    animation.pause();
+    animation.currentTime = 2_000;
+    const activeBody = element.querySelector<HTMLElement>(
+      element.closest('[data-to-theme="dark"]')
+        ? '.theme-transition__moon'
+        : '.theme-transition__sun'
+    );
+    if (!activeBody) return null;
+    const finalPosition = activeBody.getBoundingClientRect();
+    animation.currentTime = 2_900;
+    const holdPosition = activeBody.getBoundingClientRect();
     return {
       duration: Number(effect.getTiming().duration),
+      easing: getComputedStyle(element).animationTimingFunction,
       frames: effect.getKeyframes().map((frame) => ({
         offset: frame.offset,
         transform: String(frame.transform)
-      }))
+      })),
+      finalPosition: { left: finalPosition.left, top: finalPosition.top },
+      holdPosition: { left: holdPosition.left, top: holdPosition.top }
     };
   });
   expect(celestial).not.toBeNull();
   if (!celestial) throw new Error('celestial animation is missing');
-  expect(celestial.duration).toBe(2_600);
-  const apexFrames = celestial.frames.filter(({ offset }) => offset === 0.35 || offset === 0.65);
-  expect(apexFrames).toHaveLength(2);
-  expect(apexFrames[0]?.transform).toBe(apexFrames[1]?.transform);
-  expect((0.65 - 0.35) * celestial.duration).toBeCloseTo(780);
+  expect(celestial.duration).toBe(2_000);
+  expect(celestial.easing).toBe('cubic-bezier(0.7, 0, 0, 1)');
+  expect(celestial.frames.map(({ transform }) => transform)).toEqual(['rotate(0deg)', 'rotate(360deg)']);
+  expect(celestial.finalPosition.left).toBeCloseTo(0.6 * 1_440);
+  expect(celestial.finalPosition.top).toBeCloseTo(0.14 * 900);
+  expect(celestial.holdPosition).toEqual(celestial.finalPosition);
 
   const nightPupilFrames = await cat.locator('.theme-transition__pupil').first().evaluate((element) => {
     const effect = element.getAnimations()[0]?.effect;
@@ -166,6 +182,31 @@ test('theme transition runs once and persists the destination theme', async ({ p
   await expect(overlay).toBeHidden({ timeout: 4_000 });
   await expect(toggle).toBeEnabled();
   expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
+});
+
+test('theme transition matches the reference lifecycle timing', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.clock.install();
+  await page.goto('/');
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1_000);
+
+  const overlay = page.locator('[data-theme-transition]');
+  const toggle = page.getByRole('button', { name: '切换主题' });
+  await toggle.click();
+
+  await page.clock.fastForward(409);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.clock.fastForward(1);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.clock.fastForward(2_499);
+  await expect(overlay).not.toHaveClass(/is-leaving/);
+  await page.clock.fastForward(1);
+  await expect(overlay).toHaveClass(/is-leaving/);
+  await page.clock.fastForward(199);
+  await expect(overlay).toBeVisible();
+  await page.clock.fastForward(1);
+  await expect(overlay).toBeHidden();
+  await expect(toggle).toBeEnabled();
 });
 
 test('pending destination survives immediate client navigation', async ({ page }) => {

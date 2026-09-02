@@ -266,7 +266,7 @@ Review the active overlay at desktop and mobile sizes. Do not stage `猫咪范�
 - Consumes: the existing transition overlay and measurements from ShokaX `0.4.21` on `https://linn-ylz.com/`
 - Produces: the measured 2-second orbit, final `60vw, 14vh` resting position, 910ms fully visible hold, and 3110ms lifecycle
 
-- [ ] **Step 1: Replace the custom-path assertions and add a deterministic lifecycle test**
+- [x] **Step 1: Replace the custom-path assertions and add a deterministic lifecycle test**
 
 In the existing transition test, inspect `.theme-transition__orbit` rather than an individual celestial body. Assert a 2000ms animation with `cubic-bezier(0.7, 0, 0, 1)`, `rotate(0deg)` and `rotate(360deg)` endpoints. Pause it at the end and verify the active body's top-left position is `60%` of the layout viewport width and `14%` of the viewport height. Move the animation current time to 2900ms and verify that the position has not changed.
 
@@ -299,7 +299,7 @@ test('theme transition matches the reference lifecycle timing', async ({ page })
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run:
 
@@ -309,7 +309,7 @@ corepack pnpm exec playwright test tests/e2e/interactions.spec.ts --project=desk
 
 Expected: FAIL because the current implementation uses a 2.6-second translated path, switches at 220ms, starts leaving at 2620ms, and hides at 2900ms.
 
-- [ ] **Step 3: Implement the measured orbit and lifecycle**
+- [x] **Step 3: Implement the measured orbit and lifecycle**
 
 Use an independently written orbit layer with the measured geometry:
 
@@ -341,7 +341,7 @@ Use an independently written orbit layer with the measured geometry:
 
 Set the overlay enter and leave animations to 200ms. In `theme.ts`, set the apply, leave, and end timers to `410`, `2910`, and `3110` milliseconds. The night gradient changes over 2 seconds after a 410ms delay. Do not add a post-hold descent.
 
-- [ ] **Step 4: Run focused verification and verify GREEN**
+- [x] **Step 4: Run focused verification and verify GREEN**
 
 Run the command from Step 2. Expected: both tests PASS, including exact fake-clock boundaries.
 
