@@ -67,7 +67,50 @@ test('theme transition runs once and persists the destination theme', async ({ p
 
   const overlay = page.locator('[data-theme-transition]');
   const toggle = page.getByRole('button', { name: '切换主题' });
+  const cat = overlay.locator('.theme-transition__cat');
   await expect(overlay).toBeHidden();
+  await expect(cat.locator('.theme-transition__ear')).toHaveCount(0);
+  await expect(cat.locator('.theme-transition__whiskers')).toHaveCount(0);
+
+  const dayCat = await cat.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      width: style.width,
+      background: style.backgroundColor,
+      borderRadius: style.borderRadius,
+      boxShadow: style.boxShadow,
+      clipPath: style.clipPath
+    };
+  });
+  expect(dayCat).toMatchObject({
+    width: '108px',
+    background: 'rgb(119, 119, 119)',
+    borderRadius: '0px',
+    boxShadow: 'none'
+  });
+  expect(dayCat.clipPath).toContain('polygon');
+
+  await page.setViewportSize({ width: 3840, height: 1907 });
+  expect(parseFloat(await cat.evaluate((element) => getComputedStyle(element).width))).toBeCloseTo(
+    204,
+    0
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  const dayEye = await cat.locator('.theme-transition__eye').first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { width: style.width, background: style.backgroundColor };
+  });
+  const dayPupil = await cat.locator('.theme-transition__pupil').first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { width: style.width, height: style.height, background: style.backgroundColor };
+  });
+  expect(dayEye).toEqual({ width: '32px', background: 'rgb(255, 238, 148)' });
+  expect(dayPupil).toEqual({
+    width: '4px',
+    height: '30px',
+    background: 'rgb(255, 179, 153)'
+  });
 
   await toggle.click();
   await expect(overlay).toBeVisible();
@@ -75,6 +118,38 @@ test('theme transition runs once and persists the destination theme', async ({ p
   await expect(overlay).toHaveAttribute('data-to-theme', 'dark');
   await expect(toggle).toBeDisabled();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  const celestial = await overlay.locator('.theme-transition__sun').evaluate((element) => {
+    const effect = element.getAnimations()[0]?.effect;
+    if (!(effect instanceof KeyframeEffect)) return null;
+    return {
+      duration: Number(effect.getTiming().duration),
+      frames: effect.getKeyframes().map((frame) => ({
+        offset: frame.offset,
+        transform: String(frame.transform)
+      }))
+    };
+  });
+  expect(celestial).not.toBeNull();
+  if (!celestial) throw new Error('celestial animation is missing');
+  expect(celestial.duration).toBe(2_600);
+  const apexFrames = celestial.frames.filter(({ offset }) => offset === 0.35 || offset === 0.65);
+  expect(apexFrames).toHaveLength(2);
+  expect(apexFrames[0]?.transform).toBe(apexFrames[1]?.transform);
+  expect((0.65 - 0.35) * celestial.duration).toBeCloseTo(780);
+
+  const nightPupilFrames = await cat.locator('.theme-transition__pupil').first().evaluate((element) => {
+    const effect = element.getAnimations()[0]?.effect;
+    if (!(effect instanceof KeyframeEffect)) return [];
+    return effect.getKeyframes().map((frame) => ({
+      width: String(frame.width),
+      height: String(frame.height)
+    }));
+  });
+  expect(nightPupilFrames.at(-1)).toEqual({ width: '27px', height: '27px' });
+  await expect.poll(() => cat.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
+    'rgb(68, 68, 68)'
+  );
 
   await toggle.dispatchEvent('click');
   await expect(overlay).toHaveAttribute('data-to-theme', 'dark');

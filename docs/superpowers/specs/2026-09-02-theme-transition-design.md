@@ -30,7 +30,7 @@ Replace the plain theme glyph with a day/night icon and add a playful full-scree
 
 ## Cat Reference
 
-- Keep the cat centered on the bottom edge, about 108px wide on desktop and 92px wide on small screens.
+- Keep the cat centered on the bottom edge. Its width follows the reference ratio from 108px at ordinary desktop sizes to 204px at a 3840px viewport; screens up to 480px use a 92px by 118px cat.
 - Use one flat, narrow body silhouette. The two pointed ears are part of its top outline rather than separate triangles.
 - Remove the rounded top corners, whiskers, and drop shadow from the current cat.
 - Use `#777777` for the day body and `#444444` for the night body.

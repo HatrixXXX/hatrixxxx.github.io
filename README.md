@@ -139,6 +139,8 @@ export const playlist: readonly Track[] = [
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 
+如果视觉差异只出现在含远程图片的文章，先查看 `reports/image-check.json`。临时失败恢复后，重新运行 `pnpm check:images`，删除 `.astro/` 并执行 `pnpm exec astro sync`，再运行视觉测试。不要把远程图片未加载完整造成的页面高度变化写入基线。
+
 新增或删除页面、导航项等内容后，如果站内链接总量发生了合理变化，先核对构建产物，再同步更新 `scripts/check-built-site.ts` 中的期望值；未更新时 `pnpm check:site` 会失败。
 
 ## 部署

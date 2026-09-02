@@ -152,7 +152,7 @@ Do not render a fixed `aria-pressed` value in static markup. Let the existing fi
 - Consumes: the existing `[data-theme-transition]` lifecycle and the two local, untracked cat reference screenshots
 - Produces: a 2.6-second celestial track with a 0.78-second apex hold and a reference-matched CSS cat
 
-- [ ] **Step 1: Extend the existing transition test and verify RED**
+- [x] **Step 1: Extend the existing transition test and verify RED**
 
 In `theme transition runs once and persists the destination theme`, inspect the active celestial animation through `getAnimations()`. Require a `2600` millisecond duration, matching transforms at offsets `0.35` and `0.65`, and a calculated hold of `780` milliseconds. Inspect the cat before and during the transition:
 
@@ -187,15 +187,16 @@ corepack pnpm exec playwright test tests/e2e/interactions.spec.ts --project=desk
 
 Expected: FAIL because the current track lasts 1.8 seconds without apex keyframes and the current cat is 132px wide with separate ears and whiskers.
 
-- [ ] **Step 2: Replace the cat markup and CSS**
+- [x] **Step 2: Replace the cat markup and CSS**
 
 Keep only the cat container, two eyes with pupils, and the nose. Style the container with the approved dimensions, polygon, and sampled reference colors:
 
 ```css
 .theme-transition__cat {
-  bottom: -24px;
-  width: 108px;
-  height: 132px;
+  bottom: clamp(-40px, -1.25vw, -24px);
+  width: clamp(108px, 5.3125vw, 204px);
+  height: auto;
+  aspect-ratio: 108 / 132;
   border-radius: 0;
   background: #777;
   box-shadow: none;
@@ -210,9 +211,9 @@ Keep only the cat container, two eyes with pupils, and the nose. Style the conta
 .theme-transition__nose { top: 50px; width: 8px; background: #ffb399; }
 ```
 
-The night pupil keyframe ends at `27px` square so the yellow eye rim remains visible. The small-screen rule uses a `92px` wide, `118px` high cat with proportionally smaller eyes.
+The night pupil keyframe scales from `27px` to `54px` square so the yellow eye rim remains visible. The small-screen rule uses a `92px` wide, `118px` high cat with proportionally smaller eyes.
 
-- [ ] **Step 3: Add the apex hold and synchronize lifecycle timers**
+- [x] **Step 3: Add the apex hold and synchronize lifecycle timers**
 
 Change the night layer and celestial animations to `2.6s`. Replace the celestial keyframes with:
 
@@ -226,13 +227,13 @@ Change the night layer and celestial animations to `2.6s`. Replace the celestial
 
 In `theme.ts`, keep `THEME_APPLY_DELAY_MS = 220`, set `THEME_LEAVE_DELAY_MS = 2_620`, and set `THEME_TRANSITION_END_MS = 2_900`.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run the focused Playwright command from Step 1.
 
 Expected: PASS with the 2.6-second track, 780-millisecond hold, and reference cat assertions.
 
-- [ ] **Step 5: Run project verification**
+- [x] **Step 5: Run project verification**
 
 Run:
 
@@ -248,6 +249,6 @@ git diff --check
 
 Expected: every command exits with code 0; the Playwright total and 21 existing visual baselines remain unchanged.
 
-- [ ] **Step 6: Review and commit only project files**
+- [x] **Step 6: Review and commit only project files**
 
 Review the active overlay at desktop and mobile sizes. Do not stage `猫咪范例.png` or `猫咪范例2.png`. Commit the implementation, tests, updated spec, and this plan only after the verification evidence is complete.
