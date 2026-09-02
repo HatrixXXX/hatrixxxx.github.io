@@ -140,3 +140,114 @@ Write the destination to storage when the transition starts. Track timeout handl
 - [x] **Step 3: Remove the hard-coded toggle state**
 
 Do not render a fixed `aria-pressed` value in static markup. Let the existing first client restore set it from the actual root theme.
+
+### Task 6: Slow the celestial arc and match the approved cat reference
+
+**Files:**
+- Modify: `tests/e2e/interactions.spec.ts`
+- Modify: `src/components/ThemeTransition.astro`
+- Modify: `src/scripts/theme.ts`
+
+**Interfaces:**
+- Consumes: the existing `[data-theme-transition]` lifecycle and the two local, untracked cat reference screenshots
+- Produces: a 2.6-second celestial track with a 0.78-second apex hold and a reference-matched CSS cat
+
+- [ ] **Step 1: Extend the existing transition test and verify RED**
+
+In `theme transition runs once and persists the destination theme`, inspect the active celestial animation through `getAnimations()`. Require a `2600` millisecond duration, matching transforms at offsets `0.35` and `0.65`, and a calculated hold of `780` milliseconds. Inspect the cat before and during the transition:
+
+```ts
+const cat = overlay.locator('.theme-transition__cat');
+const dayCat = await cat.evaluate((element) => {
+  const style = getComputedStyle(element);
+  return {
+    width: style.width,
+    background: style.backgroundColor,
+    borderRadius: style.borderRadius,
+    boxShadow: style.boxShadow,
+    clipPath: style.clipPath
+  };
+});
+expect(dayCat).toMatchObject({
+  width: '108px',
+  background: 'rgb(119, 119, 119)',
+  borderRadius: '0px',
+  boxShadow: 'none'
+});
+expect(dayCat.clipPath).toContain('polygon');
+await expect(cat.locator('.theme-transition__ear')).toHaveCount(0);
+await expect(cat.locator('.theme-transition__whiskers')).toHaveCount(0);
+```
+
+Run:
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/interactions.spec.ts --project=desktop-1440 --grep "theme transition runs once"
+```
+
+Expected: FAIL because the current track lasts 1.8 seconds without apex keyframes and the current cat is 132px wide with separate ears and whiskers.
+
+- [ ] **Step 2: Replace the cat markup and CSS**
+
+Keep only the cat container, two eyes with pupils, and the nose. Style the container with the approved dimensions, polygon, and sampled reference colors:
+
+```css
+.theme-transition__cat {
+  bottom: -24px;
+  width: 108px;
+  height: 132px;
+  border-radius: 0;
+  background: #777;
+  box-shadow: none;
+  clip-path: polygon(0 0, 22% 12%, 78% 12%, 100% 0, 100% 100%, 0 100%);
+}
+
+[data-to-theme='dark'] .theme-transition__cat { background: #444; }
+.theme-transition__eye { top: 30px; width: 32px; background: #ffee94; }
+.theme-transition__eye--left { left: 10px; }
+.theme-transition__eye--right { right: 10px; }
+.theme-transition__pupil { width: 4px; height: 30px; background: #ffb399; }
+.theme-transition__nose { top: 50px; width: 8px; background: #ffb399; }
+```
+
+The night pupil keyframe ends at `27px` square so the yellow eye rim remains visible. The small-screen rule uses a `92px` wide, `118px` high cat with proportionally smaller eyes.
+
+- [ ] **Step 3: Add the apex hold and synchronize lifecycle timers**
+
+Change the night layer and celestial animations to `2.6s`. Replace the celestial keyframes with:
+
+```css
+@keyframes theme-transition-celestial-track {
+  0% { transform: translate(calc(-50% - 8vw), calc(-50% + 20vh)); }
+  35%, 65% { transform: translate(calc(-50% + 50vw), calc(-50% - 6vh)); }
+  100% { transform: translate(calc(-50% + 108vw), calc(-50% + 20vh)); }
+}
+```
+
+In `theme.ts`, keep `THEME_APPLY_DELAY_MS = 220`, set `THEME_LEAVE_DELAY_MS = 2_620`, and set `THEME_TRANSITION_END_MS = 2_900`.
+
+- [ ] **Step 4: Run the focused test and verify GREEN**
+
+Run the focused Playwright command from Step 1.
+
+Expected: PASS with the 2.6-second track, 780-millisecond hold, and reference cat assertions.
+
+- [ ] **Step 5: Run project verification**
+
+Run:
+
+```powershell
+corepack pnpm test:run
+corepack pnpm check
+corepack pnpm build
+corepack pnpm check:site
+corepack pnpm exec playwright test tests/e2e/interactions.spec.ts tests/e2e/accessibility.spec.ts --project=desktop-1440
+corepack pnpm test:e2e
+git diff --check
+```
+
+Expected: every command exits with code 0; the Playwright total and 21 existing visual baselines remain unchanged.
+
+- [ ] **Step 6: Review and commit only project files**
+
+Review the active overlay at desktop and mobile sizes. Do not stage `猫咪范例.png` or `猫咪范例2.png`. Commit the implementation, tests, updated spec, and this plan only after the verification evidence is complete.
