@@ -1,20 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { buildArchives, buildTaxonomy, getAdjacentPosts, paginatePosts, sortPosts, type PostEntry } from '../../src/lib/content';
+import { buildArchives, getAdjacentPosts, paginatePosts, sortPosts, type PostEntry } from '../../src/lib/content';
 import * as search from '../../src/lib/search';
 
 const markdownToPlainText = (search as typeof search & {
   markdownToPlainText?: (markdown: string, maxLength?: number) => string;
 }).markdownToPlainText;
 
-const post = (id: string, date: string, category = '软件工程与工具', tags = ['Git']) => ({
+const post = (id: string, date: string) => ({
   id,
   data: {
     title: id,
     description: `description for ${id}`,
     pubDate: new Date(date),
     cover: '/x.svg',
-    category,
-    tags,
     draft: false,
     math: false,
     mermaid: false,
@@ -25,7 +23,7 @@ const post = (id: string, date: string, category = '软件工程与工具', tags
 const fixtures = [
   post('old', '2025-01-02'),
   post('new', '2026-02-03'),
-  post('middle', '2025-06-04', 'FPGA 与数字系统', ['FPGA'])
+  post('middle', '2025-06-04')
 ];
 
 describe('content utilities', () => {
@@ -48,12 +46,9 @@ describe('content utilities', () => {
     expect(() => paginatePosts(fixtures, 2)).toThrow(RangeError);
   });
 
-  it('groups archives and taxonomies in newest-first order', () => {
+  it('groups archives in newest-first order', () => {
     expect(buildArchives(fixtures).map((group) => [group.year, group.month, group.posts.length]))
       .toEqual([[2026, 2, 1], [2025, 6, 1], [2025, 1, 1]]);
-    expect(buildTaxonomy(fixtures, 'category').get('软件工程与工具')?.map((item) => item.id))
-      .toEqual(['new', 'old']);
-    expect(buildTaxonomy(fixtures, 'tags').get('FPGA')?.map((item) => item.id)).toEqual(['middle']);
   });
 
   it('returns chronological neighbours from newest-first input', () => {
@@ -73,11 +68,11 @@ describe('content utilities', () => {
       id: 'FPGA',
       url: '/posts/FPGA/',
       title: 'FPGA',
-      description: 'description for FPGA',
-      category: '软件工程与工具',
-      tags: ['Git']
+      description: 'description for FPGA'
     });
-    expect(document.text).toContain('FPGA description for FPGA 软件工程与工具 Git');
+    expect(document).not.toHaveProperty('category');
+    expect(document).not.toHaveProperty('tags');
+    expect(document.text).toContain('FPGA description for FPGA');
     expect(document.text.endsWith('a'.repeat(2000))).toBe(true);
   });
 

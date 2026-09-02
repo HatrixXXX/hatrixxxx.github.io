@@ -42,6 +42,9 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
     'href',
     /^\/posts\//
   );
+  await expect(page.locator('.breadcrumbs li')).toHaveCount(2);
+  await expect(page.locator('.post-tags')).toHaveCount(0);
+  await expect(page.locator('a[href^="/categories/"], a[href^="/tags/"]')).toHaveCount(0);
 });
 
 test('article navigation targets the home article feed', async ({ page }) => {

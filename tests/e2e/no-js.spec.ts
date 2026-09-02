@@ -5,7 +5,7 @@ test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
 test('articles and ordinary navigation remain usable without JavaScript', async ({ page }) => {
   await page.goto('/');
   const headerLinks = page.locator('.desktop-nav a');
-  await expect(headerLinks).toHaveCount(7);
+  await expect(headerLinks).toHaveCount(5);
   const hrefs = await headerLinks.evaluateAll((links) =>
     links.map((link) => link.getAttribute('href'))
   );
@@ -21,7 +21,7 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   expect(commentsText).toContain('评论需要 JavaScript');
 });
 
-for (const route of ['/archives/', '/categories/', '/tags/', '/projects/']) {
+for (const route of ['/archives/', '/projects/']) {
   test(`${route} remains directly readable without JavaScript`, async ({ page }) => {
     const response = await page.goto(route);
     expect(response?.status()).toBe(200);

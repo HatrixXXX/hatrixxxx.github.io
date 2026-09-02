@@ -1,14 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-test('home renders six alternating post cards and live author counts', async ({ page }) => {
+test('home renders six alternating post cards without taxonomy links', async ({ page }) => {
   await page.goto('/');
   const cards = page.locator('article[data-post-card]');
   await expect(cards).toHaveCount(6);
   await expect(cards.nth(0)).toHaveAttribute('data-side', 'left');
   await expect(cards.nth(1)).toHaveAttribute('data-side', 'right');
   await expect(page.locator('[data-post-count]')).toHaveText('40');
-  await expect(page.locator('[data-category-count]')).not.toHaveText('0');
-  await expect(page.locator('[data-tag-count]')).not.toHaveText('0');
+  await expect(page.locator('a[href^="/categories/"], a[href^="/tags/"]')).toHaveCount(0);
   await page.goto('/page/2/');
   await expect(page.locator('article[data-post-card]').first()).toBeVisible();
 
