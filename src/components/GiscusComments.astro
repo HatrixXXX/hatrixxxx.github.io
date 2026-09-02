@@ -1,7 +1,12 @@
 ---
 import { SITE } from '@/config/site';
+import darkThemeCss from '@/styles/giscus-dark.css?raw';
+import darkThemePath from '@/styles/giscus-dark.css?url';
 
 const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
+const darkTheme = import.meta.env.DEV
+  ? `data:text/css;charset=utf-8,${encodeURIComponent(darkThemeCss)}`
+  : new URL(darkThemePath, SITE.url).href;
 ---
 
 <section
@@ -13,6 +18,7 @@ const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
   data-giscus-category={category}
   data-giscus-category-id={categoryId}
   data-giscus-mapping={mapping}
+  data-giscus-dark-theme={darkTheme}
 >
   <h2>评论</h2>
   <p class="comments-status" data-giscus-status>评论正在加载…</p>
@@ -36,7 +42,9 @@ const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
       script.dataset.reactionsEnabled = '1';
       script.dataset.emitMetadata = '0';
       script.dataset.inputPosition = 'top';
-      script.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      script.dataset.theme = document.documentElement.dataset.theme === 'light'
+        ? 'light'
+        : section.dataset.giscusDarkTheme;
       script.dataset.lang = 'zh-CN';
       script.crossOrigin = 'anonymous';
       script.async = true;

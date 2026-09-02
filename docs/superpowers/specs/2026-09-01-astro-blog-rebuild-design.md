@@ -186,6 +186,7 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 - 播放器通过 View Transitions 保持组件和状态，不因站内跳转重置。
 - 搜索索引按标题、摘要、分类、标签和正文摘要生成。
 - 主题设置、播放器音量和界面状态写入 `localStorage`。
+- Giscus 亮色模式使用内置 `light` 主题，深色主题由 `src/styles/giscus-dark.css` 提供。开发环境内联该文件，生产构建输出带 hash 的 HTTPS CSS。
 - 页面转场尊重 `prefers-reduced-motion`。
 - 3D 依赖不进入首版依赖树，也不出现在普通页面产物中。
 - 首页客户端 JavaScript 的 gzip 体积目标不超过 160 KB，不计 Giscus iframe。

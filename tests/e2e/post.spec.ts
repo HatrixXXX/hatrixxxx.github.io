@@ -110,7 +110,7 @@ test('post layout has no mobile horizontal overflow', async ({ page }) => {
   expect(sizes.scroll).toBe(sizes.client);
 });
 
-test('Giscus follows theme changes and remounts once after client navigation', async ({
+test('Giscus uses the site dark theme and remounts once after client navigation', async ({
   page
 }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
@@ -124,7 +124,7 @@ test('Giscus follows theme changes and remounts once after client navigation', a
             <script>
               addEventListener('message', (event) => {
                 const theme = event.data?.giscus?.setConfig?.theme;
-                if (theme !== 'light' && theme !== 'dark') return;
+                if (theme !== 'light' && !theme?.startsWith('data:text/css')) return;
                 document.documentElement.dataset.theme = theme;
                 document.documentElement.dataset.messageCount = String(
                   Number(document.documentElement.dataset.messageCount) + 1
@@ -156,20 +156,23 @@ test('Giscus follows theme changes and remounts once after client navigation', a
   const script = page.locator('script[src="https://giscus.app/client.js"]');
   await expect(script).toHaveCount(1);
   await expect(script).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
+  const darkTheme = await page.locator('[data-giscus-comments]').getAttribute('data-giscus-dark-theme');
+  expect(darkTheme).toMatch(/^data:text\/css/);
+  const giscusFrame = page.locator('iframe.giscus-frame');
+  await expect(giscusFrame).toHaveCount(1);
   const frameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
   await expect(frameHtml).toHaveAttribute('data-message-count', '0');
 
   await page.getByRole('button', { name: '切换主题' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(frameHtml).toHaveAttribute('data-theme', 'dark');
+  await expect(frameHtml).toHaveAttribute('data-theme', darkTheme!);
   await expect(frameHtml).toHaveAttribute('data-message-count', '1');
 
   await page.locator('[data-adjacent-posts] a').first().click();
   await expect(page.locator('article[data-post]')).toBeVisible();
   await expect(page.locator('[data-giscus-status]')).toBeHidden();
   await expect(script).toHaveCount(1);
-  await expect(script).toHaveAttribute('data-theme', 'dark');
+  await expect(script).toHaveAttribute('data-theme', darkTheme!);
   await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
   const remountedFrameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
   await expect(remountedFrameHtml).toHaveAttribute('data-message-count', '0');

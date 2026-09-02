@@ -147,6 +147,8 @@ Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows �
 
 `.github/workflows/pages-deploy.yml` 在 `master` push 或手动触发时构建 `dist/` 并发布到 GitHub Pages；pull request 只执行构建门禁，不部署。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
 
+Giscus 深色主题源码位于 `src/styles/giscus-dark.css`。本地开发时，主题以内联 data URL 注入 iframe；生产构建会输出带 hash 的 HTTPS CSS。亮色模式继续使用 Giscus 内置的 `light` 主题。修改评论区配色时只改主题文件。
+
 不要恢复根目录 `CNAME`，也不要提交 `dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
 
 ## 后续 3D 页面

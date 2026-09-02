@@ -82,6 +82,14 @@ describe('Astro project tooling', () => {
     expect(playwrightConfig.snapshotPathTemplate).not.toContain('platform');
   });
 
+  it('ships an opaque Giscus dark theme matching the site canvas', () => {
+    const theme = readFileSync('src/styles/giscus-dark.css', 'utf8');
+
+    expect(theme).toContain('background: #161a20;');
+    expect(theme).toContain('--color-canvas-default: #161a20;');
+    expect(theme).not.toContain('@import');
+  });
+
   it('limits Pages write permissions to the deployment job', () => {
     const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
     const workflowPermissions = workflow.match(/^permissions:\n((?:  .+\n)+)/m)?.[1];

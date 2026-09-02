@@ -12,8 +12,17 @@ function currentTheme(): Theme {
 }
 
 function updateGiscusTheme(theme: Theme): void {
+  const darkTheme = document.querySelector<HTMLElement>(
+    '[data-giscus-dark-theme]'
+  )?.dataset.giscusDarkTheme;
+  const giscusTheme = theme === 'dark'
+    ? darkTheme ?? 'dark'
+    : 'light';
   document.querySelectorAll<HTMLIFrameElement>('iframe.giscus-frame').forEach((iframe) => {
-    iframe.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app');
+    iframe.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme: giscusTheme } } },
+      'https://giscus.app'
+    );
   });
 }
 
