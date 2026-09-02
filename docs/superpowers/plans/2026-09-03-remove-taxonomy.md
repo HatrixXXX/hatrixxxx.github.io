@@ -456,7 +456,7 @@ git diff -- 'src/content/posts/2025-07-04-杂货铺.md'
 
 Expected: legacySlug 总数为 40；Giscus 配置与测试仍在；《杂货铺》的提交差异只包含 frontmatter 删除，未暂存差异只包含用户新增链接。
 
-- [ ] **Step 5: 提交文档并启动预览**
+- [x] **Step 5: 提交文档并启动预览**
 
 先按 `neat-freak` 检查 README、AGENTS、docs 与代码是否一致，再提交不含用户正文 hunk 的文档和计划：
 
