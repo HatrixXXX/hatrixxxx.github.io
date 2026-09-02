@@ -1,5 +1,32 @@
 import { expect, test } from '@playwright/test';
 
+type SakanaVoiceWindow = Window & { __sakanaVoicePlays?: string[] };
+
+async function installSakanaVoiceProbe(page: import('@playwright/test').Page): Promise<void> {
+  await page.addInitScript(() => {
+    const NativeAudio = window.Audio;
+    const trackedWindow = window as SakanaVoiceWindow;
+    Object.defineProperty(trackedWindow, '__sakanaVoicePlays', { value: [] });
+    window.Audio = new Proxy(NativeAudio, {
+      construct(target, args) {
+        const audio = Reflect.construct(target, args) as HTMLAudioElement;
+        const source = String(args[0] ?? '');
+        Object.defineProperty(audio, 'play', {
+          value: () => {
+            trackedWindow.__sakanaVoicePlays?.push(source);
+            return Promise.resolve();
+          }
+        });
+        return audio;
+      }
+    });
+  });
+}
+
+async function readSakanaVoicePlays(page: import('@playwright/test').Page): Promise<string[]> {
+  return page.evaluate(() => (window as SakanaVoiceWindow).__sakanaVoicePlays ?? []);
+}
+
 async function readSakanaLayout(page: import('@playwright/test').Page) {
   return page.locator('[data-sakana-layer]').evaluate((layer) => {
     const left = layer.querySelector<HTMLElement>('[data-sakana-anchor="left"]');
@@ -83,6 +110,7 @@ test('renders mirrored artwork and responsive mounts without horizontal overflow
 });
 
 test('initializes locked roles once and persists them across client navigation', async ({ page }) => {
+  await installSakanaVoiceProbe(page);
   const remoteSakanaRequests: string[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());
@@ -104,17 +132,25 @@ test('initializes locked roles once and persists them across client navigation',
   await expect(chisato.locator('.sakana-character')).toHaveAttribute('data-character', 'chisato');
   await expect(takina.locator('.sakana-character')).toHaveAttribute('data-character', 'takina');
   await expect(layer.locator('canvas')).toHaveCount(2);
-  const paintedCanvases = await layer.locator('canvas').evaluateAll((canvases) =>
+  const restingRodPixels = await layer.locator('canvas').evaluateAll((canvases) =>
     canvases.map((canvas) => {
       const element = canvas as HTMLCanvasElement;
-      const pixels = element.getContext('2d')?.getImageData(0, 0, element.width, element.height).data;
-      return pixels ? pixels.some((value, index) => index % 4 === 3 && value > 0) : false;
+      const context = element.getContext('2d');
+      if (!context) throw new Error('Sakana canvas context is unavailable');
+      const dpr = element.width / 500;
+      const alphaAt = (x: number, y: number) =>
+        context.getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data[3];
+      return { rodAlpha: alphaAt(250, 600), emptyAlpha: alphaAt(200, 600) };
     })
   );
-  expect(paintedCanvases).toEqual([true, true]);
+  for (const { rodAlpha, emptyAlpha } of restingRodPixels) {
+    expect(rodAlpha).toBeGreaterThan(0);
+    expect(emptyAlpha).toBe(0);
+  }
 
   const chisatoCharacter = chisato.locator('.sakana-character');
   const restingStyle = await chisatoCharacter.getAttribute('style');
+  expect(restingStyle).toBe('transform: rotate(0deg) translateX(0px) translateY(0px);');
   const restingBox = await chisatoCharacter.boundingBox();
   if (!restingBox) throw new Error('Chisato is not visible at rest');
   await page.mouse.click(restingBox.x + restingBox.width / 2, restingBox.y + restingBox.height / 2);
@@ -122,6 +158,7 @@ test('initializes locked roles once and persists them across client navigation',
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));
   expect(await chisatoCharacter.getAttribute('style')).toBe(restingStyle);
+  expect(await readSakanaVoicePlays(page)).toHaveLength(0);
   await expect(chisato).not.toHaveAttribute('data-can-switch-character', 'true');
   await expect(takina).not.toHaveAttribute('data-can-switch-character', 'true');
 
@@ -167,25 +204,7 @@ test('dragging Chisato follows the pointer and moves only that instance', async 
 });
 
 test('Takina moves independently and plays its embedded voice', async ({ page }) => {
-  await page.addInitScript(() => {
-    const NativeAudio = window.Audio;
-    const trackedWindow = window as Window & { __sakanaVoicePlays?: string[] };
-    Object.defineProperty(trackedWindow, '__sakanaVoicePlays', { value: [] });
-    window.Audio = new Proxy(NativeAudio, {
-      construct(target, args) {
-        const audio = Reflect.construct(target, args) as HTMLAudioElement;
-        const source = String(args[0] ?? '');
-        Object.defineProperty(audio, 'play', {
-          value: () => {
-            trackedWindow.__sakanaVoicePlays?.push(source);
-            return Promise.resolve();
-          }
-        });
-        return audio;
-      }
-    });
-  });
-
+  await installSakanaVoiceProbe(page);
   await page.goto('/');
   const layer = page.locator('[data-sakana-layer]');
   await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
@@ -208,11 +227,7 @@ test('Takina moves independently and plays its embedded voice', async ({ page })
   expect(await chisato.getAttribute('style')).toBe(chisatoStyle);
   await page.mouse.up();
 
-  await expect.poll(() => page.evaluate(
-    () => (window as Window & { __sakanaVoicePlays?: string[] }).__sakanaVoicePlays ?? []
-  )).toHaveLength(1);
-  const sources = await page.evaluate(
-    () => (window as Window & { __sakanaVoicePlays?: string[] }).__sakanaVoicePlays ?? []
-  );
+  await expect.poll(() => readSakanaVoicePlays(page)).toHaveLength(1);
+  const sources = await readSakanaVoicePlays(page);
   expect(sources[0]).toMatch(/^data:audio\/x-m4a;base64,/);
 });
