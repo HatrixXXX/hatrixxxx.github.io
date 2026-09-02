@@ -1,0 +1,88 @@
+---
+interface Props {
+  title: string;
+  subtitle?: string;
+  image: string;
+  compact?: boolean;
+}
+
+const { title, subtitle, image, compact = false } = Astro.props;
+const backgroundImage = `--hero-image: url("${encodeURI(image).replaceAll('"', '%22')}")`;
+---
+
+<section
+  data-hero
+  class:list={['hero', { 'hero--compact': compact }]}
+  style={backgroundImage}
+  aria-labelledby="hero-title"
+>
+  <div class="hero-overlay"></div>
+  <div class="hero-content container">
+    <h1 id="hero-title">{title}</h1>
+    {subtitle && <p>{subtitle}</p>}
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: grid;
+    height: clamp(440px, 76svh, 720px);
+    place-items: center;
+    overflow: hidden;
+    isolation: isolate;
+    background-color: var(--color-surface);
+    background-image: var(--hero-image);
+    background-position: center;
+    background-size: cover;
+    color: #fff;
+  }
+
+  .hero--compact {
+    height: clamp(280px, 44svh, 420px);
+  }
+
+  .hero-overlay {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background:
+      linear-gradient(to bottom, rgb(8 10 13 / 18%), rgb(8 10 13 / 68%)),
+      radial-gradient(circle at 50% 42%, rgb(255 143 166 / 10%), transparent 48%);
+  }
+
+  .hero-content {
+    padding-block: calc(var(--header-height) + 3rem) 5rem;
+    text-align: center;
+    text-shadow: 0 3px 20px rgb(0 0 0 / 72%);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2.6rem, 7vw, 5.6rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+  }
+
+  p {
+    margin: 1rem 0 0;
+    color: rgb(255 255 255 / 88%);
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    letter-spacing: 0.12em;
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      height: clamp(400px, 66svh, 600px);
+    }
+
+    .hero--compact {
+      height: clamp(260px, 42svh, 360px);
+    }
+
+    .hero-content {
+      padding-bottom: 4rem;
+    }
+  }
+</style>

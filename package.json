@@ -1,146 +1,40 @@
 {
-  "name": "jekyll-theme-chirpy",
-  "version": "7.2.4",
-  "description": "A minimal, responsive, and feature-rich Jekyll theme for technical writing.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cotes2020/jekyll-theme-chirpy.git"
-  },
-  "author": "Cotes Chung",
-  "license": "MIT",
-  "since": 2019,
-  "bugs": {
-    "url": "https://github.com/cotes2020/jekyll-theme-chirpy/issues"
-  },
-  "homepage": "https://github.com/cotes2020/jekyll-theme-chirpy/",
+  "name": "hatrix-blog",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "build": "concurrently npm:build:*",
-    "build:css": "node purgecss.js",
-    "build:js": "rollup -c --bundleConfigAsCjs --environment BUILD:production",
-    "watch:js": "rollup -c --bundleConfigAsCjs -w",
-    "lint:scss": "stylelint _sass/**/*.scss",
-    "lint:fix:scss": "npm run lint:scss -- --fix",
-    "test": "npm run lint:scss",
-    "test:images": "node --test tools/image-pipeline/test/*.test.mjs",
-    "images": "node tools/image-pipeline/cli.mjs",
-    "prepare": "husky"
+    "dev": "astro dev",
+    "build": "cross-env-shell NODE_USE_ENV_PROXY=1 \"tsx scripts/check-images.ts && astro build\"",
+    "preview": "astro preview",
+    "check": "astro check",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "check:images": "cross-env NODE_USE_ENV_PROXY=1 tsx scripts/check-images.ts",
+    "check:site": "tsx scripts/check-built-site.ts"
   },
   "dependencies": {
-    "@popperjs/core": "^2.11.8",
-    "bootstrap": "^5.3.8"
+    "@astrojs/check": "^0.9.10",
+    "@astrojs/markdown-remark": "^7.2.4",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^7.2.9",
+    "gray-matter": "^4.0.3",
+    "katex": "^0.18.4",
+    "mermaid": "^11.17.2",
+    "minisearch": "^7.2.0",
+    "photoswipe": "^5.4.4",
+    "reading-time": "^1.5.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.0",
-    "@babel/plugin-transform-class-properties": "^7.27.1",
-    "@babel/plugin-transform-private-methods": "^7.27.1",
-    "@babel/preset-env": "^7.28.0",
-    "@commitlint/cli": "^21.1.0",
-    "@commitlint/config-conventional": "^21.1.0",
-    "@rollup/plugin-babel": "^7.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^1.0.0",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/exec": "^7.1.0",
-    "@semantic-release/git": "^10.0.1",
-    "concurrently": "^10.0.3",
-    "conventional-changelog-conventionalcommits": "^10.2.0",
-    "husky": "^9.1.7",
-    "purgecss": "^8.0.0",
-    "rollup": "^4.62.2",
-    "semantic-release": "^25.0.5",
-    "sharp": "0.34.3",
-    "stylelint": "16.10.0",
-    "stylelint-config-standard-scss": "13.1.0"
-  },
-  "prettier": {
-    "trailingComma": "none"
-  },
-  "browserslist": [
-    "last 2 versions",
-    "> 0.2%",
-    "not dead"
-  ],
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ],
-    "rules": {
-      "body-max-line-length": [
-        0,
-        "always"
-      ]
-    }
-  },
-  "release": {
-    "branches": [
-      "production"
-    ],
-    "plugins": [
-      [
-        "@semantic-release/commit-analyzer",
-        {
-          "preset": "conventionalcommits"
-        }
-      ],
-      [
-        "@semantic-release/release-notes-generator",
-        {
-          "preset": "conventionalcommits",
-          "presetConfig": {
-            "types": [
-              {
-                "type": "feat",
-                "section": "Features"
-              },
-              {
-                "type": "fix",
-                "section": "Bug Fixes"
-              },
-              {
-                "type": "perf",
-                "section": "Improvements"
-              },
-              {
-                "type": "refactor",
-                "section": "Changes",
-                "hidden": true
-              }
-            ]
-          }
-        }
-      ],
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "docs/CHANGELOG.md",
-          "changelogTitle": "# Changelog"
-        }
-      ],
-      [
-        "@semantic-release/npm",
-        {
-          "npmPublish": false
-        }
-      ],
-      [
-        "@semantic-release/exec",
-        {
-          "prepareCmd": "bash tools/release.sh --prepare",
-          "publishCmd": "bash tools/release.sh"
-        }
-      ],
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "docs",
-            "package.json",
-            "*.gemspec"
-          ],
-          "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
-        }
-      ],
-      "@semantic-release/github"
-    ]
+    "@playwright/test": "^1.62.1",
+    "cross-env": "^10.1.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
   }
 }

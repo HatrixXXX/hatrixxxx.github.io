@@ -1,0 +1,82 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import SiteFooter from '@/components/SiteFooter.astro';
+import SiteHeader from '@/components/SiteHeader.astro';
+import MusicPlayer from '@/components/MusicPlayer.astro';
+import SearchOverlay from '@/components/SearchOverlay.astro';
+import { SITE } from '@/config/site';
+import '@/styles/tokens.css';
+import '@/styles/global.css';
+import '@/styles/prose.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  bodyClass?: string;
+  canonicalPath?: string;
+}
+
+const {
+  title,
+  description = SITE.description,
+  image = '/images/default-cover.svg',
+  bodyClass,
+  canonicalPath
+} = Astro.props;
+const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
+const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
+const socialImage = new URL(image, SITE.url);
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem('hatrix-theme');
+        const theme = stored === 'light' || stored === 'dark'
+          ? stored
+          : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#161a20" />
+    <meta name="msvalidate.01" content={SITE.verification.bing} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.title} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={socialImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    <title>{pageTitle}</title>
+    <ClientRouter />
+  </head>
+  <body class={bodyClass}>
+    <SiteHeader />
+    <slot />
+    <SiteFooter />
+    <SearchOverlay />
+    <MusicPlayer />
+    <script>
+      import '@/scripts/lightbox';
+      import '@/scripts/music-player';
+      import '@/scripts/navigation';
+      import '@/scripts/search';
+      import '@/scripts/theme';
+    </script>
+  </body>
+</html>

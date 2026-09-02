@@ -1,0 +1,76 @@
+---
+import { SITE } from '@/config/site';
+
+const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
+---
+
+<section
+  class="comments"
+  aria-label="评论"
+  data-giscus-comments
+  data-giscus-repo={repo}
+  data-giscus-repo-id={repoId}
+  data-giscus-category={category}
+  data-giscus-category-id={categoryId}
+  data-giscus-mapping={mapping}
+>
+  <h2>评论</h2>
+  <p class="comments-status" data-giscus-status>评论正在加载…</p>
+  <noscript>评论需要 JavaScript。</noscript>
+</section>
+
+<script>
+  function mountGiscus() {
+    document.querySelectorAll<HTMLElement>('[data-giscus-comments]').forEach((section) => {
+      const status = section.querySelector<HTMLElement>('[data-giscus-status]');
+      if (!status || section.querySelector('script[src="https://giscus.app/client.js"]')) return;
+
+      const script = document.createElement('script');
+      script.src = 'https://giscus.app/client.js';
+      script.dataset.repo = section.dataset.giscusRepo ?? '';
+      script.dataset.repoId = section.dataset.giscusRepoId ?? '';
+      script.dataset.category = section.dataset.giscusCategory ?? '';
+      script.dataset.categoryId = section.dataset.giscusCategoryId ?? '';
+      script.dataset.mapping = section.dataset.giscusMapping ?? '';
+      script.dataset.strict = '0';
+      script.dataset.reactionsEnabled = '1';
+      script.dataset.emitMetadata = '0';
+      script.dataset.inputPosition = 'top';
+      script.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      script.dataset.lang = 'zh-CN';
+      script.crossOrigin = 'anonymous';
+      script.async = true;
+      script.addEventListener('load', () => {
+        status.hidden = true;
+      });
+      script.addEventListener('error', () => {
+        status.hidden = false;
+        status.textContent = '评论暂时无法加载，正文内容不受影响';
+      });
+      section.append(script);
+    });
+  }
+
+  mountGiscus();
+  document.addEventListener('astro:page-load', mountGiscus);
+</script>
+
+<style>
+  .comments {
+    margin-top: 2.5rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--color-line);
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    color: #fff;
+    font-size: 1.25rem;
+  }
+
+  .comments-status,
+  noscript {
+    color: var(--color-muted);
+    font-size: 0.88rem;
+  }
+</style>

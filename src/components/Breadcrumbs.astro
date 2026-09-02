@@ -1,0 +1,46 @@
+---
+import { categoryPath } from '@/lib/urls';
+
+interface Props {
+  category: string;
+  title: string;
+}
+
+const { category, title } = Astro.props;
+---
+
+<nav class="breadcrumbs" aria-label="面包屑">
+  <ol>
+    <li><a href="/">首页</a></li>
+    <li><a href={categoryPath(category)}>{category}</a></li>
+    <li aria-current="page">{title}</li>
+  </ol>
+</nav>
+
+<style>
+  .breadcrumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    color: rgb(255 255 255 / 74%);
+    font-size: 0.82rem;
+    list-style: none;
+  }
+
+  .breadcrumbs li:not(:last-child)::after {
+    margin-left: 0.35rem;
+    color: rgb(255 255 255 / 42%);
+    content: '/';
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-accent);
+  }
+
+  .breadcrumbs [aria-current='page'] {
+    overflow-wrap: anywhere;
+  }
+</style>

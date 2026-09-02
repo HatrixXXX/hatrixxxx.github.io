@@ -1,0 +1,200 @@
+---
+import { SITE } from '@/config/site';
+
+const links = [
+  { label: '首页', href: '/' },
+  { label: '文章', href: '/#articles' },
+  { label: '归档', href: '/archives/' },
+  { label: '分类', href: '/categories/' },
+  { label: '标签', href: '/tags/' },
+  { label: '作品', href: '/projects/' },
+  { label: '关于', href: '/about/' }
+];
+---
+
+<header data-site-header class="site-header">
+  <div class="header-inner container">
+    <a class="brand" href="/" aria-label={`${SITE.title} 首页`}>
+      <img src={SITE.author.avatar} alt="" width="34" height="34" />
+      <span>{SITE.author.name}</span>
+    </a>
+
+    <nav class="desktop-nav" aria-label="主导航">
+      <ul>
+        {links.map((link) => (
+          <li><a href={link.href}>{link.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <button class="header-action" type="button" aria-label="搜索文章" data-open-search>⌕</button>
+      <button class="header-action" type="button" aria-label="切换主题" data-theme-toggle>◐</button>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-label="切换导航栏"
+        aria-controls="mobile-menu"
+        aria-expanded="false"
+        data-menu-toggle
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </div>
+
+  <nav id="mobile-menu" class="mobile-nav" aria-label="移动端导航" data-mobile-menu hidden>
+    <ul class="container">
+      {links.map((link) => (
+        <li><a href={link.href}>{link.label}</a></li>
+      ))}
+    </ul>
+  </nav>
+</header>
+
+<style>
+  .site-header {
+    position: absolute;
+    z-index: 20;
+    top: 0;
+    right: 0;
+    left: 0;
+    min-height: var(--header-height);
+    border-bottom: 1px solid transparent;
+    background: linear-gradient(to bottom, rgb(8 10 13 / 48%), transparent);
+    color: #fff;
+  }
+
+  .header-inner {
+    display: flex;
+    min-height: var(--header-height);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .brand img {
+    width: 34px;
+    height: 34px;
+    border: 2px solid rgb(255 255 255 / 76%);
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 30%);
+  }
+
+  .desktop-nav ul,
+  .mobile-nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .desktop-nav ul {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  .desktop-nav a {
+    display: block;
+    padding: 0.65rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 55%);
+    transition: color 160ms ease, background-color 160ms ease;
+  }
+
+  .desktop-nav a:hover {
+    background: rgb(255 255 255 / 10%);
+    color: var(--color-accent);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .header-action,
+  .menu-toggle {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(17 20 25 / 56%);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .header-action:hover,
+  .menu-toggle:hover {
+    background: rgb(255 255 255 / 14%);
+    color: var(--color-accent);
+  }
+
+  .menu-toggle,
+  .mobile-nav {
+    display: none;
+  }
+
+  .menu-toggle {
+    padding: 0;
+  }
+
+  .menu-toggle span {
+    display: block;
+    width: 19px;
+    height: 2px;
+    margin: 4px auto;
+    border-radius: 2px;
+    background: currentColor;
+  }
+
+  @media (max-width: 768px) {
+    .desktop-nav {
+      display: none;
+    }
+
+    .menu-toggle {
+      display: block;
+    }
+
+    .mobile-nav:not([hidden]) {
+      display: block;
+      border-top: 1px solid var(--color-line);
+      background: rgb(22 26 32 / 96%);
+      box-shadow: var(--shadow-panel);
+      backdrop-filter: blur(14px);
+    }
+
+    .mobile-nav ul {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.25rem;
+      padding-block: 0.7rem 1rem;
+    }
+
+    .mobile-nav a {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      border-radius: 6px;
+      padding: 0.55rem 0.75rem;
+      color: var(--color-text);
+    }
+
+    .mobile-nav a:hover {
+      background: var(--color-surface-raised);
+      color: var(--color-accent);
+    }
+  }
+</style>

@@ -1,0 +1,59 @@
+---
+import { getCollection } from 'astro:content';
+import HeroBanner from '@/components/HeroBanner.astro';
+import Pagination from '@/components/Pagination.astro';
+import PostList from '@/components/PostList.astro';
+import ProfileSidebar from '@/components/ProfileSidebar.astro';
+import WaveDivider from '@/components/WaveDivider.astro';
+import { SITE } from '@/config/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { buildTaxonomy, paginatePosts, sortPosts, type PostEntry } from '@/lib/content';
+
+const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+const page = paginatePosts(posts, 1, 6);
+const categoryCount = buildTaxonomy(posts, 'category').size;
+const tagCount = buildTaxonomy(posts, 'tags').size;
+---
+
+<BaseLayout title={SITE.title}>
+  <HeroBanner title={SITE.title} subtitle={SITE.tagline} image="/images/default-cover.svg" />
+  <WaveDivider />
+  <main id="articles" class="home-main container with-sidebar">
+    <div class="home-feed">
+      <PostList posts={page.items} />
+      <Pagination current={page.current} total={page.total} basePath="/page/" />
+    </div>
+    <div class="sidebar-column">
+      <ProfileSidebar
+        postCount={posts.length}
+        categoryCount={categoryCount}
+        tagCount={tagCount}
+      />
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .home-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    align-items: start;
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .home-feed,
+  .sidebar-column {
+    min-width: 0;
+  }
+
+  @media (max-width: 1024px) {
+    .home-main {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sidebar-column {
+      grid-row: 1;
+    }
+  }
+</style>

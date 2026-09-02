@@ -1,0 +1,40 @@
+---
+import readingTime from 'reading-time';
+import type { PostEntry } from '@/lib/content';
+
+interface Props {
+  post: PostEntry;
+}
+
+const { post } = Astro.props;
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date);
+const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
+---
+
+<div class="post-meta" aria-label="文章信息">
+  <time datetime={post.data.pubDate.toISOString()}>发布于 {formatDate(post.data.pubDate)}</time>
+  {
+    post.data.updatedDate && (
+      <time datetime={post.data.updatedDate.toISOString()}>
+        更新于 {formatDate(post.data.updatedDate)}
+      </time>
+    )
+  }
+  <span>预计阅读 {minutes} 分钟</span>
+</div>
+
+<style>
+  .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 1rem;
+    color: rgb(255 255 255 / 78%);
+    font-size: 0.84rem;
+  }
+</style>

@@ -1,0 +1,22 @@
+---
+import PostCard from '@/components/PostCard.astro';
+import type { PostEntry } from '@/lib/content';
+
+interface Props {
+  posts: PostEntry[];
+}
+
+const { posts } = Astro.props;
+---
+
+<section class="post-list" aria-label="文章列表">
+  {posts.map((post, index) => <PostCard post={post} index={index} />)}
+</section>
+
+<style>
+  .post-list {
+    display: grid;
+    min-width: 0;
+    gap: clamp(1.25rem, 3vw, 2rem);
+  }
+</style>
