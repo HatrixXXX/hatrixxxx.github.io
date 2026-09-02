@@ -252,3 +252,101 @@ Expected: every command exits with code 0; the Playwright total and 21 existing 
 - [x] **Step 6: Review and commit only project files**
 
 Review the active overlay at desktop and mobile sizes. Do not stage `猫咪范例.png` or `猫咪范例2.png`. Commit the implementation, tests, updated spec, and this plan only after the verification evidence is complete.
+
+### Task 7: Match the measured reference-site celestial orbit
+
+**Files:**
+- Modify: `tests/e2e/interactions.spec.ts`
+- Modify: `src/components/ThemeTransition.astro`
+- Modify: `src/scripts/theme.ts`
+- Modify: `README.md`
+- Modify: `AGENTS.md`
+
+**Interfaces:**
+- Consumes: the existing transition overlay and measurements from ShokaX `0.4.21` on `https://linn-ylz.com/`
+- Produces: the measured 2-second orbit, final `60vw, 14vh` resting position, 910ms fully visible hold, and 3110ms lifecycle
+
+- [ ] **Step 1: Replace the custom-path assertions and add a deterministic lifecycle test**
+
+In the existing transition test, inspect `.theme-transition__orbit` rather than an individual celestial body. Assert a 2000ms animation with `cubic-bezier(0.7, 0, 0, 1)`, `rotate(0deg)` and `rotate(360deg)` endpoints. Pause it at the end and verify the active body's top-left position is `60%` of the layout viewport width and `14%` of the viewport height. Move the animation current time to 2900ms and verify that the position has not changed.
+
+Add one Playwright test using `page.clock`:
+
+```ts
+test('theme transition matches the reference lifecycle timing', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.clock.install();
+  await page.goto('/');
+  await page.clock.pauseAt(await page.evaluate(() => Date.now()));
+
+  const overlay = page.locator('[data-theme-transition]');
+  const toggle = page.getByRole('button', { name: '切换主题' });
+  await toggle.click();
+
+  await page.clock.fastForward(409);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.clock.fastForward(1);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.clock.fastForward(2_499);
+  await expect(overlay).not.toHaveClass(/is-leaving/);
+  await page.clock.fastForward(1);
+  await expect(overlay).toHaveClass(/is-leaving/);
+  await page.clock.fastForward(199);
+  await expect(overlay).toBeVisible();
+  await page.clock.fastForward(1);
+  await expect(overlay).toBeHidden();
+  await expect(toggle).toBeEnabled();
+});
+```
+
+- [ ] **Step 2: Run the focused test and verify RED**
+
+Run:
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/interactions.spec.ts --project=desktop-1440 --grep "theme transition runs once|reference lifecycle"
+```
+
+Expected: FAIL because the current implementation uses a 2.6-second translated path, switches at 220ms, starts leaving at 2620ms, and hides at 2900ms.
+
+- [ ] **Step 3: Implement the measured orbit and lifecycle**
+
+Use an independently written orbit layer with the measured geometry:
+
+```css
+.theme-transition__orbit {
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  transform-origin: center bottom;
+}
+
+.is-active .theme-transition__orbit {
+  animation: theme-transition-celestial-track 2s cubic-bezier(0.7, 0, 0, 1) both;
+}
+
+.theme-transition__sun,
+.theme-transition__moon {
+  top: 32%;
+  left: 55%;
+}
+
+@keyframes theme-transition-celestial-track {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+```
+
+Set the overlay enter and leave animations to 200ms. In `theme.ts`, set the apply, leave, and end timers to `410`, `2910`, and `3110` milliseconds. The night gradient changes over 2 seconds after a 410ms delay. Do not add a post-hold descent.
+
+- [ ] **Step 4: Run focused verification and verify GREEN**
+
+Run the command from Step 2. Expected: both tests PASS, including exact fake-clock boundaries.
+
+- [ ] **Step 5: Run full verification and start the required preview**
+
+Run `corepack pnpm test:run`, `corepack pnpm check`, `corepack pnpm build`, `corepack pnpm check:site`, and `corepack pnpm test:e2e`. Expected: 48 unit tests, 63 Playwright tests, 80 generated pages, 4653 local links, and 21 unchanged visual baselines.
+
+After verification, start `corepack pnpm dev --host 127.0.0.1` and open `http://127.0.0.1:4321/` in a visible local browser. Keep the preview running and include `[本地预览](http://127.0.0.1:4321/)` in the final response.
