@@ -17,8 +17,8 @@ async function searchIndex(): Promise<MiniSearch<SearchDocument>> {
       })
       .then((documents) => {
         const index = new MiniSearch<SearchDocument>({
-          fields: ['title', 'description', 'category', 'tags', 'text'],
-          storeFields: ['url', 'title', 'description', 'category']
+          fields: ['title', 'description', 'text'],
+          storeFields: ['url', 'title', 'description']
         });
         index.addAll(documents);
         return index;
@@ -77,7 +77,7 @@ async function renderResults(input: HTMLInputElement): Promise<void> {
       link.href = String(match.url);
       link.dataset.searchResult = '';
       title.textContent = String(match.title);
-      meta.textContent = `${String(match.category)} · ${String(match.description)}`;
+      meta.textContent = String(match.description);
       link.append(title, meta);
       item.append(link);
       results.append(item);

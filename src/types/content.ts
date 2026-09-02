@@ -1,15 +1,9 @@
-import type { POST_CATEGORIES } from '../config/site';
-
-export type PostCategory = (typeof POST_CATEGORIES)[number];
-
 export interface PostData {
   title: string;
   description: string;
   pubDate: Date;
   updatedDate?: Date;
   cover: string;
-  category: PostCategory;
-  tags: string[];
   series?: string;
   seriesOrder?: number;
   draft: boolean;

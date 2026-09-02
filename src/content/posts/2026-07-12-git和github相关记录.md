@@ -5,9 +5,6 @@ pubDate: '2026-07-12'
 updatedDate: '2026-07-14T23:27:52+08:00'
 cover: >-
   https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/Snipaste_2026-07-12_14-27-47.png
-category: 软件工程与工具
-tags:
-  - Git
 draft: false
 math: true
 mermaid: true

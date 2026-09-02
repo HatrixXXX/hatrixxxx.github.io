@@ -5,11 +5,6 @@ pubDate: '2026-02-11'
 updatedDate: '2026-06-28T23:15:08+08:00'
 cover: >-
   https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/Screen-Shot-2019-10-03-at-5.31.06-PM.jpg
-category: FPGA 与数字系统
-tags:
-  - Vivado
-  - Vitis
-  - FPGA
 series: FPGA 开发
 seriesOrder: 1
 draft: false

@@ -1,12 +1,3 @@
-export const POST_CATEGORIES = [
-  'FPGA 与数字系统',
-  '嵌入式与硬件',
-  'AI 与图形计算',
-  '软件工程与工具',
-  '数学与基础',
-  '随笔与资源'
-] as const;
-
 export const SITE = {
   title: "Hatrixの窝",
   tagline: '轻松即单纯，速成即精准',

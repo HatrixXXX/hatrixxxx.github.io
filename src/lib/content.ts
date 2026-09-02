@@ -44,17 +44,6 @@ export function buildArchives(posts: PostEntry[]): ArchiveMonth[] {
   return [...groups.values()];
 }
 
-export function buildTaxonomy(posts: PostEntry[], field: 'category' | 'tags'): Map<string, PostEntry[]> {
-  const result = new Map<string, PostEntry[]>();
-  for (const post of sortPosts(posts)) {
-    const values = field === 'category' ? [post.data.category] : post.data.tags;
-    for (const value of values) {
-      result.set(value, [...(result.get(value) ?? []), post]);
-    }
-  }
-  return result;
-}
-
 export function getAdjacentPosts(posts: PostEntry[], currentId: string): AdjacentPosts {
   const index = posts.findIndex((post) => post.id === currentId);
   if (index < 0) return {};
