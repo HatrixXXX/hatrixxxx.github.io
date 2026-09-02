@@ -314,20 +314,18 @@ test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
   await expect(page.locator('.pswp')).toBeVisible();
 });
 
-test('empty music player persists without constructing Audio or requesting media', async ({ page }) => {
+test('empty music player persists without constructing track audio or requesting media', async ({ page }) => {
   const mediaRequests: string[] = [];
   page.on('request', (request) => {
     if (request.resourceType() === 'media') mediaRequests.push(request.url());
   });
   await page.addInitScript(() => {
     const NativeAudio = window.Audio;
-    Object.defineProperty(window, '__audioConstructed', { value: 0, writable: true });
+    const trackedWindow = window as Window & { __audioSources?: string[] };
+    Object.defineProperty(trackedWindow, '__audioSources', { value: [] });
     window.Audio = new Proxy(NativeAudio, {
       construct(target, args) {
-        Object.defineProperty(window, '__audioConstructed', {
-          value: Number((window as Window & { __audioConstructed?: number }).__audioConstructed) + 1,
-          writable: true
-        });
+        trackedWindow.__audioSources?.push(String(args[0] ?? ''));
         return Reflect.construct(target, args);
       }
     });
@@ -377,6 +375,10 @@ test('empty music player persists without constructing Audio or requesting media
 
   await page.getByRole('link', { name: '归档', exact: true }).click();
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-persist-probe', 'same-node');
-  expect(await page.evaluate(() => (window as Window & { __audioConstructed?: number }).__audioConstructed)).toBe(0);
+  const audioSources = await page.evaluate(
+    () => (window as Window & { __audioSources?: string[] }).__audioSources ?? []
+  );
+  expect(audioSources).toHaveLength(2);
+  expect(audioSources.every((source) => source.startsWith('data:audio/x-m4a;base64,'))).toBe(true);
   expect(mediaRequests).toEqual([]);
 });
