@@ -8,7 +8,7 @@ import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { buildTaxonomy, paginatePosts, sortPosts, type Page, type PostEntry } from '@/lib/content';
+import { paginatePosts, sortPosts, type Page, type PostEntry } from '@/lib/content';
 
 interface Props {
   page: Page<PostEntry>;
@@ -29,8 +29,6 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { page, posts } = Astro.props;
-const categoryCount = buildTaxonomy(posts, 'category').size;
-const tagCount = buildTaxonomy(posts, 'tags').size;
 ---
 
 <BaseLayout title={`文章列表 · 第 ${page.current} 页`}>
@@ -47,11 +45,7 @@ const tagCount = buildTaxonomy(posts, 'tags').size;
       <Pagination current={page.current} total={page.total} basePath="/page/" />
     </div>
     <div class="sidebar-column">
-      <ProfileSidebar
-        postCount={posts.length}
-        categoryCount={categoryCount}
-        tagCount={tagCount}
-      />
+      <ProfileSidebar postCount={posts.length} />
     </div>
   </main>
 </BaseLayout>

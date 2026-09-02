@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets';
 import readingTime from 'reading-time';
 import type { PostEntry } from '@/lib/content';
-import { categoryPath, postPath } from '@/lib/urls';
+import { postPath } from '@/lib/urls';
 
 interface Props {
   post: PostEntry;
@@ -35,7 +35,6 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     />
   </a>
   <div class="post-card-content">
-    <a class="post-category" href={categoryPath(post.data.category)}>{post.data.category}</a>
     <h2><a href={href}>{post.data.title}</a></h2>
     <p>{post.data.description}</p>
     <div class="post-meta">
@@ -91,16 +90,8 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     padding: clamp(1.4rem, 3vw, 2.4rem);
   }
 
-  .post-category {
-    align-self: flex-start;
-    color: var(--color-accent);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-  }
-
   h2 {
-    margin: 0.55rem 0 0;
+    margin: 0;
     color: #fff;
     font-size: clamp(1.3rem, 2.2vw, 1.8rem);
     line-height: 1.35;

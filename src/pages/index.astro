@@ -7,12 +7,10 @@ import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { buildTaxonomy, paginatePosts, sortPosts, type PostEntry } from '@/lib/content';
+import { paginatePosts, sortPosts, type PostEntry } from '@/lib/content';
 
 const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
 const page = paginatePosts(posts, 1, 6);
-const categoryCount = buildTaxonomy(posts, 'category').size;
-const tagCount = buildTaxonomy(posts, 'tags').size;
 ---
 
 <BaseLayout title={SITE.title}>
@@ -24,11 +22,7 @@ const tagCount = buildTaxonomy(posts, 'tags').size;
       <Pagination current={page.current} total={page.total} basePath="/page/" />
     </div>
     <div class="sidebar-column">
-      <ProfileSidebar
-        postCount={posts.length}
-        categoryCount={categoryCount}
-        tagCount={tagCount}
-      />
+      <ProfileSidebar postCount={posts.length} />
     </div>
   </main>
 </BaseLayout>

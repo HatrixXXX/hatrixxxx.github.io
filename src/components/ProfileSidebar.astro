@@ -3,11 +3,9 @@ import { SITE } from '@/config/site';
 
 interface Props {
   postCount: number;
-  categoryCount: number;
-  tagCount: number;
 }
 
-const { postCount, categoryCount, tagCount } = Astro.props;
+const { postCount } = Astro.props;
 ---
 
 <aside class="profile-sidebar" aria-label="作者资料">
@@ -18,14 +16,6 @@ const { postCount, categoryCount, tagCount } = Astro.props;
     <div>
       <dt>文章</dt>
       <dd data-post-count>{postCount}</dd>
-    </div>
-    <div>
-      <dt>分类</dt>
-      <dd data-category-count>{categoryCount}</dd>
-    </div>
-    <div>
-      <dt>标签</dt>
-      <dd data-tag-count>{tagCount}</dd>
     </div>
   </dl>
   <nav aria-label="作者链接">
@@ -69,12 +59,8 @@ const { postCount, categoryCount, tagCount } = Astro.props;
 
   dl {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     margin: 1.5rem 0;
-  }
-
-  dl div + div {
-    border-left: 1px solid var(--color-line);
   }
 
   dt {

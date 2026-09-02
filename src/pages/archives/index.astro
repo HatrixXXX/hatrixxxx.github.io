@@ -4,13 +4,11 @@ import HeroBanner from '@/components/HeroBanner.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { buildArchives, buildTaxonomy, sortPosts, type PostEntry } from '@/lib/content';
+import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
 import { postPath } from '@/lib/urls';
 
 const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
 const archives = buildArchives(posts);
-const categoryCount = buildTaxonomy(posts, 'category').size;
-const tagCount = buildTaxonomy(posts, 'tags').size;
 ---
 
 <BaseLayout title="归档">
@@ -33,7 +31,7 @@ const tagCount = buildTaxonomy(posts, 'tags').size;
         </section>
       ))}
     </section>
-    <aside><ProfileSidebar postCount={posts.length} categoryCount={categoryCount} tagCount={tagCount} /></aside>
+    <aside><ProfileSidebar postCount={posts.length} /></aside>
   </main>
 </BaseLayout>
 

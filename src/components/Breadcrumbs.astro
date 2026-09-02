@@ -1,18 +1,14 @@
 ---
-import { categoryPath } from '@/lib/urls';
-
 interface Props {
-  category: string;
   title: string;
 }
 
-const { category, title } = Astro.props;
+const { title } = Astro.props;
 ---
 
 <nav class="breadcrumbs" aria-label="面包屑">
   <ol>
     <li><a href="/">首页</a></li>
-    <li><a href={categoryPath(category)}>{category}</a></li>
     <li aria-current="page">{title}</li>
   </ol>
 </nav>
