@@ -31,6 +31,29 @@ test('decorative motion stops when reduced motion is requested', async ({ page }
   expect(durations.length).toBeGreaterThan(0);
   expect(durations.every(({ animation }) => animation === '0s')).toBe(true);
   expect(durations.every(({ transition }) => transition === '0s')).toBe(true);
+
+  const sakanaLayer = page.locator('[data-sakana-layer]');
+  await expect(sakanaLayer).toHaveAttribute('data-sakana-state', 'ready');
+  await expect(sakanaLayer).toHaveAttribute('data-sakana-motion', 'reduced');
+  await expect(sakanaLayer.locator('a, button, input, [tabindex]')).toHaveCount(0);
+
+  const characters = sakanaLayer.locator('.sakana-character');
+  await expect(characters).toHaveCount(2);
+  const before = await characters.evaluateAll((elements) =>
+    elements.map((element) => ({
+      pointerEvents: getComputedStyle(element).pointerEvents,
+      transform: element.getAttribute('style')
+    }))
+  );
+  await page.waitForTimeout(250);
+  const after = await characters.evaluateAll((elements) =>
+    elements.map((element) => ({
+      pointerEvents: getComputedStyle(element).pointerEvents,
+      transform: element.getAttribute('style')
+    }))
+  );
+  expect(before.every(({ pointerEvents }) => pointerEvents === 'none')).toBe(true);
+  expect(after).toEqual(before);
 });
 
 test('desktop and mobile navigation and table of contents match their viewport', async ({

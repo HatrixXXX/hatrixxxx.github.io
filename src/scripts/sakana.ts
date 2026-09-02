@@ -1,8 +1,17 @@
-import type { SakanaInstance } from 'sakana';
+import type { SakanaApi, SakanaInstance } from 'sakana';
 
 const IDLE_TIMEOUT_MS = 1_000;
 const FALLBACK_DELAY_MS = 200;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let instances: SakanaInstance[] = [];
+let sakanaApi: SakanaApi | undefined;
+
+function applyMotionPreference(reduce: boolean): void {
+  const layer = document.querySelector<HTMLElement>('[data-sakana-layer]');
+  if (layer) layer.dataset.sakanaMotion = reduce ? 'reduced' : 'full';
+  sakanaApi?.setMute(reduce);
+  if (reduce) instances.forEach((instance) => instance.pause());
+}
 
 async function initializeSakanaCharacters(layer: HTMLElement): Promise<void> {
   if (layer.dataset.sakanaState === 'ready' || layer.dataset.sakanaState === 'loading') return;
@@ -14,7 +23,7 @@ async function initializeSakanaCharacters(layer: HTMLElement): Promise<void> {
     if (!chisatoMount || !takinaMount) throw new Error('Sakana mount points are missing');
 
     const { default: Sakana } = await import('sakana');
-    Sakana.setMute(false);
+    sakanaApi = Sakana;
 
     const baseOptions = {
       r: 0,
@@ -28,10 +37,11 @@ async function initializeSakanaCharacters(layer: HTMLElement): Promise<void> {
       Sakana.init({ ...baseOptions, el: takinaMount, character: 'takina' })
     ];
     instances.forEach((instance) => instance.pause());
-    layer.dataset.sakanaMotion = 'full';
     layer.dataset.sakanaState = 'ready';
+    applyMotionPreference(reducedMotion.matches);
   } catch (error) {
     instances = [];
+    sakanaApi = undefined;
     layer.dataset.sakanaState = 'error';
     console.error('Unable to initialize Sakana characters', error);
   }
@@ -54,5 +64,6 @@ function scheduleSakanaInitialization(): void {
   }
 }
 
+reducedMotion.addEventListener('change', (event) => applyMotionPreference(event.matches));
 document.addEventListener('astro:page-load', scheduleSakanaInitialization);
 scheduleSakanaInitialization();

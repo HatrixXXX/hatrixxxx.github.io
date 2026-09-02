@@ -56,4 +56,11 @@
       --sakana-scale: 0.32;
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-sakana-layer] .sakana-character,
+    [data-sakana-layer] .sakana-bed {
+      pointer-events: none !important;
+    }
+  }
 </style>

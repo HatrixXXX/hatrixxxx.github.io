@@ -103,3 +103,29 @@ test('initializes locked roles once and persists them across client navigation',
   await expect(page.locator('[data-sakana-layer] canvas')).toHaveCount(2);
   expect(remoteSakanaRequests).toEqual([]);
 });
+
+test('dragging one character moves only that instance', async ({ page }) => {
+  await page.goto('/');
+  const layer = page.locator('[data-sakana-layer]');
+  await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
+
+  const chisato = layer.locator('[data-sakana-mount="chisato"] .sakana-character');
+  const takina = layer.locator('[data-sakana-mount="takina"] .sakana-character');
+  const initial = {
+    chisato: await chisato.getAttribute('style'),
+    takina: await takina.getAttribute('style')
+  };
+  const box = await chisato.boundingBox();
+  if (!box) throw new Error('Chisato is not visible');
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.85, box.y + box.height * 0.35);
+
+  const draggedStyle = await chisato.getAttribute('style');
+  expect(draggedStyle).not.toBe(initial.chisato);
+  expect(await takina.getAttribute('style')).toBe(initial.takina);
+
+  await page.mouse.up();
+  await expect.poll(() => chisato.getAttribute('style')).not.toBe(draggedStyle);
+});
