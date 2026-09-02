@@ -345,7 +345,7 @@ Set the overlay enter and leave animations to 200ms. In `theme.ts`, set the appl
 
 Run the command from Step 2. Expected: both tests PASS, including exact fake-clock boundaries.
 
-- [ ] **Step 5: Run full verification and start the required preview**
+- [x] **Step 5: Run full verification and start the required preview**
 
 Run `corepack pnpm test:run`, `corepack pnpm check`, `corepack pnpm build`, `corepack pnpm check:site`, and `corepack pnpm test:e2e`. Expected: 48 unit tests, 63 Playwright tests, 80 generated pages, 4653 local links, and 21 unchanged visual baselines.
 
