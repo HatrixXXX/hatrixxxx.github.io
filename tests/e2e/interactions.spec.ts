@@ -90,6 +90,14 @@ test('theme transition runs once and persists the destination theme', async ({ p
   });
   expect(dayCat.clipPath).toContain('polygon');
 
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await cat.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { width: style.width, height: style.height };
+    })
+  ).toEqual({ width: '92px', height: '118px' });
+
   await page.setViewportSize({ width: 3840, height: 1907 });
   expect(parseFloat(await cat.evaluate((element) => getComputedStyle(element).width))).toBeCloseTo(
     204,
