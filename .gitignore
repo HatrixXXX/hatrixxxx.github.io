@@ -13,6 +13,7 @@ reports/
 
 # Agent work files
 .superpowers/
+.worktrees/
 
 # IDE configurations
 .idea/
