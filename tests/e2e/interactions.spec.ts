@@ -192,12 +192,41 @@ test('theme transition matches the reference lifecycle timing', async ({ page })
 
   const overlay = page.locator('[data-theme-transition]');
   const toggle = page.getByRole('button', { name: '切换主题' });
+  const sun = overlay.locator('.theme-transition__sun');
+  const moon = overlay.locator('.theme-transition__moon');
+  const celestialOpacity = async () => ({
+    sun: await sun.evaluate((element) => getComputedStyle(element).opacity),
+    moon: await moon.evaluate((element) => getComputedStyle(element).opacity)
+  });
+  expect({
+    sun: await sun.evaluate((element) => getComputedStyle(element).width),
+    moon: await moon.evaluate((element) => getComputedStyle(element).width)
+  }).toEqual({ sun: '40px', moon: '24px' });
   await toggle.click();
 
   await page.clock.fastForward(409);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  expect(await celestialOpacity()).toEqual({ sun: '1', moon: '0' });
   await page.clock.fastForward(1);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await celestialOpacity()).toEqual({ sun: '0', moon: '1' });
+  await page.clock.fastForward(2_499);
+  await expect(overlay).not.toHaveClass(/is-leaving/);
+  await page.clock.fastForward(1);
+  await expect(overlay).toHaveClass(/is-leaving/);
+  await page.clock.fastForward(199);
+  await expect(overlay).toBeVisible();
+  await page.clock.fastForward(1);
+  await expect(overlay).toBeHidden();
+  await expect(toggle).toBeEnabled();
+
+  await toggle.click();
+  await page.clock.fastForward(409);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await celestialOpacity()).toEqual({ sun: '0', moon: '1' });
+  await page.clock.fastForward(1);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  expect(await celestialOpacity()).toEqual({ sun: '1', moon: '0' });
   await page.clock.fastForward(2_499);
   await expect(overlay).not.toHaveClass(/is-leaving/);
   await page.clock.fastForward(1);

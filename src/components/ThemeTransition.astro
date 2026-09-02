@@ -3,6 +3,7 @@
   data-theme-transition
   data-from-theme=""
   data-to-theme=""
+  data-visible-theme=""
   aria-hidden="true"
   hidden
 >
@@ -156,13 +157,13 @@
     height: 16%;
   }
 
-  [data-to-theme='dark'] .theme-transition__sun,
-  [data-to-theme='light'] .theme-transition__moon {
+  [data-visible-theme='dark'] .theme-transition__sun,
+  [data-visible-theme='light'] .theme-transition__moon {
     opacity: 0;
   }
 
-  [data-to-theme='dark'] .theme-transition__moon,
-  [data-to-theme='light'] .theme-transition__sun {
+  [data-visible-theme='dark'] .theme-transition__moon,
+  [data-visible-theme='light'] .theme-transition__sun {
     opacity: 1;
   }
 

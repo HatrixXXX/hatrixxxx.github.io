@@ -69,6 +69,7 @@ function finishThemeTransition(
     overlay.classList.remove('is-active', 'is-leaving');
     overlay.dataset.fromTheme = '';
     overlay.dataset.toTheme = '';
+    overlay.dataset.visibleTheme = '';
   }
 
   setTransitionLocked(false);
@@ -88,12 +89,16 @@ function runThemeTransition(theme: Theme): void {
   setTransitionLocked(true);
   overlay.dataset.fromTheme = fromTheme;
   overlay.dataset.toTheme = theme;
+  overlay.dataset.visibleTheme = fromTheme;
   overlay.classList.remove('is-active', 'is-leaving');
   overlay.hidden = false;
   void overlay.offsetWidth;
   overlay.classList.add('is-active');
 
-  scheduleTransitionStep(() => applyTheme(theme), THEME_APPLY_DELAY_MS);
+  scheduleTransitionStep(() => {
+    overlay.dataset.visibleTheme = theme;
+    applyTheme(theme);
+  }, THEME_APPLY_DELAY_MS);
   scheduleTransitionStep(() => overlay.classList.add('is-leaving'), THEME_LEAVE_DELAY_MS);
   scheduleTransitionStep(() => finishThemeTransition(overlay), THEME_TRANSITION_END_MS);
 }
