@@ -6,13 +6,14 @@ import { SITE } from '../../src/config/site';
 import { playlist } from '../../src/data/playlist';
 
 describe('content contracts', () => {
-  it('does not carry category or tag metadata', async () => {
+  it('does not carry taxonomy metadata', async () => {
     for (const directory of ['src/content/posts', 'src/drafts']) {
       const root = join(process.cwd(), directory);
       const files = (await readdir(root)).filter((file) => /\.mdx?$/.test(file));
       for (const file of files) {
         const { data } = matter(await readFile(join(root, file), 'utf8'));
         expect(data, `${directory}/${file}`).not.toHaveProperty('category');
+        expect(data, `${directory}/${file}`).not.toHaveProperty('categories');
         expect(data, `${directory}/${file}`).not.toHaveProperty('tags');
       }
     }
