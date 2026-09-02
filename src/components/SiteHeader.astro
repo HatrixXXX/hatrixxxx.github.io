@@ -29,7 +29,22 @@ const links = [
 
     <div class="header-actions">
       <button class="header-action" type="button" aria-label="搜索文章" data-open-search>⌕</button>
-      <button class="header-action" type="button" aria-label="切换主题" data-theme-toggle>◐</button>
+      <button
+        class="header-action"
+        type="button"
+        aria-label="切换主题"
+        data-theme-toggle
+      >
+        <span class="theme-icon" aria-hidden="true">
+          <svg class="theme-icon__sun" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 1.75v2.2M12 20.05v2.2M1.75 12h2.2M20.05 12h2.2M4.75 4.75l1.55 1.55M17.7 17.7l1.55 1.55M19.25 4.75 17.7 6.3M6.3 17.7l-1.55 1.55"></path>
+          </svg>
+          <svg class="theme-icon__moon" viewBox="0 0 24 24" width="20" height="20">
+            <path d="M20.2 15.15A8.6 8.6 0 0 1 8.85 3.8a8.65 8.65 0 1 0 11.35 11.35Z"></path>
+          </svg>
+        </span>
+      </button>
       <button
         class="menu-toggle"
         type="button"
@@ -139,6 +154,51 @@ const links = [
   .menu-toggle:hover {
     background: rgb(255 255 255 / 14%);
     color: var(--color-accent);
+  }
+
+  .header-action:disabled {
+    cursor: wait;
+  }
+
+  .theme-icon {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    margin: auto;
+    place-items: center;
+  }
+
+  .theme-icon svg {
+    grid-area: 1 / 1;
+    overflow: visible;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .theme-icon__sun circle {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  .theme-icon__moon {
+    fill: currentColor !important;
+    stroke: none !important;
+  }
+
+  :global(html[data-theme='dark']) .theme-icon__sun,
+  :global(html[data-theme='light']) .theme-icon__moon {
+    opacity: 0;
+    transform: rotate(-35deg) scale(0.65);
+  }
+
+  :global(html[data-theme='dark']) .theme-icon__moon,
+  :global(html[data-theme='light']) .theme-icon__sun {
+    opacity: 1;
+    transform: rotate(0) scale(1);
   }
 
   .menu-toggle,

@@ -1348,7 +1348,7 @@ Expected: snapshots generated for all required routes/viewports. Review them aga
 
 Run: `pnpm test:e2e`
 
-Expected: PASS in all three projects; no duplicate mobile content or oversized blank region. Final suite: 59 Playwright cases and 21 Windows-generated snapshots. Snapshot names are platform-neutral; the Pages workflow intentionally does not run the visual suite.
+Expected: PASS in all three projects; no duplicate mobile content or oversized blank region. Final suite: 62 Playwright cases and 21 Windows-generated snapshots. Snapshot names are platform-neutral; the Pages workflow intentionally does not run the visual suite.
 
 ```bash
 git add playwright.config.ts tests/e2e src/styles src/components src/layouts src/pages

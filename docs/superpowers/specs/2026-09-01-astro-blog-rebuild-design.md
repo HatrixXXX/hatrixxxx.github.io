@@ -261,6 +261,6 @@ GitHub Pages 只托管构建后的 HTML、CSS、JavaScript 和静态资源。首
 - `public/CNAME` 与 `dist/CNAME` 内容一致，GitHub Pages 构建产物正确。
 - 桌面和移动端结构与参考站保持同一视觉语言，不包含参考站的超长空白和移动端重复内容问题。
 - 干净构建少于 8 分钟，发布目录小于 1 GB。
-- 静态构建生成 80 个 HTML 页面；Playwright 共 59 项检查和 21 张 Windows 视觉基线，快照名不含平台后缀。Pages workflow 不运行视觉套件。
+- 静态构建生成 80 个 HTML 页面；Playwright 共 62 项检查和 21 张 Windows 视觉基线，快照名不含平台后缀。Pages workflow 不运行视觉套件。
 - 旧 Jekyll 文件在新站验证通过后清理完毕。
 - 音乐和作品页面在无数据时表现正常。

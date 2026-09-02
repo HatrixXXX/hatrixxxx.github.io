@@ -61,6 +61,58 @@ test('stored theme is applied and one click toggles it after client navigation',
   expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
 });
 
+test('theme transition runs once and persists the destination theme', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.goto('/');
+
+  const overlay = page.locator('[data-theme-transition]');
+  const toggle = page.getByRole('button', { name: '切换主题' });
+  await expect(overlay).toBeHidden();
+
+  await toggle.click();
+  await expect(overlay).toBeVisible();
+  await expect(overlay).toHaveAttribute('data-from-theme', 'light');
+  await expect(overlay).toHaveAttribute('data-to-theme', 'dark');
+  await expect(toggle).toBeDisabled();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  await toggle.dispatchEvent('click');
+  await expect(overlay).toHaveAttribute('data-to-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  await expect(overlay).toBeHidden({ timeout: 4_000 });
+  await expect(toggle).toBeEnabled();
+  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
+});
+
+test('pending destination survives immediate client navigation', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.goto('/');
+
+  await page.getByRole('button', { name: '切换主题' }).click();
+  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
+
+  await page.getByRole('link', { name: '归档', exact: true }).dispatchEvent('click');
+  await expect(page).toHaveURL(/\/archives\/$/);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('[data-theme-transition]')).toBeHidden();
+  await expect(page.getByRole('button', { name: '切换主题' })).toBeEnabled();
+});
+
+test('reduced motion switches theme without showing the transition overlay', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.goto('/');
+
+  const overlay = page.locator('[data-theme-transition]');
+  await expect(overlay).toHaveCount(1);
+  await page.getByRole('button', { name: '切换主题' }).click();
+
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(overlay).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
+});
+
 test('mobile menu toggles once and closes on Escape and navigation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
