@@ -104,6 +104,24 @@ test('initializes locked roles once and persists them across client navigation',
   await expect(chisato.locator('.sakana-character')).toHaveAttribute('data-character', 'chisato');
   await expect(takina.locator('.sakana-character')).toHaveAttribute('data-character', 'takina');
   await expect(layer.locator('canvas')).toHaveCount(2);
+  const paintedCanvases = await layer.locator('canvas').evaluateAll((canvases) =>
+    canvases.map((canvas) => {
+      const element = canvas as HTMLCanvasElement;
+      const pixels = element.getContext('2d')?.getImageData(0, 0, element.width, element.height).data;
+      return pixels ? pixels.some((value, index) => index % 4 === 3 && value > 0) : false;
+    })
+  );
+  expect(paintedCanvases).toEqual([true, true]);
+
+  const chisatoCharacter = chisato.locator('.sakana-character');
+  const restingStyle = await chisatoCharacter.getAttribute('style');
+  const restingBox = await chisatoCharacter.boundingBox();
+  if (!restingBox) throw new Error('Chisato is not visible at rest');
+  await page.mouse.click(restingBox.x + restingBox.width / 2, restingBox.y + restingBox.height / 2);
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  expect(await chisatoCharacter.getAttribute('style')).toBe(restingStyle);
   await expect(chisato).not.toHaveAttribute('data-can-switch-character', 'true');
   await expect(takina).not.toHaveAttribute('data-can-switch-character', 'true');
 
@@ -146,4 +164,55 @@ test('dragging Chisato follows the pointer and moves only that instance', async 
     await page.mouse.up();
     await expect.poll(() => chisato.getAttribute('style')).not.toBe(draggedStyle);
   }
+});
+
+test('Takina moves independently and plays its embedded voice', async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeAudio = window.Audio;
+    const trackedWindow = window as Window & { __sakanaVoicePlays?: string[] };
+    Object.defineProperty(trackedWindow, '__sakanaVoicePlays', { value: [] });
+    window.Audio = new Proxy(NativeAudio, {
+      construct(target, args) {
+        const audio = Reflect.construct(target, args) as HTMLAudioElement;
+        const source = String(args[0] ?? '');
+        Object.defineProperty(audio, 'play', {
+          value: () => {
+            trackedWindow.__sakanaVoicePlays?.push(source);
+            return Promise.resolve();
+          }
+        });
+        return audio;
+      }
+    });
+  });
+
+  await page.goto('/');
+  const layer = page.locator('[data-sakana-layer]');
+  await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
+  await expect(layer).toHaveAttribute('data-sakana-motion', 'full');
+
+  const chisato = layer.locator('[data-sakana-mount="chisato"] .sakana-character');
+  const takina = layer.locator('[data-sakana-mount="takina"] .sakana-character');
+  const chisatoStyle = await chisato.getAttribute('style');
+  const initialBox = await takina.boundingBox();
+  if (!initialBox) throw new Error('Takina is not visible');
+  const centerX = initialBox.x + initialBox.width / 2;
+  const centerY = initialBox.y + initialBox.height / 2;
+
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(centerX + 120, centerY);
+  const draggedBox = await takina.boundingBox();
+  if (!draggedBox) throw new Error('Takina disappeared while dragging');
+  expect(draggedBox.x + draggedBox.width / 2).toBeGreaterThan(centerX);
+  expect(await chisato.getAttribute('style')).toBe(chisatoStyle);
+  await page.mouse.up();
+
+  await expect.poll(() => page.evaluate(
+    () => (window as Window & { __sakanaVoicePlays?: string[] }).__sakanaVoicePlays ?? []
+  )).toHaveLength(1);
+  const sources = await page.evaluate(
+    () => (window as Window & { __sakanaVoicePlays?: string[] }).__sakanaVoicePlays ?? []
+  );
+  expect(sources[0]).toMatch(/^data:audio\/x-m4a;base64,/);
 });

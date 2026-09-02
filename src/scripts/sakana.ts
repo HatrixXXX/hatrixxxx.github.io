@@ -2,9 +2,39 @@ import type { SakanaApi, SakanaInstance } from 'sakana';
 
 const IDLE_TIMEOUT_MS = 1_000;
 const FALLBACK_DELAY_MS = 200;
+const SAKANA_WIDTH = 500;
+const SAKANA_HEIGHT = 800;
+const ROD_COLOR = '#182562';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let instances: SakanaInstance[] = [];
 let sakanaApi: SakanaApi | undefined;
+
+function resetSakanaValue(instance: SakanaInstance): void {
+  const value = instance.getValue();
+  value.r = 0;
+  value.y = 0;
+  value.t = 0;
+  value.w = 0;
+  instance.pause();
+}
+
+function renderRestingPose(mount: HTMLElement): void {
+  const character = mount.querySelector<HTMLElement>('.sakana-character');
+  const canvas = mount.querySelector<HTMLCanvasElement>('canvas');
+  const context = canvas?.getContext('2d');
+  if (!character || !canvas || !context) throw new Error('Sakana render targets are missing');
+
+  character.style.transform = 'rotate(0deg) translateX(0px) translateY(0px)';
+  context.clearRect(0, 0, SAKANA_WIDTH, SAKANA_HEIGHT);
+  context.save();
+  context.strokeStyle = ROD_COLOR;
+  context.lineWidth = 10;
+  context.beginPath();
+  context.moveTo(250, 780);
+  context.quadraticCurveTo(250, 715, 250, 540);
+  context.stroke();
+  context.restore();
+}
 
 function applyMotionPreference(reduce: boolean): void {
   const layer = document.querySelector<HTMLElement>('[data-sakana-layer]');
@@ -36,7 +66,9 @@ async function initializeSakanaCharacters(layer: HTMLElement): Promise<void> {
       Sakana.init({ ...baseOptions, el: chisatoMount, character: 'chisato' }),
       Sakana.init({ ...baseOptions, el: takinaMount, character: 'takina' })
     ];
-    instances.forEach((instance) => instance.pause());
+    instances.forEach(resetSakanaValue);
+    renderRestingPose(chisatoMount);
+    renderRestingPose(takinaMount);
     layer.dataset.sakanaState = 'ready';
     applyMotionPreference(reducedMotion.matches);
   } catch (error) {

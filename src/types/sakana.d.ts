@@ -10,10 +10,16 @@ declare module 'sakana' {
     canSwitchCharacter: boolean;
   }
 
+  export interface SakanaValue {
+    r: number;
+    y: number;
+    t: number;
+    w: number;
+  }
+
   export interface SakanaInstance {
     pause(): void;
-    play(): void;
-    destroy(): void;
+    getValue(): SakanaValue;
   }
 
   export interface SakanaApi {
