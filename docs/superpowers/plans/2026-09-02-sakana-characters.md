@@ -1045,11 +1045,11 @@ Expected: 66 tests pass, including 21 visual comparisons.
 Run:
 
 ```powershell
-rg -n "cdn\.jsdelivr\.net/npm/sakana|lab\.magiconch\.com/sakana" dist
+rg -n --glob '*.html' "cdn\.jsdelivr\.net/npm/sakana|lab\.magiconch\.com/sakana" dist
 node -e 'const fs=require("fs"),path=require("path"),z=require("zlib");const dir="dist/_astro";const html=fs.readFileSync("dist/index.html","utf8");const js=fs.readdirSync(dir).filter(f=>f.endsWith(".js"));const direct=[...html.matchAll(/<script[^>]+src="\/_astro\/([^"]+\.js)"/g)].map(m=>m[1]);const marked=js.filter(f=>{const s=fs.readFileSync(path.join(dir,f),"utf8");return s.includes("data-sakana-layer")||s.includes("chin~a~na~go")});const chosen=[...new Set([...direct,...marked])];const total=chosen.reduce((n,f)=>n+z.gzipSync(fs.readFileSync(path.join(dir,f)),{level:9}).length,0);console.log({files:chosen,totalGzipBytes:total,limit:160*1024});if(total>160*1024)process.exit(1)'
 ```
 
-Expected: `rg` finds no runtime Sakana CDN URL; the selected base router, Sakana initializer and Sakana payload stay at or below 163,840 gzip bytes. The upstream Sakana payload measured before implementation is 83,651 gzip bytes.
+Expected: `rg` exits 1 because no built HTML loads Sakana from a remote URL. The bundled JavaScript may retain the upstream project homepage as a `console` message; the runtime request assertion in `tests/e2e/sakana.spec.ts` verifies that it is not fetched. The selected base router, Sakana initializer and Sakana payload stay at or below 163,840 gzip bytes. The upstream Sakana payload measured before implementation is 83,651 gzip bytes.
 
 - [ ] **Step 6: Inspect final repository state**
 
@@ -1058,7 +1058,7 @@ git status --short
 git log -5 --oneline
 ```
 
-Expected: only the user's pre-existing `src/content/posts/2025-07-04-杂货铺.md` edit remains unstaged; generated build, report and test artifacts are ignored.
+Expected: the isolated feature worktree is clean; the user's unrelated edits remain untouched in the original `master` worktree. Generated build, report and test artifacts are ignored.
 
 - [ ] **Step 7: Start the required local preview**
 
@@ -1072,3 +1072,105 @@ Poll `http://127.0.0.1:4321/` until it returns HTTP 200. Keep the process runnin
 - [ ] **Step 8: Verify the live page in a browser**
 
 Open `http://127.0.0.1:4321/` at desktop and mobile widths. Confirm both characters, orientation, drag behavior, fixed corners, theme-overlay stacking and the absence of horizontal scrolling. Save screenshots only under ignored test output directories, not the repository root.
+
+---
+
+### Task 7: Scope the empty-player audio regression and close verification
+
+**Files:**
+- Modify: `tests/e2e/interactions.spec.ts:317-382`
+
+**Interfaces:**
+- Consumes: `sakana@1.0.8` 创建的两条 `data:audio/x-m4a;base64` 内嵌语音。
+- Produces: `window.__audioSources` 测试探针，用来源而不是全局构造次数区分 Sakana 语音与歌单音频。
+- Verifies: built HTML has no remote Sakana URL, runtime has no remote Sakana request, and all 66 E2E checks pass.
+
+- [ ] **Step 1: Reproduce the stale global-Audio assertion**
+
+Run:
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/interactions.spec.ts --project=desktop-1440 -g "empty music player"
+```
+
+Expected: FAIL at the final `__audioConstructed === 0` assertion with actual value 2. Both constructor arguments are `data:audio/x-m4a;base64` Sakana voices, while `mediaRequests` remains empty.
+
+- [ ] **Step 2: Record audio sources instead of attributing every Audio to the player**
+
+将测试名称改为：
+
+```ts
+test('empty music player persists without constructing track audio or requesting media', async ({ page }) => {
+```
+
+将 `page.addInitScript` 替换为：
+
+```ts
+  await page.addInitScript(() => {
+    const NativeAudio = window.Audio;
+    const trackedWindow = window as Window & { __audioSources?: string[] };
+    Object.defineProperty(trackedWindow, '__audioSources', { value: [] });
+    window.Audio = new Proxy(NativeAudio, {
+      construct(target, args) {
+        trackedWindow.__audioSources?.push(String(args[0] ?? ''));
+        return Reflect.construct(target, args);
+      }
+    });
+  });
+```
+
+将最终的 `__audioConstructed` 断言替换为：
+
+```ts
+  const audioSources = await page.evaluate(
+    () => (window as Window & { __audioSources?: string[] }).__audioSources ?? []
+  );
+  expect(audioSources).toHaveLength(2);
+  expect(audioSources.every((source) => source.startsWith('data:audio/x-m4a;base64,'))).toBe(true);
+```
+
+保留 `expect(mediaRequests).toEqual([])`，继续证明页面没有发出媒体请求。
+
+- [ ] **Step 3: Run the corrected focused test**
+
+Run:
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/interactions.spec.ts --project=desktop-1440 -g "empty music player"
+```
+
+Expected: PASS, 1 test. The probe sees exactly two embedded Sakana voices and no track/network media.
+
+- [ ] **Step 4: Stop the ordinary preview and rerun the full E2E suite**
+
+```powershell
+corepack pnpm exec astro dev stop
+corepack pnpm test:e2e
+```
+
+Expected: Playwright starts its own `PLAYWRIGHT_TEST=1` server; all 66 tests pass, including 21 visual comparisons.
+
+- [ ] **Step 5: Recheck HTML delivery and runtime request coverage**
+
+```powershell
+rg -n --glob '*.html' "cdn\.jsdelivr\.net/npm/sakana|lab\.magiconch\.com/sakana" dist
+corepack pnpm exec playwright test tests/e2e/sakana.spec.ts --project=desktop-1440 -g "initializes locked roles"
+```
+
+Expected: `rg` exits 1 with no built-HTML matches. The focused browser test passes and its request listener records no remote Sakana request. The upstream JavaScript's `console` homepage constant is allowed because it is not loaded as a resource.
+
+- [ ] **Step 6: Commit the corrected regression scope**
+
+```powershell
+git add -- tests/e2e/interactions.spec.ts
+git commit -m "test: distinguish sakana voices from track audio"
+```
+
+- [ ] **Step 7: Restore the user-facing preview**
+
+```powershell
+$preview = Start-Process -FilePath 'corepack.cmd' -ArgumentList 'pnpm','dev','--host','127.0.0.1' -WorkingDirectory (Get-Location) -WindowStyle Hidden -PassThru
+$preview.Id
+```
+
+Poll `http://127.0.0.1:4321/` until it returns HTTP 200. Record the listening `node.exe` PID and keep it running.
