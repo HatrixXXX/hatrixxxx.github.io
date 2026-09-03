@@ -13,6 +13,7 @@ for (const path of routes) {
     test.setTimeout(path.startsWith('/posts/') ? 360_000 : 60_000);
     await page.route('https://giscus.app/**', (route) => route.abort());
     await page.goto(path);
+    await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-sakana-state', 'ready');
     await page.evaluate(() => document.fonts.ready);
     await page.locator('img').evaluateAll((images) => {
       for (const image of images) (image as HTMLImageElement).loading = 'eager';
