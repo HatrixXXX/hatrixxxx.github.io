@@ -6,6 +6,7 @@ import MusicPlayer from '@/components/MusicPlayer.astro';
 import SearchOverlay from '@/components/SearchOverlay.astro';
 import ThemeTransition from '@/components/ThemeTransition.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
+import CursorTrail from '@/components/CursorTrail.astro';
 import { SITE } from '@/config/site';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
@@ -73,12 +74,14 @@ const socialImage = new URL(image, SITE.url);
     <SiteFooter />
     <SakanaCharacters />
     <ThemeTransition />
+    <CursorTrail />
     <SearchOverlay />
     <MusicPlayer />
     <script>
       import '@/scripts/lightbox';
       import '@/scripts/music-player';
       import '@/scripts/navigation';
+      import '@/scripts/cursor-trail';
       import '@/scripts/sakana';
       import '@/scripts/search';
       import '@/scripts/theme';

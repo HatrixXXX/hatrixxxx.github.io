@@ -6,7 +6,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
 ---
 
 <header data-site-header class="site-header">
-  <div class="header-inner container">
+  <div class="header-inner container" data-content-boundary>
     <a class="brand" href="/" aria-label={`${SITE.title} 首页`}>
       <img src={SITE.author.avatar} alt="" width="34" height="34" />
       <span>{SITE.author.name}</span>
