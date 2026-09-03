@@ -75,6 +75,29 @@ test('card and archive headings remain readable in the light theme', async ({ pa
   );
 });
 
+test('focused post rail supports native arrow-key scrolling', async ({ page }) => {
+  await page.goto('/blog/');
+  const rail = page.locator('[data-post-rail]');
+  await rail.focus();
+  await expect(rail).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+});
+
+test('client navigation restores the default blog card view', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: '浏览全部博客文章' }).click();
+  const toggle = page.locator('[data-blog-view-toggle]');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('link', { name: '首页', exact: true }).first().click();
+  await page.getByRole('link', { name: '浏览全部博客文章' }).click();
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('[data-blog-card-view]')).toBeVisible();
+});
+
 test('mouse wheel scrolls the rail and returns vertical scrolling at its end', async ({ page }) => {
   await page.goto('/blog/');
   const rail = page.locator('[data-post-rail]');
