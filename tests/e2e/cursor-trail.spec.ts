@@ -192,11 +192,14 @@ test('the visible area below a short main does not create trails', async ({ page
   const main = await page.locator('main').boundingBox();
   const viewport = page.viewportSize();
   if (!horizontal || !main || !viewport) throw new Error('Missing projects page geometry');
-  const y = main.y + main.height + 24;
-  expect(y).toBeLessThan(viewport.height);
+  const mainBottom = main.y + main.height;
+  const firstY = mainBottom + 16;
+  const secondY = mainBottom + 56;
+  expect(firstY).toBeGreaterThan(mainBottom);
+  expect(secondY).toBeLessThan(viewport.height);
   const x = Math.max(8, horizontal.x - 24);
-  await page.mouse.move(x, y - 32);
-  await page.mouse.move(x, y + 32);
+  await page.mouse.move(x, firstY);
+  await page.mouse.move(x, secondY);
   await waitForAnimationFrames(page);
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
 
