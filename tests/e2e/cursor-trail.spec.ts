@@ -86,6 +86,25 @@ test('reduced motion disables drawing', async ({ page }) => {
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
 });
 
+test('a non-fine pointer disables drawing', async ({ browser }) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    viewport: { width: 1440, height: 900 }
+  });
+  const page = await context.newPage();
+  await page.goto('/');
+  expect(await page.evaluate(() => (
+    matchMedia('(hover: hover) and (pointer: fine)').matches
+  ))).toBe(false);
+  const canvas = page.locator('[data-cursor-trail]');
+  const bounds = await page.locator('[data-content-boundary]').boundingBox();
+  if (!bounds) throw new Error('Missing content boundary');
+  await page.mouse.move(Math.max(8, bounds.x - 24), 260);
+  await page.waitForTimeout(150);
+  expect(await canvas.evaluate(alphaPixels)).toBe(0);
+  await context.close();
+});
+
 test('the canvas persists once across client navigation', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
