@@ -8,13 +8,16 @@ describe('browser security policy', () => {
       "default-src 'self'",
       "base-uri 'none'",
       "object-src 'none'",
-      "script-src 'self' 'unsafe-inline' https://giscus.app",
+      // Astro ClientRouter emits data: module scripts during client navigation.
+      "script-src 'self' 'unsafe-inline' data: https://giscus.app",
       "script-src-attr 'none'",
-      "style-src 'self' 'unsafe-inline'",
+      // Giscus injects its default.css into the host page.
+      "style-src 'self' 'unsafe-inline' https://giscus.app",
       "img-src 'self' data: blob: https://cdn.jsdelivr.net",
       "font-src 'self' data:",
       "connect-src 'self'",
-      "media-src 'self' blob:",
+      // Current pages generate data: media loads.
+      "media-src 'self' data: blob:",
       'frame-src https://giscus.app',
       "worker-src 'self' blob:",
       "manifest-src 'self'",
