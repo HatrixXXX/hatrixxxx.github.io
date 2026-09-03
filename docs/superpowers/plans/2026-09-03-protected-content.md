@@ -246,23 +246,23 @@ Commit: `feat: encrypt protected post images`
 - 公开 manifest: `{ version, salt, argon2, rememberForMs, routes, verifier }`。
 - DOM: `[data-protected-gate]`、`[data-protected-envelope]`、`[data-protected-mount]`、`[data-unlock-form]`。
 
-- [ ] **Step 1: 写路由和输出契约的失败测试**
+- [x] **Step 1: 写路由和输出契约的失败测试**
 
 测试 `publicProtectedRoutes(posts)` 只返回 `locked && !draft` 的 postPath 和 `LOCKED_PAGE_PATHS`，去重并规范化。增加源码契约测试，要求 BaseLayout 读取普通页面锁配置、PostLayout 只锁正文网格、post route 对加锁文章使用 `renderProtectedMarkdown()`。
 
-- [ ] **Step 2: 运行测试并确认 RED**
+- [x] **Step 2: 运行测试并确认 RED**
 
 Run: `corepack pnpm test:run tests/unit/protected-routes.test.ts`
 
 Expected: FAIL，原因是路由 helper 和组件不存在。
 
-- [ ] **Step 3: 实现组件、manifest 和布局接线**
+- [x] **Step 3: 实现组件、manifest 和布局接线**
 
 `ProtectedContent.astro` 在 `locked=false` 时原样输出 `<slot />`；锁定时调用 `Astro.slots.render('default')`，使用服务端内容密钥加密 HTML，只输出解锁表单、base64 信封和空 mount。BaseLayout 仅对 `LOCKED_PAGE_PATHS` 包裹页面 slot；PostLayout 保留公开 Hero，把文章网格包入组件。加锁 post 的 slot 使用受保护 Markdown HTML，公开 post 继续用 Astro 的 `<Content />`。
 
 manifest 使用同一密钥加密固定验证文本；不得返回 key、派生 key 或正文。
 
-- [ ] **Step 4: 验证静态输出并提交**
+- [x] **Step 4: 验证静态输出并提交**
 
 Run: `$env:HATRIX_ADMIN_KEY='test-admin'; corepack pnpm check`
 
