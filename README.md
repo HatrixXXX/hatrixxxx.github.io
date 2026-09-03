@@ -139,6 +139,16 @@ Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows �
 
 新增或删除页面、导航项等内容后，如果站内链接总量发生了合理变化，先核对构建产物，再同步更新 `scripts/check-built-site.ts` 中的期望值；未更新时 `pnpm check:site` 会失败。
 
+## 安全边界
+
+生产页面通过 HTML CSP 限制脚本、框架、图片和其他资源来源，并使用 `strict-origin-when-cross-origin` Referrer Policy。CSP 只在生产构建输出，开发服务器仍使用 Vite HMR。新增第三方脚本、框架、远程图片或媒体来源时，先更新安全策略和构建产物测试，不能只放宽 `default-src`。
+
+已发布 Markdown 会在构建期拒绝可执行原始 HTML、事件属性、危险 URL scheme 和未固定的远程图片。检查失败时修改内容或明确更新允许边界，不要用 sanitizer 静默删除正文。
+
+GitHub Pages 无法由仓库配置 HSTS、`nosniff`、`frame-ancestors`、WAF、限流或可控 DDoS 防护。这些项目留给后续 Cloudflare 阶段；当前流量仍由 DNSPod 直接指向 GitHub Pages。
+
+Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留凭据，手动部署只能使用 `master`。升级 Action 时同时更新版本注释和项目配置测试。
+
 ## 部署
 
 `.github/workflows/pages-deploy.yml` 在 `master` push 或手动触发时构建 `dist/` 并发布到 GitHub Pages；pull request 只执行构建门禁，不部署。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
