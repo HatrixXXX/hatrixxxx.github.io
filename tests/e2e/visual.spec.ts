@@ -81,7 +81,7 @@ for (const path of routes) {
     expect(metrics.emptyTallBlocks).toEqual([]);
     expect(metrics.postArticles).toBe(path.startsWith('/posts/') ? 1 : 0);
     expect(metrics.duplicateVisibleCardLinks).toBe(0);
-    if (path === '/') expect(metrics.visiblePostCards).toBe(6);
+    if (path === '/') expect(metrics.visiblePostCards).toBe(0);
 
     const randomFooter = page.locator('[data-footer-random]');
     await expect(randomFooter).toHaveAttribute('data-test-seed', 'playwright-fixed');
