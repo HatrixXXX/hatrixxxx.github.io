@@ -270,6 +270,32 @@ test('leaving and re-entering one gutter starts a disconnected trail', async ({ 
   await expect.poll(() => canvas.evaluate(alphaPixelsInRect, oldArea)).toBe(0);
 });
 
+test('three same-side sessions retain separate fading remnants', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const geometry = await activationGeometry(page);
+  const x = geometry.leftX;
+  const halfWidth = Math.min(12, Math.max(1, (geometry.content.left - x) / 2 - 1));
+  expect(x + halfWidth).toBeLessThan(geometry.content.left);
+  const offsets = [-96, 0, 96];
+  const areas = offsets.map((offset) => ({
+    left: x - halfWidth,
+    right: x + halfWidth,
+    top: geometry.y + offset - 20,
+    bottom: geometry.y + offset + 20
+  }));
+
+  for (const [index, offset] of offsets.entries()) {
+    await page.mouse.move(x, geometry.y + offset - 16);
+    await page.mouse.move(x, geometry.y + offset + 16);
+    await waitForAnimationFrames(page);
+    if (index < offsets.length - 1) await page.mouse.move(geometry.centerX, geometry.y);
+  }
+
+  for (const area of areas) expect(await canvas.evaluate(alphaPixelsInRect, area)).toBeGreaterThan(0);
+  for (const area of areas) await expect.poll(() => canvas.evaluate(alphaPixelsInRect, area)).toBe(0);
+});
+
 test('a top-level pointer exit starts a disconnected gutter session on re-entry', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
