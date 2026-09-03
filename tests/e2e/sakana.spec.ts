@@ -166,10 +166,32 @@ test('initializes locked roles once and persists them across client navigation',
   await expect(takina.locator('.sakana-bed')).toBeHidden();
 
   await layer.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
-  await page.getByRole('link', { name: '归档', exact: true }).click();
-  await expect(page).toHaveURL(/\/archives\/$/);
-  await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-persist-probe', 'same-node');
-  await expect(page.locator('[data-sakana-layer] canvas')).toHaveCount(2);
+  await page.locator('article[data-post-card] h2 a').first().click();
+  await expect(page.locator('article[data-post]')).toBeVisible();
+
+  const persistedLayer = page.locator('[data-sakana-layer]');
+  await expect(persistedLayer).toHaveAttribute('data-persist-probe', 'same-node');
+  await expect(persistedLayer.locator('canvas')).toHaveCount(2);
+  const articleCharacters = persistedLayer.locator('.sakana-character');
+  await expect(articleCharacters).toHaveCount(2);
+  await expect(articleCharacters.first()).toBeVisible();
+  await expect(articleCharacters.last()).toBeVisible();
+  await expect(page.locator('head style[data-sakana-runtime-style]')).toHaveCount(1);
+
+  await page
+    .locator('header[data-site-header]')
+    .getByRole('link', { name: '首页', exact: true })
+    .click();
+  await expect(page.locator('[data-hero]')).toBeVisible();
+  await expect(page.locator('[data-sakana-layer]')).toHaveAttribute(
+    'data-persist-probe',
+    'same-node'
+  );
+  const homeCharacters = page.locator('[data-sakana-layer] .sakana-character');
+  await expect(homeCharacters).toHaveCount(2);
+  await expect(homeCharacters.first()).toBeVisible();
+  await expect(homeCharacters.last()).toBeVisible();
+  await expect(page.locator('head style[data-sakana-runtime-style]')).toHaveCount(1);
   expect(remoteSakanaRequests).toEqual([]);
 });
 

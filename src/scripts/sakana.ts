@@ -8,6 +8,21 @@ const ROD_COLOR = '#182562';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let instances: SakanaInstance[] = [];
 let sakanaApi: SakanaApi | undefined;
+let sakanaRuntimeStyle: HTMLStyleElement | undefined;
+
+function findSakanaRuntimeStyle(): HTMLStyleElement | undefined {
+  return [...document.head.querySelectorAll<HTMLStyleElement>('style')].find(
+    (style) =>
+      (style.textContent ?? '').includes('.sakana-box') &&
+      (style.textContent ?? '').includes('.sakana-character[data-character=chisato]')
+  );
+}
+
+function restoreSakanaRuntimeStyle(): void {
+  if (sakanaRuntimeStyle && !sakanaRuntimeStyle.isConnected) {
+    document.head.append(sakanaRuntimeStyle);
+  }
+}
 
 function resetSakanaValue(instance: SakanaInstance): void {
   const value = instance.getValue();
@@ -54,6 +69,9 @@ async function initializeSakanaCharacters(layer: HTMLElement): Promise<void> {
 
     const { default: Sakana } = await import('sakana');
     sakanaApi = Sakana;
+    sakanaRuntimeStyle = findSakanaRuntimeStyle();
+    if (!sakanaRuntimeStyle) throw new Error('Sakana runtime styles are missing');
+    sakanaRuntimeStyle.dataset.sakanaRuntimeStyle = '';
 
     const baseOptions = {
       r: 0,
@@ -98,4 +116,5 @@ function scheduleSakanaInitialization(): void {
 
 reducedMotion.addEventListener('change', (event) => applyMotionPreference(event.matches));
 document.addEventListener('astro:page-load', scheduleSakanaInitialization);
+document.addEventListener('astro:after-swap', restoreSakanaRuntimeStyle);
 scheduleSakanaInitialization();
