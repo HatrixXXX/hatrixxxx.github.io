@@ -14,6 +14,14 @@ function workflowJob(workflow: string, name: string): string {
   return next === -1 ? remainder : remainder.slice(0, next + 1);
 }
 
+function workflowStep(job: string, name: string): string {
+  const start = job.indexOf(`\n      - name: ${name}\n`);
+  expect(start, `workflow step ${name}`).toBeGreaterThanOrEqual(0);
+  const remainder = job.slice(start + 1);
+  const next = remainder.slice(1).search(/\n      - name: /);
+  return next === -1 ? remainder : remainder.slice(0, next + 1);
+}
+
 describe('Astro project tooling', () => {
   it('enables Node environment proxy support for image checks and the entire build', () => {
     const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -103,6 +111,23 @@ describe('Astro project tooling', () => {
     ]);
   });
 
+  it('documents the private repository as the only published article authoring location', () => {
+    const readme = readFileSync('README.md', 'utf8');
+    const agents = readFileSync('AGENTS.md', 'utf8');
+
+    expect(readme).toContain('`.private-content/posts/`：已发布文章');
+    expect(readme).toContain('`.private-content/` 是独立的私有 Git 仓库');
+    expect(readme).toContain('公开仓库不跟踪任何已发布文章的 Markdown');
+    expect(readme).toContain('在 `.private-content/posts/` 新建 Markdown 或 MDX 文件');
+    expect(readme).not.toContain('`src/content/posts/`：已发布文章');
+    expect(readme).not.toContain('在 `src/content/posts/` 新建');
+
+    expect(agents).toContain('`.private-content/posts/`：40 篇已发布文章');
+    expect(agents).toContain('`.private-content/` 是独立的私有 Git 仓库');
+    expect(agents).toContain('公开仓库不跟踪文章 Markdown');
+    expect(agents).not.toContain('`src/content/posts/`：40 篇已发布文章');
+  });
+
   it('starts the Playwright server through the project package manager', () => {
     expect(playwrightConfig.webServer).toMatchObject({
       command: 'corepack pnpm dev --host 127.0.0.1 --port 4322',
@@ -168,13 +193,16 @@ describe('Astro project tooling', () => {
     const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
     const productionJob = workflowJob(workflow, 'build-production');
     const deployJob = workflowJob(workflow, 'deploy');
+    const dispatchValidation = workflowStep(productionJob, 'Validate dispatched content SHA');
+    const dispatchCheckout = workflowStep(productionJob, 'Checkout dispatched private content');
+    const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private content');
+    const provenance = workflowStep(productionJob, 'Record private content SHA');
 
     expect(workflow).toContain('  push:\n    branches: [master]');
     expect(workflow).toContain('  workflow_dispatch:');
     expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated]');
     expect(productionJob).toContain("if: github.event_name != 'pull_request'");
     expect(productionJob).toContain('HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}');
-    expect(productionJob).toContain('HATRIX_CONTENT_TOKEN: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
     expect(productionJob.slice(0, productionJob.indexOf('\n    steps:'))).not.toContain('secrets.');
     expect(productionJob).toContain(
       '      - name: Build site\n' +
@@ -183,12 +211,24 @@ describe('Astro project tooling', () => {
       '        run: corepack pnpm build'
     );
     expect(productionJob).toContain('Required secret HATRIX_ADMIN_KEY is not configured.');
-    expect(productionJob).toContain('Required secret HATRIX_CONTENT_TOKEN is not configured.');
-    expect(productionJob).toContain('DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}');
-    expect(productionJob).toContain('repos/HatrixXXX/hatrix-content/commits/HEAD');
-    expect(productionJob).toContain('repository: HatrixXXX/hatrix-content');
-    expect(productionJob).toContain('ref: ${{ steps.content.outputs.sha }}');
-    expect(productionJob).toContain('path: .private-content');
+    expect(productionJob).not.toContain('gh api');
+    expect(productionJob).not.toContain('GH_TOKEN');
+    expect(productionJob.match(/HATRIX_CONTENT_TOKEN/g)).toHaveLength(2);
+    expect(dispatchValidation).toContain("if: github.event_name == 'repository_dispatch'");
+    expect(dispatchValidation).toContain('DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}');
+    expect(dispatchCheckout).toContain("if: github.event_name == 'repository_dispatch'");
+    expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-content');
+    expect(dispatchCheckout).toContain('token: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
+    expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.content_sha }}');
+    expect(dispatchCheckout).toContain('path: .private-content');
+    expect(defaultBranchCheckout).toContain("if: github.event_name != 'repository_dispatch'");
+    expect(defaultBranchCheckout).toContain('repository: HatrixXXX/hatrix-content');
+    expect(defaultBranchCheckout).toContain('token: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
+    expect(defaultBranchCheckout).toContain('path: .private-content');
+    expect(defaultBranchCheckout).not.toContain('ref:');
+    expect(provenance).toContain('content_sha="$(git -C .private-content rev-parse HEAD)"');
+    expect(provenance).toContain('"$content_sha" != "$DISPATCH_CONTENT_SHA"');
+    expect(provenance).toContain('echo "sha=$content_sha" >> "$GITHUB_OUTPUT"');
     expect(productionJob).toContain('run: corepack pnpm check:site');
     expect(productionJob).not.toContain('tests/fixtures/private-content');
     expect(deployJob).toContain("if: github.event_name != 'pull_request'");

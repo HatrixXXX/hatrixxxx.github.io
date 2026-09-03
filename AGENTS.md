@@ -18,7 +18,7 @@ corepack pnpm test:e2e
 
 ## 目录边界
 
-- `src/content/posts/`：40 篇已发布文章，公开路径由 `legacySlug` 生成。
+- `.private-content/posts/`：40 篇已发布文章，公开路径由 `legacySlug` 生成。`.private-content/` 是独立的私有 Git 仓库；公开仓库不跟踪文章 Markdown。
 - `src/drafts/`：两篇草稿，不加入 Content Collection，不生成页面。
 - `src/content/projects/`：允许为空的作品集合。
 - `src/data/playlist.ts`：允许为空的音乐列表。
@@ -33,7 +33,7 @@ corepack pnpm test:e2e
 
 - 保持纯静态输出，不增加服务器、数据库、上传、下载中心或对象存储。
 - 保留全部 `/posts/<legacySlug>/` 路径和 Giscus pathname 映射。
-- 文章正文属于用户内容。除非任务明确要求，不改写正文；schema 调整也要保持旧 URL。
+- 已发布文章只在 `.private-content/posts/` 中编辑。文章正文属于用户内容，除非任务明确要求，不改写正文；schema 调整也要保持旧 URL。
 - 主导航固定为首页、博客文章、作品橱窗、关于我和留言板；博客文章与关于我在桌面端使用横向二级菜单。文章 `type` 只能是 `技术笔记|踩坑记录|生活动态|好物推荐|随笔杂谈`，用于文章类型页，不得作为旧分类或标签 taxonomy 恢复。
 - `series` 与 `seriesOrder` 必须成对出现。
 - 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。空歌单播放器位于普通文档流，只有非空歌单才固定在页面右下角。

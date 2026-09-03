@@ -32,13 +32,13 @@ pnpm test:e2e
 
 ## 内容目录
 
-- `src/content/posts/`：已发布文章
+- `.private-content/posts/`：已发布文章。`.private-content/` 是独立的私有 Git 仓库，整个目录由公开仓库忽略
 - `src/drafts/`：不参与构建的草稿
 - `src/content/projects/`：作品集合，目录可以为空
 - `src/data/playlist.ts`：音乐列表
 - `public/`：CNAME、favicon、头像和本地静态资源
 
-当前仓库有 40 篇文章和 2 篇草稿；一次完整构建会生成 67 个 HTML 页面。
+私有内容仓库有 40 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。公开仓库另有 2 篇草稿；一次完整构建会生成 67 个 HTML 页面。
 
 ## 站点导航
 
@@ -46,7 +46,7 @@ pnpm test:e2e
 
 ## 新增文章
 
-在 `src/content/posts/` 新建 Markdown 或 MDX 文件。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
+在 `.private-content/posts/` 新建 Markdown 或 MDX 文件，并在 `.private-content/` 私有仓库中提交。不要把已发布文章复制回公开仓库。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
 
 ```yaml
 ---
