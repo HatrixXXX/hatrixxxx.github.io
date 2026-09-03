@@ -290,6 +290,33 @@ test('the canvas persists once across client navigation', async ({ page }) => {
   await expect.poll(() => canvas.evaluate(alphaPixels, range)).toBeGreaterThan(0);
 });
 
+test('post cover gutters stay inactive before the article region activates', async ({ page }) => {
+  await page.goto('/posts/本科数学大杂烩/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const horizontal = await page.locator('[data-content-boundary]').boundingBox();
+  const hero = await page.locator('.post-hero').boundingBox();
+  const viewport = page.viewportSize();
+  if (!horizontal || !hero || !viewport) throw new Error('Missing post cover geometry');
+  const visibleTop = Math.max(8, hero.y);
+  const visibleBottom = Math.min(viewport.height - 8, hero.y + hero.height);
+  if (visibleBottom - visibleTop < 80) throw new Error('Post cover is outside the viewport');
+  const y = (visibleTop + visibleBottom) / 2;
+  for (const x of [Math.max(8, horizontal.x - 24), Math.min(viewport.width - 8, horizontal.x + horizontal.width + 24)]) {
+    await page.mouse.move(x, y - 40);
+    await page.mouse.move(x, y + 40);
+  }
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  expect(await canvas.evaluate(alphaPixels)).toBe(0);
+
+  const geometry = await activationGeometry(page);
+  await page.mouse.move(geometry.leftX, geometry.y - 40);
+  await page.mouse.move(geometry.leftX, geometry.y + 40);
+  await expect.poll(() => canvas.evaluate(alphaPixels, { left: 0, right: geometry.content.left }))
+    .toBeGreaterThan(0);
+});
+
 test('an open image lightbox blocks the trail', async ({ page }) => {
   await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
