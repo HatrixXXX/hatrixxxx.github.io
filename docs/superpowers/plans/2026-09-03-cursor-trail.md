@@ -473,7 +473,12 @@ git commit -m "feat: add sidebar cursor trail"
 ```ts
 const contentBounds = await page.locator('[data-content-boundary]').boundingBox();
 if (!contentBounds) throw new Error('Missing content boundary');
-await page.mouse.move(contentBounds.x + contentBounds.width / 2, contentBounds.y + 8);
+const viewport = page.viewportSize();
+const belowHeader = contentBounds.y + contentBounds.height + 24;
+await page.mouse.move(
+  contentBounds.x + contentBounds.width / 2,
+  Math.min(belowHeader, (viewport?.height ?? belowHeader + 1) - 1)
+);
 ```
 
 - [ ] **Step 2: 运行视觉结构测试，确认基线无需更新**
