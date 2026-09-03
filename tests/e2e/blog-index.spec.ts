@@ -8,7 +8,7 @@ test('blog index lists every published post', async ({ page, request }) => {
   await expect(page.locator('article[data-post-card]')).toHaveCount(40);
 
   const dates = await page.locator('article[data-post-card] time').evaluateAll((times) =>
-    times.map((time) => Date.parse(time.dateTime))
+    times.map((time) => Date.parse(time.getAttribute('datetime') ?? ''))
   );
   expect(dates).toHaveLength(40);
   expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
