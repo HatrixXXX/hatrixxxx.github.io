@@ -11,6 +11,7 @@ const EXPECTED_LOCAL_LINKS = 3961;
 const IMMUTABLE_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
 const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 export interface BuiltSiteCheckOptions {
   sourceCnamePath?: string;
@@ -129,6 +130,10 @@ function attributeValue(element: DefaultTreeAdapterTypes.Element | undefined, na
   return element?.attrs.find((attribute) => attribute.name.toLowerCase() === name)?.value;
 }
 
+function attributeName(attribute: DefaultTreeAdapterTypes.Element['attrs'][number]): string {
+  return attribute.prefix ? `${attribute.prefix}:${attribute.name}` : attribute.name;
+}
+
 function parsedUrl(value: string, route: string): URL | undefined {
   try {
     return new URL(value.trim(), `${SITE_ORIGIN}${route}`);
@@ -185,15 +190,36 @@ function srcsetUrls(value: string): string[] {
 }
 
 function imageSourceErrors(attribute: string, value: string, route: string): string[] {
+  return resourceErrors('Found unapproved remote image', attribute, value, route, attribute === 'srcset' ? srcsetUrls(value) : [value]);
+}
+
+function resourceErrors(message: string, attribute: string, value: string, route: string, candidates = [value]): string[] {
   const errors: string[] = [];
-  const candidates = attribute === 'srcset' ? srcsetUrls(value) : [value];
   for (const candidate of candidates) {
     const url = parsedUrl(candidate, route);
     if (url && url.origin !== 'null' && url.origin !== SITE_ORIGIN && !url.href.startsWith(IMMUTABLE_IMAGE_PREFIX)) {
-      errors.push(diagnostic(route, 'Found unapproved remote image', attribute, url.origin));
+      errors.push(diagnostic(route, message, attribute, url.origin));
     }
   }
   return errors;
+}
+
+function cssResourceUrls(value: string): string[] {
+  const urls: string[] = [];
+  const resourceUrl = /(?:url\(\s*|@import\s+)(?:url\(\s*)?['"]?((?:https?:)?\/\/[^\s'"()]+)['"]?/gi;
+  for (const match of value.matchAll(resourceUrl)) urls.push(match[1]);
+  return urls;
+}
+
+function cssResourceErrors(attribute: string, value: string, route: string): string[] {
+  return resourceErrors('Found unapproved CSS resource', attribute, value, route, cssResourceUrls(value));
+}
+
+function textContent(element: DefaultTreeAdapterTypes.Element): string {
+  return element.childNodes
+    .filter((node): node is DefaultTreeAdapterTypes.TextNode => node.nodeName === '#text')
+    .map((node) => node.value)
+    .join('');
 }
 
 export function securityErrorsForHtml(html: string, route: string): string[] {
@@ -240,6 +266,21 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
     if (element.tagName === 'embed') {
       errors.push(diagnostic(route, 'Found executable <embed>', 'src', attributeValue(element, 'src')));
     }
+    if (element.tagName === 'iframe' && attributeValue(element, 'srcdoc') !== undefined) {
+      errors.push(diagnostic(route, 'Found iframe srcdoc', 'srcdoc', attributeValue(element, 'srcdoc')));
+    }
+    if (element.namespaceURI === SVG_NAMESPACE) {
+      const href = element.attrs.find((attribute) => attribute.name === 'href');
+      if (element.tagName.toLowerCase() === 'script') {
+        errors.push(diagnostic(route, 'Found SVG <script>', href ? attributeName(href) : 'script', href?.value ?? 'inline'));
+      }
+      if (['image', 'feimage'].includes(element.tagName.toLowerCase()) && href) {
+        errors.push(...imageSourceErrors(attributeName(href), href.value, route));
+      }
+      if (element.tagName.toLowerCase() === 'use' && href && !href.value.trim().startsWith('#')) {
+        errors.push(diagnostic(route, 'Found external SVG reference', attributeName(href), href.value));
+      }
+    }
     for (const attribute of element.attrs) {
       if (/^on[a-z0-9_-]+$/i.test(attribute.name)) {
         errors.push(diagnostic(route, 'Found inline event attribute', attribute.name, attribute.value));
@@ -253,6 +294,30 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
       if (/^(?:href|src|action|formaction|data|poster|background)$/i.test(attribute.name) && isDangerousDataUrl(attribute.value)) {
         errors.push(diagnostic(route, 'Found dangerous data document', attribute.name, attribute.value));
       }
+      if (attribute.name === 'style') errors.push(...cssResourceErrors(attribute.name, attribute.value, route));
+    }
+    if (element.tagName === 'style') errors.push(...cssResourceErrors('text', textContent(element), route));
+    if (element.namespaceURI === HTML_NAMESPACE && attributeValue(element, 'background') !== undefined) {
+      errors.push(...imageSourceErrors('background', attributeValue(element, 'background') ?? '', route));
+    }
+    if (element.namespaceURI === HTML_NAMESPACE && element.tagName === 'video' && attributeValue(element, 'poster') !== undefined) {
+      errors.push(...imageSourceErrors('poster', attributeValue(element, 'poster') ?? '', route));
+    }
+    if (
+      element.namespaceURI === HTML_NAMESPACE &&
+      element.tagName === 'input' &&
+      attributeValue(element, 'type')?.trim().toLowerCase() === 'image' &&
+      attributeValue(element, 'src') !== undefined
+    ) {
+      errors.push(...imageSourceErrors('src', attributeValue(element, 'src') ?? '', route));
+    }
+    if (
+      element.namespaceURI === HTML_NAMESPACE &&
+      element.tagName === 'link' &&
+      new Set((attributeValue(element, 'rel') ?? '').toLowerCase().split(/\s+/)).has('icon') &&
+      attributeValue(element, 'href') !== undefined
+    ) {
+      errors.push(...imageSourceErrors('href', attributeValue(element, 'href') ?? '', route));
     }
     if (element.tagName === 'img' || element.tagName === 'source') {
       for (const name of ['src', 'srcset']) {

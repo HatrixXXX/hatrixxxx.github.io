@@ -130,6 +130,60 @@ it('bounds diagnostic attribute values while retaining the route and attribute n
   expect(errors.join('\n')).not.toContain('x'.repeat(200));
 });
 
+it('rejects SVG scripts and external SVG resources while preserving local fragments and pinned images', () => {
+  const pinnedImage =
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
+  const safeHtml = `<html>${secureHead}<body><svg><use href="#symbol"></use><image href="/images/local.svg"></image><feImage href="${pinnedImage}"></feImage></svg></body></html>`;
+  const unsafeHtml = `<html>${secureHead}<body><svg xmlns:xlink="http://www.w3.org/1999/xlink"><script>alert(1)</script><script xlink:href="https://evil.example/script.js"></script><image href="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/mutable.png"></image><feImage xlink:href="//evil.example/filter.png"></feImage><use href="https://evil.example/sprite.svg#icon"></use></svg></body></html>`;
+
+  expect(securityErrorsForHtml(safeHtml, '/svg/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/svg/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('SVG <script>'),
+    expect.stringContaining('xlink:href='),
+    expect.stringContaining('unapproved remote image'),
+    expect.stringContaining('external SVG reference')
+  ]));
+});
+
+it('validates standard image resource carriers', () => {
+  const pinnedImage =
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
+  const safeHtml = `<html>${secureHead}<body><link rel="icon" href="/favicon.svg"><video poster="${pinnedImage}"></video><input type="image" src="/images/submit.png"><table background="${pinnedImage}"></table></body></html>`;
+  const unsafeHtml = `<html>${secureHead}<body><link rel="shortcut icon" href="https://evil.example/favicon.ico"><video poster="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/mutable.png"></video><input type="image" src="//evil.example/submit.png"><table background="https://evil.example/background.png"></table></body></html>`;
+
+  expect(securityErrorsForHtml(safeHtml, '/carriers/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/carriers/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('poster='),
+    expect.stringContaining('background='),
+    expect.stringContaining('src='),
+    expect.stringContaining('href='),
+    expect.stringContaining('unapproved remote image')
+  ]));
+});
+
+it('rejects iframe srcdoc without relaxing the frame allowlist', () => {
+  const html = `<html>${secureHead}<body><iframe src="https://giscus.app" srcdoc="<p>embedded</p>"></iframe></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/frames/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('iframe srcdoc'),
+    expect.stringContaining('srcdoc=')
+  ]));
+});
+
+it('enforces explicit remote CSS resources in attributes and style elements', () => {
+  const pinnedImage =
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
+  const safeHtml = `<html>${secureHead}<body><style>.hero { background-image: url(${pinnedImage}); }</style><div style="background-image: url('/images/local.png')"></div></body></html>`;
+  const unsafeHtml = `<html>${secureHead}<body><div style="background-image: url(//evil.example/inline.png)"></div><style>@import "https://evil.example/theme.css"; .hero { background-image: url(https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/mutable.png); }</style></body></html>`;
+
+  expect(securityErrorsForHtml(safeHtml, '/styles/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/styles/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unapproved CSS resource'),
+    expect.stringContaining('style='),
+    expect.stringContaining('text=')
+  ]));
+});
+
 it('requires the third-party notice in built output', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-site-'));
   await writeSiteFile(root, 'index.html');
