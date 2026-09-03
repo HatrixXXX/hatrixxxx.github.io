@@ -21,8 +21,14 @@ for (const path of routes) {
     });
     await page.waitForFunction(() => [...document.images].every((image) => image.complete));
 
-    await page.mouse.move(0, 0);
+    const contentBounds = await page.locator('[data-content-boundary]').boundingBox();
+    if (!contentBounds) throw new Error('Missing content boundary');
     const viewport = page.viewportSize();
+    const contentY = Math.min(
+      contentBounds.y + contentBounds.height + 24,
+      (viewport?.height ?? contentBounds.y) - 1
+    );
+    await page.mouse.move(contentBounds.x + contentBounds.width / 2, contentY);
     if (viewport && viewport.width > 768) {
       for (const submenu of await page.locator('.desktop-nav .submenu').all()) {
         await expect(submenu).toBeHidden();
