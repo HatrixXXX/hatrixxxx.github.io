@@ -192,7 +192,13 @@ function srcsetUrls(value: string): string[] {
 }
 
 function imageSourceErrors(attribute: string, value: string, route: string): string[] {
-  return resourceErrors('Found unapproved remote image', attribute, value, route, attribute === 'srcset' ? srcsetUrls(value) : [value]);
+  return resourceErrors(
+    'Found unapproved remote image',
+    attribute,
+    value,
+    route,
+    attribute === 'srcset' || attribute === 'imagesrcset' ? srcsetUrls(value) : [value]
+  );
 }
 
 function resourceErrors(message: string, attribute: string, value: string, route: string, candidates = [value]): string[] {
@@ -366,6 +372,8 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
       const preloadAs = attributeValue(element, 'as')?.trim().toLowerCase();
       if (rel.has('preload') && preloadAs === 'image') {
         errors.push(...imageSourceErrors('href', href, route));
+        const imageSrcset = attributeValue(element, 'imagesrcset');
+        if (imageSrcset !== undefined) errors.push(...imageSourceErrors('imagesrcset', imageSrcset, route));
       }
       if (
         rel.has('stylesheet') ||

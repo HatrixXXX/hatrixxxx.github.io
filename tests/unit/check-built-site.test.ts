@@ -212,6 +212,19 @@ it('validates image and executable link resource relations', () => {
   ]));
 });
 
+it('validates image preload imagesrcset candidates independently of a local href', () => {
+  const pinnedImage =
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
+  const safeHtml = `<html>${secureHead}<body><link rel="preload" as="image" href="/images/hero.png" imagesrcset="/images/hero.png 320w, ${pinnedImage} 640w"></body></html>`;
+  const unsafeHtml = `<html>${secureHead}<body><link rel="preload" as="image" href="/images/hero.png" imagesrcset="//evil.example/hero.png 320w, https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/mutable.png 640w"></body></html>`;
+
+  expect(securityErrorsForHtml(safeHtml, '/preloads/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/preloads/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unapproved remote image'),
+    expect.stringContaining('imagesrcset=')
+  ]));
+});
+
 it('returns a bounded diagnostic when css-tree rejects generated CSS', () => {
   const html = `<html>${secureHead}<body><div style="a{]"></div></body></html>`;
 
