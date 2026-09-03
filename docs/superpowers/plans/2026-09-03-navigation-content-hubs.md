@@ -515,7 +515,7 @@ aria-current={Astro.url.pathname === item.href ? 'page' : undefined}
 桌面样式必须包含：
 
 ```css
-.nav-item { position: relative; }
+.desktop-nav { position: relative; }
 .nav-caret {
   display: inline-block;
   margin-left: 0.35rem;
@@ -528,7 +528,11 @@ aria-current={Astro.url.pathname === item.href ? 'page' : undefined}
   position: absolute;
   top: 100%;
   left: 50%;
-  display: grid;
+  display: flex;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  flex-wrap: nowrap;
+  gap: 0.15rem;
   visibility: hidden;
   min-width: 9rem;
   padding: 0.45rem;
@@ -540,13 +544,13 @@ aria-current={Astro.url.pathname === item.href ? 'page' : undefined}
   transform: translate(-50%, -0.35rem);
   transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
 }
-.desktop-nav .nav-item:hover > .submenu,
-.desktop-nav .nav-item:focus-within > .submenu {
+.desktop-nav > ul > li:hover > .submenu,
+.desktop-nav > ul > li:focus-within > .submenu {
   visibility: visible;
   opacity: 1;
   transform: translate(-50%, 0);
 }
-.desktop-nav > ul:hover .nav-item:focus-within:not(:hover) > .submenu {
+.desktop-nav > ul:has(> li:hover) > li:not(:hover) > .submenu {
   visibility: hidden;
   opacity: 0;
 }

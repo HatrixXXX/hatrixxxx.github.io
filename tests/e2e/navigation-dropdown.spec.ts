@@ -47,6 +47,39 @@ test('desktop navigation reveals only the active Blog or About submenu', async (
   await expect(blogSubmenu).toBeHidden();
 });
 
+test('desktop submenus expand horizontally without leaving the viewport', async ({ page }) => {
+  for (const width of [769, 800, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+
+    for (const label of ['博客文章', '关于我']) {
+      const item = page.locator(`[data-nav-item="${label}"]`);
+      const submenu = item.locator(':scope > .submenu');
+      await item.hover();
+      await expect(submenu).toBeVisible();
+
+      const layout = await submenu.evaluate((menu) => {
+        const menuBox = menu.getBoundingClientRect();
+        const itemBoxes = [...menu.children].map((item) => item.getBoundingClientRect());
+        return {
+          menuLeft: menuBox.left,
+          menuRight: menuBox.right,
+          itemLefts: itemBoxes.map((box) => box.left),
+          itemRights: itemBoxes.map((box) => box.right),
+          itemCenters: itemBoxes.map((box) => box.top + box.height / 2)
+        };
+      });
+
+      expect(layout.menuLeft).toBeGreaterThanOrEqual(0);
+      expect(layout.menuRight).toBeLessThanOrEqual(width);
+      expect(Math.min(...layout.itemLefts)).toBeGreaterThanOrEqual(0);
+      expect(Math.max(...layout.itemRights)).toBeLessThanOrEqual(width);
+      expect(Math.max(...layout.itemCenters) - Math.min(...layout.itemCenters)).toBeLessThan(1);
+      expect(layout.itemLefts.every((left, index) => index === 0 || left > layout.itemLefts[index - 1])).toBe(true);
+    }
+  }
+});
+
 test('mobile navigation renders primary and nested links in the open menu', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
