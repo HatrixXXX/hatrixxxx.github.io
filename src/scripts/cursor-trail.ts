@@ -138,11 +138,19 @@ function pointerRegion(event: PointerEvent): TrailRegion {
   });
 }
 
+function endPointerSession(): void {
+  activeRegion = null;
+}
+
+function handlePointerExit(event: PointerEvent): void {
+  if (event.relatedTarget === null) endPointerSession();
+}
+
 function handlePointerMove(event: PointerEvent): void {
   if (!canvas || !context || !isEnabled()) return;
   const nextRegion = pointerRegion(event);
   if (nextRegion === null) {
-    activeRegion = null;
+    endPointerSession();
     return;
   }
   if (!state || activeRegion !== nextRegion) state = createTrailState(event.clientX, event.clientY);
@@ -158,6 +166,10 @@ function handleCapabilityChange(): void {
 }
 
 window.addEventListener('pointermove', handlePointerMove, { passive: true });
+window.addEventListener('pointerout', handlePointerExit, { passive: true });
+window.addEventListener('pointerleave', handlePointerExit, { passive: true });
+window.addEventListener('pointercancel', endPointerSession, { passive: true });
+window.addEventListener('blur', endPointerSession);
 window.addEventListener('resize', resizeCanvas, { passive: true });
 reducedMotion.addEventListener('change', handleCapabilityChange);
 finePointer.addEventListener('change', handleCapabilityChange);
