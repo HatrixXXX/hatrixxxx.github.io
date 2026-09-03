@@ -6,11 +6,9 @@ import { postPath } from '@/lib/urls';
 
 interface Props {
   post: PostEntry;
-  index: number;
 }
 
-const { post, index } = Astro.props;
-const side = index % 2 === 0 ? 'left' : 'right';
+const { post } = Astro.props;
 const href = postPath(post.data.legacySlug);
 const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
 const published = new Intl.DateTimeFormat('zh-CN', {
@@ -20,7 +18,7 @@ const published = new Intl.DateTimeFormat('zh-CN', {
 }).format(post.data.pubDate);
 ---
 
-<article data-post-card data-side={side} class="post-card">
+<article data-post-card class="post-card">
   <a class="post-card-media" href={href} tabindex="-1" aria-hidden="true">
     <Image
       src={post.data.cover || '/images/default-cover.svg'}
@@ -46,29 +44,25 @@ const published = new Intl.DateTimeFormat('zh-CN', {
 
 <style>
   .post-card {
-    display: grid;
-    grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
+    display: flex;
+    flex: 0 0 clamp(17rem, 27vw, 22rem);
     min-width: 0;
+    flex-direction: column;
     overflow: hidden;
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
     background: var(--color-surface);
     box-shadow: var(--shadow-panel);
-  }
-
-  .post-card[data-side='right'] {
-    grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
-  }
-
-  .post-card[data-side='right'] .post-card-media {
-    order: 2;
+    scroll-snap-align: start;
   }
 
   .post-card-media {
     display: block;
-    min-height: 260px;
     overflow: hidden;
+    aspect-ratio: 16 / 10;
     background: var(--color-surface-raised);
+    user-select: none;
+    -webkit-user-drag: none;
   }
 
   .post-card-media :global(img) {
@@ -76,6 +70,7 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     height: 100%;
     object-fit: cover;
     transition: transform 320ms ease;
+    -webkit-user-drag: none;
   }
 
   .post-card:hover .post-card-media :global(img) {
@@ -85,14 +80,14 @@ const published = new Intl.DateTimeFormat('zh-CN', {
   .post-card-content {
     display: flex;
     min-width: 0;
+    flex: 1;
     flex-direction: column;
-    justify-content: center;
-    padding: clamp(1.4rem, 3vw, 2.4rem);
+    padding: 1.35rem;
   }
 
   h2 {
     margin: 0;
-    color: #fff;
+    color: var(--color-heading, #fff);
     font-size: clamp(1.3rem, 2.2vw, 1.8rem);
     line-height: 1.35;
     overflow-wrap: anywhere;
@@ -115,24 +110,15 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem 1rem;
-    margin-top: 1.15rem;
+    margin-top: auto;
+    padding-top: 1.15rem;
     color: var(--color-muted);
     font-size: 0.78rem;
   }
 
   @media (max-width: 768px) {
-    .post-card,
-    .post-card[data-side='right'] {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .post-card[data-side='right'] .post-card-media {
-      order: 0;
-    }
-
-    .post-card-media {
-      min-height: 0;
-      aspect-ratio: 16 / 9;
+    .post-card {
+      flex-basis: min(84vw, 21rem);
     }
 
     .post-card-content {

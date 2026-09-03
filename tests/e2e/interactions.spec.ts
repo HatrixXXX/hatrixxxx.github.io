@@ -346,11 +346,11 @@ test('empty music player persists without constructing track audio or requesting
   );
   await expect(player.getByText('0:00 / 0:00')).toBeVisible();
 
-  const firstCard = page.locator('article[data-post-card]').first();
-  await firstCard.evaluate((element) => element.scrollIntoView({ block: 'end' }));
-  await expect(firstCard).toBeInViewport();
+  const blogEntry = page.locator('.home-blog-entry');
+  await blogEntry.evaluate((element) => element.scrollIntoView({ block: 'end' }));
+  await expect(blogEntry).toBeInViewport();
   expect(await player.evaluate((element) => {
-    const primary = document.querySelector('article[data-post-card]');
+    const primary = document.querySelector('.home-blog-entry');
     if (!primary) throw new Error('Missing primary content probe');
     const playerRect = element.getBoundingClientRect();
     const primaryRect = primary.getBoundingClientRect();

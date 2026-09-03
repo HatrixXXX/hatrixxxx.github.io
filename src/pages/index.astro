@@ -1,26 +1,24 @@
 ---
 import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
-import Pagination from '@/components/Pagination.astro';
-import PostList from '@/components/PostList.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { paginatePosts, sortPosts, type PostEntry } from '@/lib/content';
+import type { PostEntry } from '@/lib/content';
 
-const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
-const page = paginatePosts(posts, 1, 6);
+const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
 ---
 
 <BaseLayout title={SITE.title}>
   <HeroBanner title={SITE.title} subtitle={SITE.tagline} image="/images/default-cover.svg" />
   <WaveDivider />
   <main id="articles" class="home-main container with-sidebar">
-    <div class="home-feed">
-      <PostList posts={page.items} />
-      <Pagination current={page.current} total={page.total} basePath="/page/" />
-    </div>
+    <section class="home-blog-entry" aria-labelledby="home-blog-heading">
+      <h2 id="home-blog-heading">博客文章</h2>
+      <p>所有文章都放在博客页面，可以浏览全部内容，也可以按文章类型查看。</p>
+      <a href="/blog/" data-blog-entry>浏览全部博客文章 <span aria-hidden="true">→</span></a>
+    </section>
     <div class="sidebar-column">
       <ProfileSidebar postCount={posts.length} />
     </div>
@@ -36,9 +34,50 @@ const page = paginatePosts(posts, 1, 6);
     padding-block: clamp(2.5rem, 6vw, 5rem);
   }
 
-  .home-feed,
+  .home-blog-entry,
   .sidebar-column {
     min-width: 0;
+  }
+
+  .home-blog-entry {
+    display: grid;
+    min-height: 300px;
+    place-content: center;
+    justify-items: center;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: clamp(2rem, 6vw, 4rem);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-panel);
+    text-align: center;
+  }
+
+  .home-blog-entry h2 {
+    margin: 0;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+  }
+
+  .home-blog-entry p {
+    max-width: 34rem;
+    margin: 0.8rem 0 1.5rem;
+    color: var(--color-muted);
+  }
+
+  .home-blog-entry a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 0.55rem;
+    border: 1px solid var(--color-accent);
+    border-radius: 999px;
+    padding: 0.65rem 1.25rem;
+    background: var(--color-accent);
+    color: #161a20;
+    font-weight: 800;
+  }
+
+  .home-blog-entry a:hover {
+    background: var(--color-accent-strong);
   }
 
   @media (max-width: 1024px) {

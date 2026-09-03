@@ -1,18 +1,19 @@
 import { expect, test } from '@playwright/test';
 
-test('home renders six alternating post cards without taxonomy links', async ({ page }) => {
+test('home links to the blog without rendering an article feed', async ({ page }) => {
   await page.goto('/');
-  const cards = page.locator('article[data-post-card]');
-  await expect(cards).toHaveCount(6);
-  await expect(cards.nth(0)).toHaveAttribute('data-side', 'left');
-  await expect(cards.nth(1)).toHaveAttribute('data-side', 'right');
+  await expect(page.locator('article[data-post-card]')).toHaveCount(0);
+  await expect(page.locator('.pagination')).toHaveCount(0);
   await expect(page.locator('[data-post-count]')).toHaveText('40');
+  await expect(page.getByRole('link', { name: '浏览全部博客文章' })).toHaveAttribute(
+    'href',
+    '/blog/'
+  );
   await expect(page.locator('a[href^="/categories/"], a[href^="/tags/"]')).toHaveCount(0);
-  await page.goto('/page/2/');
-  await expect(page.locator('article[data-post-card]').first()).toBeVisible();
 
   const missingFirstPage = await page.request.get('/page/1/');
   expect(missingFirstPage.status()).toBe(404);
+  expect((await page.request.get('/page/2/')).status()).toBe(200);
 
   await page.goto('/page/7/');
   await expect(page.locator('article[data-post-card]')).toHaveCount(4);
@@ -54,9 +55,9 @@ test('profile sidebar switches from desktop sticky column to mobile flow', async
     (sidebar) => getComputedStyle(sidebar).position
   );
   const desktopSidebar = await page.locator('.profile-sidebar').boundingBox();
-  const desktopCard = await page.locator('article[data-post-card]').first().boundingBox();
+  const desktopEntry = await page.locator('.home-blog-entry').boundingBox();
   expect(desktopPosition).toBe('sticky');
-  expect(desktopSidebar?.x).toBeGreaterThan((desktopCard?.x ?? 0) + (desktopCard?.width ?? 0));
+  expect(desktopSidebar?.x).toBeGreaterThan((desktopEntry?.x ?? 0) + (desktopEntry?.width ?? 0));
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
@@ -64,9 +65,9 @@ test('profile sidebar switches from desktop sticky column to mobile flow', async
     (sidebar) => getComputedStyle(sidebar).position
   );
   const mobileSidebar = await page.locator('.profile-sidebar').boundingBox();
-  const mobileCard = await page.locator('article[data-post-card]').first().boundingBox();
+  const mobileEntry = await page.locator('.home-blog-entry').boundingBox();
   expect(mobilePosition).toBe('static');
-  expect(mobileSidebar?.y).toBeLessThan(mobileCard?.y ?? 0);
+  expect(mobileSidebar?.y).toBeLessThan(mobileEntry?.y ?? 0);
 });
 
 test('home has no mobile horizontal overflow', async ({ page }) => {
@@ -79,7 +80,7 @@ test('home has no mobile horizontal overflow', async ({ page }) => {
   expect(sizes.scroll).toBe(sizes.client);
 
   const sidebar = await page.locator('.profile-sidebar').boundingBox();
-  const firstCard = await page.locator('article[data-post-card]').first().boundingBox();
+  const entry = await page.locator('.home-blog-entry').boundingBox();
   expect(sidebar?.width).toBeGreaterThan(340);
-  expect(firstCard?.width).toBeGreaterThan(340);
+  expect(entry?.width).toBeGreaterThan(340);
 });
