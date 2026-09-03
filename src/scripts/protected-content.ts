@@ -72,8 +72,10 @@ function formParts(form: HTMLFormElement) {
 }
 
 function setFormEnabled(form: HTMLFormElement, enabled: boolean): void {
-  const { key, submit } = formParts(form);
+  const { key, showKey, remember, submit } = formParts(form);
   key.disabled = !enabled;
+  showKey.disabled = !enabled;
+  remember.disabled = !enabled;
   submit.disabled = !enabled;
 }
 
@@ -222,17 +224,15 @@ function showLogout(show: boolean): void {
   });
 }
 
-function restoreGuestForms(gates: HTMLElement[]): void {
+function restoreGuestForm(gate: HTMLElement | null): void {
   showLogout(false);
-  gates.forEach((gate) => {
-    const form = gate.querySelector<HTMLFormElement>('[data-unlock-form]');
-    if (!form) return;
-    setStatus(form, '');
-    if (!startCooldown(form, readFailureState().until)) {
-      setFormEnabled(form, true);
-      formParts(form).key.focus();
-    }
-  });
+  const form = gate?.querySelector<HTMLFormElement>('[data-unlock-form]');
+  if (!form) return;
+  setStatus(form, '');
+  if (!startCooldown(form, readFailureState().until)) {
+    setFormEnabled(form, true);
+    formParts(form).key.focus();
+  }
 }
 
 function mountGiscus(): void {
@@ -280,6 +280,7 @@ function resetGate(gate: HTMLElement): void {
   key.type = 'password';
   showKey.checked = false;
   setStatus(form, '');
+  setFormEnabled(form, true);
   if (!startCooldown(form, readFailureState().until)) key.focus();
 }
 
@@ -288,7 +289,8 @@ async function logout(): Promise<void> {
   clearCooldownTimer();
   revokeBlobUrls();
   showLogout(false);
-  document.querySelectorAll<HTMLElement>('[data-protected-gate]').forEach(resetGate);
+  const gates = document.querySelectorAll<HTMLElement>('[data-protected-gate]');
+  if (gates.length === 1) resetGate(gates[0]);
   await clearCredentialState();
 }
 
@@ -303,6 +305,7 @@ async function handleSubmit(form: HTMLFormElement, gate: HTMLElement): Promise<v
   }
 
   const rawKey = parts.key.value;
+  const remember = parts.remember.checked;
   setFormEnabled(form, false);
   setStatus(form, messages.loading);
 
@@ -346,11 +349,11 @@ async function handleSubmit(form: HTMLFormElement, gate: HTMLElement): Promise<v
       key,
       manifest.version,
       manifest.rememberForMs,
-      parts.remember.checked
+      remember
     );
     assertCurrentPage(gate, generation);
   } catch (error) {
-    if (prepared) resetPreparedContent([prepared]);
+    if (prepared) resetPreparedContent(prepared);
     if (error instanceof StalePageError) return;
     showFeedback(form, error instanceof ProtectedContentError ? error.kind : 'corrupt');
     return;
@@ -386,24 +389,25 @@ function bindLogoutButtons(): void {
   });
 }
 
-function resetPreparedContent(prepared: PreparedContent[]): void {
-  prepared.flatMap(({ urls }) => urls).forEach((url) => URL.revokeObjectURL(url));
+function resetPreparedContent(prepared: PreparedContent): void {
+  prepared.urls.forEach((url) => URL.revokeObjectURL(url));
 }
 
-async function restoreStoredCredential(gates: HTMLElement[], generation: number): Promise<void> {
+async function restoreStoredCredential(
+  gate: HTMLElement | null,
+  generation: number
+): Promise<void> {
   const stored = readCredentialReference();
   if (!stored.reference) {
     if (stored.invalid) await clearCredentialState();
     return;
   }
 
-  gates.forEach((gate) => {
-    const form = gate.querySelector<HTMLFormElement>('[data-unlock-form]');
-    if (form) {
-      setFormEnabled(form, false);
-      setStatus(form, messages.loading);
-    }
-  });
+  const form = gate?.querySelector<HTMLFormElement>('[data-unlock-form]');
+  if (form) {
+    setFormEnabled(form, false);
+    setStatus(form, messages.loading);
+  }
 
   let manifest: ProtectedManifest;
   try {
@@ -411,18 +415,15 @@ async function restoreStoredCredential(gates: HTMLElement[], generation: number)
   } catch (error) {
     if (error instanceof ProtectedContentError && error.kind === 'corrupt') {
       await clearCredentialState();
-      restoreGuestForms(gates);
+      restoreGuestForm(gate);
     }
-    gates.forEach((gate) => {
-      const form = gate.querySelector<HTMLFormElement>('[data-unlock-form]');
-      if (form) showFeedback(form, error instanceof ProtectedContentError ? error.kind : 'corrupt');
-    });
+    if (form) showFeedback(form, error instanceof ProtectedContentError ? error.kind : 'corrupt');
     return;
   }
   if (generation !== pageGeneration || stored.reference.version !== manifest.version) {
     if (generation === pageGeneration) {
       await clearCredentialState();
-      restoreGuestForms(gates);
+      restoreGuestForm(gate);
     }
     return;
   }
@@ -432,12 +433,12 @@ async function restoreStoredCredential(gates: HTMLElement[], generation: number)
     record = await loadCredentialRecord(stored.reference.id);
   } catch {
     await clearCredentialState();
-    restoreGuestForms(gates);
+    restoreGuestForm(gate);
     return;
   }
   if (!validStoredKey(record, stored.reference)) {
     await clearCredentialState();
-    restoreGuestForms(gates);
+    restoreGuestForm(gate);
     return;
   }
 
@@ -445,42 +446,63 @@ async function restoreStoredCredential(gates: HTMLElement[], generation: number)
     await verifyKey(record.key, manifest.verifier);
   } catch {
     await clearCredentialState();
-    restoreGuestForms(gates);
+    restoreGuestForm(gate);
     return;
   }
   if (generation !== pageGeneration) return;
   showLogout(true);
-  if (gates.length === 0) return;
+  if (!gate) return;
 
-  const prepared: PreparedContent[] = [];
+  let prepared: PreparedContent;
   try {
-    for (const gate of gates) prepared.push(await prepareGateContent(gate, record.key, generation));
+    prepared = await prepareGateContent(gate, record.key, generation);
   } catch (error) {
-    resetPreparedContent(prepared);
     if (error instanceof StalePageError) return;
     if (error instanceof ProtectedContentError && error.kind === 'corrupt') {
       await clearCredentialState();
       showLogout(false);
     }
-    gates.forEach((gate) => {
-      const form = gate.querySelector<HTMLFormElement>('[data-unlock-form]');
-      if (form) showFeedback(form, error instanceof ProtectedContentError ? error.kind : 'corrupt');
-    });
+    if (form) showFeedback(form, error instanceof ProtectedContentError ? error.kind : 'corrupt');
     return;
   }
 
   clearFailureState();
-  gates.forEach((gate, index) => mountPreparedContent(gate, prepared[index]));
+  mountPreparedContent(gate, prepared);
+}
+
+function failClosedMultipleGates(gates: NodeListOf<HTMLElement>): void {
+  pageGeneration += 1;
+  clearCooldownTimer();
+  revokeBlobUrls();
+  showLogout(false);
+  gates.forEach((gate) => {
+    gate.querySelector<HTMLElement>('[data-protected-mount]')?.replaceChildren();
+    const form = gate.querySelector<HTMLFormElement>('[data-unlock-form]');
+    if (!form) return;
+    form.hidden = false;
+    form.noValidate = true;
+    if (!initializedForms.has(form)) {
+      initializedForms.add(form);
+      form.addEventListener('submit', (event) => event.preventDefault());
+    }
+    setFormEnabled(form, false);
+    setStatus(form, messages.corrupt);
+  });
 }
 
 function initializeProtectedContent(): void {
   bindLogoutButtons();
-  const gates = Array.from(document.querySelectorAll<HTMLElement>('[data-protected-gate]'));
-  gates.forEach(bindGate);
-  const root = gates[0] ?? document.querySelector<HTMLButtonElement>('[data-admin-logout]');
+  const gates = document.querySelectorAll<HTMLElement>('[data-protected-gate]');
+  if (gates.length > 1) {
+    failClosedMultipleGates(gates);
+    return;
+  }
+  const gate = gates[0] ?? null;
+  if (gate) bindGate(gate);
+  const root = gate ?? document.querySelector<HTMLButtonElement>('[data-admin-logout]');
   if (!root || initializedRoots.has(root)) return;
   initializedRoots.add(root);
-  void restoreStoredCredential(gates, pageGeneration);
+  void restoreStoredCredential(gate, pageGeneration);
 }
 
 document.addEventListener('astro:before-swap', () => {

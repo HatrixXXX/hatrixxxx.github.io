@@ -93,6 +93,26 @@ async function mockProtectedEndpoints(page: Page, options: EndpointOptions = {})
   await page.route('https://giscus.app/**', (route) => route.abort());
 }
 
+async function injectSecondProtectedGate(page: Page): Promise<void> {
+  await page.route(`**${FIRST_PAGE}`, async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    const secondGate = `
+      <section data-protected-gate data-protected-route="${FIRST_PAGE}">
+        <form data-unlock-form>
+          <label>管理员 key 2<input name="key" type="password"></label>
+          <label><input name="showKey" type="checkbox">显示 key 2</label>
+          <label><input name="remember" type="checkbox">7 天免解锁 2</label>
+          <button type="submit">解锁 2</button>
+          <p aria-live="polite" data-unlock-status></p>
+        </form>
+        <script type="application/json" data-protected-envelope>{}</script>
+        <div data-protected-mount></div>
+      </section>`;
+    await route.fulfill({ response, body: body.replace('</body>', `${secondGate}</body>`) });
+  });
+}
+
 async function submitKey(page: Page, key: string, remember = false): Promise<void> {
   await page.getByLabel('管理员 key', { exact: true }).fill(key);
   if (remember) await page.getByLabel('7 天免解锁').check();
@@ -138,6 +158,24 @@ test('guest sees the complete gate and empty input has its own accessible error'
   await expect(input).toBeFocused();
 });
 
+test('multiple protected gates fail closed instead of sharing singleton state', async ({ page }) => {
+  await injectSecondProtectedGate(page);
+  await mockProtectedEndpoints(page);
+  await page.goto(FIRST_PAGE);
+
+  await expect(page.locator('[data-protected-gate]')).toHaveCount(2);
+  const forms = page.locator('[data-unlock-form]');
+  await expect(forms.locator('input, button')).toHaveCount(8);
+  for (const control of await forms.locator('input, button').all()) {
+    await expect(control).toBeDisabled();
+  }
+  await expect(forms.locator('[data-unlock-status]')).toHaveText([
+    '加密内容无法读取，请稍后再试',
+    '加密内容无法读取，请稍后再试'
+  ]);
+  await expect(page.locator('[data-protected-test-content]')).toHaveCount(0);
+});
+
 test('loading, wrong key, and the persisted third-failure cooldown are distinct', async ({ page }) => {
   await mockProtectedEndpoints(page, { manifestDelayMs: 250 });
   await page.goto(FIRST_PAGE);
@@ -151,9 +189,17 @@ test('loading, wrong key, and the persisted third-failure cooldown are distinct'
   await submitKey(page, 'wrong-key');
   await expect(page.locator('[data-unlock-status]')).toContainText(/请等待 [1-5] 秒后重试/);
   await expect(page.getByLabel('管理员 key', { exact: true })).toBeDisabled();
+  await expect(page.getByLabel('显示 key')).toBeDisabled();
+  await expect(page.getByLabel('7 天免解锁')).toBeDisabled();
   await page.reload();
   await expect(page.locator('[data-unlock-status]')).toContainText(/请等待 [1-5] 秒后重试/);
   await expect(page.getByRole('button', { name: '解锁' })).toBeDisabled();
+  await expect(page.getByLabel('显示 key')).toBeDisabled();
+  await expect(page.getByLabel('7 天免解锁')).toBeDisabled();
+  await expect(page.getByLabel('管理员 key', { exact: true })).toBeEnabled({ timeout: 7_000 });
+  await expect(page.getByRole('button', { name: '解锁' })).toBeEnabled();
+  await expect(page.getByLabel('显示 key')).toBeEnabled();
+  await expect(page.getByLabel('7 天免解锁')).toBeEnabled();
 });
 
 test('network and corrupt ciphertext failures use separate messages', async ({ page }) => {
@@ -267,6 +313,41 @@ test('session unlock restores assets and integrations across navigation and refr
   });
   await expect(page.locator('.mermaid svg')).toHaveCount(1);
   await expect(page.locator('[data-giscus-comments] script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+});
+
+test('unlock snapshots remember mode and restores every control after loading', async ({ page }) => {
+  await mockProtectedEndpoints(page, { manifestDelayMs: 400 });
+  await page.goto(FIRST_PAGE);
+
+  const key = page.getByLabel('管理员 key', { exact: true });
+  const showKey = page.getByLabel('显示 key');
+  const remember = page.getByLabel('7 天免解锁');
+  const submit = page.getByRole('button', { name: '解锁' });
+  await key.fill(TEST_KEY);
+  await submit.click();
+  await expect(page.locator('[data-unlock-status]')).toHaveText('正在验证…');
+  const loadingDisabled = await Promise.all([
+    key.isDisabled(),
+    showKey.isDisabled(),
+    remember.isDisabled(),
+    submit.isDisabled()
+  ]);
+
+  await remember.evaluate((checkbox: HTMLInputElement) => {
+    checkbox.checked = true;
+  });
+  await expect(page.getByText('protected-e2e-secret-protected')).toBeVisible();
+
+  const stored = await storedCredentialDetails(page);
+  expect(stored.session).not.toBeNull();
+  expect(stored.remembered).toBeNull();
+  expect(loadingDisabled).toEqual([true, true, true, true]);
+
+  await page.getByRole('button', { name: '退出管理员身份' }).click();
+  await expect(key).toBeEnabled();
+  await expect(showKey).toBeEnabled();
+  await expect(remember).toBeEnabled();
+  await expect(submit).toBeEnabled();
 });
 
 test('remembered unlock crosses pages and an expired reference returns to guest', async ({ page }) => {
