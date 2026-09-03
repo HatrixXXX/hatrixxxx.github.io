@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import SiteFooter from '@/components/SiteFooter.astro';
 import SiteHeader from '@/components/SiteHeader.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
 import SearchOverlay from '@/components/SearchOverlay.astro';
@@ -70,6 +71,7 @@ const socialImage = new URL(image, SITE.url);
   <body class={bodyClass}>
     <SiteHeader />
     <slot />
+    <SiteFooter />
     <SakanaCharacters />
     <ThemeTransition />
     <CursorTrail />

@@ -27,12 +27,15 @@ test('home links to the blog without rendering an article feed', async ({ page }
   expect(resolvedPath).toBe(encodeURI('/posts/FPGA开发(1)Vivado+Vitis 使用/'));
 });
 
-test('site footer is absent from home and paginated pages', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
-
-  await page.goto('/page/2/');
-  await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
+test('site footer stays compact on home and paginated pages', async ({ page }) => {
+  for (const path of ['/', '/page/2/']) {
+    await page.goto(path);
+    const footer = page.locator('footer[data-site-footer]');
+    await expect(footer).toBeVisible();
+    await expect(footer.locator('section, img, li')).toHaveCount(0);
+    const bounds = await footer.boundingBox();
+    expect(bounds?.height).toBeLessThan(64);
+  }
 });
 
 test('profile sidebar switches from desktop sticky column to mobile flow', async ({ page }) => {

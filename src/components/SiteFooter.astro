@@ -1,0 +1,53 @@
+---
+import { SITE } from '@/config/site';
+
+const firstYear = 2025;
+const currentYear = new Date().getFullYear();
+const copyrightYears = currentYear > firstYear ? `${firstYear}–${currentYear}` : `${firstYear}`;
+---
+
+<footer data-site-footer class="site-footer">
+  <p class="footer-line container">
+    <span>© {copyrightYears} {SITE.author.name}</span>
+    <span aria-hidden="true">·</span>
+    <span>保留所有权利</span>
+    <span aria-hidden="true">·</span>
+    <a href="/third-party-notices.txt">第三方许可</a>
+    {
+      SITE.filings.map((filing) => (
+        <>
+          <span aria-hidden="true">·</span>
+          <a href={filing.url} target="_blank" rel="noreferrer" data-site-filing>{filing.label}</a>
+        </>
+      ))
+    }
+  </p>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-line);
+    color: var(--color-muted);
+  }
+
+  .footer-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    margin-block: 0;
+    padding-block: 0.65rem 0.75rem;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  a {
+    transition: color 160ms ease;
+  }
+
+  a:hover {
+    color: var(--color-accent);
+  }
+</style>

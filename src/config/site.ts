@@ -14,6 +14,7 @@ export const SITE = {
     { label: 'Bilibili', url: 'https://space.bilibili.com/352420563' },
     { label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx' }
   ],
+  filings: [] as readonly { label: string; url: string }[],
   giscus: {
     repo: 'hatrixxxx/hatrixxxx.github.io',
     repoId: 'R_kgDORB9GlQ',

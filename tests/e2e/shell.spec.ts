@@ -1,11 +1,19 @@
 import { expect, test } from '@playwright/test';
 
-test('home shell omits the removed site footer', async ({ page }) => {
+test('home shell renders the compact legal footer', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();
   await expect(page.locator('[data-hero]')).toBeVisible();
   await expect(page.locator('[data-wave-divider]')).toBeVisible();
-  await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
+
+  const footer = page.locator('footer[data-site-footer]');
+  await expect(footer).toHaveCount(1);
+  await expect(footer).toContainText(`© 2025–${new Date().getFullYear()} Hatrix`);
+  await expect(footer.getByRole('link', { name: '第三方许可' })).toHaveAttribute(
+    'href',
+    '/third-party-notices.txt'
+  );
+  await expect(footer.locator('[data-site-filing]')).toHaveCount(0);
 });
 
 test('favicon metadata is valid in static output', async ({ request }) => {
