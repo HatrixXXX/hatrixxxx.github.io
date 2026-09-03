@@ -28,6 +28,7 @@
 - Modify: `src/content.config.ts:1-26`
 - Modify: `src/content/posts/*.md`（40 个已发布文章 frontmatter）
 - Modify: `tests/unit/content-schema.test.ts:1-20`
+- Modify: `tests/unit/content-utils.test.ts:9-21`
 - Create: `tests/unit/navigation-config.test.ts`
 
 **Interfaces:**
@@ -162,6 +163,12 @@ import { POST_TYPES } from './config/navigation';
 type: z.enum(POST_TYPES),
 ```
 
+`tests/unit/content-utils.test.ts` 的 `post()` 测试夹具在 `cover` 后增加：
+
+```ts
+type: '技术笔记',
+```
+
 - [ ] **Step 4: 给 40 篇文章增加显式类型**
 
 每篇文章在 `cover` 后加入 `type`。分配如下：
@@ -188,7 +195,7 @@ Run: `corepack pnpm test:run tests/unit/navigation-config.test.ts tests/unit/con
 Expected: PASS。
 
 ```powershell
-git add -- src/config/navigation.ts src/content.config.ts src/content/posts tests/unit/content-schema.test.ts tests/unit/navigation-config.test.ts
+git add -- src/config/navigation.ts src/content.config.ts src/content/posts tests/unit/content-schema.test.ts tests/unit/content-utils.test.ts tests/unit/navigation-config.test.ts
 git commit -m "feat: define navigation and post types"
 ```
 
@@ -231,7 +238,7 @@ for (const [path, title, count] of [
     expect(response?.status()).toBe(200);
     await expect(page.locator('h1')).toContainText(title);
     await expect(page.locator('article[data-post-card]')).toHaveCount(count);
-    if (count === 0) await expect(page.getByText('这个分类还没有文章')).toBeVisible();
+    if (count === 0) await expect(page.getByText('这个类型还没有文章')).toBeVisible();
   });
 }
 ```
@@ -294,7 +301,7 @@ const { type, posts } = Astro.props;
 正文在 `posts.length > 0` 时渲染 `PostList`，否则渲染：
 
 ```astro
-<EmptyState title="这个分类还没有文章" description="以后写到这类内容时，会放在这里。" />
+<EmptyState title="这个类型还没有文章" description="以后写到这类内容时，会放在这里。" />
 ```
 
 - [ ] **Step 5: 运行 E2E 并提交**
