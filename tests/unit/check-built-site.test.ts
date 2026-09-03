@@ -2,7 +2,14 @@ import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { inspectBuiltSite, inspectProjectBuiltSite } from '../../scripts/check-built-site';
+import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../../src/config/security';
+import {
+  inspectBuiltSite,
+  inspectProjectBuiltSite,
+  securityErrorsForHtml
+} from '../../scripts/check-built-site';
+
+const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 async function writeSiteFile(root: string, relativePath: string, contents = ''): Promise<void> {
   const target = join(root, ...relativePath.split('/'));
@@ -31,11 +38,11 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
   await writeSiteFile(
     root,
     'index.html',
-    '<a href="/posts/%E4%B8%AD%E6%96%87%20%E6%96%87%E7%AB%A0/">post</a><img src="/images/logo.svg"><a href="#jump">skip</a><a href="mailto:test@example.com">mail</a><a href="tel:+100">phone</a><img src="data:image/svg+xml,skip"><a href="https://example.com">external</a>'
+    `<html>${secureHead}<body><a href="/posts/%E4%B8%AD%E6%96%87%20%E6%96%87%E7%AB%A0/">post</a><img src="/images/logo.svg"><a href="#jump">skip</a><a href="mailto:test@example.com">mail</a><a href="tel:+100">phone</a><img src="data:image/png,skip"><a href="https://example.com">external</a></body></html>`
   );
-  await writeSiteFile(root, 'posts/中文 文章/index.html', '<a href="/">home</a>');
+  await writeSiteFile(root, 'posts/中文 文章/index.html', `<html>${secureHead}<body><a href="/">home</a></body></html>`);
   await writeSiteFile(root, 'images/logo.svg', '<svg/>');
-  await writeSiteFile(root, '404.html');
+  await writeSiteFile(root, '404.html', `<html>${secureHead}</html>`);
   await writeSiteFile(root, 'CNAME', 'hatrix.site\n');
   await writeSiteFile(root, 'rss.xml', '<rss/>');
   await writeSiteFile(root, 'sitemap-0.xml', '<urlset/>');
@@ -45,6 +52,24 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
   const result = await inspectBuiltSite(root, [postRoute]);
 
   expect(result.errors).toEqual([]);
+});
+
+it('accepts the reviewed metadata and safe external resources', () => {
+  const html = `<html>${secureHead}<body><img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png"><a href="https://example.com" target="_blank" rel="noreferrer">external</a><script src="https://giscus.app/client.js"></script></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/safe/')).toEqual([]);
+});
+
+it('reports missing or late metadata and unsafe HTML attributes', () => {
+  const html = `<html><head><script src="/early.js"></script>${secureHead}</head><body><a href="javascript:alert(1)" target="_blank">bad</a><img src="https://evil.example/tracker.png" onerror="alert(1)"></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/unsafe/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('CSP must appear before every script'),
+    expect.stringContaining('unsafe URL scheme'),
+    expect.stringContaining('inline event attribute'),
+    expect.stringContaining('missing noopener protection'),
+    expect.stringContaining('unapproved remote image')
+  ]));
 });
 
 it('requires the third-party notice in built output', async () => {

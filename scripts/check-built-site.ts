@@ -2,10 +2,14 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
+import { parse, type DefaultTreeAdapterTypes } from 'parse5';
+import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 const SITE_ORIGIN = 'https://hatrix.site';
 const EXPECTED_LOCAL_LINKS = 3961;
+const IMMUTABLE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
 
 export interface BuiltSiteCheckOptions {
   sourceCnamePath?: string;
@@ -99,6 +103,117 @@ function localLinks(html: string): string[] {
   return links;
 }
 
+function htmlElements(html: string): DefaultTreeAdapterTypes.Element[] {
+  const elements: DefaultTreeAdapterTypes.Element[] = [];
+  const document = parse(html, { sourceCodeLocationInfo: true });
+
+  function visit(node: DefaultTreeAdapterTypes.Node): void {
+    if ('tagName' in node) elements.push(node);
+    if ('content' in node) visit(node.content);
+    if ('childNodes' in node) {
+      for (const child of node.childNodes) visit(child);
+    }
+  }
+
+  visit(document);
+  return elements;
+}
+
+function attributeValue(element: DefaultTreeAdapterTypes.Element, name: string): string | undefined {
+  return element.attrs.find((attribute) => attribute.name === name)?.value;
+}
+
+function externalUrl(value: string, route: string): URL | undefined {
+  try {
+    const url = new URL(value, `${SITE_ORIGIN}${route}`);
+    return url.origin === SITE_ORIGIN ? undefined : url;
+  } catch {
+    return undefined;
+  }
+}
+
+function isDangerousDataUrl(value: string): boolean {
+  return /^data:\s*(?:text\/html|application\/xhtml\+xml|image\/svg\+xml)(?:[;,]|$)/i.test(value.trim());
+}
+
+export function securityErrorsForHtml(html: string, route: string): string[] {
+  const errors: string[] = [];
+  const elements = htmlElements(html);
+  const metaElements = elements.filter((element) => element.tagName === 'meta');
+  const cspTags = metaElements.filter(
+    (element) => attributeValue(element, 'http-equiv')?.toLowerCase() === 'content-security-policy'
+  );
+  const referrerTags = metaElements.filter(
+    (element) => attributeValue(element, 'name')?.toLowerCase() === 'referrer'
+  );
+
+  const cspTag = cspTags[0];
+  const referrerTag = referrerTags[0];
+  if (cspTags.length !== 1 || !cspTag || attributeValue(cspTag, 'content') !== CONTENT_SECURITY_POLICY) {
+    errors.push(`Invalid Content Security Policy in ${route}.`);
+  }
+  if (referrerTags.length !== 1 || !referrerTag || attributeValue(referrerTag, 'content') !== REFERRER_POLICY) {
+    errors.push(`Invalid Referrer Policy in ${route}.`);
+  }
+
+  const cspOffset = cspTags.length === 1 ? cspTag?.sourceCodeLocation?.startTag?.startOffset : undefined;
+  if (
+    elements.some(
+      (element) =>
+        element.tagName === 'script' &&
+        (cspOffset === undefined || (element.sourceCodeLocation?.startTag?.startOffset ?? Infinity) < cspOffset)
+    )
+  ) {
+    errors.push(`CSP must appear before every script in ${route}.`);
+  }
+
+  for (const element of elements) {
+    for (const attribute of element.attrs) {
+      if (/^on[a-z0-9_-]+$/i.test(attribute.name)) {
+        errors.push(`Found inline event attribute in ${route}.`);
+      }
+      if (
+        /^(?:href|src|action|formaction)$/i.test(attribute.name) &&
+        /^\s*(?:javascript|vbscript):/i.test(attribute.value)
+      ) {
+        errors.push(`Found unsafe URL scheme in ${route}.`);
+      }
+      if (/^(?:href|src|action|formaction)$/i.test(attribute.name) && isDangerousDataUrl(attribute.value)) {
+        errors.push(`Found dangerous data document in ${route}.`);
+      }
+    }
+  }
+
+  for (const anchor of elements.filter((element) => element.tagName === 'a')) {
+    if (attributeValue(anchor, 'target')?.toLowerCase() !== '_blank') continue;
+    const rel = new Set((attributeValue(anchor, 'rel') ?? '').toLowerCase().split(/\s+/));
+    if (!rel.has('noopener') && !rel.has('noreferrer')) {
+      errors.push(`External-window link is missing noopener protection in ${route}.`);
+    }
+  }
+  for (const script of elements.filter((element) => element.tagName === 'script')) {
+    const src = attributeValue(script, 'src');
+    const url = src ? externalUrl(src, route) : undefined;
+    if (url && url.href !== 'https://giscus.app/client.js') {
+      errors.push(`Unapproved external script in ${route}: ${url.origin}`);
+    }
+  }
+  for (const iframe of elements.filter((element) => element.tagName === 'iframe')) {
+    const src = attributeValue(iframe, 'src');
+    const url = src ? externalUrl(src, route) : undefined;
+    if (url && url.origin !== 'https://giscus.app') {
+      errors.push(`Unapproved external frame in ${route}: ${url.origin}`);
+    }
+  }
+  for (const image of elements.filter((element) => element.tagName === 'img')) {
+    const src = attributeValue(image, 'src')?.trim();
+    if (src && /^https?:\/\//i.test(src) && !src.startsWith(IMMUTABLE_IMAGE_PREFIX)) {
+      errors.push(`Found unapproved remote image in ${route}.`);
+    }
+  }
+  return errors;
+}
+
 async function requiredFile(root: string, path: string, errors: string[]): Promise<void> {
   if (!(await pathExists(join(root, path)))) errors.push(`Missing required output: /${path.replaceAll('\\', '/')}`);
 }
@@ -147,7 +262,9 @@ export async function inspectBuiltSite(
 
   for (const htmlFile of files.filter((file) => file.endsWith('.html'))) {
     const sourceRoute = routeForHtmlFile(root, htmlFile);
-    for (const link of localLinks(await readFile(htmlFile, 'utf8'))) {
+    const html = await readFile(htmlFile, 'utf8');
+    errors.push(...securityErrorsForHtml(html, sourceRoute));
+    for (const link of localLinks(html)) {
       const targetPath = localTargetPath(link, sourceRoute);
       if (!targetPath) continue;
       checkedLinks += 1;
