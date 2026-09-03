@@ -62,8 +62,16 @@ const publicPost = {
         <PostCard post={lockedPost} index={0} />
         {['footer', 'archive', 'adjacent'].map((surface) => (
           <section data-lock-surface={surface}>
-            <PostLink post={lockedPost} data-fixture-state="locked" />
-            <PostLink post={publicPost} data-fixture-state="public" />
+            <PostLink
+              post={lockedPost}
+              direction={surface === 'adjacent' ? '上一篇' : undefined}
+              data-fixture-state="locked"
+            />
+            <PostLink
+              post={publicPost}
+              direction={surface === 'adjacent' ? '上一篇' : undefined}
+              data-fixture-state="public"
+            />
           </section>
         ))}
       </main>

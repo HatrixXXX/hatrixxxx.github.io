@@ -69,6 +69,13 @@ test('locked public surfaces expose only public metadata and an accessible lock 
     await expect(lockedLink.getByRole('img', { name: '加锁内容' })).toBeVisible();
     await expect(publicLink).not.toHaveAttribute('data-locked-link', '');
     await expect(publicLink.getByRole('img', { name: '加锁内容' })).toHaveCount(0);
+    if (surface === 'adjacent') {
+      await expect(lockedLink.locator(':scope > span')).toHaveText('上一篇');
+      await expect(lockedLink.locator('strong')).toContainText('公开的加锁文章标题');
+      await expect(lockedLink.locator('strong').getByRole('img', { name: '加锁内容' })).toBeVisible();
+      await expect(publicLink.locator(':scope > span')).toHaveText('上一篇');
+      await expect(publicLink.locator('strong').getByRole('img', { name: '加锁内容' })).toHaveCount(0);
+    }
   }
 
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
