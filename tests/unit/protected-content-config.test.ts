@@ -19,6 +19,7 @@ describe('protected content config', () => {
   it('normalizes configured routes without decoding legacy slugs', () => {
     expect(normalizeRoutePath('/about/research')).toBe('/about/research/');
     expect(normalizeRoutePath('/')).toBe('/');
+    expect(normalizeRoutePath('/posts/a%2Fb')).toBe('/posts/a%2Fb/');
     expect(LOCKED_PAGE_PATHS.every(isConfiguredLockedPage)).toBe(true);
   });
 

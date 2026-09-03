@@ -29,7 +29,8 @@
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "sakana": "1.0.8",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

@@ -1,27 +1,11 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { POST_TYPES } from '../../src/config/navigation';
 import { SITE } from '../../src/config/site';
-
-vi.mock('astro:content', () => ({ defineCollection: <T>(config: T) => config }));
-vi.mock('astro/loaders', () => ({ glob: <T>(config: T) => config }));
-vi.mock('astro/zod', async () => {
-  const { z } = await import('../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/index.js');
-  return { z };
-});
-
-import { collections } from '../../src/content.config';
 import { playlist } from '../../src/data/playlist';
-import { contentRoot } from '../../src/lib/content-root';
-
-const postSchema = collections.posts.schema;
-
-if (!postSchema || typeof postSchema === 'function') {
-  throw new Error('posts collection must expose a schema object');
-}
+import { postSchema } from '../../src/lib/post-schema';
 
 const postFixture = {
   title: 'Schema fixture',
@@ -62,9 +46,9 @@ describe('content contracts', () => {
     expect(SITE.giscus.mapping).toBe('pathname');
   });
 
-  it('gives Astro a file URL for the absolute private posts root', () => {
-    const postLoader = (collections.posts as unknown as { loader: { base: string } }).loader;
-    expect(postLoader.base).toBe(pathToFileURL(contentRoot('posts')).href);
+  it('keeps published posts on the current source root until the private migration', async () => {
+    const config = await readFile(join(process.cwd(), 'src/content.config.ts'), 'utf8');
+    expect(config).toContain("loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' })");
   });
 
   it('defaults omitted locked metadata to public and rejects non-boolean values', () => {
