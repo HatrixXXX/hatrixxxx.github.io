@@ -71,17 +71,13 @@ async function sourceContext(post: PostEntry): Promise<{ postPath: string; conte
     throw protectedContentError(post.id, '的源文件不存在，无法保护正文图片。');
   }
 
-  const roots = process.env.HATRIX_CONTENT_DIR === undefined
-    ? [contentRoot('posts'), resolve('src/content/posts')]
-    : [contentRoot('posts')];
-
-  for (const root of roots) {
-    try {
-      const canonicalRoot = await realpath(root);
-      if (pathIsWithin(canonicalRoot, postPath)) return { postPath, contentRoot: canonicalRoot };
-    } catch {
-      // A candidate root that does not exist cannot own the post.
+  try {
+    const canonicalRoot = await realpath(contentRoot('posts'));
+    if (pathIsWithin(canonicalRoot, postPath)) {
+      return { postPath, contentRoot: canonicalRoot };
     }
+  } catch {
+    // A content root that does not exist cannot own the post.
   }
 
   throw protectedContentError(post.id, '的源文件不在文章内容目录内。');

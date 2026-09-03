@@ -60,12 +60,14 @@ afterEach(async () => {
 describe('protected Markdown', () => {
   it('replaces a local image with an opaque encrypted asset reference', async () => {
     const result = await renderProtectedMarkdown(
-      fixturePost('Private marker.\n\n![secret](./private-image.png)'),
+      fixturePost('Private marker.\n\n![secret alt](./private-image.png "secret title")'),
       keyBytes
     );
 
     expect(result.html).toContain('data-protected-src="/protected-content/assets/');
     expect(result.html).toContain('data-protected-type="image/png"');
+    expect(result.html).toContain('alt="secret alt"');
+    expect(result.html).toContain('title="secret title"');
     expect(result.html).not.toContain('private-image.png');
     expect(result.assets).toHaveLength(1);
     expect(result.assets[0]).toEqual({
@@ -122,6 +124,39 @@ describe('protected Markdown', () => {
     await expect(
       renderProtectedMarkdown(fixturePost('![secret](./linked/private-image.png)'), keyBytes)
     ).rejects.toThrow(/加锁文章/);
+  });
+
+  it('accepts only the default private content root when HATRIX_CONTENT_DIR is unset', async () => {
+    const previousWorkingDirectory = process.cwd();
+    const privatePosts = join(temporaryRoot, '.private-content', 'posts');
+    const publicPosts = join(temporaryRoot, 'src', 'content', 'posts');
+    const privatePostPath = join(privatePosts, 'private.md');
+    const publicPostPath = join(publicPosts, 'public.md');
+    delete process.env.HATRIX_CONTENT_DIR;
+    await mkdir(privatePosts, { recursive: true });
+    await mkdir(publicPosts, { recursive: true });
+    await copyFile(fixtureImage, join(privatePosts, 'private-image.png'));
+    await copyFile(fixtureImage, join(publicPosts, 'private-image.png'));
+    await writeFile(privatePostPath, '# private fixture', 'utf8');
+    await writeFile(publicPostPath, '# public fixture', 'utf8');
+
+    try {
+      process.chdir(temporaryRoot);
+      await expect(
+        renderProtectedMarkdown(
+          fixturePost('![private](./private-image.png)', { filePath: privatePostPath }),
+          keyBytes
+        )
+      ).resolves.toMatchObject({ assets: [{ sourcePath: join(privatePosts, 'private-image.png') }] });
+      await expect(
+        renderProtectedMarkdown(
+          fixturePost('![public](./private-image.png)', { filePath: publicPostPath }),
+          keyBytes
+        )
+      ).rejects.toThrow(/加锁文章/);
+    } finally {
+      process.chdir(previousWorkingDirectory);
+    }
   });
 
   it('keeps the existing math and Shiki Markdown behavior', async () => {
