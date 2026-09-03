@@ -193,7 +193,7 @@ Commit: `feat: add protected content cryptography`
 - Produces: `collectProtectedAssets(posts: PostEntry[], keyBytes: Uint8Array): Promise<ProtectedAsset[]>`。
 - Static endpoint: `/protected-content/assets/<keyed-id>.bin`，正文解锁前无法读取原图。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 测试创建临时 Markdown 和 PNG，断言渲染 HTML 不含原文件名或图片字节，只含 `data-protected-src`、媒体类型和不可读 ID；远程图片、绝对 public 路径和越出内容根目录的路径必须拒绝。
 
@@ -211,17 +211,17 @@ it.each(['![x](https://example.com/x.png)', '![x](/images/x.png)', '![x](../../o
   });
 ```
 
-- [ ] **Step 2: 运行测试并确认 RED**
+- [x] **Step 2: 运行测试并确认 RED**
 
 Run: `corepack pnpm test:run tests/unit/protected-markdown.test.ts`
 
 Expected: FAIL，原因是 Markdown 保护模块不存在。
 
-- [ ] **Step 3: 实现受保护图片 remark 插件和端点**
+- [x] **Step 3: 实现受保护图片 remark 插件和端点**
 
 复用 `@astrojs/markdown-remark` 的 `createMarkdownProcessor()`、现有 math/KaTeX/Shiki 设置。插件只接受位于当前私有内容根目录内的相对图片，使用内容密钥 HMAC-SHA-256 生成公开 ID，把节点改为透明占位 `src` 加 `data-protected-src` 和 `data-protected-type`。asset endpoint 枚举所有已发布且 `locked` 的文章，读取对应文件后用 AES-GCM 和 `asset:<id>` AAD 输出二进制信封。
 
-- [ ] **Step 4: 验证 GREEN 并提交**
+- [x] **Step 4: 验证 GREEN 并提交**
 
 Run: `corepack pnpm test:run tests/unit/protected-markdown.test.ts tests/unit/protected-crypto.test.ts`
 
