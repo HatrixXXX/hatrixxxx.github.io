@@ -40,7 +40,7 @@
 - Produces: `contentRoot(...segments: string[]): string`，默认解析 `.private-content/`，测试可用 `HATRIX_CONTENT_DIR` 覆盖。
 - Produces: `PostEntry['data']['locked']: boolean`。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/unit/protected-content-config.test.ts`：
 
@@ -71,13 +71,13 @@ describe('protected content config', () => {
 
 扩展 `tests/unit/content-schema.test.ts`，断言夹具或真实文章省略 `locked` 时为公开，并拒绝非布尔值。
 
-- [ ] **Step 2: 运行测试并确认 RED**
+- [x] **Step 2: 运行测试并确认 RED**
 
 Run: `corepack pnpm test:run tests/unit/protected-content-config.test.ts tests/unit/content-schema.test.ts`
 
 Expected: FAIL，原因是配置模块不存在且 schema 尚无 `locked`。
 
-- [ ] **Step 3: 写最小配置和 schema**
+- [x] **Step 3: 写最小配置和 schema**
 
 `src/config/protected-content.ts` 的公开契约：
 
@@ -104,7 +104,7 @@ export function isConfiguredLockedPage(path: string): boolean {
 
 实现 `contentRoot()`，把 `HATRIX_CONTENT_DIR` 解析为绝对路径并拒绝空字符串。posts schema 增加 `locked: z.boolean().default(false)`，`PostData` 同步增加字段。
 
-- [ ] **Step 4: 验证 GREEN 并提交**
+- [x] **Step 4: 验证 GREEN 并提交**
 
 Run: `corepack pnpm test:run tests/unit/protected-content-config.test.ts tests/unit/content-schema.test.ts`
 
