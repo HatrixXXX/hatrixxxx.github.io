@@ -355,23 +355,23 @@ Commit: `feat: add administrator unlock flow`
 - `check:protected` 接收内容根目录和 `dist`，检测 Markdown 正文片段、原始资源名/字节和禁止的远程正文图片。
 - 加锁链接使用 `data-locked-link` 和可见/可访问的锁图标。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 扩展 search 单元测试，证明加锁文章的独有正文词不进入文档。审计脚本测试构造临时 `dist`：存在私密正文、原图字节或原资源名时失败，只有 AES-GCM 密文时通过。E2E 断言卡片锁标记、RSS 无正文、搜索结果只含公开摘要。
 
-- [ ] **Step 2: 运行测试并确认 RED**
+- [x] **Step 2: 运行测试并确认 RED**
 
 Run: `corepack pnpm test:run tests/unit/content-utils.test.ts tests/unit/check-protected-output.test.ts`
 
 Expected: FAIL，原因是 search 未裁剪且审计脚本不存在。
 
-- [ ] **Step 3: 实现公开面和审计**
+- [x] **Step 3: 实现公开面和审计**
 
 所有已知 post 链接根据 `post.data.locked` 增加锁标识；不靠图标承担安全。search 对 locked post 不调用正文提取。RSS 继续使用公开 description。sitemap filter 排除 manifest 中的静态锁路由，并为加锁页面输出 `noindex, nofollow`。
 
 `build` 在 `astro build` 后运行 `check:protected`，审计失败返回非零退出码且只报告文件和规则，不回显私密正文。
 
-- [ ] **Step 4: 验证 GREEN 并提交**
+- [x] **Step 4: 验证 GREEN 并提交**
 
 Run: `corepack pnpm test:run tests/unit/content-utils.test.ts tests/unit/check-protected-output.test.ts`
 
