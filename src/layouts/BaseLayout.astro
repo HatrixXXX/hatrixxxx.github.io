@@ -8,6 +8,7 @@ import ThemeTransition from '@/components/ThemeTransition.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
 import CursorTrail from '@/components/CursorTrail.astro';
 import { SITE } from '@/config/site';
+import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '@/config/security';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
 import '@/styles/prose.css';
@@ -35,6 +36,12 @@ const socialImage = new URL(image, SITE.url);
 <!doctype html>
 <html lang="zh-CN" data-theme="dark">
   <head>
+    {
+      import.meta.env.PROD && (
+        <meta http-equiv="Content-Security-Policy" content={CONTENT_SECURITY_POLICY} />
+      )
+    }
+    <meta name="referrer" content={REFERRER_POLICY} />
     <script is:inline>
       (() => {
         const stored = localStorage.getItem('hatrix-theme');
