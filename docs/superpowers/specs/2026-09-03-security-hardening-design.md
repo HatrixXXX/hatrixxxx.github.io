@@ -35,22 +35,22 @@ GitHub Pages 不提供仓库级任意响应头配置。第一阶段可以用 HTM
 default-src 'self';
 base-uri 'none';
 object-src 'none';
-script-src 'self' 'unsafe-inline' https://giscus.app;
+script-src 'self' 'unsafe-inline' data: https://giscus.app;
 script-src-attr 'none';
-style-src 'self' 'unsafe-inline';
+style-src 'self' 'unsafe-inline' https://giscus.app;
 img-src 'self' data: blob: https://cdn.jsdelivr.net;
 font-src 'self' data:;
 connect-src 'self';
-media-src 'self' blob:;
+media-src 'self' data: blob:;
 frame-src https://giscus.app;
 worker-src 'self' blob:;
 manifest-src 'self';
 form-action 'self'
 ```
 
-第一阶段保留 `script-src 'unsafe-inline'`，原因是当前构建包含主题初始化和 Giscus 内联模块，直接改成哈希策略会与 Astro ClientRouter、构建压缩和正在开发的加锁内容脚本相互影响。`script-src-attr 'none'` 单独禁止 HTML 事件属性。内容检查同时拒绝原始 `<script>`，缩小 `unsafe-inline` 留下的风险。
+第一阶段保留 `script-src 'unsafe-inline'`，原因是当前构建包含主题初始化和 Giscus 内联模块，直接改成哈希策略会与 Astro ClientRouter、构建压缩和正在开发的加锁内容脚本相互影响。生产取证还确认 ClientRouter 在客户端导航时加载 `data:` 模块，Sakana 使用内嵌 `data:` 音频，Giscus 客户端会加载同源于 `giscus.app` 的样式；策略只为这三项现有行为增加对应来源。`script-src-attr 'none'` 单独禁止 HTML 事件属性。内容检查同时拒绝原始 `<script>`，缩小 `unsafe-inline` 留下的风险。
 
-样式仍允许内联。Astro 页面样式、Hero 背景、Mermaid 和现有交互会生成 `<style>` 或 `style` 属性；为了去掉 `unsafe-inline` 而重写这些功能不在本阶段范围内。
+样式仍允许内联，并允许 Giscus 客户端加载 `https://giscus.app/default.css`。Astro 页面样式、Hero 背景、Mermaid 和现有交互会生成 `<style>` 或 `style` 属性；为了去掉 `unsafe-inline` 而重写这些功能不在本阶段范围内。
 
 CSP 只在生产构建输出。开发服务器需要 Vite HMR 和 WebSocket，不加载生产策略。所有页面同时输出：
 

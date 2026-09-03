@@ -44,6 +44,9 @@ corepack pnpm test:e2e
 - Sakana 的许可和素材来源告知固定在 `public/third-party-notices.txt`，构建后必须复制到 `dist/third-party-notices.txt`。内置千束与泷奈插画只用于非商业网页；站点用途或依赖版本变化时必须重新核对授权。
 - 若视觉差异只出现在含远程图片的文章，先核对 `reports/image-check.json`。临时失败恢复后应重跑 `check:images`、清理 `.astro` 并执行 `astro sync`，不要直接更新视觉基线。
 - 主题切换继续使用 `hatrix-theme`，并同步 Giscus。全屏动效由 `ThemeTransition.astro` 和 `theme.ts` 管理；减少动态效果时必须直接切换，不能显示过渡层。Giscus 深色主题源码位于 `src/styles/giscus-dark.css`：开发环境内联，生产构建输出带 hash 的 HTTPS CSS；不要用宿主页面 CSS 覆盖 iframe 内部样式。
+- 生产 CSP 和 Referrer Policy 的唯一来源是 `src/config/security.ts`。新增第三方脚本、框架、远程图片或媒体来源时，必须同时更新策略、构建产物测试和生产预览取证，不能只放宽 `default-src`。
+- 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
+- Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `check:site` 固定校验 3961 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
@@ -68,3 +71,11 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-03-navigation-content-hubs.md`：导航内容中心的实施与验证记录。
 - `docs/superpowers/specs/2026-09-03-non-home-banner-design.md`：非首页 Banner 高度、文章信息布局和波浪边界。
 - `docs/superpowers/plans/2026-09-03-non-home-banner.md`：非首页 Banner 压缩的测试与实施步骤。
+- `docs/superpowers/specs/2026-09-03-cursor-trail-design.md`：侧栏鼠标尾迹的区域、动画和性能边界。
+- `docs/superpowers/plans/2026-09-03-cursor-trail-activation-regions.md`：鼠标尾迹正文高度门控和区域切换步骤。
+- `docs/superpowers/specs/2026-09-03-horizontal-post-rail-design.md`：横向文章栏、博客视图切换和无 JavaScript 降级设计。
+- `docs/superpowers/plans/2026-09-03-horizontal-post-rail.md`：横向文章栏的实施与验证记录。
+- `docs/superpowers/specs/2026-09-03-compact-legal-footer-design.md`：极简法律页脚和备案信息边界。
+- `docs/superpowers/plans/2026-09-03-compact-legal-footer.md`：法律页脚的实施与验证记录。
+- `docs/superpowers/specs/2026-09-03-security-hardening-design.md`：仓库安全策略、内容边界和 Cloudflare 分阶段方案。
+- `docs/superpowers/plans/2026-09-03-security-hardening.md`：仓库安全加固的测试与实施步骤。
