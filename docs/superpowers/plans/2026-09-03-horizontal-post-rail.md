@@ -811,7 +811,7 @@ Run `corepack pnpm dev --host 127.0.0.1` in a persistent process. Confirm `http:
 
 **Interfaces:**
 - Consumes: the existing `PostList` component and delegated drag behavior.
-- Produces: optional `wide: boolean` presentation on `PostList`, without changing the `PostEntry[]` data contract.
+- Produces: page-level `.blog-rail-shell.container` wrappers; `PostList` keeps the existing `PostEntry[]` data contract.
 
 - [ ] **Step 1: Write the failing regression checks**
 
@@ -830,6 +830,8 @@ expect(layout.left).toBeCloseTo(32, 0);
 expect(layout.right).toBeCloseTo(1_408, 0);
 expect(layout.scrollbarWidth).toBe('none');
 ```
+
+Add a second geometry test that sets `body { width: 1425px }` in a 1440 px viewport, then requires rail edges at 32 px and 1393 px. This reproduces the coordinate mismatch caused by classic scrollbar width without relying on the headless browser's overlay scrollbar mode.
 
 Change the drag distance from 240 px to 64 px, then replace the final position assertion with:
 
@@ -851,14 +853,15 @@ Expected: the rail still begins at 130 px, computed scrollbar width is `thin`, a
 
 - [ ] **Step 3: Implement the minimal CSS and prop changes**
 
-Add `wide?: boolean` to `PostList.astro`, apply `post-list--wide` when true, and pass `wide` only from `/blog/` and `/blog/[type]/`. Remove `scroll-snap-type`, `scroll-padding-inline`, the visible scrollbar colors, and all WebKit track/thumb rules. Set `scrollbar-width: none`, hide the WebKit scrollbar, reduce the rail padding to `0.25rem 0.125rem`, and remove `scroll-snap-align` from `PostCard.astro`.
+Remove `scroll-snap-type`, `scroll-padding-inline`, the visible scrollbar colors, and all WebKit track/thumb rules from `PostList.astro`. Set `scrollbar-width: none`, hide the WebKit scrollbar, reduce the rail padding to `0.25rem 0.125rem`, and remove `scroll-snap-align` from `PostCard.astro`.
 
-At `min-width: 1025px`, use:
+Remove the `container` class from each blog `<main>`. On `/blog/`, apply `container` to the toolbar and archive panel, and apply `class="blog-rail-shell container"` to the card-view wrapper. On `/blog/[type]/`, wrap either the empty state or `PostList` in a `container`; the nonempty wrapper also receives `blog-rail-shell`.
+
+At `min-width: 1025px`, both pages use:
 
 ```css
-.post-list--wide {
-  width: calc(100vw - 4rem);
-  margin-inline: calc(50% - 50vw + 2rem);
+.blog-rail-shell {
+  width: calc(100% - 4rem);
 }
 ```
 

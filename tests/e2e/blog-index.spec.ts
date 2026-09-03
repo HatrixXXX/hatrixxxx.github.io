@@ -55,6 +55,28 @@ test('post rail hides its scrollbar and does not snap', async ({ page }) => {
   expect(styles.firstScrollSnapAlign).toBe('none');
 });
 
+test('wide rail stays centered when layout width differs from viewport units', async ({ page }) => {
+  await page.goto('/blog/');
+  await page.addStyleTag({ content: 'body { width: 1425px !important; }' });
+
+  const layout = await page.locator('[data-post-rail]').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const layoutWidth = document.body.getBoundingClientRect().width;
+    return {
+      layoutWidth,
+      left: rect.left,
+      right: rect.right,
+      expectedRight: layoutWidth - 32,
+      rootOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+    };
+  });
+
+  expect(layout.layoutWidth).toBe(1_425);
+  expect(layout.left).toBeCloseTo(32, 0);
+  expect(layout.right).toBeCloseTo(layout.expectedRight, 0);
+  expect(layout.rootOverflow).toBe(0);
+});
+
 test('blog switches between the default card view and time archive', async ({ page }) => {
   await page.goto('/blog/');
   const toggle = page.locator('[data-blog-view-toggle]');

@@ -14,9 +14,9 @@ const archives = buildArchives(posts);
 <BaseLayout title="博客文章">
   <HeroBanner title="博客文章" image="/images/default-cover.svg" />
   <WaveDivider />
-  <main class="blog-main container">
+  <main class="blog-main">
     <div class="blog-view" data-blog-view-root>
-      <div class="blog-toolbar">
+      <div class="blog-toolbar container">
         <p class="blog-total">共 <strong data-blog-total>{posts.length}</strong> 篇文章</p>
         <button
           type="button"
@@ -26,10 +26,10 @@ const archives = buildArchives(posts);
           hidden
         >切换到时间归档</button>
       </div>
-      <div id="blog-card-view" data-blog-card-view>
-        <PostList posts={posts} wide />
+      <div id="blog-card-view" class="blog-rail-shell container" data-blog-card-view>
+        <PostList posts={posts} />
       </div>
-      <section id="blog-archive-view" aria-label="按时间归档" data-blog-archive-view hidden>
+      <section id="blog-archive-view" class="container" aria-label="按时间归档" data-blog-archive-view hidden>
         <PostArchiveList archives={archives} />
       </section>
     </div>
@@ -50,4 +50,5 @@ const archives = buildArchives(posts);
   button[hidden] { display: none; }
   button:hover { border-color: var(--color-accent); color: var(--color-accent); }
   [data-blog-archive-view] { min-width: 0; }
+  @media (min-width: 1025px) { .blog-rail-shell { width: calc(100% - 4rem); } }
 </style>

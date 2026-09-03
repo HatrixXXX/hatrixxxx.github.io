@@ -26,15 +26,20 @@ const { title, posts } = Astro.props;
 <BaseLayout title={title}>
   <HeroBanner title={title} image="/images/default-cover.svg" />
   <WaveDivider />
-  <main class="blog-main container">
+  <main class="blog-main">
     {posts.length === 0 ? (
-      <EmptyState title="这个类型还没有文章" description="以后写到这类内容时，会放在这里。" />
+      <div class="container">
+        <EmptyState title="这个类型还没有文章" description="以后写到这类内容时，会放在这里。" />
+      </div>
     ) : (
-      <PostList posts={posts} wide />
+      <div class="blog-rail-shell container">
+        <PostList posts={posts} />
+      </div>
     )}
   </main>
 </BaseLayout>
 
 <style>
   .blog-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  @media (min-width: 1025px) { .blog-rail-shell { width: calc(100% - 4rem); } }
 </style>
