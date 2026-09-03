@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { POST_TYPES } from './config/navigation';
+import { isHttpsUrl } from './lib/safe-url';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' }),
@@ -35,7 +36,14 @@ const projects = defineCollection({
     status: z.enum(['idea', 'active', 'done', 'archived']),
     cover: z.string().optional(),
     tech: z.array(z.string()).default([]),
-    links: z.array(z.object({ label: z.string(), url: z.url() })).default([]),
+    links: z
+      .array(
+        z.object({
+          label: z.string(),
+          url: z.string().refine(isHttpsUrl, { message: 'project links must use https' })
+        })
+      )
+      .default([]),
     featured: z.boolean().default(false),
     order: z.number().int().default(0)
   })

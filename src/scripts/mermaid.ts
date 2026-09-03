@@ -2,7 +2,7 @@ let mermaidModule: Promise<(typeof import('mermaid'))['default']> | undefined;
 
 function loadMermaid() {
   mermaidModule ??= import('mermaid').then(({ default: mermaid }) => {
-    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
     return mermaid;
   });
   return mermaidModule;

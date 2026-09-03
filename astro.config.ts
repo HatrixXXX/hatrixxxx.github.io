@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import remarkContentSecurity from './src/plugins/remark-content-security';
 import remarkImageStatus from './src/plugins/remark-image-status';
 
 export default defineConfig({
@@ -21,7 +22,7 @@ export default defineConfig({
     ]
   },
   markdown: {
-    remarkPlugins: [remarkMath, remarkImageStatus],
+    remarkPlugins: [remarkMath, remarkContentSecurity, remarkImageStatus],
     rehypePlugins: [rehypeKatex],
     shikiConfig: { theme: 'github-dark' }
   }
