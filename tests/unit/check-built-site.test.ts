@@ -73,6 +73,65 @@ it('reports missing or late metadata and unsafe HTML attributes', () => {
 });
 
 it.each([
+  ['style', '<style>@import "https://evil.example/x.css"</style>'],
+  ['meta refresh', '<meta http-equiv="refresh" content="0;url=https://evil.example/">'],
+  ['link', '<link rel="stylesheet" href="https://evil.example/x.css">'],
+  ['iframe', '<iframe src="https://evil.example/"></iframe>'],
+  ['object', '<object data="/payload"></object>'],
+  ['embed', '<embed src="/payload">'],
+  ['base', '<base href="https://evil.example/">'],
+  ['form control', '<form action="/"><input name="secret"></form>'],
+  ['SVG', '<svg><script>alert(1)</script></svg>'],
+  ['MathML', '<math><mtext>payload</mtext></math>'],
+  ['script', '<script src="/payload.js"></script>']
+])('rejects %s hidden in noscript', (_label, payload) => {
+  const html = `<html>${secureHead}<body><noscript>${payload}</noscript></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/hidden/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('in noscript')
+  ]));
+});
+
+it('checks remote image resources hidden in noscript', () => {
+  const html = `<html>${secureHead}<body><noscript><img src="https://evil.example/tracker.png"></noscript></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/hidden-image/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unapproved remote image')
+  ]));
+});
+
+it('accepts text-only noscript fallback content', () => {
+  const html = `<html>${secureHead}<body><noscript>评论需要 JavaScript。</noscript></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/noscript-safe/')).toEqual([]);
+});
+
+it.each([
+  ['numeric tab', 'java&#9;script:alert(1)'],
+  ['named tab', 'java&Tab;script:alert(1)'],
+  ['named newline', 'java&NewLine;script:alert(1)'],
+  ['HTML data', 'data: text/html ; charset=utf-8,<script>alert(1)</script>'],
+  ['XHTML data', 'data: application/xhtml+xml;charset=utf-8,<html></html>'],
+  ['SVG data', 'data: image/svg+xml ; charset=utf-8,<svg></svg>']
+])('rejects parse5-decoded %s URLs in ordinary resource attributes', (_label, value) => {
+  const html = `<html>${secureHead}<body><a href="${value}">open</a></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/decoded-url/')).toEqual(expect.arrayContaining([
+    expect.stringMatching(/unsafe URL scheme|dangerous data document/)
+  ]));
+});
+
+it('rejects decoded dangerous URL candidates in srcset and imagesrcset', () => {
+  const html = `<html>${secureHead}<body><img srcset="javascript&colon;alert(1) 1x, data:image/svg+xml;charset=utf-8,%3Csvg%3E 2x"><link rel="preload" as="image" href="/hero.png" imagesrcset="vbscript&colon;msgbox(1) 1x, data:text/html;charset=utf-8,%3Cp%3E 2x"></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/decoded-srcset/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('srcset='),
+    expect.stringContaining('imagesrcset='),
+    expect.stringMatching(/unsafe URL scheme|dangerous data document/)
+  ]));
+});
+
+it.each([
   ['template', `<template>${secureHead}<script src="/template.js"></script></template>`],
   ['body', secureHead],
   ['foreign content', `<svg>${secureHead}</svg>`]

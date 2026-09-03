@@ -64,6 +64,8 @@ CSP 只在生产构建输出。开发服务器需要 Vite HMR 和 WebSocket，�
 
 构建使用 AST 检查已发布 Markdown，不扫描代码块里的示例文本，也不改写文章正文。
 
+原始 HTML 统一交给 parse5 解析，并显式设置 `scriptingEnabled: false`。这样 `<noscript>` 内的标签仍会进入语法树，不会被当成普通文本绕过检查。站点 origin、基于页面地址的 URL 解析、浏览器会执行的 `javascript:`/`vbscript:`、危险 `data:` MIME 和固定图床规则集中在 `src/lib/safe-url.ts`，Markdown 检查器与构建产物检查器使用同一套判定。
+
 原始 HTML 拒绝以下内容：
 
 - `script`、`iframe`、`object`、`embed`、`base`、`meta`、`link`、`style` 和表单控件；
@@ -87,6 +89,8 @@ Mermaid 初始化显式设置 `securityLevel: 'strict'`，不依赖上游默认�
 - `target="_blank"` 链接具备阻断 opener 的 `rel`；
 - 外部脚本只允许 Giscus，远程图片只允许已批准的 jsDelivr 前缀；
 - 现有 40 条旧文章路由、CNAME、第三方声明、站内链接总量和发布体积检查继续执行。
+
+产物检查同样以 `scriptingEnabled: false` 和源码位置信息解析 HTML。遍历时记录 `<noscript>` 祖先，拒绝其中的脚本、样式、元数据、外部资源标签、表单控件和 SVG/MathML；纯文本降级提示可以保留。`srcset` 与 `imagesrcset` 使用严格解析，每个候选地址再交给共享 URL 判定，无法解析时按失败处理。
 
 检查器报告文件、路由和违规值，不输出文章私密正文、管理员 key 或加密材料。加锁内容功能合入后，同一门禁必须覆盖公开外壳和解锁脚本。
 

@@ -1,8 +1,11 @@
 import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5';
+import {
+  dangerousBrowserUrlKind,
+  isApprovedRemoteImageUrl,
+  resolveBrowserUrl,
+  SITE_ORIGIN
+} from '../lib/safe-url';
 
-const IMMUTABLE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
-const SITE_URL = new URL('https://hatrix.site');
 const FORBIDDEN_TAGS = new Set([
   'script',
   'iframe',
@@ -25,7 +28,6 @@ const FORBIDDEN_TAGS = new Set([
 const URL_ATTRIBUTES = new Set(['href', 'src', 'action', 'formaction']);
 const IMAGE_FETCH_ATTRIBUTES = new Set(['poster', 'background']);
 const SAFE_INLINE_STYLE = /^\s*zoom\s*:\s*[1-9]\d*%\s*;?\s*$/;
-const ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
 
 type ContentNode = {
   type?: string;
@@ -41,37 +43,16 @@ function fail(file: FileLike, reason: string): never {
   throw new Error(`[remark-content-security] ${file.path ?? 'content'}: ${reason}`);
 }
 
-function dataMediaType(url: URL): string {
-  const commaIndex = url.pathname.indexOf(',');
-  const metadata = url.pathname.slice(0, commaIndex === -1 ? undefined : commaIndex);
-  const parameterIndex = metadata.indexOf(';');
-  return metadata
-    .slice(0, parameterIndex === -1 ? undefined : parameterIndex)
-    .replace(ASCII_WHITESPACE, '');
-}
-
-function isUnsafeUrl(url: URL): boolean {
-  if (url.protocol === 'javascript:' || url.protocol === 'vbscript:') return true;
-  return (
-    url.protocol === 'data:' &&
-    ['text/html', 'application/xhtml+xml', 'image/svg+xml'].includes(dataMediaType(url).toLowerCase())
-  );
-}
-
 function validateUrl(value: string, file: FileLike, isImage = false): void {
-  let url: URL;
-  try {
-    url = new URL(value, SITE_URL);
-  } catch {
-    return;
-  }
+  const url = resolveBrowserUrl(value, SITE_ORIGIN);
+  if (!url) return;
 
-  if (isUnsafeUrl(url)) fail(file, 'unsafe URL');
+  if (dangerousBrowserUrlKind(url, SITE_ORIGIN)) fail(file, 'unsafe URL');
   if (
     isImage &&
     (url.protocol === 'http:' || url.protocol === 'https:') &&
-    url.origin !== SITE_URL.origin &&
-    !url.href.startsWith(IMMUTABLE_IMAGE_PREFIX)
+    url.origin !== SITE_ORIGIN &&
+    !isApprovedRemoteImageUrl(url)
   ) {
     fail(file, 'unapproved remote image');
   }
@@ -113,7 +94,7 @@ function visitHtmlNodes(nodes: DefaultTreeAdapterTypes.ChildNode[], file: FileLi
 }
 
 function validateHtml(value: string, file: FileLike): void {
-  visitHtmlNodes(parseFragment(value).childNodes, file);
+  visitHtmlNodes(parseFragment(value, { scriptingEnabled: false }).childNodes, file);
 }
 
 function visit(node: ContentNode, file: FileLike): void {

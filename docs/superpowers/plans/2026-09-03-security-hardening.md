@@ -6,6 +6,8 @@
 
 **Architecture:** 浏览器策略集中在 `src/config/security.ts`，由公共布局输出，并由构建产物检查器复核。Markdown AST 插件在渲染前拒绝危险原始 HTML 和未批准的远程图片；CI 则固定工具链、Action 引用和可发布 ref。Cloudflare 作为下一阶段，不进入本计划的代码和验收。
 
+**最终复核补充（2026-09-03）：** 下方步骤与代码片段保留最初执行记录，不追改为最终源码。最终实现让 Markdown 和产物检查都以 parse5 的 `scriptingEnabled: false` 模式解析 HTML；产物解析另保留源码位置并追踪 `<noscript>` 祖先。两处检查共用 `src/lib/safe-url.ts` 的站点 origin、页面基址解析、危险协议与 `data:` MIME 判定、固定图床规则。运行时 CSP 以 `src/config/security.ts` 为准，包含 ClientRouter 所需的 `script-src data:`、Giscus 所需的脚本与样式来源，以及 Sakana 所需的 `media-src data:`。
+
 **Tech Stack:** Astro 7、TypeScript 5.9、Vitest 4、Playwright 1.62、GitHub Actions、Corepack、pnpm 11.25.0。
 
 ## Global Constraints

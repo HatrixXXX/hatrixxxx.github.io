@@ -30,6 +30,13 @@ const UNSAFE_STYLE_VALUES = [
   'color:red'
 ];
 const SAFE_STYLE_VALUES = ['zoom:50%;', 'zoom: 67%', 'zoom:300%;'];
+const FORBIDDEN_NOSCRIPT_HTML = [
+  '<noscript><style>@import "https://evil.example/x.css"</style></noscript>',
+  '<noscript><meta http-equiv="refresh" content="0;url=https://evil.example/"></noscript>',
+  '<noscript><link rel="stylesheet" href="https://evil.example/x.css"></noscript>',
+  '<noscript><iframe src="https://evil.example/"></iframe></noscript>',
+  '<noscript><img src="https://evil.example/tracker.png"></noscript>'
+];
 
 function transform(children: Array<Record<string, unknown>>) {
   return () => remarkContentSecurity()({ type: 'root', children }, { path: 'post.md' });
@@ -63,6 +70,27 @@ describe('published content security', () => {
     '<a href="java&Tab;script&colon;alert(1)">open</a>'
   ])('rejects browser-normalized executable raw HTML URLs: %s', (value) => {
     expect(transform([{ type: 'html', value }])).toThrow(/unsafe URL/i);
+  });
+
+  it.each([
+    '<a href="java&#9;script:alert(1)">open</a>',
+    '<a href="java&Tab;script:alert(1)">open</a>',
+    '<a href="java&NewLine;script:alert(1)">open</a>',
+    '<a href="data: text/html ; charset=utf-8,<script>alert(1)</script>">open</a>',
+    '<a href="data: application/xhtml+xml;charset=utf-8,<html></html>">open</a>',
+    '<a href="data: image/svg+xml ; charset=utf-8,<svg></svg>">open</a>'
+  ])('rejects decoded executable URLs with whitespace or MIME parameters: %s', (value) => {
+    expect(transform([{ type: 'html', value }])).toThrow(/unsafe URL/i);
+  });
+
+  it.each(FORBIDDEN_NOSCRIPT_HTML)('rejects forbidden content hidden in noscript: %s', (value) => {
+    expect(transform([{ type: 'html', value }])).toThrow(
+      /forbidden raw HTML tag|unapproved remote image/i
+    );
+  });
+
+  it('accepts text-only noscript fallback content', () => {
+    expect(transform([{ type: 'html', value: '<noscript>评论需要 JavaScript。</noscript>' }])).not.toThrow();
   });
 
   it('rejects remote images outside the immutable prefix', () => {
@@ -180,6 +208,19 @@ describe('published content security', () => {
 
   it.each(SAFE_STYLE_VALUES)('accepts existing zoom formatting through Astro markdown: %s', async (style) => {
     await expect(renderMarkdown(`<div style="${style}"></div>`)).resolves.toBeDefined();
+  });
+
+  it.each(FORBIDDEN_NOSCRIPT_HTML)(
+    'rejects forbidden noscript content through Astro markdown processing: %s',
+    async (value) => {
+      await expect(renderMarkdown(value)).rejects.toThrow(
+        /forbidden raw HTML tag|unapproved remote image/i
+      );
+    }
+  );
+
+  it('accepts text-only noscript fallback content through Astro markdown processing', async () => {
+    await expect(renderMarkdown('<noscript>评论需要 JavaScript。</noscript>')).resolves.toBeDefined();
   });
 
   it('accepts code examples and pinned images', () => {

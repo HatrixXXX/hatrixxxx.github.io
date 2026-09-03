@@ -113,16 +113,24 @@ describe('Astro project tooling', () => {
     expect(deployJob).toContain('    permissions:\n      pages: write\n      id-token: write\n');
   });
 
-  it('pins Corepack and every GitHub Action to immutable versions', () => {
+  it('pins Corepack and the complete approved GitHub Action sequence', () => {
     const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
     const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8');
-    const actionRefs = [...workflow.matchAll(/^\s+uses:\s+[^@\s]+@([^\s#]+)/gm)].map(
-      (match) => match[1]
+    const actions = [...workflow.matchAll(/^\s+uses:\s+([^@\s]+)@([^\s#]+)\s+#\s+(.+)$/gm)].map(
+      ([, action, revision, version]) => ({ action, revision, version })
     );
 
     expect(packageJson.packageManager).toBe('pnpm@11.25.0');
-    expect(actionRefs.length).toBeGreaterThan(0);
-    expect(actionRefs.every((ref) => /^[a-f0-9]{40}$/.test(ref))).toBe(true);
+    expect(actions).toEqual([
+      { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
+      { action: 'actions/configure-pages', revision: '45bfe0192ca1faeb007ade9deae92b16b8254a0d', version: 'v6' },
+      { action: 'actions/setup-node', revision: '820762786026740c76f36085b0efc47a31fe5020', version: 'v7' },
+      { action: 'actions/cache', revision: '55cc8345863c7cc4c66a329aec7e433d2d1c52a9', version: 'v6' },
+      { action: 'actions/cache', revision: '55cc8345863c7cc4c66a329aec7e433d2d1c52a9', version: 'v6' },
+      { action: 'actions/upload-pages-artifact', revision: 'fc324d3547104276b827a68afc52ff2a11cc49c9', version: 'v5' },
+      { action: 'actions/deploy-pages', revision: '368f82528645a54fb793d4d04e342629a3f51346', version: 'v5' }
+    ]);
+    expect(actions.every(({ revision }) => /^[a-f0-9]{40}$/.test(revision))).toBe(true);
   });
 
   it('does not persist checkout credentials or deploy a manually selected non-master ref', () => {

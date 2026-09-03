@@ -6,15 +6,37 @@ import { ident, parse as parseCss, walk as walkCss } from 'css-tree';
 import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
+import {
+  dangerousBrowserUrlKind,
+  isApprovedRemoteImageUrl,
+  resolveBrowserUrl,
+  SITE_ORIGIN
+} from '../src/lib/safe-url';
 import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
-const SITE_ORIGIN = 'https://hatrix.site';
 const EXPECTED_LOCAL_LINKS = 3961;
-const IMMUTABLE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
 const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+const NOSCRIPT_FORBIDDEN_TAGS = new Set([
+  'script',
+  'iframe',
+  'object',
+  'embed',
+  'base',
+  'meta',
+  'link',
+  'style',
+  'form',
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'option',
+  'source',
+  'svg',
+  'math'
+]);
 
 export interface BuiltSiteCheckOptions {
   sourceCnamePath?: string;
@@ -77,16 +99,10 @@ function routeForHtmlFile(root: string, file: string): string {
 
 function localTargetPath(link: string, sourceRoute: string): string | undefined {
   const value = link.trim();
-  if (!value || value.startsWith('#') || /^(?:data|mailto|tel|javascript):/i.test(value) || value.startsWith('//')) {
-    return undefined;
-  }
+  if (!value || value.startsWith('#')) return undefined;
 
-  let url: URL;
-  try {
-    url = new URL(value, `${SITE_ORIGIN}${sourceRoute}`);
-  } catch {
-    return undefined;
-  }
+  const url = resolveBrowserUrl(value, `${SITE_ORIGIN}${sourceRoute}`);
+  if (!url) return undefined;
   if (url.origin !== SITE_ORIGIN) return undefined;
 
   const decodedPath = decodePathname(url.pathname);
@@ -111,17 +127,19 @@ function localLinks(html: string): string[] {
 interface ParsedElement {
   element: DefaultTreeAdapterTypes.Element;
   inTemplate: boolean;
+  inNoscript: boolean;
 }
 
 function htmlElements(html: string): ParsedElement[] {
   const elements: ParsedElement[] = [];
-  const document = parse(html, { sourceCodeLocationInfo: true });
+  const document = parse(html, { scriptingEnabled: false, sourceCodeLocationInfo: true });
 
-  function visit(node: DefaultTreeAdapterTypes.Node, inTemplate = false): void {
-    if ('tagName' in node) elements.push({ element: node, inTemplate });
-    if ('content' in node) visit(node.content, true);
+  function visit(node: DefaultTreeAdapterTypes.Node, inTemplate = false, inNoscript = false): void {
+    const childInNoscript = inNoscript || ('tagName' in node && node.tagName === 'noscript');
+    if ('tagName' in node) elements.push({ element: node, inTemplate, inNoscript });
+    if ('content' in node) visit(node.content, true, childInNoscript);
     if ('childNodes' in node) {
-      for (const child of node.childNodes) visit(child, inTemplate);
+      for (const child of node.childNodes) visit(child, inTemplate, childInNoscript);
     }
   }
 
@@ -138,20 +156,12 @@ function attributeName(attribute: DefaultTreeAdapterTypes.Element['attrs'][numbe
 }
 
 function parsedUrl(value: string, route: string): URL | undefined {
-  try {
-    return new URL(value.trim(), `${SITE_ORIGIN}${route}`);
-  } catch {
-    return undefined;
-  }
+  return resolveBrowserUrl(value, `${SITE_ORIGIN}${route}`);
 }
 
 function externalUrl(value: string, route: string): URL | undefined {
   const url = parsedUrl(value, route);
   return url?.origin === SITE_ORIGIN ? undefined : url;
-}
-
-function isDangerousDataUrl(value: string): boolean {
-  return /^data:\s*(?:text\/html|application\/xhtml\+xml|image\/svg\+xml)(?:[;,]|$)/i.test(value.trim());
 }
 
 function isHtmlElement(
@@ -187,10 +197,11 @@ function imageSourceErrors(attribute: string, value: string, route: string): str
 
   const errors: string[] = [];
   for (const candidate of candidates) {
-    if (/^\s*(?:javascript|vbscript):/i.test(candidate)) {
+    const dangerousKind = dangerousBrowserUrlKind(candidate, `${SITE_ORIGIN}${route}`);
+    if (dangerousKind === 'executable-scheme') {
       errors.push(diagnostic(route, 'Found unsafe URL scheme', attribute, candidate));
     }
-    if (isDangerousDataUrl(candidate)) {
+    if (dangerousKind === 'dangerous-data-document') {
       errors.push(diagnostic(route, 'Found dangerous data document', attribute, candidate));
     }
   }
@@ -202,7 +213,7 @@ function resourceErrors(message: string, attribute: string, value: string, route
   const errors: string[] = [];
   for (const candidate of candidates) {
     const url = parsedUrl(candidate, route);
-    if (url && url.origin !== 'null' && url.origin !== SITE_ORIGIN && !url.href.startsWith(IMMUTABLE_IMAGE_PREFIX)) {
+    if (url && url.origin !== 'null' && url.origin !== SITE_ORIGIN && !isApprovedRemoteImageUrl(url)) {
       errors.push(diagnostic(route, message, attribute, url.origin));
     }
   }
@@ -297,7 +308,10 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
     errors.push(diagnostic(route, 'CSP must appear before every script', 'script', 'active'));
   }
 
-  for (const { element } of elements) {
+  for (const { element, inNoscript } of elements) {
+    if (inNoscript && NOSCRIPT_FORBIDDEN_TAGS.has(element.tagName)) {
+      errors.push(diagnostic(route, `Found forbidden <${element.tagName}> in noscript`, 'element', element.tagName));
+    }
     if (element.tagName === 'meta' && attributeValue(element, 'http-equiv')?.trim().toLowerCase() === 'refresh') {
       errors.push(diagnostic(route, 'Found meta refresh', 'http-equiv', attributeValue(element, 'http-equiv')));
     }
@@ -326,14 +340,14 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
       if (/^on[a-z0-9_-]+$/i.test(attribute.name)) {
         errors.push(diagnostic(route, 'Found inline event attribute', attribute.name, attribute.value));
       }
-      if (
-        /^(?:href|src|action|formaction|data|poster|background)$/i.test(attribute.name) &&
-        /^\s*(?:javascript|vbscript):/i.test(attribute.value)
-      ) {
-        errors.push(diagnostic(route, 'Found unsafe URL scheme', attribute.name, attribute.value));
-      }
-      if (/^(?:href|src|action|formaction|data|poster|background)$/i.test(attribute.name) && isDangerousDataUrl(attribute.value)) {
-        errors.push(diagnostic(route, 'Found dangerous data document', attribute.name, attribute.value));
+      if (/^(?:href|src|action|formaction|data|poster|background)$/i.test(attribute.name)) {
+        const dangerousKind = dangerousBrowserUrlKind(attribute.value, `${SITE_ORIGIN}${route}`);
+        if (dangerousKind === 'executable-scheme') {
+          errors.push(diagnostic(route, 'Found unsafe URL scheme', attribute.name, attribute.value));
+        }
+        if (dangerousKind === 'dangerous-data-document') {
+          errors.push(diagnostic(route, 'Found dangerous data document', attribute.name, attribute.value));
+        }
       }
       if (attribute.name === 'style') {
         errors.push(...cssResourceErrors(attribute.name, attribute.value, route, 'declarationList'));
