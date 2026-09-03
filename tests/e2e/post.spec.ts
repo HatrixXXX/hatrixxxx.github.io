@@ -47,10 +47,10 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
   await expect(page.locator('a[href^="/categories/"], a[href^="/tags/"]')).toHaveCount(0);
 });
 
-test('article navigation targets the home article feed', async ({ page }) => {
+test('blog navigation targets its index while home retains the article feed', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('link', { name: '文章' }).first()).toHaveAttribute('href', '/#articles');
+  await expect(page.getByRole('link', { name: '博客文章', exact: true }).first()).toHaveAttribute('href', '/blog/');
   await expect(page.locator('main#articles')).toBeVisible();
 });
 

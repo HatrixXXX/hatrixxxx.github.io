@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const routes = [
   '/',
+  '/blog/',
   '/posts/本科数学大杂烩/',
   '/archives/',
   '/projects/',
@@ -20,10 +21,23 @@ for (const path of routes) {
     });
     await page.waitForFunction(() => [...document.images].every((image) => image.complete));
 
+    await page.mouse.move(0, 0);
+    const viewport = page.viewportSize();
+    if (viewport && viewport.width > 768) {
+      for (const submenu of await page.locator('.desktop-nav .submenu').all()) {
+        await expect(submenu).toBeHidden();
+      }
+    } else {
+      await expect(page.locator('[data-menu-toggle]')).toHaveAttribute('aria-expanded', 'false');
+      await expect(page.locator('[data-mobile-menu]')).toBeHidden();
+    }
+
     const metrics = await page.evaluate(() => ({
       bodies: document.querySelectorAll('body').length,
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
+      headerScrollWidth: document.querySelector<HTMLElement>('[data-site-header]')?.scrollWidth,
+      headerClientWidth: document.querySelector<HTMLElement>('[data-site-header]')?.clientWidth,
       emptyTallBlocks: [...document.querySelectorAll('main *, article[data-post] *')]
         .filter((element) => {
           const rect = element.getBoundingClientRect();
@@ -55,6 +69,9 @@ for (const path of routes) {
 
     expect(metrics.bodies).toBe(1);
     expect(metrics.scrollWidth).toBe(metrics.clientWidth);
+    if (viewport && viewport.width <= 768) {
+      expect(metrics.headerScrollWidth).toBe(metrics.headerClientWidth);
+    }
     expect(metrics.emptyTallBlocks).toEqual([]);
     expect(metrics.postArticles).toBe(path.startsWith('/posts/') ? 1 : 0);
     expect(metrics.duplicateVisibleCardLinks).toBe(0);

@@ -1,5 +1,30 @@
 import { expect, test } from '@playwright/test';
 
+const generatedRoutes = [
+  '/blog/',
+  '/blog/tech-notes/',
+  '/blog/troubleshooting/',
+  '/blog/life/',
+  '/blog/recommendations/',
+  '/blog/essays/',
+  '/about/hobbies/',
+  '/about/research/',
+  '/about/reading/',
+  '/about/games/',
+  '/about/albums/',
+  '/about/gear/',
+  '/about/tools/',
+  '/about/bookmarks/',
+  '/about/friends/',
+  '/guestbook/'
+];
+
+for (const route of generatedRoutes) {
+  test(`${route} is generated`, async ({ request }) => {
+    expect((await request.get(route)).status()).toBe(200);
+  });
+}
+
 test('content index pages reflect migrated data', async ({ page, request }) => {
   await page.goto('/archives/');
   await expect(page.locator('[data-archive-total]')).toHaveText('40');
