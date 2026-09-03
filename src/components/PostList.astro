@@ -9,14 +9,66 @@ interface Props {
 const { posts } = Astro.props;
 ---
 
-<section class="post-list" aria-label="文章列表">
-  {posts.map((post, index) => <PostCard post={post} index={index} />)}
+<section
+  class="post-list"
+  aria-label="文章列表"
+  aria-describedby="post-list-instructions"
+  tabindex="0"
+  data-post-rail
+>
+  {posts.map((post) => <PostCard post={post} />)}
 </section>
+<p id="post-list-instructions" class="post-list-instructions">
+  使用鼠标滚轮、拖拽、触摸滑动或方向键横向浏览文章。
+</p>
 
 <style>
   .post-list {
-    display: grid;
+    display: flex;
     min-width: 0;
-    gap: clamp(1.25rem, 3vw, 2rem);
+    align-items: stretch;
+    gap: clamp(1rem, 2.2vw, 1.5rem);
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.25rem 0.125rem 1rem;
+    cursor: grab;
+    scroll-padding-inline: 0.125rem;
+    scroll-snap-type: x proximity;
+    scrollbar-color: var(--color-accent) var(--color-surface-raised);
+    scrollbar-width: thin;
+  }
+
+  .post-list::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .post-list::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: var(--color-surface-raised);
+  }
+
+  .post-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--color-accent);
+  }
+
+  .post-list[data-dragging='true'] {
+    cursor: grabbing;
+    scroll-snap-type: none;
+  }
+
+  .post-list[data-dragging='true'] :global(*) {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  .post-list-instructions {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 </style>

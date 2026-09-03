@@ -13,6 +13,9 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
 
   await page.getByRole('link', { name: '博客文章', exact: true }).click();
   await expect(page.locator('[data-blog-total]')).toHaveText('40');
+  const rail = page.locator('[data-post-rail]');
+  await expect(rail).toBeVisible();
+  expect(await rail.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
   await page.getByRole('link', { name: '本科数学大杂烩', exact: true }).click();
   await expect(page.locator('article[data-post]')).toBeVisible();
   const commentsText = await page.locator('[data-giscus-comments]').evaluate(

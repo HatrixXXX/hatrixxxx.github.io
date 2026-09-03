@@ -7,6 +7,25 @@ test('blog index lists every published post', async ({ page, request }) => {
   await expect(page.locator('[data-blog-total]')).toHaveText('40');
   await expect(page.locator('article[data-post-card]')).toHaveCount(40);
 
+  const rail = page.locator('[data-post-rail]');
+  await expect(rail).toHaveAttribute('tabindex', '0');
+  const layout = await rail.evaluate((element) => {
+    const cards = [...element.querySelectorAll<HTMLElement>('article[data-post-card]')];
+    const tops = cards.slice(0, 4).map((card) => Math.round(card.getBoundingClientRect().top));
+    const firstWidth = cards[0]?.getBoundingClientRect().width ?? 0;
+    return {
+      overflow: element.scrollWidth > element.clientWidth,
+      tops,
+      firstWidth,
+      rootOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+    };
+  });
+  expect(layout.overflow).toBe(true);
+  expect(new Set(layout.tops).size).toBe(1);
+  expect(layout.firstWidth).toBeGreaterThanOrEqual(272);
+  expect(layout.firstWidth).toBeLessThanOrEqual(352);
+  expect(layout.rootOverflow).toBe(0);
+
   const dates = await page.locator('article[data-post-card] time').evaluateAll((times) =>
     times.map((time) => Date.parse(time.getAttribute('datetime') ?? ''))
   );
