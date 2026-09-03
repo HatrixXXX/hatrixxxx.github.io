@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { resolve } from 'node:path';
 import { checkImages, collectImageSources, coverFailuresFor, extractImageUrls } from '../../scripts/check-images';
+import { contentRoot } from '../../src/lib/content-root';
 import remarkImageStatus from '../../src/plugins/remark-image-status';
 
 const IMAGE_REPOSITORY = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image';
 const IMAGE_REPOSITORY_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
 const IMMUTABLE_IMAGE_PREFIX = `${IMAGE_REPOSITORY}@${IMAGE_REPOSITORY_REF}/`;
+const USES_PUBLIC_FIXTURES = contentRoot() === resolve('tests/fixtures/private-content');
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -12,8 +15,8 @@ afterEach(() => {
 });
 
 describe('remote image checking', () => {
-  it('pins the complete published image inventory to the immutable repository commit', async () => {
-    const sources = await collectImageSources('src/content/posts');
+  it.skipIf(USES_PUBLIC_FIXTURES)('pins the complete published image inventory to the immutable repository commit', async () => {
+    const sources = await collectImageSources(contentRoot('posts'));
     const blogImageUrls = sources.urls.filter((url) => url.startsWith(IMAGE_REPOSITORY));
     const unpinned = blogImageUrls.filter((url) => !url.startsWith(IMMUTABLE_IMAGE_PREFIX));
 
@@ -47,9 +50,9 @@ describe('remote image checking', () => {
     expect(extractImageUrls(`![](<${url}>)`)).toEqual([url]);
   });
 
-  it('includes the transformed cover from the real post source', async () => {
+  it.skipIf(USES_PUBLIC_FIXTURES)('includes the transformed cover from the real post source', async () => {
     const transformedCover = `${IMMUTABLE_IMAGE_PREFIX}img/994.jpg!list1x.v2`;
-    const sources = await collectImageSources('src/content/posts');
+    const sources = await collectImageSources(contentRoot('posts'));
 
     expect(sources.coverUrls.has(transformedCover)).toBe(true);
     expect(sources.urls).toContain(transformedCover);

@@ -5,6 +5,8 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+  repository_dispatch:
+    types: [content-updated]
 
 permissions:
   contents: read
@@ -14,13 +16,104 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  validate-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    env:
+      HATRIX_CONTENT_DIR: tests/fixtures/private-content
+      HATRIX_ADMIN_KEY: test-admin
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Find pnpm store
+        shell: bash
+        run: echo "STORE_PATH=$(corepack pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Restore pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: corepack pnpm test:run
+
+      - name: Check Astro types
+        run: corepack pnpm check
+
+      - name: Build fixture site
+        run: corepack pnpm build
+
+  build-production:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      HATRIX_CONTENT_DIR: .private-content
+    steps:
+      - name: Checkout site
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      - name: Require production secrets
+        shell: bash
+        env:
+          HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}
+          HATRIX_CONTENT_TOKEN: ${{ secrets.HATRIX_CONTENT_TOKEN }}
+        run: |
+          if [[ -z "$HATRIX_ADMIN_KEY" ]]; then
+            echo "::error::Required secret HATRIX_ADMIN_KEY is not configured."
+            exit 1
+          fi
+          if (( ${#HATRIX_ADMIN_KEY} < 8 )); then
+            echo "::error::Required secret HATRIX_ADMIN_KEY is shorter than 8 characters."
+            exit 1
+          fi
+          if [[ -z "$HATRIX_CONTENT_TOKEN" ]]; then
+            echo "::error::Required secret HATRIX_CONTENT_TOKEN is not configured."
+            exit 1
+          fi
+
+      - name: Resolve private content SHA
+        id: content
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.HATRIX_CONTENT_TOKEN }}
+          DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" ]]; then
+            content_sha="$DISPATCH_CONTENT_SHA"
+          else
+            content_sha="$(gh api repos/HatrixXXX/hatrix-content/commits/HEAD --jq .sha)"
+          fi
+          if [[ ! "$content_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Private content SHA must be a 40-character hexadecimal commit."
+            exit 1
+          fi
+          echo "sha=$content_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout private content
+        uses: actions/checkout@v7
+        with:
+          repository: HatrixXXX/hatrix-content
+          token: ${{ secrets.HATRIX_CONTENT_TOKEN }}
+          ref: ${{ steps.content.outputs.sha }}
+          path: .private-content
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
@@ -48,7 +141,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: .astro
-          key: astro-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'astro.config.ts', 'src/content/**', 'src/plugins/**') }}
+          key: astro-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'astro.config.ts', 'src/**') }}-${{ steps.content.outputs.sha }}
           restore-keys: astro-${{ runner.os }}-
 
       - name: Install dependencies
@@ -61,20 +154,21 @@ jobs:
         run: corepack pnpm check
 
       - name: Build site
+        env:
+          HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}
         run: corepack pnpm build
 
       - name: Check built site
         run: corepack pnpm check:site
 
       - name: Upload Pages artifact
-        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    needs: build
+    if: github.event_name != 'pull_request'
+    needs: build-production
     runs-on: ubuntu-latest
     permissions:
       pages: write

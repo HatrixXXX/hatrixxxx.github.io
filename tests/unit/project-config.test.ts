@@ -6,6 +6,14 @@ import playwrightConfig from '../../playwright.config';
 const PINNED_IMAGE_PATH =
   '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**';
 
+function workflowJob(workflow: string, name: string): string {
+  const start = workflow.indexOf(`\n  ${name}:`);
+  expect(start, `workflow job ${name}`).toBeGreaterThanOrEqual(0);
+  const remainder = workflow.slice(start + 1);
+  const next = remainder.slice(1).search(/\n  [a-z][a-z0-9-]*:\n/);
+  return next === -1 ? remainder : remainder.slice(0, next + 1);
+}
+
 describe('Astro project tooling', () => {
   it('enables Node environment proxy support for image checks and the entire build', () => {
     const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -79,6 +87,22 @@ describe('Astro project tooling', () => {
     ]));
   });
 
+  it('keeps private content ignored and article sources out of the public tree', () => {
+    const entries = readFileSync('.gitignore', 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.trim());
+    const publicSources = existsSync('src/content/posts')
+      ? readdirSync('src/content/posts').filter((file) => /\.mdx?$/.test(file))
+      : [];
+
+    expect(entries).toContain('.private-content/');
+    expect(publicSources).toEqual([]);
+    expect(readdirSync('tests/fixtures/private-content/posts').sort()).toEqual([
+      'locked.md',
+      'public.md'
+    ]);
+  });
+
   it('starts the Playwright server through the project package manager', () => {
     expect(playwrightConfig.webServer).toMatchObject({
       command: 'corepack pnpm dev --host 127.0.0.1 --port 4322',
@@ -112,5 +136,63 @@ describe('Astro project tooling', () => {
 
     expect(workflowPermissions).toBe('  contents: read\n');
     expect(deployJob).toContain('    permissions:\n      pages: write\n      id-token: write\n');
+  });
+
+  it('isolates pull request validation from production content and secrets', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+    const pullRequestJob = workflowJob(workflow, 'validate-pr');
+
+    expect(workflow).toContain('  pull_request:');
+    expect(pullRequestJob).toContain("if: github.event_name == 'pull_request'");
+    expect(pullRequestJob).toContain('HATRIX_CONTENT_DIR: tests/fixtures/private-content');
+    expect(pullRequestJob).toContain('HATRIX_ADMIN_KEY: test-admin');
+    expect(pullRequestJob).toContain('run: corepack pnpm test:run');
+    expect(pullRequestJob).toContain('run: corepack pnpm check');
+    expect(pullRequestJob).toContain('run: corepack pnpm build');
+    expect(pullRequestJob).not.toContain('secrets.');
+    expect(pullRequestJob).not.toContain('.private-content');
+    expect(pullRequestJob).not.toContain('upload-pages-artifact');
+    expect(pullRequestJob).not.toContain('deploy-pages');
+  });
+
+  it('defaults the protected output audit to the private content root', () => {
+    const script = readFileSync('scripts/check-protected-output.ts', 'utf8');
+
+    expect(script).toContain("import { contentRoot } from '../src/lib/content-root';");
+    expect(script).toContain('const sourceRoot = resolve(args[0] ?? contentRoot());');
+    expect(script).toContain('inspectProtectedOutput(sourceRoot, distRoot)');
+    expect(script).not.toContain("process.env.HATRIX_CONTENT_DIR ?? 'src/content'");
+  });
+
+  it('checks out an exact private content commit for every production deployment', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+    const productionJob = workflowJob(workflow, 'build-production');
+    const deployJob = workflowJob(workflow, 'deploy');
+
+    expect(workflow).toContain('  push:\n    branches: [master]');
+    expect(workflow).toContain('  workflow_dispatch:');
+    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated]');
+    expect(productionJob).toContain("if: github.event_name != 'pull_request'");
+    expect(productionJob).toContain('HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}');
+    expect(productionJob).toContain('HATRIX_CONTENT_TOKEN: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
+    expect(productionJob.slice(0, productionJob.indexOf('\n    steps:'))).not.toContain('secrets.');
+    expect(productionJob).toContain(
+      '      - name: Build site\n' +
+      '        env:\n' +
+      '          HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}\n' +
+      '        run: corepack pnpm build'
+    );
+    expect(productionJob).toContain('Required secret HATRIX_ADMIN_KEY is not configured.');
+    expect(productionJob).toContain('Required secret HATRIX_CONTENT_TOKEN is not configured.');
+    expect(productionJob).toContain('DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}');
+    expect(productionJob).toContain('repos/HatrixXXX/hatrix-content/commits/HEAD');
+    expect(productionJob).toContain('repository: HatrixXXX/hatrix-content');
+    expect(productionJob).toContain('ref: ${{ steps.content.outputs.sha }}');
+    expect(productionJob).toContain('path: .private-content');
+    expect(productionJob).toContain('run: corepack pnpm check:site');
+    expect(productionJob).not.toContain('tests/fixtures/private-content');
+    expect(deployJob).toContain("if: github.event_name != 'pull_request'");
+    expect(deployJob).toContain('needs: build-production');
+    expect(deployJob).toContain('uses: actions/deploy-pages@v5');
   });
 });

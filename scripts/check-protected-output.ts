@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
+import { contentRoot } from '../src/lib/content-root';
 
 export interface ProtectedOutputCheckResult {
   errors: string[];
@@ -271,9 +272,9 @@ export async function inspectProtectedOutput(
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args[0] === '--') args.shift();
-  const contentRoot = resolve(args[0] ?? process.env.HATRIX_CONTENT_DIR ?? 'src/content');
+  const sourceRoot = resolve(args[0] ?? contentRoot());
   const distRoot = resolve(args[1] ?? 'dist');
-  const result = await inspectProtectedOutput(contentRoot, distRoot);
+  const result = await inspectProtectedOutput(sourceRoot, distRoot);
   if (result.errors.length === 0) {
     console.log('Protected output audit passed.');
     return;

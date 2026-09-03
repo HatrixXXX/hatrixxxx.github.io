@@ -2,10 +2,11 @@ import { defineConfig } from 'astro/config';
 import type { AstroIntegration } from 'astro';
 import sitemap from '@astrojs/sitemap';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import matter from 'gray-matter';
 import { siteMarkdownConfig } from './src/config/markdown';
 import { LOCKED_PAGE_PATHS, normalizeRoutePath } from './src/config/protected-content';
+import { contentRoot } from './src/lib/content-root';
 import { postPath } from './src/lib/urls';
 
 function markdownFiles(directory: string): string[] {
@@ -17,11 +18,7 @@ function markdownFiles(directory: string): string[] {
 }
 
 function sitemapExcludedRoutes(): Set<string> {
-  const configuredContentRoot = process.env.HATRIX_CONTENT_DIR;
-  const privatePostsRoot = resolve(configuredContentRoot ?? '.private-content', 'posts');
-  const postsRoot = existsSync(privatePostsRoot)
-    ? privatePostsRoot
-    : resolve('src/content/posts');
+  const postsRoot = contentRoot('posts');
   const routes = new Set(LOCKED_PAGE_PATHS.map(normalizeRoutePath));
 
   if (!existsSync(postsRoot)) return routes;

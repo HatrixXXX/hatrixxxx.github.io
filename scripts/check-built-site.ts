@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
+import { contentRoot } from '../src/lib/content-root';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 const SITE_ORIGIN = 'https://hatrix.site';
@@ -14,6 +15,7 @@ export interface BuiltSiteCheckOptions {
 
 export interface ProjectBuiltSiteCheckOptions {
   expectedLocalLinks?: number;
+  sourceContentRoot?: string;
 }
 
 export interface BuiltSiteCheckResult {
@@ -221,7 +223,8 @@ export async function inspectProjectBuiltSite(
   options: ProjectBuiltSiteCheckOptions = {}
 ): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
-  const postsDirectory = resolve(projectRoot, 'src/content/posts');
+  const sourceContentRoot = resolve(projectRoot, options.sourceContentRoot ?? '.private-content');
+  const postsDirectory = resolve(sourceContentRoot, 'posts');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
   const routes: string[] = [];
   for (const file of postFiles) {
@@ -254,7 +257,8 @@ export async function inspectProjectBuiltSite(
 
 async function main(): Promise<void> {
   const result = await inspectProjectBuiltSite(process.cwd(), {
-    expectedLocalLinks: EXPECTED_LOCAL_LINKS
+    expectedLocalLinks: EXPECTED_LOCAL_LINKS,
+    sourceContentRoot: contentRoot()
   });
 
   console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);
