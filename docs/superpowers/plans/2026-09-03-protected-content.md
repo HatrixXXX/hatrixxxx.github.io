@@ -399,23 +399,23 @@ Commit: `feat: prevent protected content metadata leaks`
 - Private repository secret: fine-grained `HATRIX_SITE_DISPATCH_TOKEN`，只允许向公开仓库发送 dispatch。
 - Dispatch payload: `{ content_sha: github.sha }`。
 
-- [ ] **Step 1: 写 workflow 和内容根目录失败测试**
+- [x] **Step 1: 写 workflow 和内容根目录失败测试**
 
 `tests/unit/project-config.test.ts` 断言公开 workflow 的生产 job 检出 `.private-content` 指定 SHA、只在非 PR 使用正式 secrets、PR 使用 `tests/fixtures/private-content`、dispatch 后仍走 Pages deploy。断言私有内容目录被忽略，公开 posts 目录不再包含文章正文。
 
-- [ ] **Step 2: 运行测试并确认 RED**
+- [x] **Step 2: 运行测试并确认 RED**
 
 Run: `corepack pnpm test:run tests/unit/project-config.test.ts tests/unit/content-schema.test.ts`
 
 Expected: FAIL，原因是 workflow 和内容路径尚未迁移。
 
-- [ ] **Step 3: 安全迁移本地内容并更新脚本**
+- [x] **Step 3: 安全迁移本地内容并更新脚本**
 
 先复制 40 篇文章到 `.private-content/posts/`，逐文件校验 SHA-256 和数量一致，再在 `.private-content` 初始化独立 Git 仓库并提交。只有私有仓库本地提交成功后，才从公开分支删除 `src/content/posts/*.md`。图片预检、schema 测试和 built-site 检查统一通过 `contentRoot()` 读取。
 
 公开 workflow 的 PR job 不接触任何正式 secret；正式 job 对缺失 secret 立即失败。私有 workflow 使用 `repository_dispatch` 传递精确内容 SHA。不得在本任务中推送、部署或创建远端仓库。
 
-- [ ] **Step 4: 验证迁移和 workflow 测试并提交**
+- [x] **Step 4: 验证迁移和 workflow 测试并提交**
 
 Run: `corepack pnpm test:run tests/unit/project-config.test.ts tests/unit/content-schema.test.ts tests/unit/check-images.test.ts`
 
