@@ -24,8 +24,7 @@ const FORBIDDEN_TAGS = new Set([
 ]);
 const URL_ATTRIBUTES = new Set(['href', 'src', 'action', 'formaction']);
 const IMAGE_FETCH_ATTRIBUTES = new Set(['poster', 'background']);
-const UNSAFE_INLINE_STYLE =
-  /(?:url\s*\(|(?:-[a-z0-9]+-)?image-set\s*\(|@import\b|expression\s*\(|(?:^|[;\s])behavior\s*:|-moz-binding\s*:)/i;
+const SAFE_INLINE_STYLE = /^\s*zoom\s*:\s*[1-9]\d*%\s*;?\s*$/;
 const ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
 
 type ContentNode = {
@@ -92,7 +91,7 @@ function visitHtmlElement(element: HtmlElement, file: FileLike): void {
   for (const attribute of element.attrs) {
     if (isForbiddenAttribute(attribute.name)) fail(file, 'forbidden raw HTML attribute');
     if (attribute.name === 'srcset') fail(file, 'raw HTML srcset is not allowed');
-    if (attribute.name === 'style' && UNSAFE_INLINE_STYLE.test(attribute.value)) {
+    if (attribute.name === 'style' && !SAFE_INLINE_STYLE.test(attribute.value)) {
       fail(file, 'unsafe inline style');
     }
     if (URL_ATTRIBUTES.has(attribute.name)) {

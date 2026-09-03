@@ -15,6 +15,21 @@ const EXECUTABLE_DATA_URLS = [
   'data: \tapplication/xhtml+xml ;charset=utf-8,<script>alert(1)</script>',
   'data: image/svg+xml ;charset=utf-8,<svg></svg>'
 ];
+const UNSAFE_STYLE_VALUES = [
+  'background-image:url(https://evil.example/tracker.png)',
+  'background:image-set(url(https://evil.example/tracker.png) 1x)',
+  'background:-webkit-image-set(url(https://evil.example/tracker.png) 1x)',
+  '@import "https://evil.example/style.css"',
+  'width:expression(alert(1))',
+  'behavior:url(#default#time2)',
+  '-moz-binding:url(https://evil.example/binding.xml#x)',
+  String.raw`background:u\72l(https://evil.example/tracker.png)`,
+  String.raw`background:\69mage-set("https://evil.example/tracker.png" 1x)`,
+  String.raw`@\69mport "https://evil.example/style.css"`,
+  String.raw`width:\65xpression(alert(1))`,
+  'color:red'
+];
+const SAFE_STYLE_VALUES = ['zoom:50%;', 'zoom: 67%', 'zoom:300%;'];
 
 function transform(children: Array<Record<string, unknown>>) {
   return () => remarkContentSecurity()({ type: 'root', children }, { path: 'post.md' });
@@ -128,22 +143,14 @@ describe('published content security', () => {
     expect(transform([{ type: 'html', value }])).toThrow(/unapproved remote image/i);
   });
 
-  it.each([
-    'background-image:url(https://evil.example/tracker.png)',
-    'background:image-set(url(https://evil.example/tracker.png) 1x)',
-    'background:-webkit-image-set(url(https://evil.example/tracker.png) 1x)',
-    '@import "https://evil.example/style.css"',
-    'width:expression(alert(1))',
-    'behavior:url(#default#time2)',
-    '-moz-binding:url(https://evil.example/binding.xml#x)'
-  ])('rejects fetching or executable inline CSS: %s', (style) => {
+  it.each(UNSAFE_STYLE_VALUES)('rejects unsafe or non-zoom inline CSS: %s', (style) => {
     expect(transform([{ type: 'html', value: `<div style="${style}"></div>` }])).toThrow(
       /unsafe inline style/i
     );
   });
 
-  it('accepts non-fetching inline CSS', () => {
-    expect(transform([{ type: 'html', value: '<div style="zoom:50%;"></div>' }])).not.toThrow();
+  it.each(SAFE_STYLE_VALUES)('accepts existing zoom formatting: %s', (style) => {
+    expect(transform([{ type: 'html', value: `<div style="${style}"></div>` }])).not.toThrow();
   });
 
   it.each([
@@ -162,11 +169,17 @@ describe('published content security', () => {
     '<a href="data: image/svg+xml ;charset=utf-8,<svg></svg>">open</a>',
     '<video poster="https://evil.example/tracker.png"></video>',
     '<div background="https://evil.example/tracker.png"></div>',
-    '<div style="background-image:url(https://evil.example/tracker.png)"></div>'
+    '<div style="background-image:url(https://evil.example/tracker.png)"></div>',
+    `<div style="${String.raw`background:u\72l(https://evil.example/tracker.png)`}"></div>`,
+    '<div style="color:red"></div>'
   ])('rejects browser-normalized raw HTML through Astro markdown processing: %s', async (value) => {
     await expect(renderMarkdown(value)).rejects.toThrow(
       /unsafe URL|unapproved remote image|unsafe inline style|srcset|forbidden raw HTML tag/i
     );
+  });
+
+  it.each(SAFE_STYLE_VALUES)('accepts existing zoom formatting through Astro markdown: %s', async (style) => {
+    await expect(renderMarkdown(`<div style="${style}"></div>`)).resolves.toBeDefined();
   });
 
   it('accepts code examples and pinned images', () => {
