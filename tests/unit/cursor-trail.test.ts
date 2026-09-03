@@ -40,6 +40,7 @@ describe('cursor trail physics', () => {
 
     expect(state.tendrils[0].nodes[0].x).toBeCloseTo(2.25);
     expect(state.tendrils[0].nodes[0].y).toBe(0);
+    expect(state.tendrils[0].nodes[1].x).toBeCloseTo(0.777375);
     expect(advanceTrailHue(state)).toBeCloseTo(285 + Math.sin(0.0015) * 85);
   });
 });

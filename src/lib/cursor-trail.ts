@@ -60,6 +60,7 @@ export function updateTrailState(state: TrailState): void {
     lead.x += lead.vx;
     lead.y += lead.vy;
 
+    spring *= TRAIL_SETTINGS.tension;
     let previous = lead;
     for (const node of rest) {
       node.vx += (previous.x - node.x) * spring + previous.vx * TRAIL_SETTINGS.dampening;
