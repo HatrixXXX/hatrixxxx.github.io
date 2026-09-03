@@ -298,13 +298,13 @@ Commit: `feat: render encrypted page shells`
 - Storage refs: `hatrix-admin-session`（sessionStorage）和 `hatrix-admin-remembered`（localStorage）。
 - Custom event: `hatrix:protected-content-ready`。
 
-- [ ] **Step 1: 写状态函数和端到端失败测试**
+- [x] **Step 1: 写状态函数和端到端失败测试**
 
 单元测试覆盖 `0, 0, 5_000, 15_000, 60_000, 300_000` 冷却序列、七天到期边界和旧格式失效。Playwright 测试页只在 `PLAYWRIGHT_TEST=1` 时生成，包含已知测试 key 加密的正文。
 
 E2E 依次断言：游客只见解锁页；空输入和错误 key 有不同提示；第 3 次出现倒计时；正确 key 显示正文；session 模式刷新有效；remember 模式新页面有效；人为过期后恢复游客；退出按钮清除状态；无 JavaScript 不含正文。
 
-- [ ] **Step 2: 运行测试并确认 RED**
+- [x] **Step 2: 运行测试并确认 RED**
 
 Run: `corepack pnpm test:run tests/unit/protected-state.test.ts`
 
@@ -314,13 +314,13 @@ Run: `$env:HATRIX_ADMIN_KEY='test-admin'; corepack pnpm exec playwright test tes
 
 Expected: FAIL，原因是测试路由和解锁脚本不存在。
 
-- [ ] **Step 3: 实现状态机、IndexedDB 和 DOM 恢复**
+- [x] **Step 3: 实现状态机、IndexedDB 和 DOM 恢复**
 
 脚本在 `astro:page-load` 初始化 gate。提交时先检查冷却，运行 Argon2id，验证 manifest 密文，再解密页面 HTML；成功后按 checkbox 写 session 或七天引用并把不可导出 CryptoKey 存入 IndexedDB。插入 HTML 前解密所有 `data-protected-src` 图片为 Blob URL，全部成功后一次性挂载并发出 ready 事件。
 
 错误文案固定为设计稿中的五种状态。退出按钮清除两类引用、IndexedDB 记录和 Blob URL。页面切换时撤销当前页 URL，但保留有效凭据。
 
-- [ ] **Step 4: 验证 GREEN、无障碍和提交**
+- [x] **Step 4: 验证 GREEN、无障碍和提交**
 
 Run: `corepack pnpm test:run tests/unit/protected-state.test.ts`
 
