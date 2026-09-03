@@ -1,11 +1,12 @@
 import {
   advanceTrailFrameClock,
   advanceTrailHue,
+  classifyTrailRegion,
   createTrailState,
-  isPointerInGutter,
   setTrailTarget,
   updateTrailState,
   type Tendril,
+  type TrailRegion,
   type TrailState
 } from '@/lib/cursor-trail';
 
@@ -21,6 +22,7 @@ let state: TrailState | undefined;
 let animationFrame = 0;
 let lastFrame: number | undefined;
 let lastPointerInput = 0;
+let activeRegion: TrailRegion = null;
 
 function clearTrail(): void {
   if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -28,6 +30,7 @@ function clearTrail(): void {
   lastFrame = undefined;
   lastPointerInput = 0;
   state = undefined;
+  activeRegion = null;
   if (canvas && context) {
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
@@ -120,12 +123,31 @@ function syncCanvas(): void {
   resizeCanvas();
 }
 
+function pointerRegion(event: PointerEvent): TrailRegion {
+  if (document.querySelector('.pswp--open')) return null;
+  const horizontal = document.querySelector<HTMLElement>('[data-content-boundary]');
+  const vertical = document.querySelector<HTMLElement>('main, [data-cursor-trail-region]');
+  if (!horizontal || !vertical) return null;
+  const horizontalBounds = horizontal.getBoundingClientRect();
+  const verticalBounds = vertical.getBoundingClientRect();
+  return classifyTrailRegion(event.clientX, event.clientY, {
+    left: horizontalBounds.left,
+    right: horizontalBounds.right,
+    top: verticalBounds.top,
+    bottom: verticalBounds.bottom
+  });
+}
+
 function handlePointerMove(event: PointerEvent): void {
   if (!canvas || !context || !isEnabled()) return;
-  const boundary = document.querySelector<HTMLElement>('[data-content-boundary]');
-  if (!boundary || !isPointerInGutter(event.clientX, boundary.getBoundingClientRect())) return;
-  if (state) setTrailTarget(state, event.clientX, event.clientY);
-  else state = createTrailState(event.clientX, event.clientY);
+  const nextRegion = pointerRegion(event);
+  if (nextRegion === null) {
+    activeRegion = null;
+    return;
+  }
+  if (!state || activeRegion !== nextRegion) state = createTrailState(event.clientX, event.clientY);
+  else setTrailTarget(state, event.clientX, event.clientY);
+  activeRegion = nextRegion;
   lastPointerInput = performance.now();
   canvas.dataset.cursorTrailState = 'active';
   startTrail();
