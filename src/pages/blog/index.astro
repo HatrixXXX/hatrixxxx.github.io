@@ -1,0 +1,25 @@
+---
+import { getCollection } from 'astro:content';
+import HeroBanner from '@/components/HeroBanner.astro';
+import PostList from '@/components/PostList.astro';
+import WaveDivider from '@/components/WaveDivider.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { sortPosts, type PostEntry } from '@/lib/content';
+
+const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+---
+
+<BaseLayout title="博客文章">
+  <HeroBanner title="博客文章" image="/images/default-cover.svg" />
+  <WaveDivider />
+  <main class="blog-main container">
+    <p class="blog-total">共 <strong data-blog-total>{posts.length}</strong> 篇文章</p>
+    <PostList posts={posts} />
+  </main>
+</BaseLayout>
+
+<style>
+  .blog-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .blog-total { margin: 0 0 1.5rem; color: var(--color-muted); }
+  .blog-total strong { color: var(--color-accent); font-size: 1.25em; }
+</style>

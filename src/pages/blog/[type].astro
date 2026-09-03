@@ -1,0 +1,40 @@
+---
+import { getCollection } from 'astro:content';
+import EmptyState from '@/components/EmptyState.astro';
+import HeroBanner from '@/components/HeroBanner.astro';
+import PostList from '@/components/PostList.astro';
+import WaveDivider from '@/components/WaveDivider.astro';
+import { POST_TYPE_LINKS } from '@/config/navigation';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { sortPosts, type PostEntry } from '@/lib/content';
+
+export async function getStaticPaths() {
+  const posts: PostEntry[] = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
+
+  return POST_TYPE_LINKS.map((type) => ({
+    params: { type: type.slug },
+    props: {
+      title: type.label,
+      posts: sortPosts(posts.filter((post) => post.data.type === type.label))
+    }
+  }));
+}
+
+const { title, posts } = Astro.props;
+---
+
+<BaseLayout title={title}>
+  <HeroBanner title={title} image="/images/default-cover.svg" />
+  <WaveDivider />
+  <main class="blog-main container">
+    {posts.length === 0 ? (
+      <EmptyState title="这个类型还没有文章" description="以后写到这类内容时，会放在这里。" />
+    ) : (
+      <PostList posts={posts} />
+    )}
+  </main>
+</BaseLayout>
+
+<style>
+  .blog-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
+</style>
