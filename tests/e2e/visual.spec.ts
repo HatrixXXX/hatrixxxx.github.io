@@ -83,10 +83,6 @@ for (const path of routes) {
     expect(metrics.duplicateVisibleCardLinks).toBe(0);
     if (path === '/') expect(metrics.visiblePostCards).toBe(0);
 
-    const randomFooter = page.locator('[data-footer-random]');
-    await expect(randomFooter).toHaveAttribute('data-test-seed', 'playwright-fixed');
-    await expect(randomFooter.locator('li')).toHaveCount(10);
-
     const snapshotName = path === '/' ? 'home.png' : `${path.replaceAll('/', '_')}.png`;
     await expect(page).toHaveScreenshot(snapshotName, {
       fullPage: true,

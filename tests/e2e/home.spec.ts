@@ -27,25 +27,12 @@ test('home links to the blog without rendering an article feed', async ({ page }
   expect(resolvedPath).toBe(encodeURI('/posts/FPGA开发(1)Vivado+Vitis 使用/'));
 });
 
-test('footer exposes stable random and newest article lists', async ({ page }) => {
-  const randomLinks = 'section[aria-labelledby="footer-random-heading"] li a';
-  const newestLinks = 'section[aria-labelledby="footer-newest-heading"] li a';
-
+test('site footer is absent from home and paginated pages', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator(randomLinks)).toHaveCount(10);
-  await expect(page.locator(newestLinks)).toHaveCount(10);
-  const firstPageRandomHrefs = await page.locator(randomLinks).evaluateAll((links) =>
-    links.map((link) => link.getAttribute('href'))
-  );
+  await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
 
   await page.goto('/page/2/');
-  await expect(page.locator(randomLinks)).toHaveCount(10);
-  await expect(page.locator(newestLinks)).toHaveCount(10);
-  const secondPageRandomHrefs = await page.locator(randomLinks).evaluateAll((links) =>
-    links.map((link) => link.getAttribute('href'))
-  );
-
-  expect(secondPageRandomHrefs).toEqual(firstPageRandomHrefs);
+  await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
 });
 
 test('profile sidebar switches from desktop sticky column to mobile flow', async ({ page }) => {
