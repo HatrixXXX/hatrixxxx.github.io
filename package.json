@@ -20,6 +20,7 @@
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "astro": "^7.2.9",
+    "css-tree": "3.2.1",
     "gray-matter": "^4.0.3",
     "katex": "^0.18.4",
     "mermaid": "^11.17.2",

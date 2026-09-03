@@ -184,6 +184,45 @@ it('enforces explicit remote CSS resources in attributes and style elements', ()
   ]));
 });
 
+it('parses escaped CSS resource functions and image sets without rejecting safe declarations', () => {
+  const pinnedImage =
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
+  const safeHtml = `<html>${secureHead}<body><style>.shiki { color: #fff; } .katex { font: normal 1em KaTeX_Main; } .hero { --hero-image: url(${pinnedImage}); } .local { background: url(/images/local.png); } .raster { background: url(data:image/png;base64,AA==); }</style></body></html>`;
+  const unsafeHtml = String.raw`<html>${secureHead}<body><div style='background: u\72l("https\3A //cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/mutable.png")'></div><style>.escaped { background: url("https\3A //evil.example/escaped.png"); } .set { background: image-set("https://evil.example/set.png" 1x, "https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/set.png" 2x); }</style></body></html>`;
+
+  expect(securityErrorsForHtml(safeHtml, '/css/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/css/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unapproved CSS resource'),
+    expect.stringContaining('style='),
+    expect.stringContaining('text=')
+  ]));
+});
+
+it('validates image and executable link resource relations', () => {
+  const pinnedImage =
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
+  const safeHtml = `<html>${secureHead}<body><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/_astro/site.css"><link rel="modulepreload" href="/_astro/app.js"><link rel="preload" as="font" href="data:font/woff2;base64,AA=="><link rel="preload" as="image" href="${pinnedImage}"><link rel="apple-touch-icon" href="/touch.png"><link rel="mask-icon" href="${pinnedImage}"></body></html>`;
+  const unsafeHtml = `<html>${secureHead}<body><link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/mutable.png"><link rel="icon" href="https://evil.example/icon.png"><link rel="apple-touch-icon" href="https://evil.example/touch.png"><link rel="mask-icon" href="https://evil.example/mask.svg"><link rel="stylesheet" href="https://evil.example/site.css"><link rel="modulepreload" href="https://evil.example/app.js"><link rel="preload" as="script" href="https://evil.example/app.js"><link rel="preload" as="font" href="https://evil.example/font.woff2"></body></html>`;
+
+  expect(securityErrorsForHtml(safeHtml, '/links/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/links/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unapproved remote image'),
+    expect.stringContaining('unapproved external link resource'),
+    expect.stringContaining('href=')
+  ]));
+});
+
+it('returns a bounded diagnostic when css-tree rejects generated CSS', () => {
+  const html = `<html>${secureHead}<body><div style="a{]"></div></body></html>`;
+
+  expect(() => securityErrorsForHtml(html, '/css-error/')).not.toThrow();
+  expect(securityErrorsForHtml(html, '/css-error/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('Unable to parse CSS resource'),
+    expect.stringContaining('/css-error/'),
+    expect.stringContaining('style=')
+  ]));
+});
+
 it('requires the third-party notice in built output', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-site-'));
   await writeSiteFile(root, 'index.html');

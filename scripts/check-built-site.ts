@@ -1,6 +1,8 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// @ts-expect-error css-tree@3.2.1 does not publish TypeScript declarations.
+import { ident, parse as parseCss, walk as walkCss } from 'css-tree';
 import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
@@ -204,15 +206,51 @@ function resourceErrors(message: string, attribute: string, value: string, route
   return errors;
 }
 
-function cssResourceUrls(value: string): string[] {
+function cssResourceUrls(value: string, context: 'declarationList' | 'stylesheet'): string[] {
   const urls: string[] = [];
-  const resourceUrl = /(?:url\(\s*|@import\s+)(?:url\(\s*)?['"]?((?:https?:)?\/\/[^\s'"()]+)['"]?/gi;
-  for (const match of value.matchAll(resourceUrl)) urls.push(match[1]);
+  const functions: string[] = [];
+  const atRules: string[] = [];
+  const ast = parseCss(value, {
+    context,
+    parseCustomProperty: true,
+    onParseError(error: unknown) {
+      throw error;
+    }
+  });
+
+  walkCss(ast, {
+    enter(node: { type: string; name?: string; value?: string }) {
+      if (node.type === 'Function') functions.push(ident.decode(node.name ?? '').toLowerCase());
+      if (node.type === 'Atrule') atRules.push((node.name ?? '').toLowerCase());
+      if (node.type === 'Url' && node.value) urls.push(node.value);
+      if (
+        node.type === 'String' &&
+        node.value &&
+        (functions.some((name) => name === 'url' || name === 'image-set' || name === '-webkit-image-set') ||
+          atRules.includes('import'))
+      ) {
+        urls.push(node.value);
+      }
+    },
+    leave(node: { type: string }) {
+      if (node.type === 'Function') functions.pop();
+      if (node.type === 'Atrule') atRules.pop();
+    }
+  });
   return urls;
 }
 
-function cssResourceErrors(attribute: string, value: string, route: string): string[] {
-  return resourceErrors('Found unapproved CSS resource', attribute, value, route, cssResourceUrls(value));
+function cssResourceErrors(
+  attribute: string,
+  value: string,
+  route: string,
+  context: 'declarationList' | 'stylesheet'
+): string[] {
+  try {
+    return resourceErrors('Found unapproved CSS resource', attribute, value, route, cssResourceUrls(value, context));
+  } catch {
+    return [diagnostic(route, 'Unable to parse CSS resource', attribute, value)];
+  }
 }
 
 function textContent(element: DefaultTreeAdapterTypes.Element): string {
@@ -294,9 +332,13 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
       if (/^(?:href|src|action|formaction|data|poster|background)$/i.test(attribute.name) && isDangerousDataUrl(attribute.value)) {
         errors.push(diagnostic(route, 'Found dangerous data document', attribute.name, attribute.value));
       }
-      if (attribute.name === 'style') errors.push(...cssResourceErrors(attribute.name, attribute.value, route));
+      if (attribute.name === 'style') {
+        errors.push(...cssResourceErrors(attribute.name, attribute.value, route, 'declarationList'));
+      }
     }
-    if (element.tagName === 'style') errors.push(...cssResourceErrors('text', textContent(element), route));
+    if (element.tagName === 'style') {
+      errors.push(...cssResourceErrors('text', textContent(element), route, 'stylesheet'));
+    }
     if (element.namespaceURI === HTML_NAMESPACE && attributeValue(element, 'background') !== undefined) {
       errors.push(...imageSourceErrors('background', attributeValue(element, 'background') ?? '', route));
     }
@@ -314,10 +356,24 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
     if (
       element.namespaceURI === HTML_NAMESPACE &&
       element.tagName === 'link' &&
-      new Set((attributeValue(element, 'rel') ?? '').toLowerCase().split(/\s+/)).has('icon') &&
       attributeValue(element, 'href') !== undefined
     ) {
-      errors.push(...imageSourceErrors('href', attributeValue(element, 'href') ?? '', route));
+      const rel = new Set((attributeValue(element, 'rel') ?? '').toLowerCase().split(/\s+/));
+      const href = attributeValue(element, 'href') ?? '';
+      if (['icon', 'apple-touch-icon', 'mask-icon'].some((name) => rel.has(name))) {
+        errors.push(...imageSourceErrors('href', href, route));
+      }
+      const preloadAs = attributeValue(element, 'as')?.trim().toLowerCase();
+      if (rel.has('preload') && preloadAs === 'image') {
+        errors.push(...imageSourceErrors('href', href, route));
+      }
+      if (
+        rel.has('stylesheet') ||
+        rel.has('modulepreload') ||
+        (rel.has('preload') && ['script', 'style', 'font'].includes(preloadAs ?? ''))
+      ) {
+        errors.push(...resourceErrors('Found unapproved external link resource', 'href', href, route));
+      }
     }
     if (element.tagName === 'img' || element.tagName === 'source') {
       for (const name of ['src', 'srcset']) {

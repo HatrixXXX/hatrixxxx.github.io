@@ -23,6 +23,9 @@ importers:
       astro:
         specifier: ^7.2.9
         version: 7.2.9(@astrojs/markdown-remark@7.2.4(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.4.0)(jiti@2.6.1)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0)
+      css-tree:
+        specifier: 3.2.1
+        version: 3.2.1
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
