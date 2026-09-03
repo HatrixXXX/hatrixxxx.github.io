@@ -1,8 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import remarkImageStatus from './src/plugins/remark-image-status';
+import { siteMarkdownConfig } from './src/config/markdown';
 
 export default defineConfig({
   site: 'https://hatrix.site',
@@ -20,9 +18,5 @@ export default defineConfig({
       }
     ]
   },
-  markdown: {
-    remarkPlugins: [remarkMath, remarkImageStatus],
-    rehypePlugins: [rehypeKatex],
-    shikiConfig: { theme: 'github-dark' }
-  }
+  markdown: siteMarkdownConfig
 });
