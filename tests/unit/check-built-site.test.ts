@@ -225,6 +225,36 @@ it('validates image preload imagesrcset candidates independently of a local href
   ]));
 });
 
+it('rejects remote candidates following a data URL in image srcsets', () => {
+  const html = `<html>${secureHead}<body><img srcset="data:image/png;base64,AAAA, https://evil.example/after-data.png 2x"><picture><source srcset="data:image/png;base64,BBBB, https://evil.example/source-after-data.png 2x"></picture><link rel="preload" as="image" href="/images/hero.png" imagesrcset="data:image/png;base64,CCCC, https://evil.example/preload-after-data.png 2x"></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/srcset-data/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unapproved remote image'),
+    expect.stringContaining('srcset='),
+    expect.stringContaining('imagesrcset=')
+  ]));
+});
+
+it('applies executable URL and dangerous data checks to preload imagesrcset candidates', () => {
+  const html = `<html>${secureHead}<body><link rel="preload" as="image" href="/images/hero.png" imagesrcset="javascript:alert(1) 1x, data:image/svg+xml,%3Csvg%3E 2x"></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/preload-schemes/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unsafe URL scheme'),
+    expect.stringContaining('dangerous data document'),
+    expect.stringContaining('imagesrcset=')
+  ]));
+});
+
+it('returns a bounded diagnostic for malformed strict srcset values', () => {
+  const html = `<html>${secureHead}<body><img srcset="/images/a.png 1x 2x"></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/srcset-error/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('Unable to parse srcset'),
+    expect.stringContaining('srcset='),
+    expect.stringContaining('/srcset-error/')
+  ]));
+});
+
 it('returns a bounded diagnostic when css-tree rejects generated CSS', () => {
   const html = `<html>${secureHead}<body><div style="a{]"></div></body></html>`;
 

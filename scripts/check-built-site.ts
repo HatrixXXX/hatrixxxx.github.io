@@ -6,6 +6,7 @@ import { ident, parse as parseCss, walk as walkCss } from 'css-tree';
 import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
+import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 const SITE_ORIGIN = 'https://hatrix.site';
@@ -175,30 +176,26 @@ function diagnostic(route: string, message: string, attribute?: string, value?: 
   return `${message} in ${route}${attribute ? `: ${attribute}=${diagnosticValue(value ?? '')}` : ''}.`;
 }
 
-function srcsetUrls(value: string): string[] {
-  const urls: string[] = [];
-  let index = 0;
-  while (index < value.length) {
-    while (index < value.length && /[\s,]/.test(value[index])) index += 1;
-    const start = index;
-    const isDataUrl = value.slice(index, index + 5).toLowerCase() === 'data:';
-    while (index < value.length && !/\s/.test(value[index]) && (isDataUrl || value[index] !== ',')) index += 1;
-    const url = value.slice(start, index);
-    if (url) urls.push(url);
-    while (index < value.length && value[index] !== ',') index += 1;
-    if (value[index] === ',') index += 1;
-  }
-  return urls;
-}
-
 function imageSourceErrors(attribute: string, value: string, route: string): string[] {
-  return resourceErrors(
-    'Found unapproved remote image',
-    attribute,
-    value,
-    route,
-    attribute === 'srcset' || attribute === 'imagesrcset' ? srcsetUrls(value) : [value]
-  );
+  const responsive = attribute === 'srcset' || attribute === 'imagesrcset';
+  let candidates: string[];
+  try {
+    candidates = responsive ? parseSrcset(value, { strict: true }).map((candidate) => candidate.url) : [value];
+  } catch {
+    return [diagnostic(route, 'Unable to parse srcset', attribute, value)];
+  }
+
+  const errors: string[] = [];
+  for (const candidate of candidates) {
+    if (/^\s*(?:javascript|vbscript):/i.test(candidate)) {
+      errors.push(diagnostic(route, 'Found unsafe URL scheme', attribute, candidate));
+    }
+    if (isDangerousDataUrl(candidate)) {
+      errors.push(diagnostic(route, 'Found dangerous data document', attribute, candidate));
+    }
+  }
+  errors.push(...resourceErrors('Found unapproved remote image', attribute, value, route, candidates));
+  return errors;
 }
 
 function resourceErrors(message: string, attribute: string, value: string, route: string, candidates = [value]): string[] {
@@ -387,12 +384,6 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
       for (const name of ['src', 'srcset']) {
         const value = attributeValue(element, name);
         if (value !== undefined) {
-          if (name === 'srcset') {
-            for (const candidate of srcsetUrls(value)) {
-              if (/^\s*(?:javascript|vbscript):/i.test(candidate)) errors.push(diagnostic(route, 'Found unsafe URL scheme', name, candidate));
-              if (isDangerousDataUrl(candidate)) errors.push(diagnostic(route, 'Found dangerous data document', name, candidate));
-            }
-          }
           errors.push(...imageSourceErrors(name, value, route));
         }
       }
