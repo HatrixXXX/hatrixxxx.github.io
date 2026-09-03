@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> 当前仓库已去除分类与标签路由。下文的 67 项检查、21 张视觉基线、80 个页面和 4,653 条链接是当时的执行记录；当前验收口径为 59 项检查、15 张视觉基线、51 个页面和 2,564 条链接。
+
 **Goal:** 修复首次加载缺少连接杆和第三方告知的问题，并补齐泷奈拖拽、普通音效及最终视觉回归证据。
 
 **Architecture:** Sakana 初始化后通过 `getValue()` 把内部状态归零，由站点在暂停前同步绘制一次竖直连接杆，之后的拖拽仍交给上游物理逻辑。许可告知作为 `public/third-party-notices.txt` 随静态站点发布，并由构建产物检查强制保留。

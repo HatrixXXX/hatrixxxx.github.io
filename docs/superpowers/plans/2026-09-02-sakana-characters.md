@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> 当前仓库已去除分类与标签路由。下文的 66 项检查、21 张视觉基线、80 个页面和 4,653 条链接是当时的执行记录；当前验收口径为 59 项检查、15 张视觉基线、51 个页面和 2,564 条链接。
+
 **Goal:** 在博客所有页面显示两个可独立拖拽的 Sakana 角色：左下角为水平镜像的锦木千束，右下角为原方向的井上泷奈。
 
 **Architecture:** `SakanaCharacters.astro` 只负责持久化 DOM、固定定位和响应式缩放，`src/scripts/sakana.ts` 在浏览器空闲时动态导入官方 `sakana` 包并创建两个实例。Astro 客户端导航沿用同一个装饰层；减少动态效果模式通过脚本暂停实例，并由 CSS 禁用拖拽。
