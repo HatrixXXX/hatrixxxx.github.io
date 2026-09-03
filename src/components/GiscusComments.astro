@@ -3,7 +3,12 @@ import { SITE } from '@/config/site';
 import darkThemeCss from '@/styles/giscus-dark.css?raw';
 import darkThemePath from '@/styles/giscus-dark.css?url';
 
+interface Props {
+  title?: string;
+}
+
 const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
+const { title = '评论' } = Astro.props;
 const darkTheme = import.meta.env.DEV
   ? `data:text/css;charset=utf-8,${encodeURIComponent(darkThemeCss)}`
   : new URL(darkThemePath, SITE.url).href;
@@ -11,7 +16,7 @@ const darkTheme = import.meta.env.DEV
 
 <section
   class="comments"
-  aria-label="评论"
+  aria-label={title}
   data-giscus-comments
   data-giscus-repo={repo}
   data-giscus-repo-id={repoId}
@@ -20,7 +25,7 @@ const darkTheme = import.meta.env.DEV
   data-giscus-mapping={mapping}
   data-giscus-dark-theme={darkTheme}
 >
-  <h2>评论</h2>
+  <h2>{title}</h2>
   <p class="comments-status" data-giscus-status>评论正在加载…</p>
   <noscript>评论需要 JavaScript。</noscript>
 </section>

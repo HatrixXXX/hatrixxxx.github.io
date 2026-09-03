@@ -1,0 +1,28 @@
+---
+import EmptyState from '@/components/EmptyState.astro';
+import HeroBanner from '@/components/HeroBanner.astro';
+import WaveDivider from '@/components/WaveDivider.astro';
+import { ABOUT_SECTION_LINKS } from '@/config/navigation';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return ABOUT_SECTION_LINKS.map((section) => ({
+    params: { section: section.slug },
+    props: { section }
+  }));
+}
+
+const { section } = Astro.props;
+---
+
+<BaseLayout title={section.label}>
+  <HeroBanner title={section.label} subtitle="关于我的一些记录" image="/images/default-cover.svg" compact />
+  <WaveDivider />
+  <main class="about-section container">
+    <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
+  </main>
+</BaseLayout>
+
+<style>
+  .about-section { padding-block: clamp(2.5rem, 6vw, 5rem); }
+</style>
