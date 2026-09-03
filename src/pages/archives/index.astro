@@ -1,11 +1,11 @@
 ---
 import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
+import PostArchiveList from '@/components/PostArchiveList.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
-import { postPath } from '@/lib/urls';
 
 const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
 const archives = buildArchives(posts);
@@ -17,19 +17,7 @@ const archives = buildArchives(posts);
   <main class="index-main container with-sidebar">
     <section class="archive-list" aria-label="文章归档">
       <p class="archive-total">已归档 <strong data-archive-total>{posts.length}</strong> 篇文章</p>
-      {archives.map((archive) => (
-        <section class="archive-month">
-          <h2>{archive.year} 年 {archive.month} 月</h2>
-          <ul>
-            {archive.posts.map((post) => (
-              <li>
-                <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.getDate()} 日</time>
-                <a href={postPath(post.data.legacySlug)}>{post.data.title}</a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <PostArchiveList archives={archives} />
     </section>
     <aside><ProfileSidebar postCount={posts.length} /></aside>
   </main>
@@ -40,13 +28,5 @@ const archives = buildArchives(posts);
   .archive-list { min-width: 0; }
   .archive-total { margin: 0 0 1.5rem; color: var(--color-muted); }
   .archive-total strong { color: var(--color-accent); font-size: 1.25em; }
-  .archive-month { border-left: 2px solid var(--color-accent); margin-left: 0.5rem; padding: 0 0 1.75rem 1.25rem; }
-  .archive-month:last-child { padding-bottom: 0; }
-  h2 { margin: 0; color: #fff; font-size: 1.25rem; }
-  ul { display: grid; gap: 0.6rem; margin: 0.9rem 0 0; padding: 0; list-style: none; }
-  li { display: flex; gap: 0.75rem; min-width: 0; }
-  time { flex: none; color: var(--color-muted); font-size: 0.85rem; }
-  a { overflow-wrap: anywhere; }
-  a:hover { color: var(--color-accent); }
   @media (max-width: 1024px) { .index-main { grid-template-columns: minmax(0, 1fr); } aside { order: -1; } }
 </style>

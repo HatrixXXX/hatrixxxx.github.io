@@ -33,6 +33,33 @@ test('blog index lists every published post', async ({ page, request }) => {
   expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
 });
 
+test('blog switches between the default card view and time archive', async ({ page }) => {
+  await page.goto('/blog/');
+  const toggle = page.locator('[data-blog-view-toggle]');
+  const cardView = page.locator('[data-blog-card-view]');
+  const archiveView = page.locator('[data-blog-archive-view]');
+
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveText('切换到时间归档');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(cardView).toBeVisible();
+  await expect(archiveView).toBeHidden();
+
+  await toggle.click();
+  await expect(toggle).toHaveText('切换到卡片视图');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(cardView).toBeHidden();
+  await expect(archiveView).toBeVisible();
+  await expect(archiveView.locator('a[href^="/posts/"]')).toHaveCount(40);
+
+  await toggle.click();
+  await expect(cardView).toBeVisible();
+  await expect(archiveView).toBeHidden();
+  await page.reload();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(cardView).toBeVisible();
+});
+
 for (const { route, title, count } of [
   { route: '/blog/tech-notes/', title: '技术笔记', count: 37 },
   { route: '/blog/troubleshooting/', title: '踩坑记录', count: 1 },
@@ -46,6 +73,7 @@ for (const { route, title, count } of [
     await page.goto(route);
     await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
     await expect(page.locator('article[data-post-card]')).toHaveCount(count);
+    await expect(page.locator('[data-blog-view-toggle]')).toHaveCount(0);
   });
 }
 

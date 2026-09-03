@@ -1,0 +1,76 @@
+---
+import type { ArchiveMonth } from '@/lib/content';
+import { postPath } from '@/lib/urls';
+
+interface Props {
+  archives: ArchiveMonth[];
+}
+
+const { archives } = Astro.props;
+---
+
+<div class="archive-groups">
+  {archives.map((archive) => (
+    <section class="archive-month">
+      <h2>{archive.year} 年 {archive.month} 月</h2>
+      <ul>
+        {archive.posts.map((post) => (
+          <li>
+            <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.getDate()} 日</time>
+            <a href={postPath(post.data.legacySlug)}>{post.data.title}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</div>
+
+<style>
+  .archive-groups {
+    min-width: 0;
+  }
+
+  .archive-month {
+    margin-left: 0.5rem;
+    border-left: 2px solid var(--color-accent);
+    padding: 0 0 1.75rem 1.25rem;
+  }
+
+  .archive-month:last-child {
+    padding-bottom: 0;
+  }
+
+  h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.25rem;
+  }
+
+  ul {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0.9rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    min-width: 0;
+    gap: 0.75rem;
+  }
+
+  time {
+    flex: none;
+    color: var(--color-muted);
+    font-size: 0.85rem;
+  }
+
+  a {
+    overflow-wrap: anywhere;
+  }
+
+  a:hover {
+    color: var(--color-accent);
+  }
+</style>

@@ -16,6 +16,9 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   const rail = page.locator('[data-post-rail]');
   await expect(rail).toBeVisible();
   expect(await rail.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+  await expect(page.locator('[data-blog-view-toggle]')).toBeHidden();
+  await expect(page.locator('[data-blog-card-view]')).toBeVisible();
+  await expect(page.locator('[data-blog-archive-view]')).toBeHidden();
   await page.getByRole('link', { name: '本科数学大杂烩', exact: true }).click();
   await expect(page.locator('article[data-post]')).toBeVisible();
   const commentsText = await page.locator('[data-giscus-comments]').evaluate(
