@@ -481,3 +481,112 @@ Expected: no remote Sakana URL appears in built HTML; relevant gzip stays at or 
 - [ ] **Step 4: Start and inspect the final feature preview**
 
 After integration into the user workspace, start `corepack pnpm dev --host 127.0.0.1` in a hidden window. Confirm HTTP 200 at `http://127.0.0.1:4321/`, both resting rods before any drag, both drag directions, embedded sound trigger, hidden bases, responsive positions, reduced-motion behavior and theme overlay stacking.
+
+---
+
+### Task 5: Preserve Sakana styles across Astro navigation
+
+**Files:**
+- Modify: `src/scripts/sakana.ts`
+- Modify: `tests/e2e/sakana.spec.ts`
+
+**Interfaces:**
+- Produces: one `style[data-sakana-runtime-style]` node captured from the Sakana package import.
+- Produces: `restoreSakanaRuntimeStyle()` on `astro:after-swap`.
+- Preserves: the existing persisted character nodes and instances without reinitialization or duplicate styles.
+
+- [ ] **Step 1: Extend the persistence test through an article round trip**
+
+在 `initializes locked roles once and persists them across client navigation` 测试中，用下面的代码替换归档导航部分：
+
+```ts
+  await layer.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
+  await page.locator('article[data-post-card] h2 a').first().click();
+  await expect(page.locator('article[data-post]')).toBeVisible();
+
+  const persistedLayer = page.locator('[data-sakana-layer]');
+  await expect(persistedLayer).toHaveAttribute('data-persist-probe', 'same-node');
+  await expect(persistedLayer.locator('canvas')).toHaveCount(2);
+  const articleCharacters = persistedLayer.locator('.sakana-character');
+  await expect(articleCharacters).toHaveCount(2);
+  await expect(articleCharacters.first()).toBeVisible();
+  await expect(articleCharacters.last()).toBeVisible();
+  await expect(page.locator('head style[data-sakana-runtime-style]')).toHaveCount(1);
+
+  await page.locator('header[data-site-header]').getByRole('link', { name: '首页', exact: true }).click();
+  await expect(page.locator('[data-hero]')).toBeVisible();
+  await expect(page.locator('[data-sakana-layer]')).toHaveAttribute(
+    'data-persist-probe',
+    'same-node'
+  );
+  const homeCharacters = page.locator('[data-sakana-layer] .sakana-character');
+  await expect(homeCharacters).toHaveCount(2);
+  await expect(homeCharacters.first()).toBeVisible();
+  await expect(homeCharacters.last()).toBeVisible();
+  await expect(page.locator('head style[data-sakana-runtime-style]')).toHaveCount(1);
+  expect(remoteSakanaRequests).toEqual([]);
+```
+
+- [ ] **Step 2: Run the focused RED**
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/sakana.spec.ts --project=desktop-1440 -g "initializes locked roles"
+```
+
+Expected: FAIL on the article page because the persisted `.sakana-character` nodes have zero height and no background after Astro removes Sakana's injected head style.
+
+- [ ] **Step 3: Capture and restore the injected runtime style**
+
+在 `src/scripts/sakana.ts` 的模块状态中加入：
+
+```ts
+let sakanaRuntimeStyle: HTMLStyleElement | undefined;
+```
+
+加入两个函数：
+
+```ts
+function findSakanaRuntimeStyle(): HTMLStyleElement | undefined {
+  return [...document.head.querySelectorAll<HTMLStyleElement>('style')].find((style) =>
+    (style.textContent ?? '').includes('.sakana-box') &&
+    (style.textContent ?? '').includes('.sakana-character[data-character=chisato]')
+  );
+}
+
+function restoreSakanaRuntimeStyle(): void {
+  if (sakanaRuntimeStyle && !sakanaRuntimeStyle.isConnected) {
+    document.head.append(sakanaRuntimeStyle);
+  }
+}
+```
+
+在 `await import('sakana')` 后立即捕获并标记样式；缺失时进入现有错误路径：
+
+```ts
+    sakanaRuntimeStyle = findSakanaRuntimeStyle();
+    if (!sakanaRuntimeStyle) throw new Error('Sakana runtime styles are missing');
+    sakanaRuntimeStyle.dataset.sakanaRuntimeStyle = '';
+```
+
+在现有事件绑定旁加入：
+
+```ts
+document.addEventListener('astro:after-swap', restoreSakanaRuntimeStyle);
+```
+
+- [ ] **Step 4: Run GREEN and regression checks**
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/sakana.spec.ts --project=desktop-1440
+corepack pnpm exec playwright test tests/e2e/accessibility.spec.ts --project=desktop-1440
+corepack pnpm check
+```
+
+Expected: 4 Sakana tests and 3 accessibility tests pass; Astro reports 0 errors.
+
+- [ ] **Step 5: Commit the navigation fix**
+
+```powershell
+git add -- src/scripts/sakana.ts tests/e2e/sakana.spec.ts
+git commit -m "fix: preserve sakana across navigation"
+```
