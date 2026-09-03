@@ -1,7 +1,7 @@
 const IMMUTABLE_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
 const FORBIDDEN_TAG =
-  /<\s*\/?\s*(?:script|iframe|object|embed|base|meta|link|style|form|input|button|textarea|select|option|svg|math)\b/i;
+  /<\s*\/?\s*(?:script|iframe|object|embed|base|meta|link|style|form|input|button|textarea|select|option|source|svg|math)\b/i;
 const FORBIDDEN_ATTRIBUTE = /\s(?:on[a-z0-9_-]+|srcdoc|formaction)\s*=/i;
 const UNSAFE_SCHEME =
   /^\s*(?:(?:javascript|vbscript)\s*:|data\s*:\s*(?:text\/html|application\/xhtml\+xml|image\/svg\+xml))/i;
@@ -11,7 +11,6 @@ const RAW_IMAGE =
   /<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>]+))[^>]*>/gi;
 const RAW_IMAGE_TAG = /<img\b[^>]*>/gi;
 const SRCSET_ATTRIBUTE = /\ssrcset\s*=/i;
-const REMOTE_URL = /^https?:\/\//i;
 const PROTOCOL_RELATIVE_URL = /^\/\//;
 const HTML_CHARACTER_REFERENCE = /&(?:#([0-9]+)|#x([0-9a-f]+)|(tab|newline|colon));?/gi;
 const URL_WHITESPACE_OR_CONTROL = /[\u0000-\u0020\u007f-\u009f]/g;
@@ -67,9 +66,21 @@ function normalizeUrl(value: string): string {
 
 function validateRemoteImage(url: string, file: FileLike): void {
   const normalizedUrl = normalizeUrl(url);
+  if (PROTOCOL_RELATIVE_URL.test(normalizedUrl)) {
+    fail(file, 'unapproved remote image');
+  }
+
+  let resourceUrl: URL;
+  try {
+    resourceUrl = new URL(normalizedUrl);
+  } catch {
+    // Relative and non-URL image paths are local content.
+    return;
+  }
+
   if (
-    (REMOTE_URL.test(normalizedUrl) || PROTOCOL_RELATIVE_URL.test(normalizedUrl)) &&
-    !normalizedUrl.startsWith(IMMUTABLE_IMAGE_PREFIX)
+    (resourceUrl.protocol === 'http:' || resourceUrl.protocol === 'https:') &&
+    !resourceUrl.href.startsWith(IMMUTABLE_IMAGE_PREFIX)
   ) {
     fail(file, 'unapproved remote image');
   }

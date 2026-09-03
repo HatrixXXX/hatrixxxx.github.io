@@ -6,6 +6,7 @@ import remarkContentSecurity from '../../src/plugins/remark-content-security';
 
 const PINNED_IMAGE =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png';
+const BACKSLASH_REMOTE_IMAGE = String.raw`https:\\evil.example\\tracker.png`;
 
 function transform(children: Array<Record<string, unknown>>) {
   return () => remarkContentSecurity()({ type: 'root', children }, { path: 'post.md' });
@@ -68,12 +69,28 @@ describe('published content security', () => {
     ).toThrow(/srcset/i);
   });
 
+  it('rejects raw HTML images using WHATWG backslash normalization', () => {
+    expect(
+      transform([{ type: 'html', value: `<img src="${BACKSLASH_REMOTE_IMAGE}">` }])
+    ).toThrow(/unapproved remote image/i);
+  });
+
+  it('rejects Markdown image URLs using WHATWG backslash normalization', () => {
+    expect(transform([{ type: 'image', url: BACKSLASH_REMOTE_IMAGE }])).toThrow(
+      /unapproved remote image/i
+    );
+  });
+
   it.each([
     '<a href="&#x6a;ava&Tab;script&colon;alert(1)">open</a>',
     '<img src="&#x2f;&#x2f;evil.example/tracker.png">',
-    '<img srcset="https://evil.example/tracker.png 1x">'
+    '<img srcset="https://evil.example/tracker.png 1x">',
+    '<picture><source srcset="https://evil.example/tracker.png 1x"><img src="/local.png"></picture>',
+    `<img src="${BACKSLASH_REMOTE_IMAGE}">`
   ])('rejects browser-normalized raw HTML through Astro markdown processing: %s', async (value) => {
-    await expect(renderMarkdown(value)).rejects.toThrow(/unsafe URL|unapproved remote image|srcset/i);
+    await expect(renderMarkdown(value)).rejects.toThrow(
+      /unsafe URL|unapproved remote image|srcset|forbidden raw HTML tag/i
+    );
   });
 
   it('accepts code examples and pinned images', () => {
