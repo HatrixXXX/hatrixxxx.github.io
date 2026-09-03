@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-test('home keeps its full hero and wave divider', async ({ page }) => {
+test('home keeps its full hero without a wave divider', async ({ page }) => {
   await page.goto('/');
 
   expect((await page.locator('[data-hero]').boundingBox())?.height).toBeGreaterThan(240);
-  await expect(page.locator('[data-wave-divider]')).toHaveCount(1);
+  await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
 });
 
 test('non-home banners share the compact height without a wave divider', async ({ page }) => {

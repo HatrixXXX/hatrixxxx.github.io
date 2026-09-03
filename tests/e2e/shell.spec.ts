@@ -4,15 +4,14 @@ test('home shell renders the compact legal footer', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();
   await expect(page.locator('[data-hero]')).toBeVisible();
-  await expect(page.locator('[data-wave-divider]')).toBeVisible();
+  await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
 
   const footer = page.locator('footer[data-site-footer]');
   await expect(footer).toHaveCount(1);
   await expect(footer).toContainText(`© 2025–${new Date().getFullYear()} Hatrix`);
-  await expect(footer.getByRole('link', { name: '第三方许可' })).toHaveCount(0);
+  await expect(footer.locator('a')).toHaveCount(0);
   const notices = await page.request.get('/third-party-notices.txt');
   expect(notices.ok()).toBe(true);
-  await expect(footer.locator('[data-site-filing]')).toHaveCount(0);
 });
 
 test('favicon metadata is valid in static output', async ({ request }) => {

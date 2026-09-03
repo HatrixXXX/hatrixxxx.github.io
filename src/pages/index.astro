@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { PostEntry } from '@/lib/content';
@@ -12,7 +11,6 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
 
 <BaseLayout title={SITE.title}>
   <HeroBanner title={SITE.title} subtitle={SITE.tagline} image="/images/default-cover.svg" />
-  <WaveDivider />
   <main id="articles" class="home-main container with-sidebar">
     <section class="home-blog-entry" aria-labelledby="home-blog-heading">
       <h2 id="home-blog-heading">博客文章</h2>
