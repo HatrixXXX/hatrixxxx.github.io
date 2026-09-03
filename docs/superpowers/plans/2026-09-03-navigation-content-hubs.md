@@ -35,7 +35,7 @@
 - Produces: `POST_TYPES`、`POST_TYPE_LINKS`、`ABOUT_SECTION_LINKS`、`PRIMARY_NAV_ITEMS`。
 - Produces: `PostEntry['data']['type']`，值为五种中文类型之一。
 
-- [ ] **Step 1: 写配置和内容契约的失败测试**
+- [x] **Step 1: 写配置和内容契约的失败测试**
 
 `tests/unit/navigation-config.test.ts`：
 
@@ -105,13 +105,13 @@ it('assigns every published post one supported content type without restoring ta
 import { POST_TYPES } from '../../src/config/navigation';
 ```
 
-- [ ] **Step 2: 运行测试并确认失败原因**
+- [x] **Step 2: 运行测试并确认失败原因**
 
 Run: `corepack pnpm test:run tests/unit/navigation-config.test.ts tests/unit/content-schema.test.ts`
 
 Expected: FAIL，原因分别是 `src/config/navigation.ts` 不存在、文章没有 `type`。
 
-- [ ] **Step 3: 写最小配置与 schema**
+- [x] **Step 3: 写最小配置与 schema**
 
 `src/config/navigation.ts`：
 
@@ -169,7 +169,7 @@ type: z.enum(POST_TYPES),
 type: '技术笔记',
 ```
 
-- [ ] **Step 4: 给 40 篇文章增加显式类型**
+- [x] **Step 4: 给 40 篇文章增加显式类型**
 
 每篇文章在 `cover` 后加入 `type`。分配如下：
 
@@ -188,7 +188,7 @@ cover: /images/default-cover.svg
 type: 技术笔记
 ```
 
-- [ ] **Step 5: 运行单元测试并提交**
+- [x] **Step 5: 运行单元测试并提交**
 
 Run: `corepack pnpm test:run tests/unit/navigation-config.test.ts tests/unit/content-schema.test.ts`
 
@@ -212,7 +212,7 @@ git commit -m "feat: define navigation and post types"
 - Consumes: `POST_TYPE_LINKS` 和必填 `PostEntry['data']['type']`。
 - Produces: `/blog/` 和五个 `/blog/<type>/` 静态页面。
 
-- [ ] **Step 1: 写博客路由失败测试**
+- [x] **Step 1: 写博客路由失败测试**
 
 `tests/e2e/blog-index.spec.ts`：
 
@@ -243,13 +243,13 @@ for (const [path, title, count] of [
 }
 ```
 
-- [ ] **Step 2: 运行测试并确认 404**
+- [x] **Step 2: 运行测试并确认 404**
 
 Run: `corepack pnpm test:e2e tests/e2e/blog-index.spec.ts --project=desktop-1440`
 
 Expected: FAIL，`/blog/` 和类型页返回 404。
 
-- [ ] **Step 3: 实现 `/blog/`**
+- [x] **Step 3: 实现 `/blog/`**
 
 `src/pages/blog/index.astro` 使用 `sortPosts(await getCollection(...))` 获取 40 篇文章，Hero 标题为“博客文章”，正文包含：
 
@@ -270,7 +270,7 @@ Expected: FAIL，`/blog/` 和类型页返回 404。
 </style>
 ```
 
-- [ ] **Step 4: 实现五个类型页**
+- [x] **Step 4: 实现五个类型页**
 
 `src/pages/blog/[type].astro` 的静态路径核心：
 
@@ -304,7 +304,7 @@ const { type, posts } = Astro.props;
 <EmptyState title="这个类型还没有文章" description="以后写到这类内容时，会放在这里。" />
 ```
 
-- [ ] **Step 5: 运行 E2E 并提交**
+- [x] **Step 5: 运行 E2E 并提交**
 
 Run: `corepack pnpm test:e2e tests/e2e/blog-index.spec.ts --project=desktop-1440`
 
@@ -330,7 +330,7 @@ git commit -m "feat: add blog type pages"
 - Produces: 九个 `/about/<section>/` 页面和 `/guestbook/`。
 - Changes: `GiscusComments` 接收可选 `title?: string`，默认值为“评论”。
 
-- [ ] **Step 1: 写路由和组件失败测试**
+- [x] **Step 1: 写路由和组件失败测试**
 
 `tests/e2e/about-guestbook.spec.ts`：
 
@@ -357,13 +357,13 @@ test('guestbook mounts a pathname-mapped Giscus discussion', async ({ page }) =>
 });
 ```
 
-- [ ] **Step 2: 运行测试并确认 404**
+- [x] **Step 2: 运行测试并确认 404**
 
 Run: `corepack pnpm test:e2e tests/e2e/about-guestbook.spec.ts --project=desktop-1440`
 
 Expected: FAIL，关于子页和留言板不存在。
 
-- [ ] **Step 3: 实现关于子页**
+- [x] **Step 3: 实现关于子页**
 
 `src/pages/about/[section].astro` 使用：
 
@@ -390,7 +390,7 @@ export const getStaticPaths = (() => ABOUT_SECTION_LINKS.map((section) => ({
 </style>
 ```
 
-- [ ] **Step 4: 让 Giscus 标题可配置并创建留言板**
+- [x] **Step 4: 让 Giscus 标题可配置并创建留言板**
 
 `GiscusComments.astro` frontmatter 增加：
 
@@ -426,7 +426,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 ```
 
-- [ ] **Step 5: 运行 E2E 并提交**
+- [x] **Step 5: 运行 E2E 并提交**
 
 Run: `corepack pnpm test:e2e tests/e2e/about-guestbook.spec.ts --project=desktop-1440`
 
@@ -451,7 +451,7 @@ git commit -m "feat: add about sections and guestbook"
 - Consumes: `PRIMARY_NAV_ITEMS`。
 - Preserves: `[data-menu-toggle]`、`[data-mobile-menu]` 和 `src/scripts/navigation.ts` 的现有契约。
 
-- [ ] **Step 1: 写桌面互斥菜单和移动层级失败测试**
+- [x] **Step 1: 写桌面互斥菜单和移动层级失败测试**
 
 `tests/e2e/navigation-dropdown.spec.ts`：
 
@@ -488,13 +488,13 @@ test('mobile menu preserves primary and nested links', async ({ page }) => {
 });
 ```
 
-- [ ] **Step 2: 运行测试并确认旧导航失败**
+- [x] **Step 2: 运行测试并确认旧导航失败**
 
 Run: `corepack pnpm test:e2e tests/e2e/navigation-dropdown.spec.ts --project=desktop-1440`
 
 Expected: FAIL，找不到两个 `data-nav-item` 和 `.submenu`。
 
-- [ ] **Step 3: 替换 Header 导航结构**
+- [x] **Step 3: 替换 Header 导航结构**
 
 `SiteHeader.astro` 导入 `PRIMARY_NAV_ITEMS`，删除本地 `links`。桌面与移动列表都使用一级 `li[data-nav-item]`、父链接和可选嵌套 `<ul class="submenu">`；父链接中的倒三角写成：
 
@@ -510,7 +510,7 @@ aria-current={Astro.url.pathname === item.href ? 'page' : undefined}
 
 子链接同样按 pathname 精确标记。不要给三角增加按钮或点击脚本。
 
-- [ ] **Step 4: 增加桌面和移动样式**
+- [x] **Step 4: 增加桌面和移动样式**
 
 桌面样式必须包含：
 
@@ -554,7 +554,7 @@ aria-current={Astro.url.pathname === item.href ? 'page' : undefined}
 
 移动端重置 `.submenu` 为普通文档流，并设置 `.mobile-nav { max-height: calc(100vh - var(--header-height)); overflow-y: auto; }`。一级和二级链接都保持 `min-height: 44px`，二级项使用缩进和较弱文字颜色。
 
-- [ ] **Step 5: 更新旧测试的选择器**
+- [x] **Step 5: 更新旧测试的选择器**
 
 `no-js.spec.ts` 只统计一级项：
 
@@ -567,7 +567,7 @@ await expect(page.locator('[data-blog-total]')).toHaveText('40');
 
 `accessibility.spec.ts` 的触控目标选择器扩展到移动嵌套链接，不改变 44 px 断言。
 
-- [ ] **Step 6: 运行相关 E2E 并提交**
+- [x] **Step 6: 运行相关 E2E 并提交**
 
 Run: `corepack pnpm test:e2e tests/e2e/navigation-dropdown.spec.ts tests/e2e/accessibility.spec.ts tests/e2e/no-js.spec.ts tests/e2e/interactions.spec.ts`
 
@@ -592,7 +592,7 @@ git commit -m "feat: add responsive navigation dropdowns"
 **Interfaces:**
 - Verifies: 所有新增静态地址、公共 Header、链接总数和视觉结果。
 
-- [ ] **Step 1: 扩展静态路由检查**
+- [x] **Step 1: 扩展静态路由检查**
 
 在 `tests/e2e/index-pages.spec.ts` 增加：
 
@@ -621,7 +621,7 @@ for (const route of [
 }
 ```
 
-- [ ] **Step 2: 运行非视觉验证**
+- [x] **Step 2: 运行非视觉验证**
 
 Run:
 
@@ -634,7 +634,7 @@ corepack pnpm build
 
 Expected: 全部退出码为 0；构建生成 40 个旧文章页和 16 个新增内容页。
 
-- [ ] **Step 3: 校准站内链接固定值**
+- [x] **Step 3: 校准站内链接固定值**
 
 Run: `corepack pnpm check:site`
 
@@ -642,7 +642,7 @@ Expected first run: 只允许固定链接总数不匹配；不得有 broken loca
 
 Expected second run: 退出码 0，输出 `Checked N local links`。
 
-- [ ] **Step 4: 更新并检查视觉基线**
+- [x] **Step 4: 更新并检查视觉基线**
 
 把 `/blog/` 加入 `tests/e2e/visual.spec.ts` 的 `routes`。运行：
 
@@ -653,7 +653,7 @@ corepack pnpm test:e2e tests/e2e/visual.spec.ts
 
 Expected: 18 个视觉测试 PASS。人工查看桌面 Header 无换行，两个菜单默认不出现在截图；390/768 菜单关闭时页面无横向溢出；`/blog/` 的 40 张卡片没有重复链接。
 
-- [ ] **Step 5: 运行完整站点验证**
+- [x] **Step 5: 运行完整站点验证**
 
 Run:
 
@@ -669,7 +669,7 @@ git diff --check
 
 Expected: 所有命令退出码为 0；Playwright 包含原 59 项和新增检查，最终数量以测试收集输出为准；无 TypeScript、Astro、断链、视觉或空白页面错误。
 
-- [ ] **Step 6: 清理文档并提交**
+- [x] **Step 6: 清理文档并提交**
 
 按 `neat-freak` 核对 `README.md`、`AGENTS.md` 和 `docs/` 是否与当前代码冲突；只修改已经失效的现行说明，不改历史 spec/plan。
 
@@ -678,7 +678,7 @@ git add -- scripts/check-built-site.ts tests/e2e/index-pages.spec.ts tests/e2e/v
 git commit -m "test: verify navigation content hubs"
 ```
 
-- [ ] **Step 7: 启动本地预览**
+- [x] **Step 7: 启动本地预览**
 
 Run: `corepack pnpm dev --host 127.0.0.1`
 

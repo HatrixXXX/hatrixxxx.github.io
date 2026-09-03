@@ -1,6 +1,6 @@
 # Astro 个人博客重构 Implementation Plan
 
-> 历史说明：本文档中的文章分类与标签设计已由 `2026-09-03-remove-taxonomy-design.md` 废止。其余内容仍作为当时的设计与实施记录保留。
+> 历史说明：本文档中的文章分类与标签设计已由 `2026-09-03-remove-taxonomy-design.md` 废止，原始导航结构已由 `2026-09-03-navigation-content-hubs-design.md` 取代。其余内容仍作为当时的设计与实施记录保留。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

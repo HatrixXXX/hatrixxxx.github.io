@@ -337,17 +337,18 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
       align-items: center;
       border-radius: 6px;
       padding: 0.55rem 0.75rem;
-      color: var(--color-text);
+      color: #fff;
     }
 
     .mobile-nav .submenu a {
-      color: var(--color-text-muted);
+      color: #b8bdc6;
       font-size: 0.9rem;
     }
 
-    .mobile-nav a:hover {
-      background: var(--color-surface-raised);
-      color: var(--color-accent);
+    .mobile-nav a:hover,
+    .mobile-nav a:focus-visible {
+      background: rgb(255 255 255 / 12%);
+      color: #fff;
     }
   }
 </style>

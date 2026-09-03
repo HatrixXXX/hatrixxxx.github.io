@@ -1,5 +1,7 @@
 # Taxonomy Removal Implementation Plan
 
+> 历史说明：本文档中的五项旧导航说明已由 `2026-09-03-navigation-content-hubs-design.md` 取代；禁止恢复旧分类和标签 taxonomy 的约束仍然有效。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 从站点数据、页面、搜索、路由、测试和现行文档中删除文章分类与标签功能。

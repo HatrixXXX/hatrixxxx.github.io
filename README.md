@@ -38,7 +38,11 @@ pnpm test:e2e
 - `src/data/playlist.ts`：音乐列表
 - `public/`：CNAME、favicon、头像和本地静态资源
 
-当前仓库有 40 篇文章和 2 篇草稿；一次完整构建会生成 51 个 HTML 页面。
+当前仓库有 40 篇文章和 2 篇草稿；一次完整构建会生成 67 个 HTML 页面。
+
+## 站点导航
+
+主导航依次为首页、博客文章、作品橱窗、关于我和留言板。博客文章与关于我包含二级菜单；`/blog/` 是全部文章索引，`/blog/<type>/` 按文章类型筛选。关于子页目前是占位页，`/guestbook/` 使用 Giscus 保存留言。
 
 ## 新增文章
 
@@ -51,6 +55,7 @@ description: 用一句话说明文章内容
 pubDate: 2026-09-02
 updatedDate: 2026-09-03
 cover: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png
+type: 技术笔记
 series: Astro 实践
 seriesOrder: 0
 draft: false
@@ -60,7 +65,7 @@ legacySlug: 示例文章
 ---
 ```
 
-`updatedDate` 可省略。`series` 和 `seriesOrder` 必须同时填写或同时省略，`seriesOrder` 是非负整数。其余字段都要保留。
+`type` 必填，只能是 `技术笔记`、`踩坑记录`、`生活动态`、`好物推荐` 或 `随笔杂谈`，用于生成 `/blog/<type>/` 类型页，不是已删除的旧分类或标签 taxonomy。`updatedDate` 可省略。`series` 和 `seriesOrder` 必须同时填写或同时省略，`seriesOrder` 是非负整数。其余字段都要保留。
 
 ## 新增作品
 
@@ -120,9 +125,9 @@ export const playlist: readonly Track[] = [
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
-| `pnpm build` | 图片预检与 51 页静态构建 |
-| `pnpm check:site` | 旧文章路由、CNAME、2564 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 59 项；其中 15 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm build` | 图片预检与 67 页静态构建 |
+| `pnpm check:site` | 旧文章路由、CNAME、5352 条站内链接和发布体积 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 90 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 
