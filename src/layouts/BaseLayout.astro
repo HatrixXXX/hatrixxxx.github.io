@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import ProtectedContent from '@/components/ProtectedContent.astro';
 import SiteFooter from '@/components/SiteFooter.astro';
 import SiteHeader from '@/components/SiteHeader.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
@@ -7,6 +8,7 @@ import SearchOverlay from '@/components/SearchOverlay.astro';
 import ThemeTransition from '@/components/ThemeTransition.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
 import CursorTrail from '@/components/CursorTrail.astro';
+import { isConfiguredLockedPage } from '@/config/protected-content';
 import { SITE } from '@/config/site';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
@@ -30,6 +32,7 @@ const {
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
 const socialImage = new URL(image, SITE.url);
+const pageLocked = isConfiguredLockedPage(Astro.url.pathname);
 ---
 
 <!doctype html>
@@ -70,7 +73,9 @@ const socialImage = new URL(image, SITE.url);
   </head>
   <body class={bodyClass}>
     <SiteHeader />
-    <slot />
+    <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
+      <slot />
+    </ProtectedContent>
     <SiteFooter />
     <SakanaCharacters />
     <ThemeTransition />

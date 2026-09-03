@@ -3,6 +3,7 @@ import 'katex/dist/katex.min.css';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import GiscusComments from '@/components/GiscusComments.astro';
 import PostMeta from '@/components/PostMeta.astro';
+import ProtectedContent from '@/components/ProtectedContent.astro';
 import TableOfContents from '@/components/TableOfContents.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { AdjacentPosts, PostEntry } from '@/lib/content';
@@ -43,37 +44,39 @@ const canonicalPath = postPath(post.data.legacySlug);
       </div>
     </header>
 
-    <div class="post-grid container">
-      <TableOfContents headings={headings} />
-      <div class="post-column">
-        <div class="prose">
-          <slot />
+    <ProtectedContent locked={post.data.locked} route={canonicalPath} title={post.data.title}>
+      <div class="post-grid container">
+        <TableOfContents headings={headings} />
+        <div class="post-column">
+          <div class="prose">
+            <slot />
+          </div>
+
+          <nav class="adjacent-posts" aria-label="相邻文章" data-adjacent-posts>
+            {
+              adjacent.previous ? (
+                <a href={postPath(adjacent.previous.data.legacySlug)} rel="prev">
+                  <span>上一篇</span>
+                  <strong>{adjacent.previous.data.title}</strong>
+                </a>
+              ) : (
+                <span aria-hidden="true" />
+              )
+            }
+            {
+              adjacent.next && (
+                <a href={postPath(adjacent.next.data.legacySlug)} rel="next">
+                  <span>下一篇</span>
+                  <strong>{adjacent.next.data.title}</strong>
+                </a>
+              )
+            }
+          </nav>
+
+          <GiscusComments />
         </div>
-
-        <nav class="adjacent-posts" aria-label="相邻文章" data-adjacent-posts>
-          {
-            adjacent.previous ? (
-              <a href={postPath(adjacent.previous.data.legacySlug)} rel="prev">
-                <span>上一篇</span>
-                <strong>{adjacent.previous.data.title}</strong>
-              </a>
-            ) : (
-              <span aria-hidden="true" />
-            )
-          }
-          {
-            adjacent.next && (
-              <a href={postPath(adjacent.next.data.legacySlug)} rel="next">
-                <span>下一篇</span>
-                <strong>{adjacent.next.data.title}</strong>
-              </a>
-            )
-          }
-        </nav>
-
-        <GiscusComments />
       </div>
-    </div>
+    </ProtectedContent>
   </article>
 </BaseLayout>
 

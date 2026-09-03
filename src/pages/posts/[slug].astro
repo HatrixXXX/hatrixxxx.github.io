@@ -1,5 +1,5 @@
 ---
-import type { GetStaticPaths } from 'astro';
+import type { GetStaticPaths, MarkdownHeading } from 'astro';
 import { getCollection, render } from 'astro:content';
 import PostLayout from '@/layouts/PostLayout.astro';
 import {
@@ -8,6 +8,9 @@ import {
   type AdjacentPosts,
   type PostEntry
 } from '@/lib/content';
+import { deriveContentKeyBytes } from '@/lib/protected-content/crypto';
+import { renderProtectedMarkdown } from '@/lib/protected-content/markdown';
+import { adminKeyFromEnvironment } from '@/lib/protected-content/server';
 
 interface Props {
   post: PostEntry;
@@ -23,9 +26,19 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { post, adjacent } = Astro.props;
-const { Content, headings } = await render(post);
+const renderedPost = post.data.locked ? undefined : await render(post);
+const Content = renderedPost?.Content;
+const headings = post.data.locked
+  ? (post.rendered?.metadata?.headings as MarkdownHeading[] | undefined) ?? []
+  : renderedPost?.headings ?? [];
+const protectedHtml = post.data.locked
+  ? (await renderProtectedMarkdown(
+      post,
+      await deriveContentKeyBytes(adminKeyFromEnvironment())
+    )).html
+  : undefined;
 ---
 
 <PostLayout post={post} headings={headings} adjacent={adjacent}>
-  <Content />
+  {protectedHtml !== undefined ? <Fragment set:html={protectedHtml} /> : Content && <Content />}
 </PostLayout>

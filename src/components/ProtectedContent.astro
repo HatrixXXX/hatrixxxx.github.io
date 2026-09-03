@@ -1,0 +1,55 @@
+---
+import { normalizeRoutePath } from '@/config/protected-content';
+import { deriveContentKeyBytes, type EncryptedEnvelope } from '@/lib/protected-content/crypto';
+import { encryptProtectedPageHtml } from '@/lib/protected-content/page';
+import { adminKeyFromEnvironment } from '@/lib/protected-content/server';
+
+interface Props {
+  locked: boolean;
+  route: string;
+  title: string;
+}
+
+const { locked, route, title } = Astro.props;
+const normalizedRoute = normalizeRoutePath(route);
+let envelope: EncryptedEnvelope | undefined;
+
+if (locked) {
+  const renderedSlot = await Astro.slots.render('default');
+  const keyBytes = await deriveContentKeyBytes(adminKeyFromEnvironment());
+  envelope = await encryptProtectedPageHtml(renderedSlot, route, keyBytes);
+}
+---
+
+{
+  locked ? (
+    <section data-protected-gate data-protected-route={normalizedRoute}>
+      <form data-unlock-form>
+        <h2>{title}需要管理员权限</h2>
+        <label>
+          管理员 key
+          <input name="key" type="password" autocomplete="current-password" required />
+        </label>
+        <label>
+          <input name="showKey" type="checkbox" />
+          显示 key
+        </label>
+        <label>
+          <input name="remember" type="checkbox" />
+          7 天免解锁
+        </label>
+        <button type="submit">解锁</button>
+        <p aria-live="polite" data-unlock-status></p>
+      </form>
+      <script
+        is:inline
+        type="application/json"
+        data-protected-envelope
+        set:html={JSON.stringify(envelope)}
+      />
+      <div data-protected-mount></div>
+    </section>
+  ) : (
+    <slot />
+  )
+}
