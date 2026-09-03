@@ -61,6 +61,16 @@ test('locked public surfaces expose only public metadata and an accessible lock 
   await expect(cardLink).toHaveAttribute('data-locked-link', '');
   await expect(cardLink.getByRole('img', { name: '加锁内容' })).toBeVisible();
 
+  for (const surface of ['footer', 'archive', 'adjacent']) {
+    const fixture = page.locator(`[data-lock-surface="${surface}"]`);
+    const lockedLink = fixture.locator('[data-fixture-state="locked"]');
+    const publicLink = fixture.locator('[data-fixture-state="public"]');
+    await expect(lockedLink).toHaveAttribute('data-locked-link', '');
+    await expect(lockedLink.getByRole('img', { name: '加锁内容' })).toBeVisible();
+    await expect(publicLink).not.toHaveAttribute('data-locked-link', '');
+    await expect(publicLink.getByRole('img', { name: '加锁内容' })).toHaveCount(0);
+  }
+
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
 });
 

@@ -16,6 +16,21 @@ const MIN_BODY_SNIPPET_LENGTH = 24;
 const MARKDOWN_IMAGE = /!\[[^\]]*\]\(\s*(?:<([^>\r\n]+)>|([^\s)]+))(?:\s+[^)]*)?\)/g;
 const HTML_IMAGE = /<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi;
 const REMOTE_REFERENCE = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
+const MARKUP_TAG = /<[A-Za-z][^>]*>/g;
+const MARKUP_ATTRIBUTE = /(?:^|\s)([A-Za-z_:][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`)\s*\}|([^\s"'=<>`]+))/g;
+const STRUCTURAL_ATTRIBUTES = new Set([
+  'class',
+  'classname',
+  'decoding',
+  'height',
+  'href',
+  'id',
+  'loading',
+  'role',
+  'src',
+  'style',
+  'width'
+]);
 
 async function filesIn(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -71,6 +86,17 @@ function bodySnippets(content: string, publicMetadata: string): string[] {
     const snippet = normalizedBody.slice(offset, offset + 64).trim();
     if (snippet.length >= MIN_BODY_SNIPPET_LENGTH && !publicText.includes(snippet)) {
       snippets.push(snippet);
+    }
+  }
+  for (const tagMatch of content.matchAll(MARKUP_TAG)) {
+    for (const attributeMatch of tagMatch[0].matchAll(MARKUP_ATTRIBUTE)) {
+      if (STRUCTURAL_ATTRIBUTES.has(attributeMatch[1].toLowerCase())) continue;
+      const value = decodeEntities(
+        attributeMatch.slice(2).find((candidate) => candidate !== undefined) ?? ''
+      ).replace(/\s+/g, ' ').trim();
+      if (value.length >= MIN_BODY_SNIPPET_LENGTH && !publicText.includes(value)) {
+        snippets.push(value);
+      }
     }
   }
   return [...new Set(snippets)];
@@ -187,9 +213,12 @@ export async function inspectProtectedOutput(
 
   for (const output of outputs) {
     const text = output.bytes.toString('utf8');
+    const decodedText = decodeEntities(text);
     const normalizedText = plainText(text);
     for (const source of sources) {
-      if (source.bodySnippets.some((snippet) => normalizedText.includes(snippet))) {
+      if (source.bodySnippets.some(
+        (snippet) => decodedText.includes(snippet) || normalizedText.includes(snippet)
+      )) {
         errors.add(`${output.relativePath}: protected Markdown body plaintext`);
       }
       for (const resource of source.resources) {

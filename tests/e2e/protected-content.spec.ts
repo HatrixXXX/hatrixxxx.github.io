@@ -468,9 +468,10 @@ test('logout clears both modes, revokes assets, and re-locks the current page', 
   expect(await page.evaluate((url) => fetch(url!).then(() => true, () => false), blobUrl)).toBe(false);
 });
 
-test('without JavaScript the response contains only the gate and ciphertext', async ({ browser }) => {
+test('without JavaScript the response contains only the gate and ciphertext', async ({ browser, baseURL }) => {
+  if (!baseURL) throw new Error('Playwright baseURL is required');
   const context = await (browser as Browser).newContext({
-    baseURL: 'http://127.0.0.1:4322',
+    baseURL,
     javaScriptEnabled: false
   });
   const page = await context.newPage();

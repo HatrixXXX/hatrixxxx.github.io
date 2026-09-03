@@ -2,7 +2,7 @@
 import 'katex/dist/katex.min.css';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import GiscusComments from '@/components/GiscusComments.astro';
-import LockIndicator from '@/components/LockIndicator.astro';
+import PostLink from '@/components/PostLink.astro';
 import PostMeta from '@/components/PostMeta.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
 import TableOfContents from '@/components/TableOfContents.astro';
@@ -57,34 +57,14 @@ const canonicalPath = postPath(post.data.legacySlug);
           <nav class="adjacent-posts" aria-label="相邻文章" data-adjacent-posts>
             {
               adjacent.previous ? (
-                <a
-                  href={postPath(adjacent.previous.data.legacySlug)}
-                  rel="prev"
-                  data-locked-link={adjacent.previous.data.locked ? '' : undefined}
-                >
-                  <span>上一篇</span>
-                  <strong>
-                    {adjacent.previous.data.title}
-                    {adjacent.previous.data.locked && <LockIndicator />}
-                  </strong>
-                </a>
+                <PostLink post={adjacent.previous} rel="prev" direction="上一篇" />
               ) : (
                 <span aria-hidden="true" />
               )
             }
             {
               adjacent.next && (
-                <a
-                  href={postPath(adjacent.next.data.legacySlug)}
-                  rel="next"
-                  data-locked-link={adjacent.next.data.locked ? '' : undefined}
-                >
-                  <span>下一篇</span>
-                  <strong>
-                    {adjacent.next.data.title}
-                    {adjacent.next.data.locked && <LockIndicator />}
-                  </strong>
-                </a>
+                <PostLink post={adjacent.next} rel="next" direction="下一篇" />
               )
             }
           </nav>

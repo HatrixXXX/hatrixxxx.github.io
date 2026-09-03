@@ -62,6 +62,38 @@ describe('protected output audit', () => {
     expect(result.errors.join('\n')).not.toContain(PRIVATE_BODY);
   });
 
+  it.each([
+    ['quoted', (value: string) => `<aside data-private-note="${value}">short</aside>`],
+    ['unquoted', (value: string) => `<aside data-private-note=${value}>short</aside>`],
+    ['MDX expression', (value: string) => `<Aside data-private-note={"${value}"}>short</Aside>`]
+  ])('reports a private %s attribute value without echoing it', async (_kind, sourceMarkup) => {
+    const privateAttribute = `distinctive-private-attribute-${_kind.replace(/\s/g, '-')}-marker`;
+    await writeFixture(sourceMarkup(privateAttribute));
+    await writeFile(
+      join(distRoot, 'leaked-attribute.html'),
+      `<aside data-private-note="${privateAttribute}">short</aside>`,
+      'utf8'
+    );
+
+    const result = await inspectProtectedOutput(contentRoot, distRoot);
+
+    expect(result.errors).toContain('leaked-attribute.html: protected Markdown body plaintext');
+    expect(result.errors.join('\n')).not.toContain(privateAttribute);
+  });
+
+  it('ignores public metadata and common structural attribute values', async () => {
+    await writeFixture(
+      '<Aside title="Public description" className="long-common-structural-component-class">short</Aside>'
+    );
+    await writeFile(
+      join(distRoot, 'public-shell.html'),
+      '<aside title="Public description" class="long-common-structural-component-class">short</aside>',
+      'utf8'
+    );
+
+    await expect(inspectProtectedOutput(contentRoot, distRoot)).resolves.toEqual({ errors: [] });
+  });
+
   it('reports original protected resource bytes without echoing them', async () => {
     await writeFixture();
     await writeFile(join(distRoot, 'assets', 'leaked.bin'), PRIVATE_ASSET);

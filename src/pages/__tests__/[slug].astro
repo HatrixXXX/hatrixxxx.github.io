@@ -1,6 +1,7 @@
 ---
 import GiscusComments from '@/components/GiscusComments.astro';
 import PostCard from '@/components/PostCard.astro';
+import PostLink from '@/components/PostLink.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { PostEntry } from '@/lib/content';
@@ -42,6 +43,16 @@ const lockedPost = {
     legacySlug: 'locked-index-fixture'
   }
 } as PostEntry;
+const publicPost = {
+  ...lockedPost,
+  id: 'public-index-fixture',
+  data: {
+    ...lockedPost.data,
+    title: '公开文章标题',
+    locked: false,
+    legacySlug: 'public-index-fixture'
+  }
+} as PostEntry;
 ---
 
 <BaseLayout title={`加锁测试${label}`} canonicalPath={route} noindex={lockedIndex}>
@@ -49,6 +60,12 @@ const lockedPost = {
     lockedIndex ? (
       <main class="container">
         <PostCard post={lockedPost} index={0} />
+        {['footer', 'archive', 'adjacent'].map((surface) => (
+          <section data-lock-surface={surface}>
+            <PostLink post={lockedPost} data-fixture-state="locked" />
+            <PostLink post={publicPost} data-fixture-state="public" />
+          </section>
+        ))}
       </main>
     ) : (
       <ProtectedContent locked route={route} title={`加锁测试${label}`}>
