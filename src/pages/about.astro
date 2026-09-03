@@ -1,13 +1,11 @@
 ---
 import HeroBanner from '@/components/HeroBanner.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="关于">
   <HeroBanner title="关于" subtitle={`你好，我是 ${SITE.author.name}`} image="/images/default-cover.svg" compact />
-  <WaveDivider />
   <main class="about-main container">
     <article>
       <img src={SITE.author.avatar} alt={`${SITE.author.name} 的头像`} width="128" height="128" loading="lazy" />

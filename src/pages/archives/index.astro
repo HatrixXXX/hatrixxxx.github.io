@@ -3,7 +3,6 @@ import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
 import PostArchiveList from '@/components/PostArchiveList.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
 
@@ -13,7 +12,6 @@ const archives = buildArchives(posts);
 
 <BaseLayout title="归档">
   <HeroBanner title="归档" subtitle={`共 ${posts.length} 篇文章`} image="/images/default-cover.svg" compact />
-  <WaveDivider />
   <main class="index-main container with-sidebar">
     <section class="archive-list" aria-label="文章归档">
       <p class="archive-total">已归档 <strong data-archive-total>{posts.length}</strong> 篇文章</p>

@@ -5,7 +5,6 @@ import HeroBanner from '@/components/HeroBanner.astro';
 import Pagination from '@/components/Pagination.astro';
 import PostList from '@/components/PostList.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { paginatePosts, sortPosts, type Page, type PostEntry } from '@/lib/content';
@@ -38,7 +37,6 @@ const { page, posts } = Astro.props;
     image="/images/default-cover.svg"
     compact
   />
-  <WaveDivider />
   <main class="home-main container with-sidebar">
     <div class="home-feed">
       <PostList posts={page.items} />

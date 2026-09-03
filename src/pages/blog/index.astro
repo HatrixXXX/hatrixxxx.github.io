@@ -3,7 +3,6 @@ import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
 import PostArchiveList from '@/components/PostArchiveList.astro';
 import PostList from '@/components/PostList.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
 
@@ -12,8 +11,7 @@ const archives = buildArchives(posts);
 ---
 
 <BaseLayout title="博客文章">
-  <HeroBanner title="博客文章" image="/images/default-cover.svg" />
-  <WaveDivider />
+  <HeroBanner title="博客文章" image="/images/default-cover.svg" compact />
   <main class="blog-main">
     <div class="blog-view" data-blog-view-root>
       <div class="blog-toolbar container">

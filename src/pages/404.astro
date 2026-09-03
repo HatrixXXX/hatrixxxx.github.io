@@ -1,12 +1,10 @@
 ---
 import HeroBanner from '@/components/HeroBanner.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="页面未找到" canonicalPath="/404.html">
   <HeroBanner title="404" subtitle="这个页面似乎不存在" image="/images/default-cover.svg" compact />
-  <WaveDivider />
   <main class="not-found container">
     <p>你可以回到首页，继续浏览已有内容。</p>
     <a href="/">返回首页</a>

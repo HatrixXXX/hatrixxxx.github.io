@@ -39,7 +39,15 @@ const backgroundImage = `--hero-image: url("${encodeURI(image).replaceAll('"', '
   }
 
   .hero--compact {
-    height: clamp(280px, 44svh, 420px);
+    height: var(--inner-page-banner-height);
+  }
+
+  .hero--compact .hero-content {
+    padding-block: calc(var(--header-height) + 1rem) 1rem;
+  }
+
+  .hero--compact h1 {
+    font-size: clamp(1.8rem, 5vw, 3.2rem);
   }
 
   .hero-overlay {
@@ -78,11 +86,15 @@ const backgroundImage = `--hero-image: url("${encodeURI(image).replaceAll('"', '
     }
 
     .hero--compact {
-      height: clamp(260px, 42svh, 360px);
+      height: var(--inner-page-banner-height);
     }
 
     .hero-content {
       padding-bottom: 4rem;
+    }
+
+    .hero--compact .hero-content {
+      padding-bottom: 1rem;
     }
   }
 </style>

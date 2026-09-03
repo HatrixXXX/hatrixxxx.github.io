@@ -2,7 +2,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import EmptyState from '@/components/EmptyState.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const projects: CollectionEntry<'projects'>[] = await getCollection('projects');
@@ -10,7 +9,6 @@ const projects: CollectionEntry<'projects'>[] = await getCollection('projects');
 
 <BaseLayout title="作品">
   <HeroBanner title="作品" subtitle="项目与实验记录" image="/images/default-cover.svg" compact />
-  <WaveDivider />
   <main class="projects-main container">
     {projects.length === 0 ? (
       <EmptyState title="作品内容还没添加" description="新的项目与实验记录会陆续整理到这里。" />

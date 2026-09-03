@@ -32,16 +32,19 @@ const canonicalPath = postPath(post.data.legacySlug);
   bodyClass="post-page"
 >
   <article data-post>
-    <header class="post-hero">
+    <header class="post-hero" data-hero>
       <img src={post.data.cover} alt="" width="1600" height="900" decoding="async" />
       <div class="post-hero-overlay"></div>
       <div class="post-hero-content container">
-        <Breadcrumbs title={post.data.title} />
         <h1>{post.data.title}</h1>
-        <p>{post.data.description}</p>
-        <PostMeta post={post} />
       </div>
     </header>
+
+    <div class="post-intro container">
+      <Breadcrumbs title={post.data.title} />
+      <p>{post.data.description}</p>
+      <PostMeta post={post} />
+    </div>
 
     <div class="post-grid container" data-cursor-trail-region>
       <TableOfContents headings={headings} />
@@ -86,7 +89,7 @@ const canonicalPath = postPath(post.data.legacySlug);
   .post-hero {
     position: relative;
     display: grid;
-    min-height: clamp(360px, 54vw, 620px);
+    height: var(--inner-page-banner-height);
     place-items: center;
     overflow: hidden;
     background: var(--color-surface-raised);
@@ -112,13 +115,9 @@ const canonicalPath = postPath(post.data.legacySlug);
   .post-hero-content {
     position: relative;
     z-index: 1;
-    padding-block: calc(var(--header-height) + 3rem) 4rem;
+    padding-block: calc(var(--header-height) + 1rem) 1rem;
     text-align: center;
     pointer-events: none;
-  }
-
-  .post-hero-content :global(a) {
-    pointer-events: auto;
   }
 
   article :global(img[data-lightbox-image]) {
@@ -127,18 +126,29 @@ const canonicalPath = postPath(post.data.legacySlug);
 
   h1 {
     max-width: 900px;
-    margin: 0.8rem auto 0;
+    margin: 0 auto;
     color: #fff;
-    font-size: clamp(2rem, 6vw, 4.5rem);
+    font-size: clamp(1.8rem, 5vw, 3.2rem);
     line-height: 1.15;
     overflow-wrap: anywhere;
     text-shadow: 0 4px 22px rgb(0 0 0 / 55%);
   }
 
-  .post-hero-content > p {
+  .post-intro {
+    padding-top: 1.5rem;
+    text-align: center;
+  }
+
+  .post-intro > p {
     max-width: 720px;
-    margin: 1rem auto;
-    color: rgb(255 255 255 / 82%);
+    margin: 0.75rem auto;
+    color: var(--color-muted);
+  }
+
+  .post-intro :global(.breadcrumbs ol),
+  .post-intro :global(.breadcrumbs li:not(:last-child)::after),
+  .post-intro :global(.post-meta) {
+    color: var(--color-muted);
   }
 
   .post-grid {
@@ -146,7 +156,7 @@ const canonicalPath = postPath(post.data.legacySlug);
     grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
     gap: clamp(1.5rem, 4vw, 3.5rem);
     align-items: start;
-    padding-block: clamp(2.5rem, 6vw, 5rem);
+    padding-block: clamp(1.5rem, 4vw, 3rem) clamp(2.5rem, 6vw, 5rem);
   }
 
   .post-column {

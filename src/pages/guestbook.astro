@@ -1,13 +1,11 @@
 ---
 import GiscusComments from '@/components/GiscusComments.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
-import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="留言板">
   <HeroBanner title="留言板" subtitle="想说什么都可以写在这里" image="/images/default-cover.svg" compact />
-  <WaveDivider />
   <main class="guestbook-main container">
     <p>留言由 GitHub Discussions 保存，需要登录 GitHub 后发布。</p>
     <GiscusComments title="留言" />

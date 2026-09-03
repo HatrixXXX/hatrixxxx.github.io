@@ -11,6 +11,7 @@
   --content-width: 1180px;
   --reading-width: 780px;
   --header-height: 56px;
+  --inner-page-banner-height: 240px;
   --radius-card: 12px;
 }
 
@@ -23,4 +24,10 @@
   --color-line: rgb(22 26 32 / 12%);
   --shadow-panel: 0 16px 40px rgb(30 35 42 / 14%);
   --color-heading: #161a20;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --inner-page-banner-height: 200px;
+  }
 }
