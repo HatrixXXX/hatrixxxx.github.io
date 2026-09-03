@@ -5,6 +5,7 @@ import {
   advanceTrailHue,
   classifyTrailRegion,
   createTrailState,
+  isPointerInGutter,
   setTrailTarget,
   updateTrailState,
 } from '../../src/lib/cursor-trail';
@@ -64,6 +65,16 @@ describe('cursor trail physics', () => {
     expect(classifyTrailRegion(1310, 400, bounds)).toBeNull();
     expect(classifyTrailRegion(129, 199, bounds)).toBeNull();
     expect(classifyTrailRegion(1311, 801, bounds)).toBeNull();
+  });
+
+  it('keeps the legacy gutter helper compatible during migration', () => {
+    const bounds = { left: 130, right: 1310 };
+
+    expect(isPointerInGutter(129, bounds)).toBe(true);
+    expect(isPointerInGutter(1311, bounds)).toBe(true);
+    expect(isPointerInGutter(130, bounds)).toBe(false);
+    expect(isPointerInGutter(720, bounds)).toBe(false);
+    expect(isPointerInGutter(1310, bounds)).toBe(false);
   });
 
   it('creates twenty tendrils of fifty stationary nodes', () => {

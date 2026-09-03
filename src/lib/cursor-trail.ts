@@ -119,3 +119,7 @@ export function classifyTrailRegion(
   if (clientX > bounds.right) return 'right';
   return null;
 }
+
+export function isPointerInGutter(clientX: number, bounds: { left: number; right: number }): boolean {
+  return clientX < bounds.left || clientX > bounds.right;
+}
