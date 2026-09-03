@@ -7,7 +7,6 @@ export interface KdfConfig {
   memorySizeKiB: number;
   iterations: number;
   parallelism: number;
-  hashLength: number;
 }
 
 export interface EncryptedEnvelope {
@@ -18,8 +17,12 @@ export interface EncryptedEnvelope {
 
 const defaultKdfConfig: KdfConfig = {
   saltBase64: PROTECTED_CONTENT.saltBase64,
-  ...PROTECTED_CONTENT.argon2
+  memorySizeKiB: PROTECTED_CONTENT.argon2.memorySizeKiB,
+  iterations: PROTECTED_CONTENT.argon2.iterations,
+  parallelism: PROTECTED_CONTENT.argon2.parallelism
 };
+
+const contentKeyLength = 32;
 
 export async function deriveContentKeyBytes(
   key: string,
@@ -28,10 +31,10 @@ export async function deriveContentKeyBytes(
   return argon2id({
     password: key,
     salt: fromBase64(config.saltBase64),
-    memorySize: config.memorySizeKiB,
-    iterations: config.iterations,
-    parallelism: config.parallelism,
-    hashLength: config.hashLength,
+    memorySize: Math.max(config.memorySizeKiB, PROTECTED_CONTENT.argon2.memorySizeKiB),
+    iterations: Math.max(config.iterations, PROTECTED_CONTENT.argon2.iterations),
+    parallelism: Math.max(config.parallelism, PROTECTED_CONTENT.argon2.parallelism),
+    hashLength: contentKeyLength,
     outputType: 'binary'
   });
 }

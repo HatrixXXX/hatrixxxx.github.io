@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PROTECTED_CONTENT } from '../../src/config/protected-content';
 import { base64, base64url, fromBase64, fromBase64url, utf8, utf8Decode } from '../../src/lib/protected-content/encoding';
 import {
   decryptEnvelope,
@@ -40,6 +41,23 @@ describe('protected content cryptography', () => {
 
     expect(first).toEqual(second);
     expect(first).toHaveLength(32);
+  });
+
+  it('does not allow KDF overrides to lower Argon2id cost or output length', async () => {
+    const expected = await deriveContentKeyBytes('remembered-key');
+    const weakerConfig = {
+      saltBase64: PROTECTED_CONTENT.saltBase64,
+      memorySizeKiB: 8,
+      iterations: 1,
+      parallelism: 1,
+      hashLength: 16
+    };
+
+    await expect(deriveContentKeyBytes('remembered-key', weakerConfig)).resolves.toEqual(expected);
+    await expect(
+      deriveContentKeyBytes('remembered-key', { ...weakerConfig, parallelism: 0 })
+    ).resolves.toEqual(expected);
+    expect(expected).toHaveLength(32);
   });
 
   it('authenticates ciphertext with the key and route', async () => {
