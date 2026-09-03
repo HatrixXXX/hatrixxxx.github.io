@@ -235,3 +235,85 @@ Expected: 无输出，退出码为 0。
 git add -- scripts/check-built-site.ts tests/e2e/visual.spec.ts-snapshots
 git commit -m "test: update compact footer baselines"
 ```
+
+### Task 3: 从页脚移除第三方许可入口
+
+**Files:**
+- Modify: `src/components/SiteFooter.astro`
+- Modify: `tests/e2e/shell.spec.ts`
+- Modify: `scripts/check-built-site.ts`
+- Modify: `tests/e2e/visual.spec.ts-snapshots/*.png`
+
+**Interfaces:**
+- Consumes: 已发布的 `/third-party-notices.txt` 文件。
+- Produces: 页脚不再链接说明文件，但构建产物仍包含该文件。
+
+- [ ] **Step 1: 写出失败的链接移除测试**
+
+将 `tests/e2e/shell.spec.ts` 中的第三方许可链接断言替换为：
+
+```ts
+await expect(footer.getByRole('link', { name: '第三方许可' })).toHaveCount(0);
+const notices = await page.request.get('/third-party-notices.txt');
+expect(notices.ok()).toBe(true);
+```
+
+- [ ] **Step 2: 确认测试因现有链接而失败**
+
+Run: `corepack pnpm exec playwright test tests/e2e/shell.spec.ts --project desktop-1440`
+
+Expected: FAIL，“第三方许可”链接的实际数量为 `1`。
+
+- [ ] **Step 3: 删除页脚链接**
+
+从 `src/components/SiteFooter.astro` 删除：
+
+```astro
+<span aria-hidden="true">·</span>
+<a href="/third-party-notices.txt">第三方许可</a>
+```
+
+- [ ] **Step 4: 运行相关测试**
+
+Run: `corepack pnpm exec playwright test tests/e2e/shell.spec.ts tests/e2e/home.spec.ts --project desktop-1440`
+
+Expected: PASS，页脚没有第三方许可链接，说明文件仍可请求。
+
+- [ ] **Step 5: 同步构建统计与视觉基线**
+
+Run: `corepack pnpm test:run`
+
+Expected: PASS。
+
+Run: `corepack pnpm check`
+
+Expected: PASS，0 errors。
+
+Run: `corepack pnpm build`
+
+Expected: PASS，构建 67 个页面。
+
+将 `scripts/check-built-site.ts` 中的链接总数改回：
+
+```ts
+const EXPECTED_LOCAL_LINKS = 3961;
+```
+
+Run: `corepack pnpm check:site`
+
+Expected: PASS，输出 `Checked 3961 local links`。
+
+Run: `corepack pnpm exec playwright test tests/e2e/visual.spec.ts --update-snapshots`
+
+Expected: PASS，更新 18 张视觉基线。
+
+Run: `corepack pnpm test:e2e`
+
+Expected: PASS，当次收集的全部测试均无失败。
+
+- [ ] **Step 6: 提交**
+
+```powershell
+git add -- src/components/SiteFooter.astro tests/e2e/shell.spec.ts scripts/check-built-site.ts tests/e2e/visual.spec.ts-snapshots
+git commit -m "refactor: hide third-party notice link"
+```
