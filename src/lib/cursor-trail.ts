@@ -100,6 +100,22 @@ export function advanceTrailHue(state: TrailState): number {
   return TRAIL_SETTINGS.hueOffset + Math.sin(state.phase) * TRAIL_SETTINGS.hueAmplitude;
 }
 
-export function isPointerInGutter(clientX: number, bounds: { left: number; right: number }): boolean {
-  return clientX < bounds.left || clientX > bounds.right;
+export type TrailRegion = 'left' | 'right' | null;
+
+export type TrailRegionBounds = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+
+export function classifyTrailRegion(
+  clientX: number,
+  clientY: number,
+  bounds: TrailRegionBounds,
+): TrailRegion {
+  if (clientY < bounds.top || clientY > bounds.bottom) return null;
+  if (clientX < bounds.left) return 'left';
+  if (clientX > bounds.right) return 'right';
+  return null;
 }

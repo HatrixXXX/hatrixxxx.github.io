@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 const SITE_ORIGIN = 'https://hatrix.site';
-const EXPECTED_LOCAL_LINKS = 5368;
+const EXPECTED_LOCAL_LINKS = 3961;
 
 export interface BuiltSiteCheckOptions {
   sourceCnamePath?: string;

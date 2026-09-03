@@ -3,8 +3,8 @@ import {
   TRAIL_SETTINGS,
   advanceTrailFrameClock,
   advanceTrailHue,
+  classifyTrailRegion,
   createTrailState,
-  isPointerInGutter,
   setTrailTarget,
   updateTrailState,
 } from '../../src/lib/cursor-trail';
@@ -54,14 +54,16 @@ describe('cursor trail physics', () => {
     expect(advanceTrailFrameClock(resumed.lastFrame, 1_027).shouldRender).toBe(false);
   });
 
-  it('classifies only points outside the content bounds as gutter', () => {
-    const bounds = { left: 130, right: 1310 };
+  it('classifies only the vertical content gutters as trail regions', () => {
+    const bounds = { left: 130, right: 1310, top: 200, bottom: 800 };
 
-    expect(isPointerInGutter(129, bounds)).toBe(true);
-    expect(isPointerInGutter(1311, bounds)).toBe(true);
-    expect(isPointerInGutter(130, bounds)).toBe(false);
-    expect(isPointerInGutter(720, bounds)).toBe(false);
-    expect(isPointerInGutter(1310, bounds)).toBe(false);
+    expect(classifyTrailRegion(129, 200, bounds)).toBe('left');
+    expect(classifyTrailRegion(1311, 800, bounds)).toBe('right');
+    expect(classifyTrailRegion(130, 400, bounds)).toBeNull();
+    expect(classifyTrailRegion(720, 400, bounds)).toBeNull();
+    expect(classifyTrailRegion(1310, 400, bounds)).toBeNull();
+    expect(classifyTrailRegion(129, 199, bounds)).toBeNull();
+    expect(classifyTrailRegion(1311, 801, bounds)).toBeNull();
   });
 
   it('creates twenty tendrils of fifty stationary nodes', () => {

@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-test('home shell exposes reference layout landmarks', async ({ page }) => {
+test('home shell omits the removed site footer', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();
   await expect(page.locator('[data-hero]')).toBeVisible();
   await expect(page.locator('[data-wave-divider]')).toBeVisible();
-  await expect(page.locator('footer[data-site-footer]')).toBeVisible();
+  await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
 });
 
 test('favicon metadata is valid in static output', async ({ request }) => {
