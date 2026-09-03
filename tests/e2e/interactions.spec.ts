@@ -20,8 +20,8 @@ test('search loads its index once, limits results and closes with Escape', async
   await page.keyboard.press('Escape');
   await expect(searchbox).toBeHidden();
 
-  await page.getByRole('link', { name: '归档', exact: true }).click();
-  await expect(page.locator('[data-archive-total]')).toHaveText('40');
+  await page.getByRole('link', { name: '博客文章', exact: true }).click();
+  await expect(page.locator('[data-blog-total]')).toHaveText('40');
   await page.keyboard.press('Control+K');
   await expect(page.getByRole('searchbox', { name: '搜索文章' })).toBeFocused();
   expect(indexRequests).toBe(1);
@@ -54,7 +54,7 @@ test('stored theme is applied and one click toggles it after client navigation',
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
-  await page.getByRole('link', { name: '归档', exact: true }).click();
+  await page.getByRole('link', { name: '博客文章', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.getByRole('button', { name: '切换主题' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -245,8 +245,8 @@ test('pending destination survives immediate client navigation', async ({ page }
   await page.getByRole('button', { name: '切换主题' }).click();
   expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
 
-  await page.getByRole('link', { name: '归档', exact: true }).dispatchEvent('click');
-  await expect(page).toHaveURL(/\/archives\/$/);
+  await page.getByRole('link', { name: '博客文章', exact: true }).dispatchEvent('click');
+  await expect(page).toHaveURL(/\/blog\/$/);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('[data-theme-transition]')).toBeHidden();
   await expect(page.getByRole('button', { name: '切换主题' })).toBeEnabled();
@@ -277,7 +277,10 @@ test('mobile menu toggles once and closes on Escape and navigation', async ({ pa
   await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
 
   await menuButton.click();
-  await page.locator('[data-mobile-menu]').getByRole('link', { name: '归档' }).click();
+  await page
+    .locator('[data-mobile-menu]')
+    .getByRole('link', { name: '博客文章', exact: true })
+    .click();
   await expect(page.getByRole('button', { name: '切换导航栏' })).toHaveAttribute(
     'aria-expanded',
     'false'
@@ -373,7 +376,7 @@ test('empty music player persists without constructing track audio or requesting
   const persistedPlayer = page.locator('[data-music-player]');
   await persistedPlayer.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
 
-  await page.getByRole('link', { name: '归档', exact: true }).click();
+  await page.getByRole('link', { name: '博客文章', exact: true }).click();
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-persist-probe', 'same-node');
   const audioSources = await page.evaluate(
     () => (window as Window & { __audioSources?: string[] }).__audioSources ?? []

@@ -1,13 +1,8 @@
 ---
 import { SITE } from '@/config/site';
+import { PRIMARY_NAV_ITEMS } from '@/config/navigation';
 
-const links = [
-  { label: '首页', href: '/' },
-  { label: '文章', href: '/#articles' },
-  { label: '归档', href: '/archives/' },
-  { label: '作品', href: '/projects/' },
-  { label: '关于', href: '/about/' }
-];
+const isCurrent = (href: string) => Astro.url.pathname === href;
 ---
 
 <header data-site-header class="site-header">
@@ -19,8 +14,24 @@ const links = [
 
     <nav class="desktop-nav" aria-label="主导航">
       <ul>
-        {links.map((link) => (
-          <li><a href={link.href}>{link.label}</a></li>
+        {PRIMARY_NAV_ITEMS.map((item) => (
+          <li data-nav-item={item.label}>
+            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+              {item.label}
+              {'children' in item && <span class="nav-caret" aria-hidden="true"></span>}
+            </a>
+            {'children' in item && (
+              <ul class="submenu">
+                {item.children.map((child) => (
+                  <li>
+                    <a href={child.href} aria-current={isCurrent(child.href) ? 'page' : undefined}>
+                      {child.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
         ))}
       </ul>
     </nav>
@@ -59,9 +70,24 @@ const links = [
   </div>
 
   <nav id="mobile-menu" class="mobile-nav" aria-label="移动端导航" data-mobile-menu hidden>
-    <ul class="container">
-      {links.map((link) => (
-        <li><a href={link.href}>{link.label}</a></li>
+    <ul class="mobile-nav__list container">
+      {PRIMARY_NAV_ITEMS.map((item) => (
+        <li>
+          <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+            {item.label}
+          </a>
+          {'children' in item && (
+            <ul class="submenu">
+              {item.children.map((child) => (
+                <li>
+                  <a href={child.href} aria-current={isCurrent(child.href) ? 'page' : undefined}>
+                    {child.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
       ))}
     </ul>
   </nav>
@@ -111,14 +137,20 @@ const links = [
     list-style: none;
   }
 
-  .desktop-nav ul {
+  .desktop-nav > ul {
     display: flex;
     align-items: center;
     gap: 0.15rem;
   }
 
-  .desktop-nav a {
-    display: block;
+  .desktop-nav > ul > li {
+    position: relative;
+  }
+
+  .desktop-nav > ul > li > a {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     padding: 0.65rem 0.8rem;
     border-radius: 999px;
     font-size: 0.9rem;
@@ -129,6 +161,57 @@ const links = [
   .desktop-nav a:hover {
     background: rgb(255 255 255 / 10%);
     color: var(--color-accent);
+  }
+
+  .nav-caret {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-0.1rem) rotate(45deg);
+  }
+
+  .desktop-nav .submenu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    min-width: 9rem;
+    padding: 0.4rem;
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    visibility: hidden;
+    background: rgb(22 26 32 / 96%);
+    box-shadow: var(--shadow-panel);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -0.35rem);
+    transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
+  }
+
+  .desktop-nav .submenu a {
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    color: #fff;
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+
+  .desktop-nav > ul > li:hover > .submenu,
+  .desktop-nav > ul > li:focus-within > .submenu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+  }
+
+  .desktop-nav > ul:has(> li:hover) > li:not(:hover) > .submenu {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -0.35rem);
   }
 
   .header-actions {
@@ -228,17 +311,24 @@ const links = [
 
     .mobile-nav:not([hidden]) {
       display: block;
+      overflow-y: auto;
+      max-height: calc(100vh - var(--header-height));
       border-top: 1px solid var(--color-line);
       background: rgb(22 26 32 / 96%);
       box-shadow: var(--shadow-panel);
       backdrop-filter: blur(14px);
     }
 
-    .mobile-nav ul {
+    .mobile-nav__list {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.25rem;
       padding-block: 0.7rem 1rem;
+    }
+
+    .mobile-nav .submenu {
+      display: grid;
+      gap: 0.15rem;
+      padding-left: 1rem;
     }
 
     .mobile-nav a {
@@ -248,6 +338,11 @@ const links = [
       border-radius: 6px;
       padding: 0.55rem 0.75rem;
       color: var(--color-text);
+    }
+
+    .mobile-nav .submenu a {
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
     }
 
     .mobile-nav a:hover {

@@ -4,16 +4,16 @@ test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
 
 test('articles and ordinary navigation remain usable without JavaScript', async ({ page }) => {
   await page.goto('/');
-  const headerLinks = page.locator('.desktop-nav a');
+  const headerLinks = page.locator('.desktop-nav > ul > li > a');
   await expect(headerLinks).toHaveCount(5);
   const hrefs = await headerLinks.evaluateAll((links) =>
     links.map((link) => link.getAttribute('href'))
   );
   expect(hrefs.every((href) => href?.startsWith('/') && href !== '#')).toBe(true);
 
-  await page.getByRole('link', { name: '归档', exact: true }).click();
-  await expect(page.locator('[data-archive-total]')).toHaveText('40');
-  await page.locator('main a[href="/posts/本科数学大杂烩/"]').click();
+  await page.getByRole('link', { name: '博客文章', exact: true }).click();
+  await expect(page.locator('[data-blog-total]')).toHaveText('40');
+  await page.getByRole('link', { name: '本科数学大杂烩', exact: true }).click();
   await expect(page.locator('article[data-post]')).toBeVisible();
   const commentsText = await page.locator('[data-giscus-comments]').evaluate(
     (element) => (element as HTMLElement).innerText
