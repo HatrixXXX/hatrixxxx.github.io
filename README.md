@@ -44,6 +44,8 @@ pnpm test:e2e
 
 主导航依次为首页、博客文章、作品橱窗、关于我和留言板。博客文章与关于我在桌面端使用横向二级菜单；`/blog/` 是全部文章索引，`/blog/<type>/` 按文章类型筛选。关于子页目前是占位页，`/guestbook/` 使用 Giscus 保存留言。
 
+首页保留大尺寸题图和波浪分隔。其他页面的顶部图片统一为桌面和平板 `240px`、手机 `200px`，并直接衔接正文；文章摘要和发布时间等信息位于题图下方。
+
 ## 新增文章
 
 在 `src/content/posts/` 新建 Markdown 或 MDX 文件。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
@@ -126,8 +128,8 @@ export const playlist: readonly Track[] = [
 | `pnpm check` | Astro 与 TypeScript 诊断 |
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检与 67 页静态构建 |
-| `pnpm check:site` | 旧文章路由、CNAME、5352 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 92 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm check:site` | 旧文章路由、CNAME、3961 条站内链接和发布体积 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 117 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 
