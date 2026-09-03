@@ -8,6 +8,7 @@ import {
 } from '../../src/lib/protected-content/crypto';
 import { utf8Decode } from '../../src/lib/protected-content/encoding';
 import { encryptProtectedPageHtml } from '../../src/lib/protected-content/page';
+import { PROTECTED_VERIFIER_AAD } from '../../src/config/protected-content';
 
 const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[] }));
 const configState = vi.hoisted(() => ({ lockedPagePaths: [] as string[] }));
@@ -61,6 +62,10 @@ function fixturePost(
 }
 
 describe('protected page routes', () => {
+  it('uses the fixed verifier protocol AAD', () => {
+    expect(PROTECTED_VERIFIER_AAD).toBe('verifier:1');
+  });
+
   it('returns normalized unique configured pages and published locked post paths', () => {
     configState.lockedPagePaths.splice(0, Infinity, '/about', '/about/', '/posts/private');
     const posts = [

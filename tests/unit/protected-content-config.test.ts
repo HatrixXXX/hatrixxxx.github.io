@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   LOCKED_PAGE_PATHS,
   PROTECTED_CONTENT,
+  PROTECTED_VERIFIER_AAD,
   isConfiguredLockedPage,
+  isLockedPage,
   normalizeRoutePath
 } from '../../src/config/protected-content';
 import { contentRoot } from '../../src/lib/content-root';
@@ -21,6 +23,16 @@ describe('protected content config', () => {
     expect(normalizeRoutePath('/')).toBe('/');
     expect(normalizeRoutePath('/posts/a%2Fb')).toBe('/posts/a%2Fb/');
     expect(LOCKED_PAGE_PATHS.every(isConfiguredLockedPage)).toBe(true);
+  });
+
+  it('normalizes both configured paths and request paths when enforcing a lock', () => {
+    expect(isLockedPage('/about/', ['/about'])).toBe(true);
+    expect(isLockedPage('/about?from=home', ['/about/'])).toBe(true);
+    expect(isLockedPage('/about/research/', ['/about'])).toBe(false);
+  });
+
+  it('keeps the verifier AAD fixed independently of runtime configuration', () => {
+    expect(PROTECTED_VERIFIER_AAD).toBe('verifier:1');
   });
 
   it('resolves private content from the default or configured root', () => {

@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import {
   LOCKED_PAGE_PATHS,
   PROTECTED_CONTENT,
+  PROTECTED_VERIFIER_AAD,
   normalizeRoutePath
 } from '../../config/protected-content';
 import type { PostEntry } from '../../lib/content';
@@ -15,7 +16,6 @@ import { utf8 } from '../../lib/protected-content/encoding';
 import { adminKeyFromEnvironment } from '../../lib/protected-content/server';
 import { postPath } from '../../lib/urls';
 
-const VERIFIER_AAD = `verifier:${PROTECTED_CONTENT.formatVersion}`;
 const VERIFIER_TEXT = 'hatrix-protected-content';
 
 export const prerender = true;
@@ -39,7 +39,7 @@ export const GET: APIRoute = async () => {
   if (routes.length > 0) {
     const keyBytes = await deriveContentKeyBytes(adminKeyFromEnvironment());
     const key = await importContentKey(keyBytes, ['encrypt']);
-    verifier = await encryptEnvelope(utf8(VERIFIER_TEXT), key, VERIFIER_AAD);
+    verifier = await encryptEnvelope(utf8(VERIFIER_TEXT), key, PROTECTED_VERIFIER_AAD);
   }
 
   return new Response(JSON.stringify({

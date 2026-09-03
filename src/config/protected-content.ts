@@ -7,12 +7,18 @@ export const PROTECTED_CONTENT = {
 } as const;
 
 export const LOCKED_PAGE_PATHS: readonly string[] = [];
+export const PROTECTED_VERIFIER_AAD = 'verifier:1' as const;
 
 export function normalizeRoutePath(path: string): string {
   const pathname = new URL(path, 'https://hatrix.site').pathname;
   return pathname === '/' ? '/' : `${pathname.replace(/\/+$/, '')}/`;
 }
 
+export function isLockedPage(path: string, configuredPaths: readonly string[]): boolean {
+  const normalizedPath = normalizeRoutePath(path);
+  return configuredPaths.some((configuredPath) => normalizeRoutePath(configuredPath) === normalizedPath);
+}
+
 export function isConfiguredLockedPage(path: string): boolean {
-  return LOCKED_PAGE_PATHS.includes(normalizeRoutePath(path));
+  return isLockedPage(path, LOCKED_PAGE_PATHS);
 }
