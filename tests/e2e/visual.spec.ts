@@ -26,7 +26,7 @@ for (const path of routes) {
     const viewport = page.viewportSize();
     const contentY = Math.min(
       contentBounds.y + contentBounds.height + 24,
-      (viewport?.height ?? contentBounds.y) - 1
+      (viewport?.height ?? contentBounds.y + contentBounds.height + 25) - 1
     );
     await page.mouse.move(contentBounds.x + contentBounds.width / 2, contentY);
     if (viewport && viewport.width > 768) {
