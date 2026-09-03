@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
+import LockIndicator from '@/components/LockIndicator.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import WaveDivider from '@/components/WaveDivider.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -24,7 +25,12 @@ const archives = buildArchives(posts);
             {archive.posts.map((post) => (
               <li>
                 <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.getDate()} 日</time>
-                <a href={postPath(post.data.legacySlug)}>{post.data.title}</a>
+                <a
+                  href={postPath(post.data.legacySlug)}
+                  data-locked-link={post.data.locked ? '' : undefined}
+                >
+                  {post.data.title}{post.data.locked && <LockIndicator />}
+                </a>
               </li>
             ))}
           </ul>

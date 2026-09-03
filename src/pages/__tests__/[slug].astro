@@ -1,7 +1,9 @@
 ---
 import GiscusComments from '@/components/GiscusComments.astro';
+import PostCard from '@/components/PostCard.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import type { PostEntry } from '@/lib/content';
 
 interface Props {
   slug: string;
@@ -15,39 +17,66 @@ export function getStaticPaths() {
 
   return [
     { params: { slug: 'protected' }, props: { slug: 'protected', label: '第一页' } },
-    { params: { slug: 'remembered' }, props: { slug: 'remembered', label: '第二页' } }
+    { params: { slug: 'remembered' }, props: { slug: 'remembered', label: '第二页' } },
+    { params: { slug: 'locked-index' }, props: { slug: 'locked-index', label: '公开索引' } }
   ];
 }
 
 const { slug, label } = Astro.props;
 const route = `/__tests__/${slug}/`;
+const lockedIndex = slug === 'locked-index';
+const lockedPost = {
+  id: 'locked-index-fixture',
+  collection: 'posts',
+  body: 'distinctive-private-body-marker',
+  data: {
+    title: '公开的加锁文章标题',
+    description: '公开的加锁文章摘要',
+    pubDate: new Date('2026-09-03'),
+    cover: '/images/default-cover.svg',
+    type: '技术笔记',
+    draft: false,
+    locked: true,
+    math: false,
+    mermaid: false,
+    legacySlug: 'locked-index-fixture'
+  }
+} as PostEntry;
 ---
 
-<BaseLayout title={`加锁测试${label}`} canonicalPath={route}>
-  <ProtectedContent locked route={route} title={`加锁测试${label}`}>
-    <main class="container" data-protected-test-content={slug}>
-      <nav aria-label="测试目录">
-        <a href="#protected-heading" data-toc-link="protected-heading">测试小节</a>
-      </nav>
-      <article>
-        <h1>仅管理员可见的{label}正文</h1>
-        <h2 id="protected-heading">解锁后的测试小节</h2>
-        <p>protected-e2e-secret-{slug}</p>
-        <img
-          src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
-          alt="解锁后的测试图片"
-          title="受保护图片标题"
-          data-protected-src="/protected-content/assets/test-image.bin"
-          data-protected-type="image/png"
-        />
-        <pre><code class="language-mermaid">graph TD; A--&gt;B;</code></pre>
-        <a href={slug === 'protected' ? '/__tests__/remembered/' : '/__tests__/protected/'} data-test-next>
-          前往另一加锁页
-        </a>
-      </article>
-      <GiscusComments title="测试评论" />
-    </main>
-  </ProtectedContent>
+<BaseLayout title={`加锁测试${label}`} canonicalPath={route} noindex={lockedIndex}>
+  {
+    lockedIndex ? (
+      <main class="container">
+        <PostCard post={lockedPost} index={0} />
+      </main>
+    ) : (
+      <ProtectedContent locked route={route} title={`加锁测试${label}`}>
+        <main class="container" data-protected-test-content={slug}>
+          <nav aria-label="测试目录">
+            <a href="#protected-heading" data-toc-link="protected-heading">测试小节</a>
+          </nav>
+          <article>
+            <h1>仅管理员可见的{label}正文</h1>
+            <h2 id="protected-heading">解锁后的测试小节</h2>
+            <p>protected-e2e-secret-{slug}</p>
+            <img
+              src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+              alt="解锁后的测试图片"
+              title="受保护图片标题"
+              data-protected-src="/protected-content/assets/test-image.bin"
+              data-protected-type="image/png"
+            />
+            <pre><code class="language-mermaid">graph TD; A--&gt;B;</code></pre>
+            <a href={slug === 'protected' ? '/__tests__/remembered/' : '/__tests__/protected/'} data-test-next>
+              前往另一加锁页
+            </a>
+          </article>
+          <GiscusComments title="测试评论" />
+        </main>
+      </ProtectedContent>
+    )
+  }
 </BaseLayout>
 
 <script>

@@ -2,6 +2,7 @@
 import 'katex/dist/katex.min.css';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import GiscusComments from '@/components/GiscusComments.astro';
+import LockIndicator from '@/components/LockIndicator.astro';
 import PostMeta from '@/components/PostMeta.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
 import TableOfContents from '@/components/TableOfContents.astro';
@@ -31,6 +32,7 @@ const canonicalPath = postPath(post.data.legacySlug);
   image={post.data.cover}
   canonicalPath={canonicalPath}
   bodyClass="post-page"
+  noindex={post.data.locked}
 >
   <article data-post>
     <header class="post-hero">
@@ -55,9 +57,16 @@ const canonicalPath = postPath(post.data.legacySlug);
           <nav class="adjacent-posts" aria-label="相邻文章" data-adjacent-posts>
             {
               adjacent.previous ? (
-                <a href={postPath(adjacent.previous.data.legacySlug)} rel="prev">
+                <a
+                  href={postPath(adjacent.previous.data.legacySlug)}
+                  rel="prev"
+                  data-locked-link={adjacent.previous.data.locked ? '' : undefined}
+                >
                   <span>上一篇</span>
-                  <strong>{adjacent.previous.data.title}</strong>
+                  <strong>
+                    {adjacent.previous.data.title}
+                    {adjacent.previous.data.locked && <LockIndicator />}
+                  </strong>
                 </a>
               ) : (
                 <span aria-hidden="true" />
@@ -65,9 +74,16 @@ const canonicalPath = postPath(post.data.legacySlug);
             }
             {
               adjacent.next && (
-                <a href={postPath(adjacent.next.data.legacySlug)} rel="next">
+                <a
+                  href={postPath(adjacent.next.data.legacySlug)}
+                  rel="next"
+                  data-locked-link={adjacent.next.data.locked ? '' : undefined}
+                >
                   <span>下一篇</span>
-                  <strong>{adjacent.next.data.title}</strong>
+                  <strong>
+                    {adjacent.next.data.title}
+                    {adjacent.next.data.locked && <LockIndicator />}
+                  </strong>
                 </a>
               )
             }

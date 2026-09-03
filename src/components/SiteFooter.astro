@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import LockIndicator from '@/components/LockIndicator.astro';
 import { SITE } from '@/config/site';
 import { sortPosts, type PostEntry } from '@/lib/content';
 import { postPath } from '@/lib/urls';
@@ -38,7 +39,14 @@ const randomPosts = shuffledPosts.slice(0, 10);
       <h2 id="footer-random-heading">随机文章</h2>
       <ul>
         {randomPosts.map((post) => (
-          <li><a href={postPath(post.data.legacySlug)}>{post.data.title}</a></li>
+          <li>
+            <a
+              href={postPath(post.data.legacySlug)}
+              data-locked-link={post.data.locked ? '' : undefined}
+            >
+              {post.data.title}{post.data.locked && <LockIndicator />}
+            </a>
+          </li>
         ))}
       </ul>
     </section>
@@ -47,7 +55,14 @@ const randomPosts = shuffledPosts.slice(0, 10);
       <h2 id="footer-newest-heading">最近更新</h2>
       <ul>
         {newestPosts.map((post) => (
-          <li><a href={postPath(post.data.legacySlug)}>{post.data.title}</a></li>
+          <li>
+            <a
+              href={postPath(post.data.legacySlug)}
+              data-locked-link={post.data.locked ? '' : undefined}
+            >
+              {post.data.title}{post.data.locked && <LockIndicator />}
+            </a>
+          </li>
         ))}
       </ul>
     </section>

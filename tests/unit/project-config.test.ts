@@ -14,8 +14,9 @@ describe('Astro project tooling', () => {
       'cross-env NODE_USE_ENV_PROXY=1 tsx scripts/check-images.ts'
     );
     expect(packageJson.scripts.build).toBe(
-      'cross-env-shell NODE_USE_ENV_PROXY=1 "tsx scripts/check-images.ts && astro build"'
+      'cross-env-shell NODE_USE_ENV_PROXY=1 "tsx scripts/check-images.ts && astro build && tsx scripts/check-protected-output.ts"'
     );
+    expect(packageJson.scripts['check:protected']).toBe('tsx scripts/check-protected-output.ts');
   });
 
   it('does not retain the removed commitlint hook', () => {
@@ -80,7 +81,7 @@ describe('Astro project tooling', () => {
 
   it('starts the Playwright server through the project package manager', () => {
     expect(playwrightConfig.webServer).toMatchObject({
-      command: 'corepack pnpm dev --host 127.0.0.1',
+      command: 'corepack pnpm dev --host 127.0.0.1 --port 4322',
       env: { ASTRO_DEV_BACKGROUND: '0' }
     });
   });
