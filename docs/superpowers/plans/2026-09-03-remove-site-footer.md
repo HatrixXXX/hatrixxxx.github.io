@@ -149,7 +149,7 @@ Expected: PASS，更新 18 张无平台后缀的 Windows 基线。
 
 Run: `corepack pnpm test:e2e`
 
-Expected: PASS，92 项检查没有失败。
+Expected: PASS，本次收集到的 115 项检查没有失败。
 
 - [ ] **Step 6: 检查改动边界并提交**
 
