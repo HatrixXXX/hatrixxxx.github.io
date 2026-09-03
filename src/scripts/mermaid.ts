@@ -41,3 +41,4 @@ async function renderMermaidTargets(): Promise<void> {
 
 void renderMermaidTargets();
 document.addEventListener('astro:page-load', () => void renderMermaidTargets());
+document.addEventListener('hatrix:protected-content-ready', () => void renderMermaidTargets());

@@ -37,6 +37,9 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     </nav>
 
     <div class="header-actions">
+      <button class="admin-logout" type="button" data-admin-logout hidden>
+        退出管理员身份
+      </button>
       <button class="header-action" type="button" aria-label="搜索文章" data-open-search>⌕</button>
       <button
         class="header-action"
@@ -226,6 +229,24 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     gap: 0.35rem;
   }
 
+  .admin-logout {
+    min-height: 40px;
+    border: 1px solid rgb(255 255 255 / 28%);
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    background: rgb(17 20 25 / 70%);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+  }
+
+  .admin-logout:hover,
+  .admin-logout:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
   .header-action,
   .menu-toggle {
     width: 44px;
@@ -307,6 +328,11 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   }
 
   @media (max-width: 768px) {
+    .admin-logout {
+      max-width: 8.5rem;
+      font-size: 0.72rem;
+    }
+
     .desktop-nav {
       display: none;
     }

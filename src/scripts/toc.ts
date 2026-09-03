@@ -35,3 +35,4 @@ function initializeTableOfContents(): void {
 
 initializeTableOfContents();
 document.addEventListener('astro:page-load', initializeTableOfContents);
+document.addEventListener('hatrix:protected-content-ready', initializeTableOfContents);

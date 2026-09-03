@@ -13,6 +13,7 @@ import { SITE } from '@/config/site';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
 import '@/styles/prose.css';
+import '@/styles/protected-content.css';
 
 interface Props {
   title: string;
@@ -86,6 +87,7 @@ const pageLocked = isConfiguredLockedPage(Astro.url.pathname);
       import '@/scripts/lightbox';
       import '@/scripts/music-player';
       import '@/scripts/navigation';
+      import '@/scripts/protected-content';
       import '@/scripts/cursor-trail';
       import '@/scripts/sakana';
       import '@/scripts/search';

@@ -50,4 +50,5 @@ document.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('astro:page-load', markImages);
+document.addEventListener('hatrix:protected-content-ready', markImages);
 markImages();
