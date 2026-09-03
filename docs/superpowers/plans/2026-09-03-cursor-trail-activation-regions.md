@@ -28,7 +28,7 @@
 
 **Interfaces:**
 - Produces: `TrailRegion`、`TrailRegionBounds`、`classifyTrailRegion(clientX, clientY, bounds)`。
-- Removes: `isPointerInGutter` 及对应布尔测试。
+- Keeps temporarily: `isPointerInGutter` 继续供尚未迁移的运行时调用，Task 2 完成迁移后再删除。
 
 - [ ] **Step 1: 写失败测试**
 
@@ -66,7 +66,7 @@ Expected: FAIL，`classifyTrailRegion` 尚未导出。
 
 - [ ] **Step 3: 实现二维分类**
 
-在 `src/lib/cursor-trail.ts` 末尾用下面的接口替换 `isPointerInGutter`：
+在 `src/lib/cursor-trail.ts` 末尾增加下面的接口，同时保留现有 `isPointerInGutter`：
 
 ```ts
 export type TrailRegion = 'left' | 'right' | null;
@@ -119,6 +119,7 @@ git commit -m "feat: classify cursor trail activation regions"
 **Interfaces:**
 - Consumes: Task 1 的 `classifyTrailRegion` 与 `TrailRegion`。
 - Produces: 文章页 `[data-cursor-trail-region]` 纵向探针；普通页读取原生 `<main>`。
+- Removes: 运行时迁移完成后删除 `isPointerInGutter` 和临时兼容测试。
 
 - [ ] **Step 1: 增加通用测试坐标和矩形像素工具**
 
