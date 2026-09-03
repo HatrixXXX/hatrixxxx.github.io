@@ -798,3 +798,74 @@ git commit --only -m "test: verify horizontal post rail" -- scripts/check-built-
 - [ ] **Step 7: Start the required development preview**
 
 Run `corepack pnpm dev --host 127.0.0.1` in a persistent process. Confirm `http://127.0.0.1:4321/` returns HTTP 200 and leave the process running for user review.
+
+### Task 6: Refine free scrolling and rail width
+
+**Files:**
+- Modify: `tests/e2e/blog-index.spec.ts`
+- Modify: `src/components/PostList.astro`
+- Modify: `src/components/PostCard.astro`
+- Modify: `src/pages/blog/index.astro`
+- Modify: `src/pages/blog/[type].astro`
+- Update: the three `/blog/` visual baselines
+
+**Interfaces:**
+- Consumes: the existing `PostList` component and delegated drag behavior.
+- Produces: optional `wide: boolean` presentation on `PostList`, without changing the `PostEntry[]` data contract.
+
+- [ ] **Step 1: Write the failing regression checks**
+
+In `tests/e2e/blog-index.spec.ts`, extend the main layout result and assertions with:
+
+```ts
+const railRect = element.getBoundingClientRect();
+return {
+  // existing fields stay here
+  left: railRect.left,
+  right: railRect.right,
+  scrollbarWidth: getComputedStyle(element).scrollbarWidth
+};
+
+expect(layout.left).toBeCloseTo(32, 0);
+expect(layout.right).toBeCloseTo(1_408, 0);
+expect(layout.scrollbarWidth).toBe('none');
+```
+
+Change the drag distance from 240 px to 64 px, then replace the final position assertion with:
+
+```ts
+await page.waitForTimeout(250);
+const scrollLeftAfterDrag = await rail.evaluate((element) => element.scrollLeft);
+expect(scrollLeftWhileDragging).toBeGreaterThan(0);
+expect(scrollLeftAfterDrag).toBeCloseTo(scrollLeftWhileDragging, 0);
+await expect(page).toHaveURL(/\/blog\/$/);
+```
+
+- [ ] **Step 2: Run the focused test and confirm RED**
+
+```powershell
+corepack pnpm exec playwright test tests/e2e/blog-index.spec.ts --project=desktop-1440
+```
+
+Expected: the rail still begins at 130 px, computed scrollbar width is `thin`, and the small drag returns to zero because scroll snapping is active.
+
+- [ ] **Step 3: Implement the minimal CSS and prop changes**
+
+Add `wide?: boolean` to `PostList.astro`, apply `post-list--wide` when true, and pass `wide` only from `/blog/` and `/blog/[type]/`. Remove `scroll-snap-type`, `scroll-padding-inline`, the visible scrollbar colors, and all WebKit track/thumb rules. Set `scrollbar-width: none`, hide the WebKit scrollbar, reduce the rail padding to `0.25rem 0.125rem`, and remove `scroll-snap-align` from `PostCard.astro`.
+
+At `min-width: 1025px`, use:
+
+```css
+.post-list--wide {
+  width: calc(100vw - 4rem);
+  margin-inline: calc(50% - 50vw + 2rem);
+}
+```
+
+- [ ] **Step 4: Run the focused test and confirm GREEN**
+
+Run the command from Step 2. Expected: all blog layout, input, view-switch, type-page, keyboard, and ClientRouter tests pass.
+
+- [ ] **Step 5: Verify visuals and the full project**
+
+Run `corepack pnpm test:run`, `corepack pnpm check`, `corepack pnpm build`, `corepack pnpm check:site`, and `corepack pnpm test:e2e`. Inspect the updated desktop, tablet, and mobile `/blog/` screenshots for card clipping or overlap with the static Sakana characters.
