@@ -60,6 +60,49 @@ test('blog switches between the default card view and time archive', async ({ pa
   await expect(cardView).toBeVisible();
 });
 
+test('mouse wheel scrolls the rail and returns vertical scrolling at its end', async ({ page }) => {
+  await page.goto('/blog/');
+  const rail = page.locator('[data-post-rail]');
+  await rail.scrollIntoViewIfNeeded();
+  await rail.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  const box = await rail.boundingBox();
+  if (!box) throw new Error('Missing post rail bounds');
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const pageStart = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, 420);
+  await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(pageStart);
+
+  await rail.evaluate((element) => {
+    element.scrollLeft = element.scrollWidth;
+  });
+  const pageAtRailEnd = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, 420);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(pageAtRailEnd);
+});
+
+test('dragging a post link scrolls the rail without opening the article', async ({ page }) => {
+  await page.goto('/blog/');
+  const rail = page.locator('[data-post-rail]');
+  const link = page.locator('article[data-post-card] h2 a').first();
+  await link.scrollIntoViewIfNeeded();
+  const box = await link.boundingBox();
+  if (!box) throw new Error('Missing first post link bounds');
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 240, box.y + box.height / 2, { steps: 8 });
+  const scrollLeftWhileDragging = await rail.evaluate((element) => element.scrollLeft);
+  await page.mouse.up();
+
+  expect(scrollLeftWhileDragging).toBeGreaterThan(0);
+  await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await expect(page).toHaveURL(/\/blog\/$/);
+});
+
 for (const { route, title, count } of [
   { route: '/blog/tech-notes/', title: '技术笔记', count: 37 },
   { route: '/blog/troubleshooting/', title: '踩坑记录', count: 1 },
