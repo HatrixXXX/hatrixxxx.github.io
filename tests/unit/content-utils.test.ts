@@ -13,6 +13,7 @@ const post = (id: string, date: string) => ({
     description: `description for ${id}`,
     pubDate: new Date(date),
     cover: '/x.svg',
+    type: '技术笔记',
     draft: false,
     math: false,
     mermaid: false,

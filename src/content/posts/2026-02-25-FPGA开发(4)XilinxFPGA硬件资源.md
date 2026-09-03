@@ -10,6 +10,7 @@ seriesOrder: 4
 draft: false
 math: true
 mermaid: true
+type: 技术笔记
 legacySlug: FPGA开发(4)XilinxFPGA硬件资源
 ---
 

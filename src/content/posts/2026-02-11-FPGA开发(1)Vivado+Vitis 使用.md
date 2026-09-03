@@ -10,6 +10,7 @@ seriesOrder: 1
 draft: false
 math: true
 mermaid: true
+type: 技术笔记
 legacySlug: FPGA开发(1)Vivado+Vitis 使用
 ---
 

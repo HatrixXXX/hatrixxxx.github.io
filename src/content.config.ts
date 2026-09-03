@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { POST_TYPES } from './config/navigation';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' }),
@@ -11,6 +12,7 @@ const posts = defineCollection({
       pubDate: z.coerce.date(),
       updatedDate: z.coerce.date().optional(),
       cover: z.string().min(1),
+      type: z.enum(POST_TYPES),
       series: z.string().optional(),
       seriesOrder: z.number().int().nonnegative().optional(),
       draft: z.boolean().default(false),
