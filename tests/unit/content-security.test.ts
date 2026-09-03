@@ -7,6 +7,8 @@ import remarkContentSecurity from '../../src/plugins/remark-content-security';
 const PINNED_IMAGE =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png';
 const BACKSLASH_REMOTE_IMAGE = String.raw`https:\\evil.example\\tracker.png`;
+const RELATIVE_BACKSLASH_REMOTE_IMAGE = String.raw`\\evil.example\tracker.png`;
+const ROOTED_BACKSLASH_REMOTE_IMAGE = String.raw`/\\evil.example\tracker.png`;
 
 function transform(children: Array<Record<string, unknown>>) {
   return () => remarkContentSecurity()({ type: 'root', children }, { path: 'post.md' });
@@ -81,12 +83,41 @@ describe('published content security', () => {
     );
   });
 
+  it.each([RELATIVE_BACKSLASH_REMOTE_IMAGE, ROOTED_BACKSLASH_REMOTE_IMAGE])(
+    'rejects raw HTML images resolved remotely from an HTTPS page base: %s',
+    (url) => {
+      expect(transform([{ type: 'html', value: `<img src="${url}">` }])).toThrow(
+        /unapproved remote image/i
+      );
+    }
+  );
+
+  it.each([RELATIVE_BACKSLASH_REMOTE_IMAGE, ROOTED_BACKSLASH_REMOTE_IMAGE])(
+    'rejects Markdown image URLs resolved remotely from an HTTPS page base: %s',
+    (url) => {
+      expect(transform([{ type: 'image', url }])).toThrow(/unapproved remote image/i);
+    }
+  );
+
+  it.each([
+    '<img src="&bsol;&bsol;evil.example&bsol;tracker.png">',
+    '<img src="&sol;&bsol;evil.example&bsol;tracker.png">',
+    '<img src="https&colon;&bsol;&bsol;evil.example&bsol;tracker.png">'
+  ])('rejects raw HTML image separators constructed with named references: %s', (value) => {
+    expect(transform([{ type: 'html', value }])).toThrow(/unapproved remote image/i);
+  });
+
   it.each([
     '<a href="&#x6a;ava&Tab;script&colon;alert(1)">open</a>',
     '<img src="&#x2f;&#x2f;evil.example/tracker.png">',
     '<img srcset="https://evil.example/tracker.png 1x">',
     '<picture><source srcset="https://evil.example/tracker.png 1x"><img src="/local.png"></picture>',
-    `<img src="${BACKSLASH_REMOTE_IMAGE}">`
+    `<img src="${BACKSLASH_REMOTE_IMAGE}">`,
+    `<img src="${RELATIVE_BACKSLASH_REMOTE_IMAGE}">`,
+    `<img src="${ROOTED_BACKSLASH_REMOTE_IMAGE}">`,
+    '<img src="&bsol;&bsol;evil.example&bsol;tracker.png">',
+    '<img src="&sol;&bsol;evil.example&bsol;tracker.png">',
+    '<img src="https&colon;&bsol;&bsol;evil.example&bsol;tracker.png">'
   ])('rejects browser-normalized raw HTML through Astro markdown processing: %s', async (value) => {
     await expect(renderMarkdown(value)).rejects.toThrow(
       /unsafe URL|unapproved remote image|srcset|forbidden raw HTML tag/i
