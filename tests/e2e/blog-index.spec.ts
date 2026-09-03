@@ -13,10 +13,13 @@ test('blog index lists every published post', async ({ page, request }) => {
     const cards = [...element.querySelectorAll<HTMLElement>('article[data-post-card]')];
     const tops = cards.slice(0, 4).map((card) => Math.round(card.getBoundingClientRect().top));
     const firstWidth = cards[0]?.getBoundingClientRect().width ?? 0;
+    const railRect = element.getBoundingClientRect();
     return {
       overflow: element.scrollWidth > element.clientWidth,
       tops,
       firstWidth,
+      left: railRect.left,
+      right: railRect.right,
       rootOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
     };
   });
@@ -24,6 +27,8 @@ test('blog index lists every published post', async ({ page, request }) => {
   expect(new Set(layout.tops).size).toBe(1);
   expect(layout.firstWidth).toBeGreaterThanOrEqual(272);
   expect(layout.firstWidth).toBeLessThanOrEqual(352);
+  expect(layout.left).toBeCloseTo(32, 0);
+  expect(layout.right).toBeCloseTo(1_408, 0);
   expect(layout.rootOverflow).toBe(0);
 
   const dates = await page.locator('article[data-post-card] time').evaluateAll((times) =>
@@ -31,6 +36,23 @@ test('blog index lists every published post', async ({ page, request }) => {
   );
   expect(dates).toHaveLength(40);
   expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
+});
+
+test('post rail hides its scrollbar and does not snap', async ({ page }) => {
+  await page.goto('/blog/');
+  const styles = await page.locator('[data-post-rail]').evaluate((element) => {
+    const firstCard = element.querySelector<HTMLElement>('article[data-post-card]');
+    const railStyle = getComputedStyle(element);
+    return {
+      scrollbarWidth: railStyle.scrollbarWidth,
+      scrollSnapType: railStyle.scrollSnapType,
+      firstScrollSnapAlign: firstCard ? getComputedStyle(firstCard).scrollSnapAlign : ''
+    };
+  });
+
+  expect(styles.scrollbarWidth).toBe('none');
+  expect(styles.scrollSnapType).toBe('none');
+  expect(styles.firstScrollSnapAlign).toBe('none');
 });
 
 test('blog switches between the default card view and time archive', async ({ page }) => {
@@ -132,12 +154,14 @@ test('dragging a post link scrolls the rail without opening the article', async 
 
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 - 240, box.y + box.height / 2, { steps: 8 });
+  await page.mouse.move(box.x + box.width / 2 - 64, box.y + box.height / 2, { steps: 8 });
   const scrollLeftWhileDragging = await rail.evaluate((element) => element.scrollLeft);
   await page.mouse.up();
+  await page.waitForTimeout(250);
+  const scrollLeftAfterDrag = await rail.evaluate((element) => element.scrollLeft);
 
   expect(scrollLeftWhileDragging).toBeGreaterThan(0);
-  await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  expect(scrollLeftAfterDrag).toBeCloseTo(scrollLeftWhileDragging, 0);
   await expect(page).toHaveURL(/\/blog\/$/);
 });
 
@@ -155,6 +179,11 @@ for (const { route, title, count } of [
     await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
     await expect(page.locator('article[data-post-card]')).toHaveCount(count);
     await expect(page.locator('[data-blog-view-toggle]')).toHaveCount(0);
+    if (count > 0) {
+      const railBox = await page.locator('[data-post-rail]').boundingBox();
+      expect(railBox?.x).toBeCloseTo(32, 0);
+      expect(railBox?.width).toBeCloseTo(1_376, 0);
+    }
   });
 }
 

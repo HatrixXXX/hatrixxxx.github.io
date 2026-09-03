@@ -27,7 +27,7 @@ const archives = buildArchives(posts);
         >切换到时间归档</button>
       </div>
       <div id="blog-card-view" data-blog-card-view>
-        <PostList posts={posts} />
+        <PostList posts={posts} wide />
       </div>
       <section id="blog-archive-view" aria-label="按时间归档" data-blog-archive-view hidden>
         <PostArchiveList archives={archives} />

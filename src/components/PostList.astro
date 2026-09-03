@@ -4,13 +4,14 @@ import type { PostEntry } from '@/lib/content';
 
 interface Props {
   posts: PostEntry[];
+  wide?: boolean;
 }
 
-const { posts } = Astro.props;
+const { posts, wide = false } = Astro.props;
 ---
 
 <section
-  class="post-list"
+  class:list={['post-list', { 'post-list--wide': wide }]}
   aria-label="文章列表"
   aria-describedby="post-list-instructions"
   tabindex="0"
@@ -34,31 +35,17 @@ const { posts } = Astro.props;
     gap: clamp(1rem, 2.2vw, 1.5rem);
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 0.25rem 0.125rem 1rem;
+    padding: 0.25rem 0.125rem;
     cursor: grab;
-    scroll-padding-inline: 0.125rem;
-    scroll-snap-type: x proximity;
-    scrollbar-color: var(--color-accent) var(--color-surface-raised);
-    scrollbar-width: thin;
+    scrollbar-width: none;
   }
 
   .post-list::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  .post-list::-webkit-scrollbar-track {
-    border-radius: 999px;
-    background: var(--color-surface-raised);
-  }
-
-  .post-list::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: var(--color-accent);
+    display: none;
   }
 
   .post-list[data-dragging='true'] {
     cursor: grabbing;
-    scroll-snap-type: none;
   }
 
   .post-list[data-dragging='true'] :global(*) {
@@ -74,5 +61,12 @@ const { posts } = Astro.props;
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  @media (min-width: 1025px) {
+    .post-list--wide {
+      width: calc(100vw - 4rem);
+      margin-inline: calc(50% - 50vw + 2rem);
+    }
   }
 </style>

@@ -30,7 +30,7 @@ const { title, posts } = Astro.props;
     {posts.length === 0 ? (
       <EmptyState title="这个类型还没有文章" description="以后写到这类内容时，会放在这里。" />
     ) : (
-      <PostList posts={posts} />
+      <PostList posts={posts} wide />
     )}
   </main>
 </BaseLayout>
