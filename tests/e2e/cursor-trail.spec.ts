@@ -1,8 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-const alphaPixels = (canvas: HTMLCanvasElement, left = 0, right = canvas.width) => {
+const alphaPixels = (
+  canvas: HTMLCanvasElement,
+  range?: { left: number; right: number }
+) => {
   const context = canvas.getContext('2d');
   if (!context) return -1;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const left = Math.max(0, Math.floor(((range?.left ?? rect.left) - rect.left) * scaleX));
+  const right = Math.min(canvas.width, Math.ceil(((range?.right ?? rect.right) - rect.left) * scaleX));
   const width = Math.max(0, right - left);
   const data = context.getImageData(left, 0, width, canvas.height).data;
   let count = 0;
@@ -40,6 +47,30 @@ test('cursor trail is a non-interactive fixed viewport layer', async ({ page }) 
       height: style.height
     };
   })).toEqual({ position: 'fixed', pointerEvents: 'none', width: '1440px', height: '900px' });
+});
+
+test('cursor trail scales its backing store for a high-DPR viewport', async ({ browser }) => {
+  const context = await browser.newContext({
+    deviceScaleFactor: 2,
+    viewport: { width: 1440, height: 900 }
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto('/');
+    const canvas = page.locator('[data-cursor-trail]');
+    expect(await canvas.evaluate((element) => {
+      const canvasElement = element as HTMLCanvasElement;
+      const style = getComputedStyle(element);
+      return {
+        cssWidth: style.width,
+        cssHeight: style.height,
+        width: canvasElement.width,
+        height: canvasElement.height
+      };
+    })).toEqual({ cssWidth: '1440px', cssHeight: '900px', width: 2880, height: 1800 });
+  } finally {
+    await context.close();
+  }
 });
 
 test('moving only inside the content band leaves the canvas transparent', async ({ page }) => {
@@ -110,6 +141,30 @@ test('reduced motion disables drawing', async ({ page }) => {
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
 });
 
+test('changing reduced motion clears and gates the trail until the next gutter input', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const bounds = await page.locator('[data-content-boundary]').boundingBox();
+  if (!bounds) throw new Error('Missing content boundary');
+  const range = { left: 0, right: bounds.x };
+  const x = Math.max(8, bounds.x - 24);
+
+  for (let step = 0; step < 6; step += 1) await page.mouse.move(x, 180 + step * 42);
+  await expect.poll(() => canvas.evaluate(alphaPixels, range)).toBeGreaterThan(0);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(() => canvas.evaluate(alphaPixels, range)).toBe(0);
+
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  expect(await canvas.evaluate(alphaPixels, range)).toBe(0);
+
+  for (let step = 0; step < 6; step += 1) await page.mouse.move(x, 460 + step * 28);
+  await expect.poll(() => canvas.evaluate(alphaPixels, range)).toBeGreaterThan(0);
+});
+
 test('a non-fine pointer disables drawing', async ({ browser }) => {
   const context = await browser.newContext({
     hasTouch: true,
@@ -133,7 +188,17 @@ test('the canvas persists once across client navigation', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
   await canvas.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
-  await page.getByRole('link', { name: '博客文章', exact: true }).click();
+  await Promise.all([
+    page.waitForURL(/\/blog\/$/),
+    page.getByRole('link', { name: '博客文章', exact: true }).click()
+  ]);
+  await expect(page.locator('[data-blog-total]')).toHaveText('40');
   await expect(page.locator('[data-cursor-trail]')).toHaveCount(1);
   await expect(page.locator('[data-cursor-trail]')).toHaveAttribute('data-persist-probe', 'same-node');
+  const bounds = await page.locator('[data-content-boundary]').boundingBox();
+  if (!bounds) throw new Error('Missing content boundary');
+  const range = { left: 0, right: bounds.x };
+  const x = Math.max(8, bounds.x - 24);
+  for (let step = 0; step < 6; step += 1) await page.mouse.move(x, 180 + step * 42);
+  await expect.poll(() => canvas.evaluate(alphaPixels, range)).toBeGreaterThan(0);
 });

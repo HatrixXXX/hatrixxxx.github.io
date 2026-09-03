@@ -1,4 +1,5 @@
 import {
+  advanceTrailFrameClock,
   advanceTrailHue,
   createTrailState,
   isPointerInGutter,
@@ -10,7 +11,6 @@ import {
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-const FRAME_INTERVAL_MS = 1000 / 60;
 const INPUT_IDLE_MS = 250;
 const SETTLED_DISTANCE_PX = 0.1;
 const SETTLED_VELOCITY_PX_PER_FRAME = 0.01;
@@ -19,13 +19,13 @@ let canvas: HTMLCanvasElement | null = null;
 let context: CanvasRenderingContext2D | null = null;
 let state: TrailState | undefined;
 let animationFrame = 0;
-let lastFrame = 0;
+let lastFrame: number | undefined;
 let lastPointerInput = 0;
 
 function clearTrail(): void {
   if (animationFrame) cancelAnimationFrame(animationFrame);
   animationFrame = 0;
-  lastFrame = 0;
+  lastFrame = undefined;
   lastPointerInput = 0;
   state = undefined;
   if (canvas && context) {
@@ -73,8 +73,9 @@ function render(time: number): void {
     return;
   }
   animationFrame = requestAnimationFrame(render);
-  if (time - lastFrame < FRAME_INTERVAL_MS) return;
-  lastFrame = time;
+  const frame = advanceTrailFrameClock(lastFrame, time);
+  lastFrame = frame.lastFrame;
+  if (!frame.shouldRender) return;
   context.globalCompositeOperation = 'destination-out';
   context.fillStyle = 'rgb(0 0 0 / 40%)';
   context.fillRect(0, 0, innerWidth, innerHeight);

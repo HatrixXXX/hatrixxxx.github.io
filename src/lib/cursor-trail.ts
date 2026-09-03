@@ -9,6 +9,26 @@ export const TRAIL_SETTINGS = {
   hueFrequency: 0.0015,
 } as const;
 
+export const TRAIL_FRAME_INTERVAL_MS = 1000 / 60;
+
+export type TrailFrameClockResult = {
+  lastFrame: number;
+  shouldRender: boolean;
+};
+
+export function advanceTrailFrameClock(
+  lastFrame: number | undefined,
+  time: number,
+): TrailFrameClockResult {
+  if (lastFrame === undefined) return { lastFrame: time, shouldRender: true };
+  const elapsed = time - lastFrame;
+  if (elapsed < TRAIL_FRAME_INTERVAL_MS) return { lastFrame, shouldRender: false };
+  return {
+    lastFrame: time - (elapsed % TRAIL_FRAME_INTERVAL_MS),
+    shouldRender: true,
+  };
+}
+
 export type TrailNode = {
   x: number;
   y: number;
