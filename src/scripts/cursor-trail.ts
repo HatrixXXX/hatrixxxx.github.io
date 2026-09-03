@@ -11,17 +11,22 @@ import {
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 const FRAME_INTERVAL_MS = 1000 / 60;
+const INPUT_IDLE_MS = 250;
+const SETTLED_DISTANCE_PX = 0.1;
+const SETTLED_VELOCITY_PX_PER_FRAME = 0.01;
 
 let canvas: HTMLCanvasElement | null = null;
 let context: CanvasRenderingContext2D | null = null;
 let state: TrailState | undefined;
 let animationFrame = 0;
 let lastFrame = 0;
+let lastPointerInput = 0;
 
 function clearTrail(): void {
   if (animationFrame) cancelAnimationFrame(animationFrame);
   animationFrame = 0;
   lastFrame = 0;
+  lastPointerInput = 0;
   state = undefined;
   if (canvas && context) {
     context.save();
@@ -53,6 +58,15 @@ function drawTendril(tendril: Tendril): void {
   context.stroke();
 }
 
+function isTrailSettled(): boolean {
+  const currentState = state;
+  if (!currentState) return false;
+  return currentState.tendrils.every(({ nodes }) => nodes.every((node) => (
+    Math.hypot(node.x - currentState.target.x, node.y - currentState.target.y) < SETTLED_DISTANCE_PX
+    && Math.hypot(node.vx, node.vy) < SETTLED_VELOCITY_PX_PER_FRAME
+  )));
+}
+
 function render(time: number): void {
   if (!canvas || !context || !state || !isEnabled()) {
     clearTrail();
@@ -66,6 +80,10 @@ function render(time: number): void {
   context.fillRect(0, 0, innerWidth, innerHeight);
   context.globalCompositeOperation = 'lighter';
   updateTrailState(state);
+  if (performance.now() - lastPointerInput >= INPUT_IDLE_MS && isTrailSettled()) {
+    clearTrail();
+    return;
+  }
   context.strokeStyle = `hsl(${Math.round(advanceTrailHue(state))} 90% 50% / 25%)`;
   context.lineWidth = 1;
   for (const tendril of state.tendrils) drawTendril(tendril);
@@ -107,6 +125,7 @@ function handlePointerMove(event: PointerEvent): void {
   if (!boundary || !isPointerInGutter(event.clientX, boundary.getBoundingClientRect())) return;
   if (state) setTrailTarget(state, event.clientX, event.clientY);
   else state = createTrailState(event.clientX, event.clientY);
+  lastPointerInput = performance.now();
   canvas.dataset.cursorTrailState = 'active';
   startTrail();
 }

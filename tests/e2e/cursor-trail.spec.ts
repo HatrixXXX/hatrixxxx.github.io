@@ -64,6 +64,30 @@ for (const side of ['left', 'right'] as const) {
   });
 }
 
+test('an idle gutter trail fades completely', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const bounds = await page.locator('[data-content-boundary]').boundingBox();
+  if (!bounds) throw new Error('Missing content boundary');
+  const x = Math.max(8, bounds.x - 24);
+  for (let step = 0; step < 6; step += 1) await page.mouse.move(x, 180 + step * 42);
+  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+  await expect.poll(() => canvas.evaluate(alphaPixels), { timeout: 10_000 }).toBe(0);
+});
+
+test('a slowly moving gutter trail remains visible', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const bounds = await page.locator('[data-content-boundary]').boundingBox();
+  if (!bounds) throw new Error('Missing content boundary');
+  const x = Math.max(8, bounds.x - 24);
+  for (let step = 0; step < 6; step += 1) {
+    await page.mouse.move(x, 180 + step * 12);
+    await page.waitForTimeout(125);
+    if (step > 0) expect(await canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+  }
+});
+
 test('a gutter trail can cross the protected content band', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
