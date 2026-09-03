@@ -112,9 +112,11 @@ git commit -m "feat: classify cursor trail activation regions"
 ### Task 2: 正文高度门控与独立区域会话
 
 **Files:**
+- Modify: `src/lib/cursor-trail.ts`
 - Modify: `src/layouts/PostLayout.astro`
 - Modify: `src/scripts/cursor-trail.ts`
 - Modify: `tests/e2e/cursor-trail.spec.ts`
+- Modify: `tests/unit/cursor-trail.test.ts`
 
 **Interfaces:**
 - Consumes: Task 1 的 `classifyTrailRegion` 与 `TrailRegion`。
