@@ -132,7 +132,7 @@ Commit: `feat: define protected content contract`
 - Produces: `adminKeyFromEnvironment(): string`，少于 8 个字符时抛出不包含 key 的错误。
 - Produces: base64/base64url、UTF-8 编解码函数。
 
-- [ ] **Step 1: 安装 Argon2id 实现并写失败测试**
+- [x] **Step 1: 安装 Argon2id 实现并写失败测试**
 
 Run: `corepack pnpm add hash-wasm@4.12.0`
 
@@ -155,17 +155,17 @@ it('authenticates ciphertext with the key and route', async () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试并确认 RED**
+- [x] **Step 2: 运行测试并确认 RED**
 
 Run: `corepack pnpm test:run tests/unit/protected-crypto.test.ts`
 
 Expected: FAIL，原因是 crypto 模块不存在。
 
-- [ ] **Step 3: 实现最小密码学模块**
+- [x] **Step 3: 实现最小密码学模块**
 
 `deriveContentKeyBytes()` 调用 `hash-wasm` 的 `argon2id({ password, salt, memorySize, iterations, parallelism, hashLength: 32, outputType: 'binary' })`。AES-GCM 信封只含 `version`、base64 IV 和 base64 ciphertext；所有加解密必须传入 AAD。服务端仅通过参数接收 key 或从 `astro:env/server` 读取，不导出到客户端常量。
 
-- [ ] **Step 4: 验证、检查 bundle 边界并提交**
+- [x] **Step 4: 验证、检查 bundle 边界并提交**
 
 Run: `corepack pnpm test:run tests/unit/protected-crypto.test.ts`
 
