@@ -72,6 +72,64 @@ it('reports missing or late metadata and unsafe HTML attributes', () => {
   ]));
 });
 
+it.each([
+  ['template', `<template>${secureHead}<script src="/template.js"></script></template>`],
+  ['body', secureHead],
+  ['foreign content', `<svg>${secureHead}</svg>`]
+])('rejects policy metadata placed in %s', (_placement, metadata) => {
+  const html = `<html><head></head><body>${metadata}</body></html>`;
+  const errors = securityErrorsForHtml(html, '/metadata/');
+
+  expect(errors).toEqual(expect.arrayContaining([
+    expect.stringContaining('Invalid Content Security Policy'),
+    expect.stringContaining('Invalid Referrer Policy')
+  ]));
+  expect(errors).not.toEqual(expect.arrayContaining([
+    expect.stringContaining('CSP must appear before every script')
+  ]));
+});
+
+it('accepts local and pinned image srcsets while rejecting normalized remote image sources', () => {
+  const pinnedImage =
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
+  const safeHtml = `<html>${secureHead}<body><picture><source srcset="/_astro/a.webp 320w, ${pinnedImage} 640w"><img src="/_astro/a.webp" srcset="/_astro/a.webp 320w, ${pinnedImage} 640w"></picture></body></html>`;
+  const unsafeHtml = String.raw`<html>${secureHead}<body><img src="\\evil.example\\tracker.png" srcset="//evil.example/one.png 1x, https:\\evil.example\\two.png 2x"><picture><source srcset="//evil.example/three.png 1x"></picture></body></html>`;
+
+  expect(securityErrorsForHtml(safeHtml, '/images/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/images/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('unapproved remote image'),
+    expect.stringContaining('src='),
+    expect.stringContaining('srcset=')
+  ]));
+});
+
+it('rejects executable carriers and applicable executable URL attributes', () => {
+  const html = `<html>${secureHead}<body><meta http-equiv="refresh" content="0;url=https://evil.example/"><object data="javascript:alert(1)"></object><embed src="https://evil.example/plugin"><iframe src="vbscript:msgbox(1)"></iframe></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/carriers/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('meta refresh'),
+    expect.stringContaining('<object'),
+    expect.stringContaining('<embed'),
+    expect.stringContaining('unsafe URL scheme'),
+    expect.stringContaining('data='),
+    expect.stringContaining('src=')
+  ]));
+});
+
+it('bounds diagnostic attribute values while retaining the route and attribute name', () => {
+  const longRemoteImage = `https://evil.example/${'x'.repeat(300)}`;
+  const html = `<html>${secureHead}<body><img src="${longRemoteImage}" onerror="alert(1)"></body></html>`;
+  const errors = securityErrorsForHtml(html, '/diagnostics/');
+
+  expect(errors).toEqual(expect.arrayContaining([
+    expect.stringContaining('/diagnostics/'),
+    expect.stringContaining('onerror='),
+    expect.stringContaining('src='),
+    expect.stringContaining('evil.example')
+  ]));
+  expect(errors.join('\n')).not.toContain('x'.repeat(200));
+});
+
 it('requires the third-party notice in built output', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-site-'));
   await writeSiteFile(root, 'index.html');

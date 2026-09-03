@@ -10,6 +10,7 @@ const SITE_ORIGIN = 'https://hatrix.site';
 const EXPECTED_LOCAL_LINKS = 3961;
 const IMMUTABLE_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
+const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
 
 export interface BuiltSiteCheckOptions {
   sourceCnamePath?: string;
@@ -103,15 +104,20 @@ function localLinks(html: string): string[] {
   return links;
 }
 
-function htmlElements(html: string): DefaultTreeAdapterTypes.Element[] {
-  const elements: DefaultTreeAdapterTypes.Element[] = [];
+interface ParsedElement {
+  element: DefaultTreeAdapterTypes.Element;
+  inTemplate: boolean;
+}
+
+function htmlElements(html: string): ParsedElement[] {
+  const elements: ParsedElement[] = [];
   const document = parse(html, { sourceCodeLocationInfo: true });
 
-  function visit(node: DefaultTreeAdapterTypes.Node): void {
-    if ('tagName' in node) elements.push(node);
-    if ('content' in node) visit(node.content);
+  function visit(node: DefaultTreeAdapterTypes.Node, inTemplate = false): void {
+    if ('tagName' in node) elements.push({ element: node, inTemplate });
+    if ('content' in node) visit(node.content, true);
     if ('childNodes' in node) {
-      for (const child of node.childNodes) visit(child);
+      for (const child of node.childNodes) visit(child, inTemplate);
     }
   }
 
@@ -119,96 +125,172 @@ function htmlElements(html: string): DefaultTreeAdapterTypes.Element[] {
   return elements;
 }
 
-function attributeValue(element: DefaultTreeAdapterTypes.Element, name: string): string | undefined {
-  return element.attrs.find((attribute) => attribute.name === name)?.value;
+function attributeValue(element: DefaultTreeAdapterTypes.Element | undefined, name: string): string | undefined {
+  return element?.attrs.find((attribute) => attribute.name.toLowerCase() === name)?.value;
 }
 
-function externalUrl(value: string, route: string): URL | undefined {
+function parsedUrl(value: string, route: string): URL | undefined {
   try {
-    const url = new URL(value, `${SITE_ORIGIN}${route}`);
-    return url.origin === SITE_ORIGIN ? undefined : url;
+    return new URL(value.trim(), `${SITE_ORIGIN}${route}`);
   } catch {
     return undefined;
   }
+}
+
+function externalUrl(value: string, route: string): URL | undefined {
+  const url = parsedUrl(value, route);
+  return url?.origin === SITE_ORIGIN ? undefined : url;
 }
 
 function isDangerousDataUrl(value: string): boolean {
   return /^data:\s*(?:text\/html|application\/xhtml\+xml|image\/svg\+xml)(?:[;,]|$)/i.test(value.trim());
 }
 
+function isHtmlElement(
+  node: DefaultTreeAdapterTypes.Node | null | undefined,
+  tagName: string
+): node is DefaultTreeAdapterTypes.Element {
+  return Boolean(node && 'tagName' in node && node.tagName === tagName && node.namespaceURI === HTML_NAMESPACE);
+}
+
+function isEffectiveMetadata({ element, inTemplate }: ParsedElement): boolean {
+  const head = element.parentNode;
+  return !inTemplate && element.namespaceURI === HTML_NAMESPACE && isHtmlElement(head, 'head') && isHtmlElement(head.parentNode, 'html') && head.parentNode.parentNode?.nodeName === '#document';
+}
+
+function diagnosticValue(value: string): string {
+  const normalized = value.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const bounded = normalized.length > 160 ? `${normalized.slice(0, 160)}…` : normalized;
+  return JSON.stringify(bounded);
+}
+
+function diagnostic(route: string, message: string, attribute?: string, value?: string): string {
+  return `${message} in ${route}${attribute ? `: ${attribute}=${diagnosticValue(value ?? '')}` : ''}.`;
+}
+
+function srcsetUrls(value: string): string[] {
+  const urls: string[] = [];
+  let index = 0;
+  while (index < value.length) {
+    while (index < value.length && /[\s,]/.test(value[index])) index += 1;
+    const start = index;
+    const isDataUrl = value.slice(index, index + 5).toLowerCase() === 'data:';
+    while (index < value.length && !/\s/.test(value[index]) && (isDataUrl || value[index] !== ',')) index += 1;
+    const url = value.slice(start, index);
+    if (url) urls.push(url);
+    while (index < value.length && value[index] !== ',') index += 1;
+    if (value[index] === ',') index += 1;
+  }
+  return urls;
+}
+
+function imageSourceErrors(attribute: string, value: string, route: string): string[] {
+  const errors: string[] = [];
+  const candidates = attribute === 'srcset' ? srcsetUrls(value) : [value];
+  for (const candidate of candidates) {
+    const url = parsedUrl(candidate, route);
+    if (url && url.origin !== 'null' && url.origin !== SITE_ORIGIN && !url.href.startsWith(IMMUTABLE_IMAGE_PREFIX)) {
+      errors.push(diagnostic(route, 'Found unapproved remote image', attribute, url.origin));
+    }
+  }
+  return errors;
+}
+
 export function securityErrorsForHtml(html: string, route: string): string[] {
   const errors: string[] = [];
   const elements = htmlElements(html);
-  const metaElements = elements.filter((element) => element.tagName === 'meta');
+  const metaElements = elements.filter(({ element }) => element.tagName === 'meta');
   const cspTags = metaElements.filter(
-    (element) => attributeValue(element, 'http-equiv')?.toLowerCase() === 'content-security-policy'
+    ({ element }) => attributeValue(element, 'http-equiv')?.toLowerCase() === 'content-security-policy'
   );
   const referrerTags = metaElements.filter(
-    (element) => attributeValue(element, 'name')?.toLowerCase() === 'referrer'
+    ({ element }) => attributeValue(element, 'name')?.toLowerCase() === 'referrer'
   );
+  const effectiveCspTags = cspTags.filter(isEffectiveMetadata);
+  const effectiveReferrerTags = referrerTags.filter(isEffectiveMetadata);
 
-  const cspTag = cspTags[0];
-  const referrerTag = referrerTags[0];
-  if (cspTags.length !== 1 || !cspTag || attributeValue(cspTag, 'content') !== CONTENT_SECURITY_POLICY) {
-    errors.push(`Invalid Content Security Policy in ${route}.`);
+  const cspTag = effectiveCspTags[0];
+  const referrerTag = effectiveReferrerTags[0];
+  if (cspTags.length !== 1 || effectiveCspTags.length !== 1 || !cspTag || attributeValue(cspTag.element, 'content') !== CONTENT_SECURITY_POLICY) {
+    errors.push(diagnostic(route, 'Invalid Content Security Policy', 'content', attributeValue(cspTag?.element ?? cspTags[0]?.element, 'content') ?? ''));
   }
-  if (referrerTags.length !== 1 || !referrerTag || attributeValue(referrerTag, 'content') !== REFERRER_POLICY) {
-    errors.push(`Invalid Referrer Policy in ${route}.`);
+  if (referrerTags.length !== 1 || effectiveReferrerTags.length !== 1 || !referrerTag || attributeValue(referrerTag.element, 'content') !== REFERRER_POLICY) {
+    errors.push(diagnostic(route, 'Invalid Referrer Policy', 'content', attributeValue(referrerTag?.element ?? referrerTags[0]?.element, 'content') ?? ''));
   }
 
-  const cspOffset = cspTags.length === 1 ? cspTag?.sourceCodeLocation?.startTag?.startOffset : undefined;
+  const cspOffset = cspTag?.element.sourceCodeLocation?.startTag?.startOffset;
   if (
     elements.some(
-      (element) =>
+      ({ element, inTemplate }) =>
+        !inTemplate &&
         element.tagName === 'script' &&
         (cspOffset === undefined || (element.sourceCodeLocation?.startTag?.startOffset ?? Infinity) < cspOffset)
     )
   ) {
-    errors.push(`CSP must appear before every script in ${route}.`);
+    errors.push(diagnostic(route, 'CSP must appear before every script', 'script', 'active'));
   }
 
-  for (const element of elements) {
+  for (const { element } of elements) {
+    if (element.tagName === 'meta' && attributeValue(element, 'http-equiv')?.trim().toLowerCase() === 'refresh') {
+      errors.push(diagnostic(route, 'Found meta refresh', 'http-equiv', attributeValue(element, 'http-equiv')));
+    }
+    if (element.tagName === 'object' && attributeValue(element, 'data') !== undefined) {
+      errors.push(diagnostic(route, 'Found executable <object>', 'data', attributeValue(element, 'data')));
+    }
+    if (element.tagName === 'embed') {
+      errors.push(diagnostic(route, 'Found executable <embed>', 'src', attributeValue(element, 'src')));
+    }
     for (const attribute of element.attrs) {
       if (/^on[a-z0-9_-]+$/i.test(attribute.name)) {
-        errors.push(`Found inline event attribute in ${route}.`);
+        errors.push(diagnostic(route, 'Found inline event attribute', attribute.name, attribute.value));
       }
       if (
-        /^(?:href|src|action|formaction)$/i.test(attribute.name) &&
+        /^(?:href|src|action|formaction|data|poster|background)$/i.test(attribute.name) &&
         /^\s*(?:javascript|vbscript):/i.test(attribute.value)
       ) {
-        errors.push(`Found unsafe URL scheme in ${route}.`);
+        errors.push(diagnostic(route, 'Found unsafe URL scheme', attribute.name, attribute.value));
       }
-      if (/^(?:href|src|action|formaction)$/i.test(attribute.name) && isDangerousDataUrl(attribute.value)) {
-        errors.push(`Found dangerous data document in ${route}.`);
+      if (/^(?:href|src|action|formaction|data|poster|background)$/i.test(attribute.name) && isDangerousDataUrl(attribute.value)) {
+        errors.push(diagnostic(route, 'Found dangerous data document', attribute.name, attribute.value));
+      }
+    }
+    if (element.tagName === 'img' || element.tagName === 'source') {
+      for (const name of ['src', 'srcset']) {
+        const value = attributeValue(element, name);
+        if (value !== undefined) {
+          if (name === 'srcset') {
+            for (const candidate of srcsetUrls(value)) {
+              if (/^\s*(?:javascript|vbscript):/i.test(candidate)) errors.push(diagnostic(route, 'Found unsafe URL scheme', name, candidate));
+              if (isDangerousDataUrl(candidate)) errors.push(diagnostic(route, 'Found dangerous data document', name, candidate));
+            }
+          }
+          errors.push(...imageSourceErrors(name, value, route));
+        }
       }
     }
   }
 
-  for (const anchor of elements.filter((element) => element.tagName === 'a')) {
+  for (const { element: anchor } of elements.filter(({ element }) => element.tagName === 'a')) {
     if (attributeValue(anchor, 'target')?.toLowerCase() !== '_blank') continue;
     const rel = new Set((attributeValue(anchor, 'rel') ?? '').toLowerCase().split(/\s+/));
     if (!rel.has('noopener') && !rel.has('noreferrer')) {
-      errors.push(`External-window link is missing noopener protection in ${route}.`);
+      errors.push(diagnostic(route, 'External-window link is missing noopener protection', 'rel', attributeValue(anchor, 'rel')));
     }
   }
-  for (const script of elements.filter((element) => element.tagName === 'script')) {
+  for (const { element: script, inTemplate } of elements.filter(({ element }) => element.tagName === 'script')) {
+    if (inTemplate) continue;
     const src = attributeValue(script, 'src');
     const url = src ? externalUrl(src, route) : undefined;
     if (url && url.href !== 'https://giscus.app/client.js') {
-      errors.push(`Unapproved external script in ${route}: ${url.origin}`);
+      errors.push(diagnostic(route, 'Unapproved external script', 'src', url.origin));
     }
   }
-  for (const iframe of elements.filter((element) => element.tagName === 'iframe')) {
+  for (const { element: iframe, inTemplate } of elements.filter(({ element }) => element.tagName === 'iframe')) {
+    if (inTemplate) continue;
     const src = attributeValue(iframe, 'src');
     const url = src ? externalUrl(src, route) : undefined;
     if (url && url.origin !== 'https://giscus.app') {
-      errors.push(`Unapproved external frame in ${route}: ${url.origin}`);
-    }
-  }
-  for (const image of elements.filter((element) => element.tagName === 'img')) {
-    const src = attributeValue(image, 'src')?.trim();
-    if (src && /^https?:\/\//i.test(src) && !src.startsWith(IMMUTABLE_IMAGE_PREFIX)) {
-      errors.push(`Found unapproved remote image in ${route}.`);
+      errors.push(diagnostic(route, 'Unapproved external frame', 'src', url.origin));
     }
   }
   return errors;
