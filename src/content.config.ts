@@ -1,10 +1,12 @@
+import { pathToFileURL } from 'node:url';
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { POST_TYPES } from './config/navigation';
+import { contentRoot } from './lib/content-root';
 
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' }),
+  loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(contentRoot('posts')).href }),
   schema: z
     .object({
       title: z.string().min(1),
@@ -16,6 +18,7 @@ const posts = defineCollection({
       series: z.string().optional(),
       seriesOrder: z.number().int().nonnegative().optional(),
       draft: z.boolean().default(false),
+      locked: z.boolean().default(false),
       math: z.boolean().default(false),
       mermaid: z.boolean().default(false),
       legacySlug: z.string().min(1)

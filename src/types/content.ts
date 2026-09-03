@@ -7,6 +7,7 @@ export interface PostData {
   series?: string;
   seriesOrder?: number;
   draft: boolean;
+  locked: boolean;
   math: boolean;
   mermaid: boolean;
   legacySlug: string;
