@@ -166,6 +166,8 @@ test('initializes locked roles once and persists them across client navigation',
   await expect(takina.locator('.sakana-bed')).toBeHidden();
 
   await layer.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
+  await page.getByRole('link', { name: '浏览全部博客文章' }).click();
+  await expect(page).toHaveURL(/\/blog\/$/);
   await page.locator('article[data-post-card] h2 a').first().click();
   await expect(page.locator('article[data-post]')).toBeVisible();
 

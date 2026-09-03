@@ -50,7 +50,6 @@ document.addEventListener('pointerdown', (event) => {
     startScrollLeft: rail.scrollLeft,
     moved: false
   };
-  rail.setPointerCapture(event.pointerId);
 });
 
 document.addEventListener('pointermove', (event) => {
@@ -58,7 +57,10 @@ document.addEventListener('pointermove', (event) => {
   const distance = event.clientX - dragState.startX;
   if (!dragState.moved && Math.abs(distance) < DRAG_THRESHOLD) return;
 
-  dragState.moved = true;
+  if (!dragState.moved) {
+    dragState.moved = true;
+    dragState.rail.setPointerCapture(event.pointerId);
+  }
   dragState.rail.dataset.dragging = 'true';
   event.preventDefault();
   dragState.rail.scrollLeft = dragState.startScrollLeft - distance;

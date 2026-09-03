@@ -20,7 +20,7 @@ test('header keyboard navigation exposes a visible focus outline', async ({ page
 
 test('decorative motion stops when reduced motion is requested', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await page.goto('/blog/');
 
   const durations = await page.locator('[data-decorative-motion]').evaluateAll((elements) =>
     elements.map((element) => {

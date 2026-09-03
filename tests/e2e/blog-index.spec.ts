@@ -60,6 +60,21 @@ test('blog switches between the default card view and time archive', async ({ pa
   await expect(cardView).toBeVisible();
 });
 
+test('card and archive headings remain readable in the light theme', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.goto('/blog/');
+
+  await expect(page.locator('article[data-post-card] h2').first()).toHaveCSS(
+    'color',
+    'rgb(22, 26, 32)'
+  );
+  await page.locator('[data-blog-view-toggle]').click();
+  await expect(page.locator('[data-blog-archive-view] h2').first()).toHaveCSS(
+    'color',
+    'rgb(22, 26, 32)'
+  );
+});
+
 test('mouse wheel scrolls the rail and returns vertical scrolling at its end', async ({ page }) => {
   await page.goto('/blog/');
   const rail = page.locator('[data-post-rail]');
