@@ -23,6 +23,10 @@ const FORBIDDEN_TAGS = new Set([
   'math'
 ]);
 const URL_ATTRIBUTES = new Set(['href', 'src', 'action', 'formaction']);
+const IMAGE_FETCH_ATTRIBUTES = new Set(['poster', 'background']);
+const UNSAFE_INLINE_STYLE =
+  /(?:url\s*\(|(?:-[a-z0-9]+-)?image-set\s*\(|@import\b|expression\s*\(|(?:^|[;\s])behavior\s*:|-moz-binding\s*:)/i;
+const ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
 
 type ContentNode = {
   type?: string;
@@ -38,11 +42,20 @@ function fail(file: FileLike, reason: string): never {
   throw new Error(`[remark-content-security] ${file.path ?? 'content'}: ${reason}`);
 }
 
+function dataMediaType(url: URL): string {
+  const commaIndex = url.pathname.indexOf(',');
+  const metadata = url.pathname.slice(0, commaIndex === -1 ? undefined : commaIndex);
+  const parameterIndex = metadata.indexOf(';');
+  return metadata
+    .slice(0, parameterIndex === -1 ? undefined : parameterIndex)
+    .replace(ASCII_WHITESPACE, '');
+}
+
 function isUnsafeUrl(url: URL): boolean {
   if (url.protocol === 'javascript:' || url.protocol === 'vbscript:') return true;
   return (
     url.protocol === 'data:' &&
-    /^(?:text\/html|application\/xhtml\+xml|image\/svg\+xml)(?:[;,]|$)/i.test(url.pathname)
+    ['text/html', 'application/xhtml+xml', 'image/svg+xml'].includes(dataMediaType(url).toLowerCase())
   );
 }
 
@@ -69,14 +82,24 @@ function isForbiddenAttribute(name: string): boolean {
   return /^on[a-z0-9_-]+$/i.test(name) || name === 'srcdoc' || name === 'formaction';
 }
 
+function isImageFetchAttribute(tagName: string, name: string): boolean {
+  return (tagName === 'img' && name === 'src') || IMAGE_FETCH_ATTRIBUTES.has(name);
+}
+
 function visitHtmlElement(element: HtmlElement, file: FileLike): void {
   if (FORBIDDEN_TAGS.has(element.tagName)) fail(file, 'forbidden raw HTML tag');
 
   for (const attribute of element.attrs) {
     if (isForbiddenAttribute(attribute.name)) fail(file, 'forbidden raw HTML attribute');
     if (attribute.name === 'srcset') fail(file, 'raw HTML srcset is not allowed');
+    if (attribute.name === 'style' && UNSAFE_INLINE_STYLE.test(attribute.value)) {
+      fail(file, 'unsafe inline style');
+    }
     if (URL_ATTRIBUTES.has(attribute.name)) {
-      validateUrl(attribute.value, file, element.tagName === 'img' && attribute.name === 'src');
+      validateUrl(attribute.value, file, isImageFetchAttribute(element.tagName, attribute.name));
+    }
+    if (IMAGE_FETCH_ATTRIBUTES.has(attribute.name)) {
+      validateUrl(attribute.value, file, true);
     }
   }
 
