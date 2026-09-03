@@ -112,4 +112,26 @@ describe('Astro project tooling', () => {
     expect(workflowPermissions).toBe('  contents: read\n');
     expect(deployJob).toContain('    permissions:\n      pages: write\n      id-token: write\n');
   });
+
+  it('pins Corepack and every GitHub Action to immutable versions', () => {
+    const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8');
+    const actionRefs = [...workflow.matchAll(/^\s+uses:\s+[^@\s]+@([^\s#]+)/gm)].map(
+      (match) => match[1]
+    );
+
+    expect(packageJson.packageManager).toBe('pnpm@11.25.0');
+    expect(actionRefs.length).toBeGreaterThan(0);
+    expect(actionRefs.every((ref) => /^[a-f0-9]{40}$/.test(ref))).toBe(true);
+  });
+
+  it('does not persist checkout credentials or deploy a manually selected non-master ref', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+
+    expect(workflow).toContain('persist-credentials: false');
+    expect(workflow).toContain("github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'");
+    expect(workflow).toContain('timeout-minutes: 15');
+    expect(workflow).toContain('timeout-minutes: 10');
+    expect(workflow).toContain('corepack pnpm audit --prod --audit-level high');
+  });
 });
