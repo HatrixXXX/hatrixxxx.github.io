@@ -71,6 +71,12 @@ async function activationGeometry(page: Page) {
   };
 }
 
+async function waitForAnimationFrames(page: Page) {
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+}
+
 test('cursor trail is a non-interactive fixed viewport layer', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
@@ -115,9 +121,15 @@ test('moving only inside the content band leaves the canvas transparent', async 
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
-  await page.mouse.move(geometry.centerX, geometry.y);
-  await page.waitForTimeout(150);
+  await page.mouse.move(geometry.centerX, geometry.y - 60);
+  await page.mouse.move(geometry.centerX, geometry.y + 60);
+  await waitForAnimationFrames(page);
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
+
+  await page.mouse.move(geometry.leftX, geometry.y - 40);
+  await page.mouse.move(geometry.leftX, geometry.y + 40);
+  await expect.poll(() => canvas.evaluate(alphaPixels, { left: 0, right: geometry.content.left }))
+    .toBeGreaterThan(0);
 });
 
 for (const side of ['left', 'right'] as const) {
@@ -160,9 +172,17 @@ test('hero gutters do not create trails', async ({ page }) => {
   const hero = await page.locator('[data-hero]').boundingBox();
   if (!horizontal || !hero) throw new Error('Missing page regions');
   const x = Math.max(8, horizontal.x - 24);
-  await page.mouse.move(x, hero.y + hero.height / 2);
-  await page.waitForTimeout(150);
+  const y = hero.y + hero.height / 2;
+  await page.mouse.move(x, y - 40);
+  await page.mouse.move(x, y + 40);
+  await waitForAnimationFrames(page);
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
+
+  const geometry = await activationGeometry(page);
+  await page.mouse.move(geometry.leftX, geometry.y - 40);
+  await page.mouse.move(geometry.leftX, geometry.y + 40);
+  await expect.poll(() => canvas.evaluate(alphaPixels, { left: 0, right: geometry.content.left }))
+    .toBeGreaterThan(0);
 });
 
 test('the visible area below a short main does not create trails', async ({ page }) => {
@@ -174,35 +194,59 @@ test('the visible area below a short main does not create trails', async ({ page
   if (!horizontal || !main || !viewport) throw new Error('Missing projects page geometry');
   const y = main.y + main.height + 24;
   expect(y).toBeLessThan(viewport.height);
-  await page.mouse.move(Math.max(8, horizontal.x - 24), y);
-  await page.waitForTimeout(150);
+  const x = Math.max(8, horizontal.x - 24);
+  await page.mouse.move(x, y - 32);
+  await page.mouse.move(x, y + 32);
+  await waitForAnimationFrames(page);
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
+
+  const geometry = await activationGeometry(page);
+  await page.mouse.move(geometry.leftX, geometry.y - 40);
+  await page.mouse.move(geometry.leftX, geometry.y + 40);
+  await expect.poll(() => canvas.evaluate(alphaPixels, { left: 0, right: geometry.content.left }))
+    .toBeGreaterThan(0);
 });
 
 test('switching gutters starts a new trail without a content bridge', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
+  const oldArea = {
+    left: geometry.leftX - 12,
+    right: geometry.leftX + 12,
+    top: geometry.y - 85,
+    bottom: geometry.y - 35
+  };
+  await page.mouse.move(geometry.leftX, geometry.y - 80);
   await page.mouse.move(geometry.leftX, geometry.y - 40);
-  await page.mouse.move(geometry.leftX, geometry.y + 40);
   await expect.poll(() => canvas.evaluate(alphaPixels, { left: 0, right: geometry.content.left }))
     .toBeGreaterThan(0);
+  await expect.poll(() => canvas.evaluate(alphaPixelsInRect, oldArea)).toBeGreaterThan(0);
 
-  await page.mouse.move(geometry.rightX, geometry.y - 40);
   await page.mouse.move(geometry.rightX, geometry.y + 40);
+  await page.mouse.move(geometry.rightX, geometry.y + 80);
   await expect.poll(() => canvas.evaluate(alphaPixels, { left: geometry.content.right, right: 1440 }))
     .toBeGreaterThan(0);
+  expect(await canvas.evaluate(alphaPixelsInRect, oldArea)).toBeGreaterThan(0);
   expect(await canvas.evaluate(contentAlphaPixels, geometry.content)).toBe(0);
+  await expect.poll(() => canvas.evaluate(alphaPixelsInRect, oldArea)).toBe(0);
 });
 
 test('leaving and re-entering one gutter starts a disconnected trail', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
+  const oldArea = {
+    left: geometry.leftX - 12,
+    right: geometry.leftX + 12,
+    top: geometry.y - 85,
+    bottom: geometry.y - 35
+  };
   await page.mouse.move(geometry.leftX, geometry.y - 80);
   await page.mouse.move(geometry.leftX, geometry.y - 40);
   await expect.poll(() => canvas.evaluate(alphaPixels, { left: 0, right: geometry.content.left }))
     .toBeGreaterThan(0);
+  await expect.poll(() => canvas.evaluate(alphaPixelsInRect, oldArea)).toBeGreaterThan(0);
 
   await page.mouse.move(geometry.centerX, geometry.y);
   await page.mouse.move(geometry.leftX, geometry.y + 40);
@@ -213,11 +257,47 @@ test('leaving and re-entering one gutter starts a disconnected trail', async ({ 
     top: geometry.y + 35,
     bottom: geometry.y + 85
   })).toBeGreaterThan(0);
+  expect(await canvas.evaluate(alphaPixelsInRect, oldArea)).toBeGreaterThan(0);
+  expect(await canvas.evaluate(alphaPixelsInRect, {
+    left: geometry.leftX - 12,
+    right: geometry.leftX + 12,
+    top: geometry.y - 10,
+    bottom: geometry.y + 30
+  })).toBe(0);
+  await expect.poll(() => canvas.evaluate(alphaPixelsInRect, oldArea)).toBe(0);
+});
+
+test('a top-level pointer exit starts a disconnected gutter session on re-entry', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const geometry = await activationGeometry(page);
+  await page.mouse.move(geometry.leftX, geometry.y - 180);
+  await page.mouse.move(geometry.leftX, geometry.y - 140);
+  await expect.poll(() => canvas.evaluate(alphaPixelsInRect, {
+    left: geometry.leftX - 12,
+    right: geometry.leftX + 12,
+    top: geometry.y - 185,
+    bottom: geometry.y - 135
+  })).toBeGreaterThan(0);
+
+  expect(await page.evaluate(() => {
+    const event = new PointerEvent('pointerout', { relatedTarget: null });
+    window.dispatchEvent(event);
+    return event.relatedTarget === null;
+  })).toBe(true);
+  await page.mouse.move(geometry.leftX, geometry.y + 140);
+  await page.mouse.move(geometry.leftX, geometry.y + 180);
+  await expect.poll(() => canvas.evaluate(alphaPixelsInRect, {
+    left: geometry.leftX - 12,
+    right: geometry.leftX + 12,
+    top: geometry.y + 135,
+    bottom: geometry.y + 185
+  })).toBeGreaterThan(0);
   expect(await canvas.evaluate(alphaPixelsInRect, {
     left: geometry.leftX - 12,
     right: geometry.leftX + 12,
     top: geometry.y - 20,
-    bottom: geometry.y + 20
+    bottom: geometry.y + 100
   })).toBe(0);
 });
 
@@ -226,8 +306,9 @@ test('reduced motion disables drawing', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
-  await page.mouse.move(geometry.leftX, geometry.y);
-  await page.waitForTimeout(150);
+  await page.mouse.move(geometry.leftX, geometry.y - 40);
+  await page.mouse.move(geometry.leftX, geometry.y + 40);
+  await waitForAnimationFrames(page);
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
 });
 
@@ -266,10 +347,20 @@ test('a non-fine pointer disables drawing', async ({ browser }) => {
   ))).toBe(false);
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
-  await page.mouse.move(geometry.leftX, geometry.y);
-  await page.waitForTimeout(150);
+  await page.mouse.move(geometry.leftX, geometry.y - 40);
+  await page.mouse.move(geometry.leftX, geometry.y + 40);
+  await waitForAnimationFrames(page);
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
   await context.close();
+});
+
+test('an unmasked left-gutter curve may enter the content band', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const geometry = await activationGeometry(page);
+  await page.mouse.move(8, geometry.y);
+  await page.mouse.move(geometry.content.left - 2, geometry.y);
+  await expect.poll(() => canvas.evaluate(contentAlphaPixels, geometry.content)).toBeGreaterThan(0);
 });
 
 test('the canvas persists once across client navigation', async ({ page }) => {
