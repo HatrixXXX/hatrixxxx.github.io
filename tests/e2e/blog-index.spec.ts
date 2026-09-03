@@ -6,6 +6,12 @@ test('blog index lists every published post', async ({ page, request }) => {
   await page.goto('/blog/');
   await expect(page.locator('[data-blog-total]')).toHaveText('40');
   await expect(page.locator('article[data-post-card]')).toHaveCount(40);
+
+  const dates = await page.locator('article[data-post-card] time').evaluateAll((times) =>
+    times.map((time) => Date.parse(time.dateTime))
+  );
+  expect(dates).toHaveLength(40);
+  expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
 });
 
 for (const { route, title, count } of [
@@ -27,6 +33,7 @@ for (const { route, title, count } of [
 for (const route of ['/blog/life/', '/blog/essays/']) {
   test(`${route} shows the empty blog type state`, async ({ page }) => {
     await page.goto(route);
-    await expect(page.getByText('这个类型还没有文章')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: '这个类型还没有文章', exact: true })).toBeVisible();
+    await expect(page.getByText('以后写到这类内容时，会放在这里。', { exact: true })).toBeVisible();
   });
 }
