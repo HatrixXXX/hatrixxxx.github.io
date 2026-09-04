@@ -64,6 +64,9 @@ jobs:
       - name: Build fixture site
         run: corepack pnpm build
 
+      - name: Check fixture built site
+        run: corepack pnpm exec tsx scripts/check-built-site.ts --fixtures
+
   build-production:
     if: >-
       github.event_name == 'repository_dispatch' ||
@@ -84,6 +87,7 @@ jobs:
         shell: bash
         env:
           HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}
+          HATRIX_CONTENT_TOKEN: ${{ secrets.HATRIX_CONTENT_TOKEN }}
         run: |
           if [[ -z "$HATRIX_ADMIN_KEY" ]]; then
             echo "::error::Required secret HATRIX_ADMIN_KEY is not configured."
@@ -91,6 +95,10 @@ jobs:
           fi
           if (( ${#HATRIX_ADMIN_KEY} < 8 )); then
             echo "::error::Required secret HATRIX_ADMIN_KEY is shorter than 8 characters."
+            exit 1
+          fi
+          if [[ -z "$HATRIX_CONTENT_TOKEN" ]]; then
+            echo "::error::Required secret HATRIX_CONTENT_TOKEN is not configured."
             exit 1
           fi
 

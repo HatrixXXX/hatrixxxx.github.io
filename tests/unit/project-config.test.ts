@@ -255,6 +255,9 @@ describe('Astro project tooling', () => {
     expect(pullRequestJob).toContain('run: corepack pnpm test:run');
     expect(pullRequestJob).toContain('run: corepack pnpm check');
     expect(pullRequestJob).toContain('run: corepack pnpm build');
+    expect(pullRequestJob).toContain(
+      'run: corepack pnpm exec tsx scripts/check-built-site.ts --fixtures'
+    );
     expect(pullRequestJob).not.toContain('secrets.');
     expect(pullRequestJob).not.toContain('.private-content');
     expect(pullRequestJob).not.toContain('upload-pages-artifact');
@@ -295,9 +298,10 @@ describe('Astro project tooling', () => {
       '        run: corepack pnpm build'
     );
     expect(productionJob).toContain('Required secret HATRIX_ADMIN_KEY is not configured.');
+    expect(productionJob).toContain('Required secret HATRIX_CONTENT_TOKEN is not configured.');
     expect(productionJob).not.toContain('gh api');
     expect(productionJob).not.toContain('GH_TOKEN');
-    expect(productionJob.match(/HATRIX_CONTENT_TOKEN/g)).toHaveLength(2);
+    expect(productionJob.match(/HATRIX_CONTENT_TOKEN/g)).toHaveLength(6);
     expect(dispatchValidation).toContain("if: github.event_name == 'repository_dispatch'");
     expect(dispatchValidation).toContain('DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}');
     expect(dispatchCheckout).toContain("if: github.event_name == 'repository_dispatch'");

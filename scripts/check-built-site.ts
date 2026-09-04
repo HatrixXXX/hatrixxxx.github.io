@@ -46,6 +46,7 @@ export interface BuiltSiteCheckOptions {
 
 export interface ProjectBuiltSiteCheckOptions {
   expectedLocalLinks?: number;
+  expectedPostCount?: number;
   sourceContentRoot?: string;
 }
 
@@ -560,6 +561,7 @@ export async function inspectProjectBuiltSite(
   options: ProjectBuiltSiteCheckOptions = {}
 ): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
+  const expectedPostCount = options.expectedPostCount ?? 40;
   const sourceContentRoot = resolve(projectRoot, options.sourceContentRoot ?? '.private-content');
   const postsDirectory = resolve(sourceContentRoot, 'posts');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
@@ -570,8 +572,10 @@ export async function inspectProjectBuiltSite(
     if (data.draft === true) continue;
     if (typeof data.legacySlug === 'string') routes.push(`/posts/${data.legacySlug}/`);
   }
-  if (routes.length !== 40 || new Set(routes).size !== 40) {
-    errors.push(`Expected 40 unique legacy post routes, found ${new Set(routes).size}.`);
+  if (routes.length !== expectedPostCount || new Set(routes).size !== expectedPostCount) {
+    errors.push(
+      `Expected ${expectedPostCount} unique legacy post routes, found ${new Set(routes).size}.`
+    );
   }
 
   const distPath = resolve(projectRoot, 'dist');
@@ -583,7 +587,9 @@ export async function inspectProjectBuiltSite(
   const generatedPostCount = postOutputFiles
     .filter((file) => /^[^/]+\/index\.html$/.test(relative(join(distPath, 'posts'), file).replaceAll('\\', '/')))
     .length;
-  if (generatedPostCount !== 40) errors.push(`Expected 40 generated post routes, found ${generatedPostCount}.`);
+  if (generatedPostCount !== expectedPostCount) {
+    errors.push(`Expected ${expectedPostCount} generated post routes, found ${generatedPostCount}.`);
+  }
 
   const result = await inspectBuiltSite(distPath, routes, {
     sourceCnamePath: resolve(projectRoot, 'public/CNAME'),
@@ -594,8 +600,10 @@ export async function inspectProjectBuiltSite(
 }
 
 async function main(): Promise<void> {
+  const fixtureMode = process.argv.includes('--fixtures');
   const result = await inspectProjectBuiltSite(process.cwd(), {
-    expectedLocalLinks: EXPECTED_LOCAL_LINKS,
+    expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
+    expectedPostCount: fixtureMode ? 2 : 40,
     sourceContentRoot: contentRoot()
   });
 
