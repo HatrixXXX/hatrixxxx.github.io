@@ -4,6 +4,7 @@ import {
   advanceTrailFrameClock,
   advanceTrailHue,
   classifyTrailRegion,
+  createTrailHueState,
   createTrailState,
   setTrailTarget,
   updateTrailState,
@@ -98,7 +99,7 @@ describe('cursor trail physics', () => {
   });
 
   it('reaches both hue extrema and returns to its offset after a full period', () => {
-    const state = createTrailState(0, 0, () => 0.5);
+    const state = createTrailHueState();
 
     state.phase = Math.PI / 2 - 0.0015;
     expect(advanceTrailHue(state)).toBe(370);
@@ -106,5 +107,15 @@ describe('cursor trail physics', () => {
     expect(advanceTrailHue(state)).toBe(200);
     state.phase = 2 * Math.PI - 0.0015;
     expect(advanceTrailHue(state)).toBe(285);
+  });
+
+  it('keeps the hue clock independent from physical trail sessions', () => {
+    const hueState = createTrailHueState();
+    hueState.phase = 1;
+
+    createTrailState(0, 0, () => 0.5);
+    createTrailState(10, 20, () => 0.5);
+
+    expect(hueState.phase).toBe(1);
   });
 });

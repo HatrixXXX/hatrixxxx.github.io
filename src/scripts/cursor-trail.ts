@@ -2,6 +2,7 @@ import {
   advanceTrailFrameClock,
   advanceTrailHue,
   classifyTrailRegion,
+  createTrailHueState,
   createTrailState,
   setTrailTarget,
   updateTrailState,
@@ -15,22 +16,34 @@ const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 const INPUT_IDLE_MS = 250;
 const SETTLED_DISTANCE_PX = 0.1;
 const SETTLED_VELOCITY_PX_PER_FRAME = 0.01;
+const FADE_TAIL_FRAMES = 24;
+
+type ActiveTrailRegion = Exclude<TrailRegion, null>;
+type TrailSession = {
+  state: TrailState;
+  region: ActiveTrailRegion;
+  status: 'active' | 'retiring';
+  lastInput: number;
+};
 
 let canvas: HTMLCanvasElement | null = null;
 let context: CanvasRenderingContext2D | null = null;
-let state: TrailState | undefined;
+const hueState = createTrailHueState();
+let sessions: TrailSession[] = [];
+let activeSession: TrailSession | undefined;
 let animationFrame = 0;
 let lastFrame: number | undefined;
-let lastPointerInput = 0;
 let activeRegion: TrailRegion = null;
+let fadeFramesRemaining = 0;
 
-function clearTrail(): void {
+function hardResetTrail(): void {
   if (animationFrame) cancelAnimationFrame(animationFrame);
   animationFrame = 0;
   lastFrame = undefined;
-  lastPointerInput = 0;
-  state = undefined;
+  sessions = [];
+  activeSession = undefined;
   activeRegion = null;
+  fadeFramesRemaining = 0;
   if (canvas && context) {
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
@@ -61,18 +74,23 @@ function drawTendril(tendril: Tendril): void {
   context.stroke();
 }
 
-function isTrailSettled(): boolean {
-  const currentState = state;
-  if (!currentState) return false;
-  return currentState.tendrils.every(({ nodes }) => nodes.every((node) => (
-    Math.hypot(node.x - currentState.target.x, node.y - currentState.target.y) < SETTLED_DISTANCE_PX
+function isTrailSettled(trail: TrailState): boolean {
+  return trail.tendrils.every(({ nodes }) => nodes.every((node) => (
+    Math.hypot(node.x - trail.target.x, node.y - trail.target.y) < SETTLED_DISTANCE_PX
     && Math.hypot(node.vx, node.vy) < SETTLED_VELOCITY_PX_PER_FRAME
   )));
 }
 
+function retireActiveSession(): void {
+  if (activeSession) activeSession.status = 'retiring';
+  activeSession = undefined;
+  activeRegion = null;
+  if (sessions.length > 0 && canvas) canvas.dataset.cursorTrailState = 'fading';
+}
+
 function render(time: number): void {
-  if (!canvas || !context || !state || !isEnabled()) {
-    clearTrail();
+  if (!canvas || !context || !isEnabled()) {
+    hardResetTrail();
     return;
   }
   animationFrame = requestAnimationFrame(render);
@@ -83,14 +101,36 @@ function render(time: number): void {
   context.fillStyle = 'rgb(0 0 0 / 40%)';
   context.fillRect(0, 0, innerWidth, innerHeight);
   context.globalCompositeOperation = 'lighter';
-  updateTrailState(state);
-  if (performance.now() - lastPointerInput >= INPUT_IDLE_MS && isTrailSettled()) {
-    clearTrail();
-    return;
+
+  if (
+    activeSession
+    && performance.now() - activeSession.lastInput >= INPUT_IDLE_MS
+    && isTrailSettled(activeSession.state)
+  ) {
+    retireActiveSession();
   }
-  context.strokeStyle = `hsl(${Math.round(advanceTrailHue(state))} 90% 50% / 25%)`;
-  context.lineWidth = 1;
-  for (const tendril of state.tendrils) drawTendril(tendril);
+
+  if (sessions.length > 0) {
+    context.strokeStyle = `hsl(${Math.round(advanceTrailHue(hueState))} 90% 50% / 25%)`;
+    context.lineWidth = 1;
+    for (const session of sessions) {
+      updateTrailState(session.state);
+      for (const tendril of session.state.tendrils) drawTendril(tendril);
+    }
+  }
+
+  const hadSessions = sessions.length > 0;
+  sessions = sessions.filter((session) => (
+    session.status === 'active' || !isTrailSettled(session.state)
+  ));
+  const becameEmpty = hadSessions && sessions.length === 0;
+  if (becameEmpty) {
+    fadeFramesRemaining = FADE_TAIL_FRAMES;
+    if (canvas) canvas.dataset.cursorTrailState = 'fading';
+  } else if (sessions.length === 0) {
+    fadeFramesRemaining -= 1;
+    if (fadeFramesRemaining <= 0) hardResetTrail();
+  }
 }
 
 function startTrail(): void {
@@ -99,10 +139,13 @@ function startTrail(): void {
 
 function resizeCanvas(): void {
   if (!canvas) return;
-  clearTrail();
   const ratio = Math.max(1, window.devicePixelRatio || 1);
-  canvas.width = Math.round(innerWidth * ratio);
-  canvas.height = Math.round(innerHeight * ratio);
+  const width = Math.round(innerWidth * ratio);
+  const height = Math.round(innerHeight * ratio);
+  if (context && canvas.width === width && canvas.height === height) return;
+  hardResetTrail();
+  canvas.width = width;
+  canvas.height = height;
   context = canvas.getContext('2d');
   context?.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
@@ -110,15 +153,17 @@ function resizeCanvas(): void {
 function syncCanvas(): void {
   const nextCanvas = document.querySelector<HTMLCanvasElement>('[data-cursor-trail]');
   if (!nextCanvas) {
-    clearTrail();
+    hardResetTrail();
     canvas = null;
     context = null;
     return;
   }
   if (canvas !== nextCanvas) {
-    clearTrail();
+    hardResetTrail();
     canvas = nextCanvas;
     context = canvas.getContext('2d');
+  } else {
+    retireActiveSession();
   }
   resizeCanvas();
 }
@@ -139,7 +184,7 @@ function pointerRegion(event: PointerEvent): TrailRegion {
 }
 
 function endPointerSession(): void {
-  activeRegion = null;
+  retireActiveSession();
 }
 
 function handlePointerExit(event: PointerEvent): void {
@@ -153,16 +198,28 @@ function handlePointerMove(event: PointerEvent): void {
     endPointerSession();
     return;
   }
-  if (!state || activeRegion !== nextRegion) state = createTrailState(event.clientX, event.clientY);
-  else setTrailTarget(state, event.clientX, event.clientY);
-  activeRegion = nextRegion;
-  lastPointerInput = performance.now();
+  const inputTime = performance.now();
+  if (activeSession && activeRegion === nextRegion) {
+    setTrailTarget(activeSession.state, event.clientX, event.clientY);
+    activeSession.lastInput = inputTime;
+  } else {
+    retireActiveSession();
+    activeSession = {
+      state: createTrailState(event.clientX, event.clientY),
+      region: nextRegion,
+      status: 'active',
+      lastInput: inputTime
+    };
+    sessions.push(activeSession);
+    activeRegion = nextRegion;
+    fadeFramesRemaining = 0;
+  }
   canvas.dataset.cursorTrailState = 'active';
   startTrail();
 }
 
 function handleCapabilityChange(): void {
-  clearTrail();
+  hardResetTrail();
 }
 
 window.addEventListener('pointermove', handlePointerMove, { passive: true });
