@@ -118,6 +118,26 @@ test('mobile navigation renders primary and nested links in the open menu', asyn
   await expect(mobileMenu.getByRole('link', { name: '我的友链', exact: true })).toBeVisible();
 });
 
+test('open mobile navigation does not add document scrolling', async ({ page }) => {
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 390, height: 600 }
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.getByRole('button', { name: '切换导航栏' }).click();
+
+    const documentHeight = await page.evaluate(() => ({
+      scrollHeight: document.documentElement.scrollHeight,
+      clientHeight: document.documentElement.clientHeight
+    }));
+    expect(documentHeight.scrollHeight).toBeLessThanOrEqual(documentHeight.clientHeight);
+
+    await page.evaluate(() => window.scrollTo(0, 9_999));
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  }
+});
+
 test('light-theme mobile navigation links meet WCAG AA contrast', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));

@@ -49,3 +49,10 @@ The only observed concern was the one-off local navigation abort noted above; it
 - GREEN: the same command exited 0: 12 passed. The test now branches on the actual viewport: desktop verifies the five primary links before search and theme; tablet/mobile verify desktop navigation is hidden, the menu button is visible, and focus advances from search to theme to menu.
 - Additional regression: `corepack pnpm exec playwright test tests/e2e/accessibility.spec.ts tests/e2e/navigation-dropdown.spec.ts --project=desktop-1440 --project=tablet-768 --project=mobile-390` exited 0: 17 passed.
 - Follow-up checks: `corepack pnpm test:run` exited 0 with 20 files and 291 tests; `corepack pnpm check` exited 0 with 0 Astro errors, warnings, and hints.
+
+## Follow-up: mobile menu document overflow
+
+- RED: `corepack pnpm exec playwright test tests/e2e/navigation-dropdown.spec.ts --project=desktop-1440` exited 1. At 390×844 with the menu open, `scrollHeight` was 848 while `clientHeight` was 844.
+- Root cause: the Header and its inner row use 60px, while the mobile menu still subtracted the old global 56px Header token. Their combined 848px height made the root document scroll by 4px.
+- GREEN: the Header now owns `--site-header-height: 60px`; the Header, inner row, and mobile menu height calculation use it, with the menu using `100dvh`. The navigation suite passed all 6 tests, including 390×844 and 390×600 menu cases.
+- Related regression: `corepack pnpm exec playwright test tests/e2e/home.spec.ts tests/e2e/navigation-dropdown.spec.ts --project=desktop-1440` exited 0: 26 passed. `corepack pnpm test:run` exited 0 with 291 tests, and `corepack pnpm check` exited 0 with 0 Astro diagnostics.
