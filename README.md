@@ -46,6 +46,8 @@ pnpm test:e2e
 
 首页保留大尺寸题图。其他页面的顶部图片统一为桌面和平板 `240px`、手机 `200px`，所有题图直接衔接正文，不再使用波浪分隔；文章摘要和发布时间等信息位于题图下方。
 
+页脚只保留版权和“保留所有权利”说明文字，不显示第三方许可链接。许可文件仍发布在 `/third-party-notices.txt`。
+
 ## 新增文章
 
 在 `src/content/posts/` 新建 Markdown 或 MDX 文件。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
@@ -129,7 +131,7 @@ export const playlist: readonly Track[] = [
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检与 67 页静态构建 |
 | `pnpm check:site` | 旧文章路由、CNAME、3961 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 117 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 123 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 
