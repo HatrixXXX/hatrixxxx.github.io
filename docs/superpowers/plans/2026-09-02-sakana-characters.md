@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> 当前仓库已去除分类与标签路由。下文的 66 项检查、21 张视觉基线、80 个页面和 4,653 条链接是当时的执行记录；当前验收口径为 123 项检查、18 张视觉基线、67 个页面和 3,961 条链接。
+> 当前仓库已去除分类与标签路由。下文的 66 项检查、21 张视觉基线、80 个页面和 4,653 条链接是当时的执行记录；当前验收口径为 125 项检查、18 张视觉基线、67 个页面和 3,961 条链接。
 
 **Goal:** 在博客所有页面显示两个可独立拖拽的 Sakana 角色：左下角为水平镜像的锦木千束，右下角为原方向的井上泷奈。
 

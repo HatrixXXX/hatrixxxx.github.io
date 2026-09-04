@@ -1,8 +1,10 @@
 # Compact Legal Footer Implementation Plan
 
+> 当前状态：Task 3 已移除页脚中的第三方许可入口，`/third-party-notices.txt` 仍随构建产物发布。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 为全站增加一条只含版权、第三方许可和可选备案链接的极简页脚。
+**Goal:** 为全站增加一条只含版权和可选备案链接的极简页脚。
 
 **Architecture:** `BaseLayout.astro` 统一挂载 `SiteFooter.astro`。页脚从 `SITE.filings` 读取真实备案信息；数组为空时不生成备案文字或链接。
 

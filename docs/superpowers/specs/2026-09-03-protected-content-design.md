@@ -121,7 +121,7 @@ Astro 先生成正常 HTML。需要加锁的正文由明确的 `data-protected-p
 
 ## 路由、索引和元数据
 
-构建生成公开的加锁路由 manifest。文章卡片、归档、页脚、相邻文章和站内搜索根据 manifest 或 `locked` 元数据显示锁图标，但链接仍指向原 URL。
+构建生成公开的加锁路由 manifest。文章卡片、归档、相邻文章和站内搜索根据 manifest 或 `locked` 元数据显示锁图标，但链接仍指向原 URL。极简页脚不展示文章，因此不需要锁图标。
 
 搜索索引为加锁文章保留标题、摘要、发布日期、类型、URL 和锁定标记，不包含正文。RSS 同样只保留公开摘要。加锁页面保留稳定 canonical URL，增加 `noindex, nofollow`；sitemap 不收录加锁 URL。
 
