@@ -312,6 +312,9 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
     if (inNoscript && NOSCRIPT_FORBIDDEN_TAGS.has(element.tagName)) {
       errors.push(diagnostic(route, `Found forbidden <${element.tagName}> in noscript`, 'element', element.tagName));
     }
+    if (element.namespaceURI === HTML_NAMESPACE && element.tagName === 'base') {
+      errors.push(diagnostic(route, 'Found <base>', 'href', attributeValue(element, 'href')));
+    }
     if (element.tagName === 'meta' && attributeValue(element, 'http-equiv')?.trim().toLowerCase() === 'refresh') {
       errors.push(diagnostic(route, 'Found meta refresh', 'http-equiv', attributeValue(element, 'http-equiv')));
     }

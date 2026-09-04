@@ -73,6 +73,17 @@ it('reports missing or late metadata and unsafe HTML attributes', () => {
 });
 
 it.each([
+  ['before the security policy', secureHead.replace('<head>', '<head><base href="https://evil.example/">')],
+  ['after the security policy', secureHead.replace('</head>', '<base href="/subdir/"></head>')]
+])('rejects a base element placed %s', (_placement, head) => {
+  const html = `<html>${head}<body><script type="module" src="./entry.js"></script></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/base/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('Found <base>')
+  ]));
+});
+
+it.each([
   ['style', '<style>@import "https://evil.example/x.css"</style>'],
   ['meta refresh', '<meta http-equiv="refresh" content="0;url=https://evil.example/">'],
   ['link', '<link rel="stylesheet" href="https://evil.example/x.css">'],

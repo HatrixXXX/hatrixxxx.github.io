@@ -98,6 +98,10 @@ function fallbackToRangeGet(status: number): boolean {
   return status === 403 || status === 405 || status === 501;
 }
 
+function isRetryableNetworkError(error: unknown): boolean {
+  return error instanceof TypeError || (error instanceof Error && error.name === 'AbortError');
+}
+
 async function checkUrlOnce(url: string): Promise<string | undefined> {
   const fetchWithTimeout = async (init: RequestInit) => {
     const controller = new AbortController();
@@ -120,12 +124,13 @@ async function checkUrl(url: string): Promise<string | undefined> {
       return await checkUrlOnce(url);
     } catch (error) {
       lastNetworkError = error instanceof Error ? error.message : String(error);
+      if (!isRetryableNetworkError(error)) return lastNetworkError;
     }
   }
   return lastNetworkError;
 }
 
-/** Checks each unique URL using at most 12 concurrent, ten-second requests. */
+/** Checks each unique URL with at most 12 workers and three ten-second network attempts. */
 export async function checkImages(urls: string[], concurrency = DEFAULT_CONCURRENCY): Promise<ImageCheckResult> {
   const uniqueUrls = [...new Set(urls)];
   const workerCount = Math.min(DEFAULT_CONCURRENCY, Math.max(1, Math.floor(concurrency)));

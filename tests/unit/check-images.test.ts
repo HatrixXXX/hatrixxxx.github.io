@@ -111,6 +111,18 @@ describe('remote image checking', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('does not retry a non-network exception', async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new SyntaxError('unexpected response parser failure');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await checkImages(['https://x/parser-failure.png'], 12);
+
+    expect(result.failed.get('https://x/parser-failure.png')).toBe('unexpected response parser failure');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('uses a ranged GET when HEAD is rejected', async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       if (init?.method === 'HEAD') return new Response(null, { status: 405 });
