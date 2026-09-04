@@ -18,14 +18,34 @@ test('header keyboard navigation exposes a visible focus outline', async ({ page
   }
 });
 
-test('home keyboard navigation reaches header controls after the primary links', async ({ page }) => {
+test('home keyboard navigation follows visible header controls', async ({ page }) => {
   await page.goto('/');
+  const viewport = page.viewportSize();
+  const desktopNavigation = page.locator('.desktop-nav');
+  const search = page.locator('[data-open-search]');
+  const theme = page.locator('[data-theme-toggle]');
+  const menu = page.locator('[data-menu-toggle]');
+
+  if ((viewport?.width ?? 0) > 768) {
+    await expect(desktopNavigation).toBeVisible();
+    await expect(menu).toBeHidden();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: '首页', exact: true })).toBeFocused();
+    for (let index = 0; index < 5; index += 1) await page.keyboard.press('Tab');
+    await expect(search).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(theme).toBeFocused();
+    return;
+  }
+
+  await expect(desktopNavigation).toBeHidden();
+  await expect(menu).toBeVisible();
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('link', { name: '首页', exact: true })).toBeFocused();
-  for (let index = 0; index < 5; index += 1) await page.keyboard.press('Tab');
-  await expect(page.locator('[data-open-search]')).toBeFocused();
+  await expect(search).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(page.locator('[data-theme-toggle]')).toBeFocused();
+  await expect(theme).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(menu).toBeFocused();
 });
 
 test('decorative motion stops when reduced motion is requested', async ({ page }) => {

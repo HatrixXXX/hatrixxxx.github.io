@@ -42,3 +42,10 @@
 The Header controls are tested across the homepage, blog, projects, about, and an article. Desktop submenu tests still cover 769, 800, 1024, and 1440 pixels, now on both the homepage and projects page. The tests leave the original no-JavaScript anchors and ordinary-page footer/Sakana/CursorTrail coverage in place.
 
 The only observed concern was the one-off local navigation abort noted above; it did not recur in the fresh full focused run.
+
+## Follow-up: collapsed-header keyboard order
+
+- RED: `corepack pnpm exec playwright test tests/e2e/accessibility.spec.ts --project=desktop-1440 --project=tablet-768 --project=mobile-390` exited 1. Desktop passed, but tablet and mobile failed because the test expected the hidden desktop `首页` link to receive the first Tab focus.
+- GREEN: the same command exited 0: 12 passed. The test now branches on the actual viewport: desktop verifies the five primary links before search and theme; tablet/mobile verify desktop navigation is hidden, the menu button is visible, and focus advances from search to theme to menu.
+- Additional regression: `corepack pnpm exec playwright test tests/e2e/accessibility.spec.ts tests/e2e/navigation-dropdown.spec.ts --project=desktop-1440 --project=tablet-768 --project=mobile-390` exited 0: 17 passed.
+- Follow-up checks: `corepack pnpm test:run` exited 0 with 20 files and 291 tests; `corepack pnpm check` exited 0 with 0 Astro errors, warnings, and hints.
