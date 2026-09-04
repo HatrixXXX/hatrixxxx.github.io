@@ -1,8 +1,9 @@
 import { expect, test, type APIResponse } from '@playwright/test';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { contentRoot } from '../../src/lib/content-root';
 
-const postsDirectory = join(process.cwd(), 'src', 'content', 'posts');
+const postsDirectory = contentRoot('posts');
 
 async function legacySlugs(): Promise<string[]> {
   const files = (await readdir(postsDirectory)).filter((file) => file.endsWith('.md'));

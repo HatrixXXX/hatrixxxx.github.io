@@ -187,17 +187,17 @@ const canonicalPath = postPath(post.data.legacySlug);
     text-align: right;
   }
 
-  .adjacent-posts span {
+  .adjacent-posts :global(a > span) {
     color: var(--color-muted);
     font-size: 0.75rem;
   }
 
-  .adjacent-posts strong {
+  .adjacent-posts :global(a > strong) {
     color: #fff;
     overflow-wrap: anywhere;
   }
 
-  .adjacent-posts a:hover strong {
+  .adjacent-posts :global(a:hover > strong) {
     color: var(--color-accent);
   }
 

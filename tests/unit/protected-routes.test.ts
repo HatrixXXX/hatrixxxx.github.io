@@ -148,6 +148,14 @@ describe('protected rendering source contracts', () => {
     expect(postLayout).toContain('locked={post.data.locked}');
   });
 
+  it('keeps adjacent link label styles across the PostLink component boundary', () => {
+    const postLayout = readFileSync('src/layouts/PostLayout.astro', 'utf8');
+
+    expect(postLayout).toContain('.adjacent-posts :global(a > span)');
+    expect(postLayout).toContain('.adjacent-posts :global(a > strong)');
+    expect(postLayout).toContain('.adjacent-posts :global(a:hover > strong)');
+  });
+
   it('uses protected Markdown only for locked post bodies', () => {
     const route = readFileSync('src/pages/posts/[slug].astro', 'utf8');
 

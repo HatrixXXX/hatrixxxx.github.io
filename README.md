@@ -40,13 +40,49 @@ pnpm test:e2e
 
 私有内容仓库有 40 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。公开仓库另有 2 篇草稿；一次完整构建会生成 67 个 HTML 页面。
 
+私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
+
+```text
+.private-content/
+├─ .github/
+│  └─ workflows/
+│     └─ notify-site.yml
+└─ posts/
+   ├─ example.md
+   └─ assets/
+      └─ private-image.png
+```
+
+## 首次接入私有仓库
+
+如果沿用迁移阶段生成的本地 `.private-content/`，它已经是独立 Git 仓库，但迁移过程没有创建远端或 remote。先在 GitHub 创建私有仓库 `HatrixXXX/hatrix-content`，再连接现有本地仓库：
+
+```powershell
+git -C .private-content remote add origin git@github.com:HatrixXXX/hatrix-content.git
+git -C .private-content push -u origin master
+```
+
+新电脑克隆公开站点后，改为把私有仓库检出到被忽略的目录：
+
+```powershell
+git clone git@github.com:HatrixXXX/hatrix-content.git .private-content
+```
+
+在公开站点工作区根目录手动创建 `.env.local`：
+
+```dotenv
+HATRIX_ADMIN_KEY=<至少八字符的本机值>
+```
+
+`.env.local` 已加入 `.gitignore`。管理员 key 不得提交、写进文章或文档、发到聊天中，也不要放进私有内容仓库。它至少需要 8 个字符；本机值应与公开仓库 Actions Secret 中的 `HATRIX_ADMIN_KEY` 一致。
+
 ## 站点导航
 
 主导航依次为首页、博客文章、作品橱窗、关于我和留言板。博客文章与关于我在桌面端使用横向二级菜单；`/blog/` 是全部文章索引，`/blog/<type>/` 按文章类型筛选。关于子页目前是占位页，`/guestbook/` 使用 Giscus 保存留言。
 
 ## 新增文章
 
-在 `.private-content/posts/` 新建 Markdown 或 MDX 文件，并在 `.private-content/` 私有仓库中提交。不要把已发布文章复制回公开仓库。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
+在 `.private-content/posts/` 新建 Markdown 或 MDX 文件。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
 
 ```yaml
 ---
@@ -59,13 +95,39 @@ type: 技术笔记
 series: Astro 实践
 seriesOrder: 0
 draft: false
+locked: false
 math: false
 mermaid: false
 legacySlug: 示例文章
 ---
 ```
 
-`type` 必填，只能是 `技术笔记`、`踩坑记录`、`生活动态`、`好物推荐` 或 `随笔杂谈`，用于生成 `/blog/<type>/` 类型页，不是已删除的旧分类或标签 taxonomy。`updatedDate` 可省略。`series` 和 `seriesOrder` 必须同时填写或同时省略，`seriesOrder` 是非负整数。其余字段都要保留。
+`type` 必填，只能是 `技术笔记`、`踩坑记录`、`生活动态`、`好物推荐` 或 `随笔杂谈`，用于生成 `/blog/<type>/` 类型页，不是已删除的旧分类或标签 taxonomy。`updatedDate` 可省略。`series` 和 `seriesOrder` 必须同时填写或同时省略，`seriesOrder` 是非负整数。`draft` 和 `locked` 省略时都按 `false` 处理，建议在文章里明确写出。
+
+| `draft` | `locked` | 结果 |
+| --- | --- | --- |
+| `false` | `false` | 发布公开正文 |
+| `false` | `true` | 发布公开元数据、封面和解锁外壳，正文与正文图片加密 |
+| `true` | `false` 或 `true` | 不生成页面 |
+
+加锁文章的标题、摘要、日期、类型、阅读时间、URL 和 `cover` 都是公开信息。封面可以继续使用带不可变 commit 的 jsDelivr URL。加锁正文图片必须保存在 `.private-content/posts/` 内，并用 Markdown 相对路径引用，例如：
+
+```markdown
+![示意图](./assets/private-image.png)
+```
+
+加锁正文不能使用远程图片、data URL、站点根绝对路径或原始 HTML `<img>`；这些写法会让构建失败。公开文章的远程正文图片继续遵守下方的图床固定提交和 inventory 规则。
+
+文章改完后，只在私有仓库中提交并 push，不需要为文章改动提交公开仓库：
+
+```powershell
+git -C .private-content status
+git -C .private-content add posts
+git -C .private-content commit -m "content: update posts"
+git -C .private-content push
+```
+
+不要把文章、加锁正文图片或其他私密资源复制回公开仓库。
 
 ## 新增作品
 
@@ -118,6 +180,22 @@ export const playlist: readonly Track[] = [
 
 文章列表的 `cover` 由 Astro 的图片管线和 Sharp 生成 WebP、`srcset` 与尺寸信息。正文远程图片通过预检后仍使用 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
 
+## 加锁内容
+
+加锁发生在 Astro 服务端渲染期间，不是构建完成后的 HTML 替换。`ProtectedContent.astro` 读取 `HATRIX_ADMIN_KEY`，用公开的固定盐和 Argon2id 派生 AES-256-GCM key，然后直接加密渲染后的 slot。正文图片由 `/protected-content/assets/<id>.bin` 静态端点分别加密。实现没有随机 DEK 或 key envelope；页面、资源和 verifier 都直接使用同一个派生 key，并各自使用随机 IV 和不同 AAD。
+
+浏览器只拿到公开 metadata、解锁外壳、KDF 参数和密文。正确解锁后，页面 HTML 在内存中挂载，图片解密为 Blob URL。原始 key 不会保存；浏览器在 IndexedDB 中保存不可导出的 AES `CryptoKey`，session 模式用 `sessionStorage` 引用，勾选“7 天免解锁”后用带到期时间的 `localStorage` 引用。凭据只对同一浏览器资料有效。
+
+解锁界面会区分空输入、验证中、错误 key、密文损坏和网络失败。错误 key 前两次没有额外等待，第 3 次等待 5 秒、第 4 次 15 秒、第 5 次 60 秒，之后每次 5 分钟；冷却保存在 `localStorage`，刷新后仍在。成功解锁会清除失败计数。页头的“退出管理员身份”会删除 session 和七天凭据、清空 IndexedDB、撤销 Blob URL，并重新锁住当前页面。
+
+纯静态方案不能阻止别人下载密文后离线猜测 key，前端冷却也可以被绕过。不可导出的 `CryptoKey` 不能防住恶意扩展、设备恶意软件或读取已解锁 DOM 的脚本。不要用这套功能保存真正敏感的信息。
+
+### 更换管理员 key
+
+同时修改本机 `.env.local` 和公开仓库 Actions Secret `HATRIX_ADMIN_KEY`，然后手动运行公开仓库 Pages workflow 或推送公开代码，重新生成全部加锁产物。旧浏览器凭据在下一次读取新 manifest 时验证失败并被清除，旧 key 也无法解密新产物。
+
+如果 key、固定盐、Argon2id 参数和格式版本都没变，普通内容更新和重新构建不会让现有浏览器凭据失效，即使新密文因随机 IV 而不同。已经下载或缓存的旧密文无法从静态站追溯删除；知道旧 key 的人仍可能解密旧副本。
+
 ## 测试矩阵
 
 | 命令 | 检查内容 |
@@ -126,22 +204,45 @@ export const playlist: readonly Track[] = [
 | `pnpm check` | Astro 与 TypeScript 诊断 |
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检与 67 页静态构建 |
+| `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
 | `pnpm check:site` | 旧文章路由、CNAME、5352 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 92 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 117 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
-
-如果视觉差异只出现在含远程图片的文章，先查看 `reports/image-check.json`。临时失败恢复后，重新运行 `pnpm check:images`，删除 `.astro/` 并执行 `pnpm exec astro sync`，再运行视觉测试。不要把远程图片未加载完整造成的页面高度变化写入基线。
 
 新增或删除页面、导航项等内容后，如果站内链接总量发生了合理变化，先核对构建产物，再同步更新 `scripts/check-built-site.ts` 中的期望值；未更新时 `pnpm check:site` 会失败。
 
 ## 部署
 
-`.github/workflows/pages-deploy.yml` 在 `master` push 或手动触发时构建 `dist/` 并发布到 GitHub Pages；pull request 只执行构建门禁，不部署。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
+`.github/workflows/pages-deploy.yml` 支持四种入口：
+
+- 私有仓库 `master` push：`notify-site.yml` 发送 `content-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的内容提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
+- 公开仓库 `master` push：检出私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
+- 手动运行公开 workflow：同样读取私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
+- 公开仓库 pull request：只使用 `tests/fixtures/private-content` 和测试 key 运行单元测试、Astro check 与 build，不读取生产 Secret、正式私有仓库，也不部署。
+
+生产构建或检查失败时，deploy job 不会运行，线上仍保留上一个 Pages 版本。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
+
+GitHub 需要三个 Secret，值不得写进仓库：
+
+| Secret | 仓库 | 最小用途和权限 |
+| --- | --- | --- |
+| `HATRIX_ADMIN_KEY` | `HatrixXXX/hatrixxxx.github.io` | 构建加密使用；不是 token，至少 8 个字符 |
+| `HATRIX_CONTENT_TOKEN` | `HatrixXXX/hatrixxxx.github.io` | fine-grained token，只授权 `HatrixXXX/hatrix-content` 的 Contents read |
+| `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-content` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
 
 Giscus 深色主题源码位于 `src/styles/giscus-dark.css`。本地开发时，主题以内联 data URL 注入 iframe；生产构建会输出带 hash 的 HTTPS CSS。亮色模式继续使用 Giscus 内置的 `light` 主题。修改评论区配色时只改主题文件。
 
-不要恢复根目录 `CNAME`，也不要提交 `dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
+不要恢复根目录 `CNAME`，也不要提交 `.env.local`、`.private-content/`、`dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
+
+## 构建失败排查
+
+先区分图片预检和保护审计：
+
+- `pnpm check:images` 检查 jsDelivr inventory 和远程地址，把结果写入 `reports/image-check.json`。如果视觉差异只发生在含远程图片的文章，先看报告。网络恢复后重跑 `pnpm check:images`，删除忽略目录 `.astro/`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要用 inventory 或视觉基线更新掩盖远程图片失败。
+- `pnpm check:protected` 检查现有 `dist/` 是否含加锁正文片段、原图片字节、原文件名、错误的索引规则或 sitemap URL。加锁正文使用远程图片、绝对路径或越界相对路径时，Astro 渲染会先失败。修正文或加密边界；不要放宽审计、替换期望密文，或把泄漏输出当成新基线。
+
+生产构建还可能因 `.private-content/posts/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。
 
 ## 后续 3D 页面
 

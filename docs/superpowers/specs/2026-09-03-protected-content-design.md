@@ -1,146 +1,134 @@
 # 加锁内容与管理员解锁设计
 
-## 目标
+状态：以当前实现为准
 
-网站继续使用 Astro 静态输出和 GitHub Pages。访客首次打开网站时是游客；加锁内容只有输入正确管理员 key 后才能在浏览器中解密。博客文章通过 Markdown frontmatter 的 `locked` 字段控制，其他页面也能使用同一套机制。
+## 目标和边界
 
-这套功能保护的是发布内容的明文，不把它包装成完整账号系统。用户已经接受纯静态方案的边界：密文可以被下载，前端冷却也能被绕过，因此弱 key 仍可能遭到离线猜测。真正敏感的信息不会放在网站中。
+网站继续使用 Astro 静态输出和 GitHub Pages。访客首次打开网站时是游客；加锁内容只有输入正确的管理员 key 后，才能在浏览器中解密。博客文章通过 frontmatter 的 `locked` 字段控制，配置在 `LOCKED_PAGE_PATHS` 中的普通页面也使用同一套解锁组件。
 
-## 已确认的产品规则
+系统只保护构建产物里的明文，不提供账号或服务端访问控制。GitHub Pages 会公开托管密文、KDF 参数、固定盐、路由和文章公开元数据。攻击者可以下载密文离线猜测 key，前端冷却也可以被绕过。至少 8 个字符只是构建下限，不代表足够强；无法接受离线穷举的内容不能放到本站。
 
-- 管理员 key 由用户自行设置，至少 8 个字符，不强制随机性或字符组合。
-- key 不进入公开仓库、私有内容仓库或构建产物，只保存在本机 `.env.local` 和 GitHub Actions Secret 中。
-- 加锁文章仍公开标题、摘要、发布日期、类型、阅读时间、URL 和封面；文章卡片显示锁定状态。
-- 加锁文章的正文、正文图片和正文内嵌资源必须加密。封面不加密。
-- 游客打开加锁 URL 时停留在目标地址，只看到全页解锁界面。输入正确 key 后在原页显示内容。
-- 未勾选“7 天免解锁”时，管理员状态只在当前浏览器会话有效。勾选后在同一浏览器资料中保存七天。
-- 过期、换浏览器、使用无痕窗口、清除站点数据、key 变化或主动退出后恢复游客状态。
-- 私有内容仓库推送后自动触发网站构建和部署；失败时保留现有线上版本。
+## 仓库和本机目录
 
-## 仓库和内容结构
-
-公开仓库继续保存 Astro 代码、测试、构建脚本和公开静态资源。全部文章源文件迁到单独的私有仓库，避免以后将加锁文章的 Markdown 写入公开 Git 历史。
-
-私有仓库在本地和 CI 中检出到公开仓库根目录的 `.private-content/`：
+公开仓库保存 Astro 代码、测试、构建脚本、封面和其他公开资源。已发布文章只保存在目标私有仓库 `HatrixXXX/hatrix-content`，本地和 CI 都检出到公开仓库根目录的 `.private-content/`。`assets/` 是按需创建的正文图片目录：
 
 ```text
 .private-content/
-├─ posts/
-│  ├─ example.md
-│  └─ assets/
-└─ pages/
+├─ .github/
+│  └─ workflows/
+│     └─ notify-site.yml
+└─ posts/
+   ├─ example.md
+   └─ assets/
+      └─ private-image.png
 ```
 
-`.private-content/` 整体加入公开仓库的 `.gitignore`。Astro 的 posts collection 从 `.private-content/posts/` 读取，作品集合仍从 `src/content/projects/` 读取。现有 40 篇文章迁入私有仓库；它们过去的公开版本仍留在当前仓库历史中，但以后新增的加锁正文不会进入公开历史。
+`.private-content/` 是独立 Git 仓库，公开仓库整体忽略该目录。Astro 的 posts collection 从 `.private-content/posts/` 读取；作品仍来自 `src/content/projects/`。迁移阶段建立的本地仓库含 40 篇文章和通知 workflow，但没有代用户创建远端、remote 或 GitHub Secrets，这些项目需要在 GitHub 上另行配置。
 
-文章 frontmatter 增加：
+公开 Git 历史仍能找到迁移前的旧文章，迁移只能避免新的加锁正文继续进入公开历史。不得把 `.private-content` 中的文章、正文图片或其他私密资源复制回公开仓库。
 
-```yaml
-locked: false
+`LOCKED_PAGE_PATHS` 当前为空。以后把普通页面路径加入该数组时，`BaseLayout` 会加密页面 slot，但公开 `.astro` 源文件仍可从 Git 读取；需要保密的文字不能直接写在公开源码中。当前实现没有通用的 `.private-content/pages/` loader。
+
+## 文章状态
+
+`locked` 和 `draft` 都可以省略，省略时按 `false` 处理。两者组合如下：
+
+| `draft` | `locked` | 构建结果 |
+| --- | --- | --- |
+| `false` | `false` | 发布公开页面，正文是普通静态 HTML |
+| `false` | `true` | 发布公开 Hero 和解锁外壳，正文与正文图片只输出密文 |
+| `true` | `false` | 不生成页面 |
+| `true` | `true` | 不生成页面，也不生成密文资源 |
+
+加锁文章仍公开标题、摘要、发布日期、类型、阅读时间、稳定 URL 和封面。文章卡片、归档、页脚、相邻文章和搜索结果显示锁标记。封面永远公开，可以继续使用符合图床固定提交规则的远程 URL。
+
+加锁正文里的图片必须用 Markdown 相对路径，且解析后的真实文件必须留在 `.private-content/posts/` 内。例如 `![示意图](./assets/private-image.png)`。远程 URL、data URL、站点根绝对路径、越出 posts 目录的路径、原始 HTML `<img>`、不存在的文件和不支持的图片格式都会让构建失败。公开文章不受这条加锁图片规则影响，仍按现有 jsDelivr inventory 和不可变 commit 规则处理远程正文图片。
+
+## 本机 key
+
+管理员 key 写在公开站点工作区根目录的 `.env.local`：
+
+```dotenv
+HATRIX_ADMIN_KEY=<至少八字符的本机值>
 ```
 
-省略时按 `false` 处理。`draft` 和 `locked` 相互独立：草稿不发布，已发布文章再按 `locked` 决定输出明文或密文。切换文章是否加锁只修改这一行。
+`.env.local` 已被公开仓库忽略。该值不得提交、复制到文章或文档、发到聊天中，也不得与私有内容仓库一起分享。本地值应与公开仓库的同名 GitHub Actions Secret 一致，否则本机和线上构建出的密文需要不同 key。
 
-非博客页面有两种入口：内容型页面放在私有仓库的 `pages/` 中；Astro 代码生成的页面通过 `BaseLayout` 的 `locked` 属性加锁。公开 `.astro` 文件中的文字本身仍能从仓库看到，需要保密的正文和资源必须来自私有内容仓库。
+## 实际加密流程
 
-## 自动部署
+当前实现没有 post-build HTML 提取阶段，也没有随机 DEK 和 key envelope。加密发生在 Astro 服务端渲染期间：
 
-私有内容仓库的默认分支 push 后发送 `repository_dispatch`，payload 带上该次内容提交 SHA。公开网站仓库的 Pages workflow 接收事件后执行：
+1. `src/pages/posts/[slug].astro` 对加锁文章调用 `renderProtectedMarkdown()`。Markdown 图片先换成透明占位和不含原文件名的加密资源地址。
+2. `PostLayout` 保留公开 Hero，把正文网格交给 `ProtectedContent.astro`。
+3. `ProtectedContent.astro` 通过 `Astro.slots.render('default')` 得到完整 HTML，读取 `HATRIX_ADMIN_KEY`，用固定盐的 Argon2id 派生 256 位 key，再以 AES-256-GCM 加密该 HTML。
+4. 页面只输出解锁表单、内联 JSON 密文信封和空挂载点。页面信封的 AAD 是规范化后的 `page:<route>`。
+5. `src/pages/protected-content/assets/[id].bin.ts` 为已发布的加锁文章生成静态资源端点。资源 ID 是派生 key 对私有仓库相对路径的 HMAC-SHA-256；文件内容再以 `asset:<id>` 为 AAD 单独加密。
+6. `/protected-content/manifest.json` 公开格式版本、固定 128 位盐、Argon2id 参数、七天时长、加锁路由和认证密文。认证密文使用 `verifier:1` AAD。
 
-1. 检出公开网站代码。
-2. 使用只读凭据把私有内容仓库的指定 SHA 检出到 `.private-content/`。
-3. 运行单元测试、Astro 类型检查和图片预检。
-4. 使用 `HATRIX_ADMIN_KEY` 构建并加密加锁内容。
-5. 扫描 `dist/`，确认没有私密正文和原始图片。
-6. 运行站内链接检查并部署 GitHub Pages。
+Argon2id 当前参数为 19 MiB 内存、2 次迭代、单路并行，输出 32 字节。每份 AES-GCM 信封使用独立的 96 位随机 IV，信封只包含格式版本、IV 和密文。相同 key、盐和参数会派生相同的 AES key，但每次构建的页面和资源密文仍会因随机 IV 改变。
 
-公开仓库的 `master` push 和手动触发也读取最新私有内容后部署。Pull request 不读取正式 key 或私有仓库凭据，改用公开测试夹具和测试 key 验证代码路径，并且不部署。
+`pnpm build` 依次运行远程图片预检、`astro build` 和 `check:protected`。保护审计会扫描 `dist/`，查找加锁 Markdown 的明文片段、原始正文图片字节、原文件名、缺失的 `noindex, nofollow` 和 sitemap 泄漏。审计报错只打印文件和规则，不回显正文。
 
-正式构建缺少 key、key 少于 8 个字符、私有内容缺失、密文生成失败或泄漏检查失败时立即终止。构建日志不得打印 key、派生密钥、内容密钥或私密正文。
+## 浏览器解锁和凭据
 
-## 加密格式
+访客直达加锁 URL、点击普通链接进入或进行 Astro 客户端换页，最终都会加载同一个目标页面外壳。无 JavaScript 时只能看到解锁表单和密文。
 
-Argon2id 根据管理员 key 和站点固定的 128 位随机盐派生 256 位 AES 内容密钥。构建进程在内存中复用派生结果，不为每张图片重复运行 Argon2id。只要管理员 key、盐和 Argon2id 参数没有变化，重新发布文章不会让七天凭据提前失效。
+提交 key 后，浏览器先加载 manifest，按 manifest 参数运行 Argon2id，并用认证密文验证派生 key。验证成功后，它解密当前页面 HTML，再请求和解密正文图片。所有图片完成后才一次性挂载正文，并发送 `hatrix:protected-content-ready`；目录、Mermaid、灯箱和 Giscus 据此初始化。图片只以 Blob URL 存在，换页和退出时会撤销。
 
-内容密钥使用 AES-256-GCM 分别加密页面 HTML 和每个正文资源。公开 manifest 另带一小段认证密文，浏览器通过它验证派生密钥；不发布可快速比较的 key 哈希。
+浏览器不保存输入的原始 key。它把不可导出的、只有 `decrypt` 用途的 AES `CryptoKey` 存在 IndexedDB 的 `hatrix-protected-content/credentials` 中：
 
-每份密文使用独立的 96 位随机 nonce。页面路由、资源标识、格式版本和内容版本作为 AES-GCM 的附加认证数据，密文被移动或篡改后无法通过认证。
+- 未勾选“7 天免解锁”时，`sessionStorage` 保存一个不含 key 的引用。关闭该浏览器会话后失效。
+- 勾选后，`localStorage` 保存带到期时间的引用。同一浏览器资料最多复用七天。
 
-Argon2id 参数保存在公开 manifest 中，初始值不低于 OWASP 的 19 MiB 内存、2 次迭代和单路并行基线。实现阶段在桌面和移动 Chromium 上测量解锁时间；允许提高参数，但不能低于基线。浏览器只有成功解密认证密文后才认为 key 正确。
+凭据不会跨浏览器资料、设备或无痕窗口同步。清除站点数据会删除它。浏览器扩展、设备恶意软件、已解锁页面中的脚本或能操作当前浏览器资料的人，仍可能读取已经挂载的正文；`CryptoKey` 的不可导出属性不能解决这些威胁。
 
-加密产物使用带版本号的信封。格式、盐、Argon2id 参数或 key 变化时，旧浏览器凭据会在验证失败后自动清除；普通内容更新不影响已有凭据。
+页头的“退出管理员身份”会清除 session 和七天引用、IndexedDB 中的凭据、当前 Blob URL，并把当前加锁页恢复为解锁外壳。退出作用于这个站点的管理员状态，不只作用于当前文章。
 
-## 构建期页面处理
+## 错误和冷却
 
-Astro 先生成正常 HTML。需要加锁的正文由明确的 `data-protected-plaintext` 标记包围；构建集成在输出完成后完成以下操作：
+解锁表单通过 `aria-live` 显示以下状态：
 
-- 提取标记内的 HTML。
-- 收集该 HTML 引用的本地正文图片。
-- 将图片变体逐个加密并改成不可读的散列文件名。
-- 把 HTML 中的图片地址替换为加密资源标识。
-- 加密处理后的 HTML。
-- 用不含正文的解锁外壳替换原标记区域。
-- 删除加密前的正文资源。
+- 空输入：`请输入管理员 key`
+- 计算或加载中：`正在验证…`
+- key 验证失败：`Key 不正确，请重试`
+- manifest、页面或资源结构无效，或正文/资源认证失败：`加密内容无法读取，请稍后再试`
+- manifest 或资源请求失败：`加密内容加载失败，请检查网络后重试`
 
-加锁正文禁止引用远程图片，因为远程 URL 无法由本站加密。构建错误会指出文章和资源位置。公开封面位于正文标记之外，不参与处理。
+格式正确但无法通过认证的 verifier 与错误 key 在客户端无法可靠区分，当前实现把它按错误 key 处理并计入冷却。已保存的 CryptoKey 如果无法通过新 manifest 的 verifier，会被删除并恢复游客状态。
 
-构建结束后再次检查：加锁标记中不得残留明文，私密图片的原输出文件不得存在，加锁正文不得进入搜索索引或 RSS。若同一张本地图片同时被公开页和加锁页引用，构建失败，要求为加锁内容提供独立资源。
+错误 key 的失败状态保存在 `localStorage`，刷新和跨加锁页面不会清除。第 1、2 次没有额外等待；第 3 次等待 5 秒，第 4 次 15 秒，第 5 次 60 秒，此后每次 5 分钟。倒计时期间输入框、显示 key、七天选项和提交按钮全部禁用。成功解锁会清除失败计数。这只是正常 UI 的节流，不妨碍修改脚本或离线尝试。
 
-## 浏览器解锁流程
+## key 变更和重新构建
 
-每个加锁页面只发布公开 Hero、解锁表单、密文地址和内容版本。页面加载后：
+普通内容更新只要保留管理员 key、固定盐、Argon2id 参数和格式版本，已有浏览器 CryptoKey 就能验证新 manifest；重新构建产生的新随机 IV 不会让凭据失效。
 
-1. 检查当前浏览器是否有未过期且版本匹配的管理员凭据。
-2. 有凭据时先验证密钥，再加载并解密正文。
-3. 没有凭据时显示 key 输入框、“显示 key”和“7 天免解锁”。
-4. 输入正确 key 后派生内容密钥，解密正文 HTML 和正文图片，在当前 URL 中渲染。
-5. 内容插入后发送 `hatrix:protected-content-ready` 事件，目录、Mermaid、灯箱和评论区在此时初始化。
+更换管理员 key 时，要同时更新本机 `.env.local` 和公开仓库的 `HATRIX_ADMIN_KEY` Secret，然后手动运行公开仓库 Pages workflow 或推送公开代码，生成一套新的页面、verifier 和资源密文。旧浏览器 CryptoKey 在下一次加载 manifest 时验证失败并被清除，旧 key 无法解密新产物。
 
-正文图片解密为内存中的 Blob URL。换页和退出管理员身份时撤销不再使用的 URL。页面源代码、无 JavaScript请求和直接下载只能得到密文。
+静态发布无法撤回别人已经下载或缓存的旧密文。知道旧 key 的人仍可能解密旧副本，因此换 key 只保护换 key 后重新构建的产物，不能追溯性吊销历史内容。
 
-浏览器保存的是不可导出的 `CryptoKey`，不是用户输入的原始 key。CryptoKey 存在 IndexedDB 中：会话模式由 `sessionStorage` 中的凭据引用控制；七天模式由带到期时间的 `localStorage` 引用控制。记录过期、版本不符或解密失败时删除 IndexedDB 和对应引用。
+## 自动部署和权限
 
-管理员解锁后，页头显示“退出管理员身份”。点击后清除凭据、撤销 Blob URL，并将当前加锁页恢复为解锁外壳。
+目标私有远端是 `HatrixXXX/hatrix-content`，默认分支为 `master`。三个 Secret 分开放置：
 
-## 错误反馈和尝试冷却
+| Secret | 存放位置 | 最小用途和权限 |
+| --- | --- | --- |
+| `HATRIX_ADMIN_KEY` | 公开站点仓库 Actions Secrets | 构建时派生加密 key；不是 GitHub token，至少 8 个字符 |
+| `HATRIX_CONTENT_TOKEN` | 公开站点仓库 Actions Secrets | 只读取 `HatrixXXX/hatrix-content`；fine-grained token 仅授权该仓库的 Contents read |
+| `HATRIX_SITE_DISPATCH_TOKEN` | 私有内容仓库 Actions Secrets | 只向 `HatrixXXX/hatrixxxx.github.io` 创建 `repository_dispatch`；fine-grained token 仅授权该仓库的 Contents read/write |
 
-解锁表单使用 `aria-live` 报告状态，并区分以下情况：
+私有仓库 `master` push 后，`notify-site.yml` 发送 `content-updated`，payload 是触发该 workflow 的完整 `github.sha`。公开 workflow 先校验它是 40 位十六进制 SHA，再把私有仓库的这个精确提交检出到 `.private-content/`，并比较实际 `git rev-parse HEAD` 与 payload。两者不一致就停止。构建和检查通过后才部署；失败不会替换现有 Pages 版本。
 
-- 空输入：“请输入管理员 key”。
-- 计算中：“正在验证…”，同时禁用重复提交。
-- 错误 key：“Key 不正确，请重试”。
-- 密文损坏：“加密内容无法读取，请稍后再试”。
-- 网络错误：“加密内容加载失败，请检查网络后重试”。
+公开仓库 `master` push 或手动运行 workflow 时，私有 checkout 不指定 ref，因此读取私有仓库默认分支当时的 HEAD。workflow 随后记录实际检出的完整 SHA，并把它加入 Astro 缓存 key。公开仓库 pull request 不读取三个正式 Secret，也不访问私有仓库；它使用 `tests/fixtures/private-content` 和固定测试 key 运行单元测试、Astro check 与 build，且不部署。
 
-错误 key 的本地冷却记录保存在 `localStorage`，刷新页面不会立即清除。前两次只承担 Argon2id 本身的计算时间；第 3 次等待 5 秒，第 4 次等待 15 秒，第 5 次等待 60 秒，此后每次等待 5 分钟。倒计时期间禁用输入和提交，时间到后恢复焦点。成功解锁会清除失败计数。
+## 索引和公开面
 
-这项冷却只约束正常页面操作。攻击者能够修改脚本或离线处理密文，系统不会声称前端冷却可以阻止这类攻击。
+加锁页面保留 canonical URL，并输出 `noindex, nofollow`；sitemap 排除这些 URL。搜索索引只保留标题和摘要等公开 metadata，不读取加锁正文。RSS 也只发布公开摘要。锁图标只用于提示状态；保护审计以构建产物中没有正文明文和原资源为准。
 
-## 路由、索引和元数据
+## 排障
 
-构建生成公开的加锁路由 manifest。文章卡片、归档、页脚、相邻文章和站内搜索根据 manifest 或 `locked` 元数据显示锁图标，但链接仍指向原 URL。
+远程图片预检与保护审计是两条不同的检查链：
 
-搜索索引为加锁文章保留标题、摘要、发布日期、类型、URL 和锁定标记，不包含正文。RSS 同样只保留公开摘要。加锁页面保留稳定 canonical URL，增加 `noindex, nofollow`；sitemap 不收录加锁 URL。
+- `pnpm check:images` 处理 jsDelivr inventory 和网络可用性，报告在忽略提交的 `reports/image-check.json`。如果只是远程图片偶发失败，先看报告并重跑；恢复后删除忽略目录 `.astro/`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要更新 inventory 或视觉基线掩盖网络故障。
+- `pnpm check:protected` 检查已经存在的 `dist/`。加锁正文远程图片通常会更早在 Astro 渲染时失败；保护审计还会报告明文、原始图片字节或文件名、索引和 sitemap 泄漏。应修正文引用或加密边界，不得放宽检查、替换期望密文或把泄漏结果写成新基线。
 
-直接访问、客户端换页和普通链接点击最终都落到同一个目标页面外壳，不依赖点击拦截提供安全性。任何遗漏的 UI 锁图标都不会造成正文泄漏。
-
-## 测试和验收
-
-单元测试覆盖 key 长度、Argon2id 参数、信封序列化、AES-GCM 认证、路由规范化、失败冷却、过期判断和公开索引裁剪。加密测试使用固定随机源夹具保证断言稳定，生产代码继续使用系统随机源。
-
-集成测试构建一篇公开文章和一篇带本地图片的加锁文章，检查：
-
-- 公开文章保持正常 HTML。
-- 加锁正文和图片字节不出现在 `dist/`。
-- 错误 key 无法解密，正确 key 能恢复原始内容。
-- 搜索、RSS 和 sitemap 不泄漏正文。
-- 正文远程图片会阻止构建。
-
-Playwright 覆盖游客直达、点击进入、错误提示、阶梯冷却、正确解锁、跨加锁页复用、会话模式、七天模式、过期、主动退出、直接 URL、刷新、移动端和无 JavaScript。最后运行项目现有的单元测试、类型检查、图片检查、构建、站点检查和完整 E2E。
-
-## 不做的内容
-
-- 不增加服务器、数据库、用户注册、找回密码或多人权限。
-- 不把管理员 key、原始 key 哈希或私密正文发送到第三方服务。
-- 不承诺防止离线穷举、已解锁浏览器中的恶意扩展、设备恶意软件或管理员主动复制内容。
-- 不加密文章标题、摘要、发布日期、类型、URL 和封面。
+正式构建还会因缺少私有内容目录、`HATRIX_ADMIN_KEY` 未配置或少于 8 个字符、内容 schema 错误和私有 token 无权读取目标仓库而失败。排障时只确认 Secret 是否存在以及权限范围，不打印 Secret 值。

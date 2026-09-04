@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import astroConfig from '../../astro.config';
 import playwrightConfig from '../../playwright.config';
 
@@ -111,6 +111,14 @@ describe('Astro project tooling', () => {
     ]);
   });
 
+  it('keeps the local administrator key file out of the public repository', () => {
+    const entries = readFileSync('.gitignore', 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.trim());
+
+    expect(entries).toContain('.env.local');
+  });
+
   it('documents the private repository as the only published article authoring location', () => {
     const readme = readFileSync('README.md', 'utf8');
     const agents = readFileSync('AGENTS.md', 'utf8');
@@ -133,6 +141,22 @@ describe('Astro project tooling', () => {
       command: 'corepack pnpm dev --host 127.0.0.1 --port 4322',
       env: { ASTRO_DEV_BACKGROUND: '0' }
     });
+  });
+
+  it('allows concurrent worktrees to select another Playwright port', async () => {
+    vi.stubEnv('PLAYWRIGHT_PORT', '4323');
+    vi.resetModules();
+    try {
+      const overriddenConfig = (await import('../../playwright.config')).default;
+      expect(overriddenConfig.use?.baseURL).toBe('http://127.0.0.1:4323');
+      expect(overriddenConfig.webServer).toMatchObject({
+        command: 'corepack pnpm dev --host 127.0.0.1 --port 4323',
+        url: 'http://127.0.0.1:4323'
+      });
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
 
   it('keeps the static-heavy Playwright suite on one worker', () => {

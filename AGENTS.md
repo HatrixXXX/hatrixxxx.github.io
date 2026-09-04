@@ -19,6 +19,7 @@ corepack pnpm test:e2e
 ## 目录边界
 
 - `.private-content/posts/`：40 篇已发布文章，公开路径由 `legacySlug` 生成。`.private-content/` 是独立的私有 Git 仓库；公开仓库不跟踪文章 Markdown。
+- `.env.local`：本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；文件已忽略，禁止提交、分享或复制到任何内容仓库。
 - `src/drafts/`：两篇草稿，不加入 Content Collection，不生成页面。
 - `src/content/projects/`：允许为空的作品集合。
 - `src/data/playlist.ts`：允许为空的音乐列表。
@@ -33,14 +34,17 @@ corepack pnpm test:e2e
 
 - 保持纯静态输出，不增加服务器、数据库、上传、下载中心或对象存储。
 - 保留全部 `/posts/<legacySlug>/` 路径和 Giscus pathname 映射。
-- 已发布文章只在 `.private-content/posts/` 中编辑。文章正文属于用户内容，除非任务明确要求，不改写正文；schema 调整也要保持旧 URL。
+- 已发布文章只在 `.private-content/posts/` 中编辑、提交和 push。禁止把文章、加锁正文图片或其他私密资源复制回公开仓库。文章正文属于用户内容，除非任务明确要求，不改写正文；schema 调整也要保持旧 URL。
+- `draft` 和 `locked` 省略时均为 `false`。`draft: true` 不生成页面；`draft: false, locked: true` 只公开 metadata、Hero 和封面，正文与正文图片必须输出密文。
+- 加锁正文图片必须使用 `.private-content/posts/` 内文件的 Markdown 相对路径。禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`；加锁文章的 `cover` 仍是公开资源。
 - 主导航固定为首页、博客文章、作品橱窗、关于我和留言板；博客文章与关于我在桌面端使用横向二级菜单。文章 `type` 只能是 `技术笔记|踩坑记录|生活动态|好物推荐|随笔杂谈`，用于文章类型页，不得作为旧分类或标签 taxonomy 恢复。
 - `series` 与 `seriesOrder` 必须成对出现。
 - 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。空歌单播放器位于普通文档流，只有非空歌单才固定在页面右下角。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。草稿不参与 inventory。
-- Playwright 有 92 项检查和 18 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
+- Playwright 有 117 项检查和 18 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
 - Sakana 的许可和素材来源告知固定在 `public/third-party-notices.txt`，构建后必须复制到 `dist/third-party-notices.txt`。内置千束与泷奈插画只用于非商业网页；站点用途或依赖版本变化时必须重新核对授权。
 - 若视觉差异只出现在含远程图片的文章，先核对 `reports/image-check.json`。临时失败恢复后应重跑 `check:images`、清理 `.astro` 并执行 `astro sync`，不要直接更新视觉基线。
+- `check:images` 负责远程图片，`check:protected` 负责 `dist/` 明文与原资源泄漏。保护审计或密文测试失败时先找泄漏根因，不得放宽检查、替换期望密文或直接更新密文基线。
 - 主题切换继续使用 `hatrix-theme`，并同步 Giscus。全屏动效由 `ThemeTransition.astro` 和 `theme.ts` 管理；减少动态效果时必须直接切换，不能显示过渡层。Giscus 深色主题源码位于 `src/styles/giscus-dark.css`：开发环境内联，生产构建输出带 hash 的 HTTPS CSS；不要用宿主页面 CSS 覆盖 iframe 内部样式。
 - `check:site` 固定校验 5352 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
@@ -50,6 +54,7 @@ corepack pnpm test:e2e
 - 不恢复 Ruby、旧主题目录或一次性迁移脚本。
 - 不恢复根目录 `CNAME`；只修改 `public/CNAME`。
 - 不提交 `dist/`、`.astro/`、`reports/`、`test-results/` 或 Playwright trace。
+- 不提交 `.env.local`、`.private-content/` 或其中任何私密内容。
 - 未经用户明确要求，不推送、合并、部署或修改远端 Pages 设置。
 - 不复制参考站源码、文案或个人资产。
 - 每次完成项目改动后，自动启动本地开发预览，并在最终回复中提供可 Ctrl+点击的 `http://127.0.0.1:4321/` Markdown 链接。除非用户明确要求停止，预览保持运行。
@@ -64,3 +69,5 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-03-remove-taxonomy.md`：分类与标签删除步骤和验证记录。
 - `docs/superpowers/specs/2026-09-03-navigation-content-hubs-design.md`：主导航、内容类型页、关于子页和留言板设计。
 - `docs/superpowers/plans/2026-09-03-navigation-content-hubs.md`：导航内容中心的实施与验证记录。
+- `docs/superpowers/specs/2026-09-03-protected-content-design.md`：私有内容仓库、SSR 加密、浏览器凭据、部署与安全边界。
+- `docs/superpowers/plans/2026-09-03-protected-content.md`：加锁内容的任务拆分和验证记录。

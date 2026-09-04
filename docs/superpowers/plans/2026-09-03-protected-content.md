@@ -6,6 +6,8 @@
 
 **Architecture:** 全部文章源从被忽略的 `.private-content/` 私有仓库读取。构建端用 Argon2id 从管理员 key 派生 AES-256-GCM 密钥，`ProtectedContent.astro` 加密服务端渲染的正文；加锁 Markdown 的本地图片由独立静态端点输出密文。浏览器只收到公开元数据、解锁外壳和密文，正确解锁后把 HTML 和图片恢复到内存。
 
+**实现校准：** 最终实现没有采用早期设计中的 post-build HTML 提取，也没有生成随机 DEK 再用管理员 key 包装。`ProtectedContent.astro` 在 Astro 服务端渲染期间取得 slot HTML，并直接使用固定盐 Argon2id 派生的 AES key 加密；正文图片由静态 `.bin` 端点使用同一派生 key 分别加密。实际数据流、安全边界、凭据、部署和排障说明以配套设计文档与 README 为准。
+
 **Tech Stack:** Astro 7.2、TypeScript 5.9、Node 24 Web Crypto、hash-wasm 4.12、Vitest 4.1、Playwright 1.62、GitHub Actions、GitHub Pages
 
 ## Global Constraints
@@ -430,10 +432,12 @@ Commit in public feature branch: `build: load posts from private content reposit
 ### Task 8: 文档、全量验证和本地预览
 
 **Files:**
+- Modify: `.gitignore`
 - Modify: `README.md`
 - Modify: `AGENTS.md`
 - Modify: `docs/superpowers/specs/2026-09-03-protected-content-design.md`
 - Modify: `docs/superpowers/plans/2026-09-03-protected-content.md`
+- Modify: `tests/unit/project-config.test.ts`
 - Modify as required by measured output: `scripts/check-built-site.ts`
 - Modify if rendered UI changes: `tests/e2e/visual.spec.ts-snapshots/*`
 
@@ -442,11 +446,11 @@ Commit in public feature branch: `build: load posts from private content reposit
 - README 列出三个 secret 名称、私有仓库目录结构、key 更换和构建失败排查。
 - AGENTS 增加禁止把私密内容复制回公开仓库、locked 正文远程图片和直接更新密文基线的规则。
 
-- [ ] **Step 1: 按 humanizer-zh 更新长期文档**
+- [x] **Step 1: 按 humanizer-zh 更新长期文档**
 
 文档给出完整 frontmatter：`locked: false`，说明封面公开、正文图片必须相对引用私有仓库文件，说明 `.env.local` 的 `HATRIX_ADMIN_KEY` 不得提交，并记录自动部署链路和纯静态限制。
 
-- [ ] **Step 2: 运行全量验证**
+- [x] **Step 2: 运行全量验证**
 
 Run: `corepack pnpm test:run`
 
@@ -472,11 +476,11 @@ Run: `corepack pnpm test:e2e`
 
 Expected: 全部 Chromium 项目通过；视觉差异仅在已审查的锁 UI 基线中出现。
 
-- [ ] **Step 3: 做规格覆盖自审和代码审查**
+- [x] **Step 3: 做规格覆盖自审和代码审查**
 
 逐条核对设计文档的内容仓库、加密、图片、错误反馈、冷却、直达 URL、凭据、索引、部署和限制。运行 `git diff --check`，确认 feature branch 没有 `.env.local`、key、`.private-content`、`dist` 或报告文件。
 
-- [ ] **Step 4: 提交文档并启动预览**
+- [x] **Step 4: 提交文档并启动预览**
 
 Commit: `docs: document protected content workflow`
 
