@@ -4,6 +4,7 @@ import {
   classifyTrailRegion,
   createTrailHueState,
   createTrailState,
+  isCursorTrailExcludedPathname,
   setTrailTarget,
   updateTrailState,
   type Tendril,
@@ -53,8 +54,12 @@ function hardResetTrail(): void {
   }
 }
 
+function isRouteExcluded(): boolean {
+  return isCursorTrailExcludedPathname(location.pathname);
+}
+
 function isEnabled(): boolean {
-  return !reducedMotion.matches && finePointer.matches;
+  return !isRouteExcluded() && !reducedMotion.matches && finePointer.matches;
 }
 
 function drawTendril(tendril: Tendril): void {
@@ -162,9 +167,14 @@ function syncCanvas(): void {
     hardResetTrail();
     canvas = nextCanvas;
     context = canvas.getContext('2d');
-  } else {
-    retireActiveSession();
   }
+  const routeExcluded = isRouteExcluded();
+  nextCanvas.hidden = routeExcluded;
+  if (routeExcluded) {
+    hardResetTrail();
+    return;
+  }
+  retireActiveSession();
   resizeCanvas();
 }
 

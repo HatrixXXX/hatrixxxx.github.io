@@ -6,6 +6,7 @@ import {
   classifyTrailRegion,
   createTrailHueState,
   createTrailState,
+  isCursorTrailExcludedPathname,
   setTrailTarget,
   updateTrailState,
 } from '../../src/lib/cursor-trail';
@@ -65,6 +66,17 @@ describe('cursor trail physics', () => {
     expect(classifyTrailRegion(1310, 400, bounds)).toBeNull();
     expect(classifyTrailRegion(129, 199, bounds)).toBeNull();
     expect(classifyTrailRegion(1311, 801, bounds)).toBeNull();
+  });
+
+  it('excludes the blog menu tree without excluding posts or other pages', () => {
+    expect(isCursorTrailExcludedPathname('/blog')).toBe(true);
+    expect(isCursorTrailExcludedPathname('/blog/')).toBe(true);
+    expect(isCursorTrailExcludedPathname('/blog/tech-notes/')).toBe(true);
+    expect(isCursorTrailExcludedPathname('/blog/essays/')).toBe(true);
+    expect(isCursorTrailExcludedPathname('/posts/example/')).toBe(false);
+    expect(isCursorTrailExcludedPathname('/page/2/')).toBe(false);
+    expect(isCursorTrailExcludedPathname('/projects/')).toBe(false);
+    expect(isCursorTrailExcludedPathname('/blogger/')).toBe(false);
   });
 
   it('creates twenty tendrils of fifty stationary nodes', () => {

@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { POST_TYPE_LINKS } from '../../src/config/navigation';
+
+const disabledBlogRoutes = ['/blog/', ...POST_TYPE_LINKS.map(({ href }) => href)];
 
 const alphaPixels = (
   canvas: HTMLCanvasElement,
@@ -8,8 +11,12 @@ const alphaPixels = (
   if (!context) return -1;
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
-  const left = Math.max(0, Math.floor(((range?.left ?? rect.left) - rect.left) * scaleX));
-  const right = Math.min(canvas.width, Math.ceil(((range?.right ?? rect.right) - rect.left) * scaleX));
+  const left = range
+    ? Math.max(0, Math.floor((range.left - rect.left) * scaleX))
+    : 0;
+  const right = range
+    ? Math.min(canvas.width, Math.ceil((range.right - rect.left) * scaleX))
+    : canvas.width;
   const width = Math.max(0, right - left);
   const data = context.getImageData(left, 0, width, canvas.height).data;
   let count = 0;
@@ -452,6 +459,62 @@ test('an unmasked left-gutter curve may enter the content band', async ({ page }
   await expect.poll(() => canvas.evaluate(contentAlphaPixels, geometry.content)).toBeGreaterThan(0);
 });
 
+test('blog menu routes hide and disable the cursor trail', async ({ page }) => {
+  for (const path of disabledBlogRoutes) {
+    await page.goto(path);
+    const canvas = page.locator('[data-cursor-trail]');
+    await expect(canvas).toBeHidden();
+    const horizontal = await page.locator('[data-content-boundary]').boundingBox();
+    const main = await page.locator('main').boundingBox();
+    const viewport = page.viewportSize();
+    if (!horizontal || !main || !viewport) throw new Error(`Missing geometry for ${path}`);
+    const visibleTop = Math.max(8, main.y);
+    const visibleBottom = Math.min(viewport.height - 8, main.y + main.height);
+    const y = (visibleTop + visibleBottom) / 2;
+    const x = Math.max(8, horizontal.x - 24);
+    await page.mouse.move(x, y - 40);
+    await page.mouse.move(x, y + 40);
+    await waitForAnimationFrames(page);
+    expect(await canvas.evaluate(alphaPixels)).toBe(0);
+  }
+
+  await page.goto('/projects/');
+  const canvas = page.locator('[data-cursor-trail]');
+  await expect(canvas).toBeVisible();
+  const geometry = await activationGeometry(page);
+  await page.mouse.move(geometry.leftX, geometry.y - 40);
+  await page.mouse.move(geometry.leftX, geometry.y + 40);
+  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+});
+
+test('entering a blog menu clears existing trails until an allowed route resumes', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const oldGeometry = await activationGeometry(page);
+  await page.mouse.move(oldGeometry.leftX, oldGeometry.y - 80);
+  await page.mouse.move(oldGeometry.leftX, oldGeometry.y + 80);
+  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+
+  await Promise.all([
+    page.waitForURL(/\/blog\/$/),
+    page.getByRole('link', { name: '博客文章', exact: true }).click()
+  ]);
+  await expect(page.locator('[data-blog-total]')).toHaveText('40');
+  await expect(canvas).toBeHidden();
+  expect(await canvas.evaluate(alphaPixels)).toBe(0);
+
+  await Promise.all([
+    page.waitForURL((url) => url.pathname === '/'),
+    page.getByRole('link', { name: '首页', exact: true }).click()
+  ]);
+  await expect(canvas).toBeVisible();
+  expect(await canvas.evaluate(alphaPixels)).toBe(0);
+  const resumedGeometry = await activationGeometry(page);
+  await page.mouse.move(resumedGeometry.rightX, resumedGeometry.y - 40);
+  await page.mouse.move(resumedGeometry.rightX, resumedGeometry.y + 40);
+  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+});
+
 test('the canvas persists once across client navigation', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
@@ -471,10 +534,10 @@ test('the canvas persists once across client navigation', async ({ page }) => {
   expect(baseline).toBeGreaterThan(0);
 
   await Promise.all([
-    page.waitForURL(/\/blog\/$/),
-    page.getByRole('link', { name: '博客文章', exact: true }).click()
+    page.waitForURL(/\/projects\/$/),
+    page.getByRole('link', { name: '作品橱窗', exact: true }).click()
   ]);
-  await expect(page.locator('[data-blog-total]')).toHaveText('40');
+  await expect(page.locator('main.projects-main')).toBeVisible();
   await expect(page.locator('[data-cursor-trail]')).toHaveCount(1);
   await expect(page.locator('[data-cursor-trail]')).toHaveAttribute('data-persist-probe', 'same-node');
   const afterNavigation = await canvas.evaluate(alphaSumInRect, oldArea);

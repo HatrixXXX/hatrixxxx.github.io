@@ -126,3 +126,7 @@ export function classifyTrailRegion(
   if (clientX > bounds.right) return 'right';
   return null;
 }
+
+export function isCursorTrailExcludedPathname(pathname: string): boolean {
+  return pathname === '/blog' || pathname.startsWith('/blog/');
+}
