@@ -47,12 +47,12 @@
 | GitHub | `https://github.com/HatrixXXX` |
 | Bilibili | `https://space.bilibili.com/352420563` |
 | 知乎 | `https://www.zhihu.com/people/hatrixxxx` |
-| 小红书 | `https://www.xiaohongshu.com/user/profile/62a6030000000000190299d` |
+| 小红书 | `xhsdiscover://user/62a6030000000000190299d` |
 | 微信 | 暂无地址 |
 | QQ 音乐 | 暂无可用地址；原分享页缺少用户参数 |
 | 邮件 | `mailto:3113624526@qq.com` |
 
-每个平台使用带可访问名称的彩色图标。图标使用站内 SVG，不加载远程图标字体。外部链接在新标签页打开；RSS 和邮件保留各自的原生行为。微信与 QQ 音乐显示为不可点击的“待补充”状态，配置有效地址后即可恢复为链接。QQ 音乐图标使用黄底绿色抽象音符，与平台标识保持一致。
+每个平台使用带可访问名称的彩色图标。图标使用站内 SVG，不加载远程图标字体。HTTP 外部链接在新标签页打开；RSS、邮件和小红书 App 深链保留原生行为。微信与 QQ 音乐显示为不可点击的“待补充”状态，配置有效地址后即可恢复为链接。QQ 音乐图标使用浅黄色按钮底色和同色系标识，不混用绿色。
 
 Stack Overflow、Twitter、Telegram、QQ 和原有 Gitee 入口不进入新资料卡。
 

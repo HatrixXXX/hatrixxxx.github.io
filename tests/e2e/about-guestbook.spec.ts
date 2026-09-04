@@ -9,8 +9,8 @@ const expectedSocials = [
   {
     id: 'xiaohongshu',
     label: '小红书',
-    href: 'https://www.xiaohongshu.com/user/profile/62a6030000000000190299d',
-    external: true
+    href: 'xhsdiscover://user/62a6030000000000190299d',
+    external: false
   },
   { id: 'email', label: '邮件', href: 'mailto:3113624526@qq.com', external: false }
 ] as const;
@@ -94,8 +94,12 @@ test('about sidebar exposes the requested profile, social links and static stati
   await expect(qqMusic.locator('a, button, [tabindex]')).toHaveCount(0);
 
   const qqMusicIcon = qqMusic.locator('svg');
-  await expect(qqMusicIcon.locator('[data-qqmusic-logo="disc"]')).toHaveCount(1);
+  await expect(qqMusicIcon.locator('[data-qqmusic-logo="disc"]')).toHaveCount(0);
   await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveCount(1);
+  await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveAttribute(
+    'fill',
+    'currentColor'
+  );
 
   for (const absent of ['Gitee', 'Stack Overflow', 'Twitter', 'Telegram', 'QQ']) {
     await expect(profile.getByRole('link', { name: absent, exact: true })).toHaveCount(0);

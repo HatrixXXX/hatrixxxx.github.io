@@ -13,9 +13,9 @@ export const SITE = {
     { id: 'github', label: 'GitHub', url: 'https://github.com/HatrixXXX', color: '#a78bfa' },
     { id: 'bilibili', label: 'Bilibili', url: 'https://space.bilibili.com/352420563', color: '#fb7299' },
     { id: 'zhihu', label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx', color: '#2f88ff' },
-    { id: 'xiaohongshu', label: '小红书', url: 'https://www.xiaohongshu.com/user/profile/62a6030000000000190299d', color: '#ff2442' },
+    { id: 'xiaohongshu', label: '小红书', url: 'xhsdiscover://user/62a6030000000000190299d', color: '#ff2442' },
     { id: 'wechat', label: '微信', url: null, color: '#07c160' },
-    { id: 'qqmusic', label: 'QQ 音乐', url: null, color: '#22c55e' },
+    { id: 'qqmusic', label: 'QQ 音乐', url: null, color: '#e6b800' },
     { id: 'email', label: '邮件', url: 'mailto:3113624526@qq.com', color: '#f97316' }
   ],
   filings: [] as readonly { label: string; url: string }[],

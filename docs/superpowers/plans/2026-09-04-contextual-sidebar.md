@@ -1,6 +1,6 @@
 # Contextual Sidebar Implementation Plan
 
-> 后续修正：QQ 音乐分享地址缺少用户参数，入口与微信一样暂时显示为“待补充”；时钟只显示加粗后的 Canvas 点阵，语义 `<time>` 视觉隐藏。
+> 后续修正：QQ 音乐分享地址缺少用户参数，入口与微信一样暂时显示为“待补充”；小红书改用官方 App 深链；时钟只显示加粗后的 Canvas 点阵，语义 `<time>` 视觉隐藏。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -322,9 +322,9 @@ socials: [
   { id: 'github', label: 'GitHub', url: 'https://github.com/HatrixXXX', color: '#a78bfa' },
   { id: 'bilibili', label: 'Bilibili', url: 'https://space.bilibili.com/352420563', color: '#fb7299' },
   { id: 'zhihu', label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx', color: '#2f88ff' },
-  { id: 'xiaohongshu', label: '小红书', url: 'https://www.xiaohongshu.com/user/profile/62a6030000000000190299d', color: '#ff2442' },
+  { id: 'xiaohongshu', label: '小红书', url: 'xhsdiscover://user/62a6030000000000190299d', color: '#ff2442' },
   { id: 'wechat', label: '微信', url: null, color: '#07c160' },
-  { id: 'qqmusic', label: 'QQ 音乐', url: null, color: '#22c55e' },
+  { id: 'qqmusic', label: 'QQ 音乐', url: null, color: '#e6b800' },
   { id: 'email', label: '邮件', url: 'mailto:3113624526@qq.com', color: '#f97316' }
 ]
 ```
