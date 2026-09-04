@@ -7,6 +7,7 @@ test('site statistics and dot clock stay live across Shanghai midnight', async (
   await page.goto('/about/');
 
   const clock = page.locator('[data-clock-text]');
+  await expect(clock).toHaveClass(/visually-hidden/);
   const runningDays = page.locator('[data-running-days]');
   const beforeDays = Number(await runningDays.textContent());
   await expect(clock).toHaveText('23:59:59');

@@ -26,7 +26,7 @@ const clockText = formatClockTime(now);
     </time>
   </p>
   <div class="clock" aria-label="当前时间">
-    <time datetime={now.toISOString()} data-clock-text>{clockText}</time>
+    <time class="visually-hidden" datetime={now.toISOString()} data-clock-text>{clockText}</time>
     <canvas width="240" height="56" data-dot-clock aria-hidden="true"></canvas>
   </div>
 </section>
@@ -85,14 +85,6 @@ const clockText = formatClockTime(now);
     position: relative;
     min-height: 56px;
     margin-top: 0.75rem;
-  }
-
-  [data-clock-text] {
-    position: absolute;
-    inset: 50% auto auto 50%;
-    color: var(--color-accent);
-    font: 700 1.15rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
-    transform: translate(-50%, -50%);
   }
 
   canvas {

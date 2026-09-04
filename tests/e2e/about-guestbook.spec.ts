@@ -12,12 +12,6 @@ const expectedSocials = [
     href: 'https://www.xiaohongshu.com/user/profile/62a6030000000000190299d',
     external: true
   },
-  {
-    id: 'qqmusic',
-    label: 'QQ 音乐',
-    href: 'https://i2.y.qq.com/n3/other/pages/share/profile_v2/index.html',
-    external: true
-  },
   { id: 'email', label: '邮件', href: 'mailto:3113624526@qq.com', external: false }
 ] as const;
 
@@ -91,6 +85,17 @@ test('about sidebar exposes the requested profile, social links and static stati
   await expect(wechat).toHaveAccessibleName(/微信.*待补充/);
   await expect(wechat.getByText('待补充', { exact: true })).toBeVisible();
   await expect(wechat.locator('a, button, [tabindex]')).toHaveCount(0);
+
+  const qqMusic = profile.locator('span[data-social-id="qqmusic"]');
+  await expect(qqMusic).toHaveAttribute('data-social-pending', 'qqmusic');
+  await expect(qqMusic).toHaveAttribute('aria-disabled', 'true');
+  await expect(qqMusic).toHaveAccessibleName(/QQ 音乐.*待补充/);
+  await expect(qqMusic.getByText('待补充', { exact: true })).toBeVisible();
+  await expect(qqMusic.locator('a, button, [tabindex]')).toHaveCount(0);
+
+  const qqMusicIcon = qqMusic.locator('svg');
+  await expect(qqMusicIcon.locator('[data-qqmusic-logo="disc"]')).toHaveCount(1);
+  await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveCount(1);
 
   for (const absent of ['Gitee', 'Stack Overflow', 'Twitter', 'Telegram', 'QQ']) {
     await expect(profile.getByRole('link', { name: absent, exact: true })).toHaveCount(0);

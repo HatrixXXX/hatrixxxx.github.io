@@ -30,6 +30,10 @@ export function changedDigitIndexes(previous: string, next: string): number[] {
   );
 }
 
+export function dotRadiusForSpacing(spacing: number): number {
+  return Math.max(1.25, spacing * 0.34);
+}
+
 export function pointsForClock(value: string): ClockPoint[] {
   if (!/^\d{2}:\d{2}:\d{2}$/.test(value)) {
     throw new RangeError('clock value must use HH:mm:ss');

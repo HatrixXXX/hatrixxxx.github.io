@@ -1,4 +1,9 @@
-import { changedDigitIndexes, formatClockTime, pointsForClock } from '@/lib/dot-clock';
+import {
+  changedDigitIndexes,
+  dotRadiusForSpacing,
+  formatClockTime,
+  pointsForClock
+} from '@/lib/dot-clock';
 
 const PARTICLE_COLORS = ['#67e8f9', '#a78bfa', '#f472b6', '#facc15'] as const;
 const MAX_PARTICLES = 360;
@@ -86,7 +91,7 @@ function bindSiteStats(root: HTMLElement): void {
     return [
       (width - clockWidth) / 2 + x * spacing,
       (height - clockHeight) / 2 + y * spacing,
-      Math.max(1.25, spacing * 0.2)
+      dotRadiusForSpacing(spacing)
     ];
   };
 

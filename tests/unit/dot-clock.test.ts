@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { changedDigitIndexes, formatClockTime, pointsForClock } from '../../src/lib/dot-clock';
+import {
+  changedDigitIndexes,
+  dotRadiusForSpacing,
+  formatClockTime,
+  pointsForClock
+} from '../../src/lib/dot-clock';
 
 describe('dot clock geometry', () => {
   it('formats a zero-padded clock value', () => {
@@ -20,5 +25,9 @@ describe('dot clock geometry', () => {
 
   it('rejects values outside the HH:mm:ss shape', () => {
     expect(() => pointsForClock('9:08:07')).toThrow('clock value must use HH:mm:ss');
+  });
+
+  it('uses bold dots without closing the gap between cells', () => {
+    expect(dotRadiusForSpacing(10)).toBeCloseTo(3.4);
   });
 });

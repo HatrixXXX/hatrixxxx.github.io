@@ -1,5 +1,7 @@
 # Contextual Sidebar Implementation Plan
 
+> 后续修正：QQ 音乐分享地址缺少用户参数，入口与微信一样暂时显示为“待补充”；时钟只显示加粗后的 Canvas 点阵，语义 `<time>` 视觉隐藏。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在关于页和文章正文页加入资料、统计、音乐三张共享侧栏卡片，并从首页及其他页面移除旧资料卡和全局播放器。
@@ -17,7 +19,7 @@
 - 不复制参考站源码、文案或个人素材；点阵时钟使用独立的 5×7 点阵实现。
 - Vercount 只在生产构建加载，本地开发和 Playwright 不发送统计请求。
 - 首页、分页、博客列表、归档、作品、留言板和 404 不显示侧栏或播放器。
-- 微信入口保留不可点击状态；QQ 音乐使用用户提供的地址，不猜测参数。
+- 微信和 QQ 音乐入口保留不可点击状态，不猜测缺失的用户参数。
 - 减少动态效果时，时钟继续更新时间但不生成粒子。
 - 不提交 `dist/`、`.astro/`、`reports/`、`test-results/` 或 Playwright trace。
 
@@ -296,7 +298,7 @@ for (const path of ['/about/', '/about/hobbies/', '/posts/本科数学大杂烩/
 }
 ```
 
-On `/about/`, assert title/tagline, eight requested social items, supplied hrefs, HTTP-link `target`/`rel`, same-tab RSS, `mailto:` email, pending WeChat, article count `40`, and initial visitor fallback `—`. Assert Gitee, Stack Overflow, Twitter, Telegram and QQ are absent.
+On `/about/`, assert title/tagline, eight requested social items, configured hrefs, HTTP-link `target`/`rel`, same-tab RSS, `mailto:` email, pending WeChat and QQ Music items, article count `40`, and initial visitor fallback `—`. Assert Gitee, Stack Overflow, Twitter, Telegram and QQ are absent.
 
 On the article route at 1440×900, assert the stack is left of `.post-column` and the desktop TOC is right of it. At 390×844, assert `.post-column` is above the stack and document width does not overflow.
 
@@ -322,7 +324,7 @@ socials: [
   { id: 'zhihu', label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx', color: '#2f88ff' },
   { id: 'xiaohongshu', label: '小红书', url: 'https://www.xiaohongshu.com/user/profile/62a6030000000000190299d', color: '#ff2442' },
   { id: 'wechat', label: '微信', url: null, color: '#07c160' },
-  { id: 'qqmusic', label: 'QQ 音乐', url: 'https://i2.y.qq.com/n3/other/pages/share/profile_v2/index.html', color: '#22c55e' },
+  { id: 'qqmusic', label: 'QQ 音乐', url: null, color: '#22c55e' },
   { id: 'email', label: '邮件', url: 'mailto:3113624526@qq.com', color: '#f97316' }
 ]
 ```

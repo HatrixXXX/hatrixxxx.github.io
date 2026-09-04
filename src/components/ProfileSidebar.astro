@@ -14,7 +14,7 @@ import SocialIcon from '@/components/SocialIcon.astro';
           aria-label={`${social.label}，待补充`}
           aria-disabled="true"
           data-social-id={social.id}
-          data-social-pending="wechat"
+          data-social-pending={social.id}
           style={`--social-color: ${social.color}`}
         >
           <SocialIcon id={social.id} />
