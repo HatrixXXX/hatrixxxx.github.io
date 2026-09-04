@@ -23,7 +23,7 @@
       └─ private-image.png
 ```
 
-`.private-content/` 是独立 Git 仓库，公开仓库整体忽略该目录。Astro 的 posts collection 从 `.private-content/posts/` 读取；作品仍来自 `src/content/projects/`。迁移阶段建立的本地仓库含 40 篇文章和通知 workflow，但没有代用户创建远端、remote 或 GitHub Secrets，这些项目需要在 GitHub 上另行配置。
+`.private-content/` 是独立 Git 仓库，公开仓库整体忽略该目录。Astro 的 posts collection 从 `.private-content/posts/` 读取；作品仍来自 `src/content/projects/`。迁移阶段建立的本地仓库含 40 篇文章和通知 workflow，但不会创建 GitHub 仓库、配置可用的 GitHub remote 或写入 GitHub Secrets。迁移仓库的 `origin` 可能只是本机 worktree 路径，首次发布前必须改成目标私有仓库。
 
 公开 Git 历史仍能找到迁移前的旧文章，迁移只能避免新的加锁正文继续进入公开历史。不得把 `.private-content` 中的文章、正文图片或其他私密资源复制回公开仓库。
 
@@ -40,7 +40,7 @@
 | `true` | `false` | 不生成页面 |
 | `true` | `true` | 不生成页面，也不生成密文资源 |
 
-加锁文章仍公开标题、摘要、发布日期、类型、阅读时间、稳定 URL 和封面。文章卡片、归档、页脚、相邻文章和搜索结果显示锁标记。封面永远公开，可以继续使用符合图床固定提交规则的远程 URL。
+加锁文章仍公开标题、摘要、发布日期、类型、阅读时间、稳定 URL 和封面。文章卡片、归档、相邻文章和搜索结果显示锁标记。封面永远公开，可以继续使用符合图床固定提交规则的远程 URL。
 
 加锁正文里的图片必须用 Markdown 相对路径，且解析后的真实文件必须留在 `.private-content/posts/` 内。例如 `![示意图](./assets/private-image.png)`。远程 URL、data URL、站点根绝对路径、越出 posts 目录的路径、原始 HTML `<img>`、不存在的文件和不支持的图片格式都会让构建失败。公开文章不受这条加锁图片规则影响，仍按现有 jsDelivr inventory 和不可变 commit 规则处理远程正文图片。
 
@@ -118,15 +118,13 @@ Argon2id 当前参数为 19 MiB 内存、2 次迭代、单路并行，输出 32 
 
 私有仓库 `master` push 后，`notify-site.yml` 发送 `content-updated`，payload 是触发该 workflow 的完整 `github.sha`。公开 workflow 先校验它是 40 位十六进制 SHA，再把私有仓库的这个精确提交检出到 `.private-content/`，并比较实际 `git rev-parse HEAD` 与 payload。两者不一致就停止。构建和检查通过后才部署；失败不会替换现有 Pages 版本。
 
-公开仓库 `master` push 或手动运行 workflow 时，私有 checkout 不指定 ref，因此读取私有仓库默认分支当时的 HEAD，并记录实际检出的完整 SHA。生产 workflow 不缓存 `.astro/`，构建结束后也会在上传 `dist/` 前删除它，因为其中可能含有私有正文、渲染 HTML 和源路径。公开仓库 pull request 不读取三个正式 Secret，也不访问私有仓库；它使用 `tests/fixtures/private-content` 和固定测试 key 运行单元测试、Astro check 与 build，且不部署。
+公开仓库 `master` push 或手动运行 workflow 时，私有 checkout 不指定 ref，因此读取私有仓库默认分支当时的 HEAD，并记录实际检出的完整 SHA。生产 workflow 不缓存 `.astro/`，构建结束后也会在上传 `dist/` 前删除它，因为其中可能含有私有正文、渲染 HTML 和源路径。公开仓库 pull request 不读取三个正式 Secret，也不访问私有仓库；它使用 `tests/fixtures/private-content` 和固定测试 key 运行单元测试、Astro check、build 与 fixture 模式的 `check:site`，且不部署。
 
 ## 索引和公开面
 
 加锁页面保留 canonical URL，并输出 `noindex, nofollow`；sitemap 排除这些 URL。搜索索引只保留标题和摘要等公开 metadata，不读取加锁正文。RSS 也只发布公开摘要。锁图标只用于提示状态；保护审计以构建产物中没有正文明文和原资源为准。
 
 ## 排障
-
-构建生成公开的加锁路由 manifest。文章卡片、归档、相邻文章和站内搜索根据 manifest 或 `locked` 元数据显示锁图标，但链接仍指向原 URL。极简页脚不展示文章，因此不需要锁图标。
 
 远程图片预检与保护审计是两条不同的检查链：
 

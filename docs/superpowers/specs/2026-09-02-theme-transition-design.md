@@ -64,4 +64,4 @@ Replace the plain theme glyph with a day/night icon and add a playful full-scree
 - Playwright verifies that an immediate Astro client navigation keeps the pending destination theme and clears the old transition state.
 - Existing theme navigation and Giscus tests remain green.
 - Type checking, unit tests, production build, built-site validation, and the full end-to-end suite must pass.
-- The two reference screenshots remain untracked working files. Existing visual baselines stay at 21 because the overlay is hidden in baseline captures.
+- The two reference screenshots remain untracked working files. The current suite has 18 visual baselines; the overlay stays hidden in baseline captures.

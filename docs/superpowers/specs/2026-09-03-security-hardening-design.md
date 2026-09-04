@@ -35,7 +35,7 @@ GitHub Pages 不提供仓库级任意响应头配置。第一阶段可以用 HTM
 default-src 'self';
 base-uri 'none';
 object-src 'none';
-script-src 'self' 'unsafe-inline' data: https://giscus.app;
+script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://giscus.app;
 script-src-attr 'none';
 style-src 'self' 'unsafe-inline' https://giscus.app;
 img-src 'self' data: blob: https://cdn.jsdelivr.net;
@@ -48,7 +48,7 @@ manifest-src 'self';
 form-action 'self'
 ```
 
-第一阶段保留 `script-src 'unsafe-inline'`，原因是当前构建包含主题初始化和 Giscus 内联模块，直接改成哈希策略会与 Astro ClientRouter、构建压缩和正在开发的加锁内容脚本相互影响。生产取证还确认 ClientRouter 在客户端导航时加载 `data:` 模块，Sakana 使用内嵌 `data:` 音频，Giscus 客户端会加载同源于 `giscus.app` 的样式；策略只为这三项现有行为增加对应来源。`script-src-attr 'none'` 单独禁止 HTML 事件属性。内容检查同时拒绝原始 `<script>`，缩小 `unsafe-inline` 留下的风险。
+第一阶段保留 `script-src 'unsafe-inline'`，原因是当前构建包含主题初始化和 Giscus 内联模块，直接改成哈希策略会与 Astro ClientRouter、构建压缩和加锁内容脚本相互影响。ClientRouter 在客户端导航时加载 `data:` 模块，`hash-wasm` 需要编译 Argon2 WebAssembly，Sakana 使用内嵌 `data:` 音频，Giscus 客户端会加载同源于 `giscus.app` 的样式。`'wasm-unsafe-eval'` 只放行 WebAssembly 编译，不允许 JavaScript 的 `eval()` 或 `Function()`；不能替换成范围更大的 `'unsafe-eval'`。`script-src-attr 'none'` 单独禁止 HTML 事件属性，内容检查同时拒绝原始 `<script>`。
 
 样式仍允许内联，并允许 Giscus 客户端加载 `https://giscus.app/default.css`。Astro 页面样式、Hero 背景、Mermaid 和现有交互会生成 `<style>` 或 `style` 属性；为了去掉 `unsafe-inline` 而重写这些功能不在本阶段范围内。
 
@@ -98,7 +98,7 @@ Mermaid 初始化显式设置 `securityLevel: 'strict'`，不依赖上游默认�
 
 所有 `uses:` 引用改为完整 40 位 commit SHA，并在同行注释保留对应版本，便于 Dependabot 更新和人工核对。Checkout 关闭凭据持久化，build 与 deploy job 设置超时。
 
-手动部署只能从 `refs/heads/master` 运行。普通 push 仍只部署 `master`，pull request 只构建、不上传 Pages artifact。加锁内容功能若增加 `repository_dispatch`，整合时为该事件保留明确条件，不把手动任意 ref 发布重新放开。
+手动部署只能从 `refs/heads/master` 运行。普通 push 仍只部署 `master`，pull request 使用私有内容夹具构建并运行 fixture 模式的 `check:site`，但不上传 Pages artifact。`repository_dispatch` 只接受约定事件，并校验私有内容提交 SHA。
 
 `package.json` 添加精确 `packageManager`，Corepack 和 CI 使用同一 pnpm 版本。安装继续使用 `--frozen-lockfile`。生产依赖审计在 CI 中以 high 级别作为门禁；审计不进入浏览器包，不影响页面运行性能。
 

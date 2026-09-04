@@ -1,5 +1,7 @@
 # 侧栏鼠标曲线实施计划
 
+> 历史说明：本文记录最初的单会话实现。当前区域门控、多会话自然淡出和博客路由禁用分别以 `2026-09-03-cursor-trail-activation-regions.md`、`2026-09-04-cursor-trail-multi-session.md` 和 `2026-09-04-cursor-trail-blog-exclusion.md` 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在全站加入参考 `kuroha.vip` 参数的弹簧贝塞尔鼠标尾迹，只允许左右留白区更新目标，同时保留跨正文绘制。

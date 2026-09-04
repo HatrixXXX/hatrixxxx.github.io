@@ -57,12 +57,16 @@ pnpm test:e2e
 
 ## 首次接入私有仓库
 
-如果沿用迁移阶段生成的本地 `.private-content/`，它已经是独立 Git 仓库，但迁移过程没有创建远端或 remote。先在 GitHub 创建私有仓库 `HatrixXXX/hatrix-content`，再连接现有本地仓库：
+如果沿用迁移阶段生成的本地 `.private-content/`，它已经是独立 Git 仓库。迁移过程不会创建 GitHub 仓库；现有 `origin` 也可能仍指向临时 worktree。先在 GitHub 创建私有仓库 `HatrixXXX/hatrix-content`，再检查并修正 remote：
 
 ```powershell
-git -C .private-content remote add origin git@github.com:HatrixXXX/hatrix-content.git
+git -C .private-content remote -v
+# 没有 origin 时使用 remote add；已有临时 origin 时使用 remote set-url
+git -C .private-content remote set-url origin git@github.com:HatrixXXX/hatrix-content.git
 git -C .private-content push -u origin master
 ```
+
+如果 `remote -v` 没有任何输出，把上面的 `remote set-url` 改成 `remote add`。确认内容已经推到 GitHub 后，才能删除保存迁移仓库的旧 worktree。
 
 新电脑克隆公开站点后，改为把私有仓库检出到被忽略的目录：
 
@@ -222,7 +226,7 @@ Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows �
 
 ## 安全边界
 
-生产页面通过 HTML CSP 限制脚本、框架、图片和其他资源来源，并使用 `strict-origin-when-cross-origin` Referrer Policy。CSP 只在生产构建输出，开发服务器仍使用 Vite HMR。新增第三方脚本、框架、远程图片或媒体来源时，先更新安全策略和构建产物测试，不能只放宽 `default-src`。
+生产页面通过 HTML CSP 限制脚本、框架、图片和其他资源来源，并使用 `strict-origin-when-cross-origin` Referrer Policy。CSP 只在生产构建输出，开发服务器仍使用 Vite HMR。Argon2 由 `hash-wasm` 执行，因此策略只为 WebAssembly 编译保留 `'wasm-unsafe-eval'`，不允许通用 `'unsafe-eval'`。新增第三方脚本、框架、远程图片或媒体来源时，先更新安全策略和构建产物测试，不能只放宽 `default-src`。
 
 已发布 Markdown 会在构建期拒绝可执行原始 HTML、事件属性、危险 URL scheme 和未固定的远程图片。检查失败时修改内容或明确更新允许边界，不要用 sanitizer 静默删除正文。
 
@@ -237,7 +241,7 @@ Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留�
 - 私有仓库 `master` push：`notify-site.yml` 发送 `content-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的内容提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
 - 公开仓库 `master` push：检出私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
 - 手动运行公开 workflow：同样读取私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
-- 公开仓库 pull request：只使用 `tests/fixtures/private-content` 和测试 key 运行单元测试、Astro check 与 build，不读取生产 Secret、正式私有仓库，也不部署。
+- 公开仓库 pull request：只使用 `tests/fixtures/private-content` 和测试 key 运行单元测试、Astro check、build 与 fixture 模式的 `check:site`，不读取生产 Secret、正式私有仓库，也不部署。
 
 生产构建或检查失败时，deploy job 不会运行，线上仍保留上一个 Pages 版本。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
 

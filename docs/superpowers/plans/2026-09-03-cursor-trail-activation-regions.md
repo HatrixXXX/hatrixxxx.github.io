@@ -1,5 +1,7 @@
 # Cursor Trail Activation Regions Implementation Plan
 
+> 历史说明：本文的区域判定仍然有效，但“切区时替换单例状态、只保留旧像素”的实现已由 `2026-09-04-cursor-trail-multi-session.md` 取代。当前运行时为每次进出和换区保留独立会话。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把鼠标轨迹限制在正文主体高度内的左右留白区，并让每次离区、换侧或同侧重入都从新坐标起笔。

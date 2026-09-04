@@ -50,7 +50,7 @@ corepack pnpm test:e2e
 - `check:images` 负责远程图片，`check:protected` 负责 `dist/` 明文与原资源泄漏。保护审计或密文测试失败时先找泄漏根因，不得放宽检查、替换期望密文或直接更新密文基线。
 - 生产构建生成的 `.astro/` 是带密构建状态，可能包含私有文章正文、渲染 HTML 和源路径，不得缓存、上传或提交；生产 workflow 必须在上传产物前删除它。
 - 主题切换继续使用 `hatrix-theme`，并同步 Giscus。全屏动效由 `ThemeTransition.astro` 和 `theme.ts` 管理；减少动态效果时必须直接切换，不能显示过渡层。Giscus 深色主题源码位于 `src/styles/giscus-dark.css`：开发环境内联，生产构建输出带 hash 的 HTTPS CSS；不要用宿主页面 CSS 覆盖 iframe 内部样式。
-- 生产 CSP 和 Referrer Policy 的唯一来源是 `src/config/security.ts`。新增第三方脚本、框架、远程图片或媒体来源时，必须同时更新策略、构建产物测试和生产预览取证，不能只放宽 `default-src`。
+- 生产 CSP 和 Referrer Policy 的唯一来源是 `src/config/security.ts`。`hash-wasm` 的 Argon2 依赖 `'wasm-unsafe-eval'`，不得换成通用 `'unsafe-eval'`。新增第三方脚本、框架、远程图片或媒体来源时，必须同时更新策略、构建产物测试和生产预览取证，不能只放宽 `default-src`。
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `check:site` 固定校验 3961 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
@@ -79,7 +79,9 @@ corepack pnpm test:e2e
 - `docs/superpowers/specs/2026-09-03-non-home-banner-design.md`：非首页 Banner 高度、文章信息布局和波浪边界。
 - `docs/superpowers/plans/2026-09-03-non-home-banner.md`：非首页 Banner 压缩的测试与实施步骤。
 - `docs/superpowers/specs/2026-09-03-cursor-trail-design.md`：侧栏鼠标尾迹的区域、动画和性能边界。
-- `docs/superpowers/plans/2026-09-03-cursor-trail-activation-regions.md`：鼠标尾迹正文高度门控和区域切换步骤。
+- `docs/superpowers/plans/2026-09-03-cursor-trail-activation-regions.md`：鼠标尾迹正文高度门控和区域切换的历史实施记录。
+- `docs/superpowers/plans/2026-09-04-cursor-trail-multi-session.md`：多轨迹会话、自然收敛和导航保留的实施记录。
+- `docs/superpowers/plans/2026-09-04-cursor-trail-blog-exclusion.md`：博客菜单路由禁用轨迹的实施记录。
 - `docs/superpowers/specs/2026-09-03-horizontal-post-rail-design.md`：横向文章栏、博客视图切换和无 JavaScript 降级设计。
 - `docs/superpowers/plans/2026-09-03-horizontal-post-rail.md`：横向文章栏的实施与验证记录。
 - `docs/superpowers/specs/2026-09-03-compact-legal-footer-design.md`：极简法律页脚和备案信息边界。
