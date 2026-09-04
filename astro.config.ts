@@ -51,6 +51,7 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   devToolbar: { enabled: process.env.PLAYWRIGHT_TEST !== '1' },
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   integrations: [
     sitemap({
       filter: (page) => !excludedFromSitemap.has(normalizeRoutePath(page))

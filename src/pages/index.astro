@@ -47,6 +47,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: #fff;
     font-family: 'IBM Plex Mono', -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
     isolation: isolate;
+    touch-action: none;
+    transform: translate3d(var(--home-drag-x, 0px), 0, 0);
+    will-change: transform;
+  }
+
+  :global(html[data-page-kind='home'] .site-header) {
+    transform: translate3d(var(--home-drag-x, 0px), 0, 0);
+    will-change: transform;
+  }
+
+  :global(html[data-home-drag-state='resetting'] .site-header),
+  :global(html[data-home-drag-state='resetting']) .home-stage {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .home-stage::before {
@@ -100,11 +113,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .home-blog-link svg {
+    animation: home-arrow-float 1.5s ease-in-out infinite;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 1.8;
+  }
+
+  [data-home-typing-cursor] {
+    animation: home-cursor-blink 700ms steps(1, end) infinite;
+  }
+
+  @keyframes home-arrow-float {
+    50% {
+      transform: translateX(8px);
+    }
+  }
+
+  @keyframes home-cursor-blink {
+    50% {
+      opacity: 0;
+    }
   }
 
   @media (max-width: 768px) {
@@ -116,4 +146,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       font-size: 1.15rem;
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-blog-link svg,
+    [data-home-typing-cursor] {
+      animation: none !important;
+    }
+  }
 </style>
+
+<script>
+  import '@/scripts/home-cover';
+</script>

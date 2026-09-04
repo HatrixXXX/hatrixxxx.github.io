@@ -31,6 +31,83 @@ test('home renders only the fullscreen cover experience', async ({ page }) => {
   expect((await page.request.get('/images/cover.png')).status()).toBe(200);
 });
 
+test('home types the tagline with a bar cursor', async ({ page }) => {
+  await page.goto('/');
+  const typing = page.locator('[data-home-typing]');
+  await expect(typing).toHaveAttribute('data-home-typing-state', 'typing');
+  await expect.poll(() => typing.textContent()).toContain('轻');
+  await expect(typing).toHaveAttribute('data-home-typing-state', 'complete');
+});
+
+test('home arrow prefetches and reveals the blog', async ({ page }) => {
+  const blogRequests: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/blog/') blogRequests.push(request.url());
+  });
+  await page.goto('/');
+  await expect.poll(() => blogRequests.length).toBeGreaterThan(0);
+  await page.locator('[data-home-blog-arrow]').click({ noWaitAfter: true });
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation instanceof CSSAnimation && animation.animationName === 'home-uncover-left'
+          )
+      )
+    )
+    .toBe(true);
+  await page.waitForURL('**/blog/');
+});
+
+test('home drag snaps back below threshold and navigates above it', async ({ page }) => {
+  await page.goto('/');
+  const stage = page.locator('[data-home-stage]');
+  const box = await stage.boundingBox();
+  if (!box) throw new Error('Missing home stage bounds');
+  await page.mouse.move(box.width * 0.75, box.height * 0.55);
+  await page.mouse.down();
+  for (let step = 1; step <= 4; step += 1) {
+    const progress = step / 4;
+    await page.mouse.move(box.width * (0.75 - 0.07 * progress), box.height * 0.55);
+    await page.waitForTimeout(45);
+  }
+  await page.mouse.up();
+  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
+  await expect(page).toHaveURL('/');
+  await page.mouse.move(box.width * 0.75, box.height * 0.55);
+  await page.mouse.down();
+  await page.mouse.move(box.width * 0.5, box.height * 0.55, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForURL('**/blog/');
+});
+
+test('home controls do not start the drag gesture', async ({ page }) => {
+  await page.goto('/');
+  const theme = page.locator('[data-theme-toggle]');
+  const box = await theme.boundingBox();
+  if (!box) throw new Error('Missing theme control bounds');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 180, box.y + box.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await expect(page).toHaveURL('/');
+  await expect(page.locator('[data-home-stage]')).toHaveAttribute('data-home-drag-state', 'idle');
+});
+
+test('home respects reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('[data-home-typing]')).toHaveText('轻松即单纯，速成即精准');
+  const animations = await page.locator('[data-home-blog-arrow]').evaluate((node) => ({
+    arrow: getComputedStyle(node.querySelector('svg')!).animationName,
+    cursor: getComputedStyle(document.querySelector('[data-home-typing-cursor]')!).animationName
+  }));
+  expect(animations).toEqual({ arrow: 'none', cursor: 'none' });
+});
+
 test('pagination and legacy post paths stay available', async ({ page }) => {
   const missingFirstPage = await page.request.get('/page/1/');
   expect(missingFirstPage.status()).toBe(404);
