@@ -80,6 +80,31 @@ test('desktop submenus expand horizontally without leaving the viewport', async 
   }
 });
 
+test('home keeps the About submenu inside a 769px desktop viewport', async ({ page }) => {
+  const viewportWidth = 769;
+  await page.setViewportSize({ width: viewportWidth, height: 900 });
+  await page.goto('/');
+
+  const aboutItem = page.locator('[data-nav-item="关于我"]');
+  const aboutSubmenu = aboutItem.locator(':scope > .submenu');
+  await aboutItem.hover();
+  await expect(aboutSubmenu).toBeVisible();
+
+  const layout = await aboutSubmenu.evaluate((menu) => {
+    const box = menu.getBoundingClientRect();
+    return {
+      x: box.x,
+      width: box.width,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth
+    };
+  });
+
+  expect(layout.x).toBeGreaterThanOrEqual(0);
+  expect(layout.x + layout.width).toBeLessThanOrEqual(viewportWidth);
+  expect(layout.scrollWidth).toBe(layout.clientWidth);
+});
+
 test('mobile navigation renders primary and nested links in the open menu', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');

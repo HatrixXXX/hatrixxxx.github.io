@@ -276,7 +276,9 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   }
 
   .site-header--home .desktop-nav .submenu {
-    right: 0;
+    position: fixed;
+    top: 60px;
+    right: 16px;
     left: auto;
     transform: translateY(-0.35rem);
   }
@@ -284,6 +286,10 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   .site-header--home .desktop-nav > ul > li:hover > .submenu,
   .site-header--home .desktop-nav > ul > li:focus-within > .submenu {
     transform: translateY(0);
+  }
+
+  .site-header--home .desktop-nav > ul:has(> li:hover) > li:not(:hover) > .submenu {
+    transform: translateY(-0.35rem);
   }
 
   .header-actions {
