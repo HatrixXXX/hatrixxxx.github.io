@@ -456,6 +456,20 @@ test('the canvas persists once across client navigation', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('[data-cursor-trail]');
   await canvas.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
+  const oldGeometry = await activationGeometry(page);
+  const oldArea = {
+    left: 0,
+    right: oldGeometry.content.left,
+    top: oldGeometry.y - 130,
+    bottom: oldGeometry.y + 130
+  };
+  for (let step = 0; step < 6; step += 1) {
+    await page.mouse.move(oldGeometry.leftX, oldGeometry.y - 105 + step * 42);
+  }
+  await expect.poll(() => canvas.evaluate(alphaSumInRect, oldArea)).toBeGreaterThan(0);
+  const baseline = await canvas.evaluate(alphaSumInRect, oldArea);
+  expect(baseline).toBeGreaterThan(0);
+
   await Promise.all([
     page.waitForURL(/\/blog\/$/),
     page.getByRole('link', { name: '博客文章', exact: true }).click()
@@ -463,10 +477,18 @@ test('the canvas persists once across client navigation', async ({ page }) => {
   await expect(page.locator('[data-blog-total]')).toHaveText('40');
   await expect(page.locator('[data-cursor-trail]')).toHaveCount(1);
   await expect(page.locator('[data-cursor-trail]')).toHaveAttribute('data-persist-probe', 'same-node');
+  const afterNavigation = await canvas.evaluate(alphaSumInRect, oldArea);
+  expect(
+    afterNavigation,
+    `persisted alpha: ${JSON.stringify({ baseline, afterNavigation })}`
+  ).toBeGreaterThanOrEqual(baseline * 0.5);
+  await expect.poll(() => canvas.evaluate(alphaSumInRect, oldArea), { timeout: 10_000 }).toBe(0);
+
   const geometry = await activationGeometry(page);
-  const range = { left: 0, right: geometry.content.left };
-  const x = geometry.leftX;
-  for (let step = 0; step < 6; step += 1) await page.mouse.move(x, geometry.y - 105 + step * 42);
+  const range = { left: geometry.content.right, right: 1440 };
+  for (let step = 0; step < 6; step += 1) {
+    await page.mouse.move(geometry.rightX, geometry.y - 105 + step * 42);
+  }
   await expect.poll(() => canvas.evaluate(alphaPixels, range)).toBeGreaterThan(0);
 });
 
