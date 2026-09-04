@@ -4,7 +4,7 @@
 
 **Goal:** 将首页改成无滚动的全屏封面，并通过右向箭头、鼠标左拖或触摸左滑，以揭开动画进入博客总览页。
 
-**Architecture:** `BaseLayout` 提供显式首页模式，按路由裁掉品牌、页脚、Sakana 和 CursorTrail；`SiteHeader` 只增加首页视觉变体；`index.astro` 负责全屏舞台。单个 `home-cover.ts` 模块管理打字、博客预取、拖动状态和 View Transition 标记，其他页面继续使用现有脚本。
+**Architecture:** `BaseLayout` 提供显式首页模式，按路由裁掉页脚、Sakana 和 CursorTrail；`SiteHeader` 改成全站统一的无品牌右上布局，并保留独立的 CursorTrail 内容边界；`index.astro` 负责全屏舞台。单个 `home-cover.ts` 模块管理打字、博客预取、拖动状态和 View Transition 标记，其他页面继续使用现有脚本。
 
 **Tech Stack:** Astro 7.2、TypeScript 5.9、Astro ClientRouter、`astro:prefetch`、原生 View Transitions、Pointer Events、Vitest 4.1、Playwright 1.62。
 
@@ -12,7 +12,7 @@
 
 - 保持 Astro 纯静态输出，不增加服务端、数据库、iframe、动画库或远程字体。
 - 背景只使用用户提供的 `public/images/cover.png`，不复制参考站源码、文案或个人素材。
-- 首页不渲染页脚、旧入口卡片、Sakana 或 CursorTrail；其他页面保持现状。
+- 全站 Header 不渲染头像或品牌文字，统一使用右上导航、搜索和主题按钮；首页另不渲染页脚、旧入口卡片、Sakana 或 CursorTrail。
 - 首页在所有测试视口内都不能产生横向或纵向滚动。
 - 首页到 `/blog/` 的揭开动画只使用合成层 `transform`，时长 `620ms`；减少动态效果时直接切换。
 - 已发布文章仍只来自 `.private-content/posts/`，不得触碰文章正文或私有资源。
@@ -118,7 +118,7 @@ const isHome = pageKind === 'home';
 ```astro
 <html lang="zh-CN" data-theme="dark" data-page-kind={isHome ? 'home' : undefined}>
   <body class={bodyClass}>
-    <SiteHeader homeMode={isHome} showBrand={!isHome} />
+    <SiteHeader homeMode={isHome} />
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
     </ProtectedContent>
@@ -131,7 +131,7 @@ const isHome = pageKind === 'home';
 </html>
 ```
 
-在 `SiteHeader.astro` 增加 `homeMode` 和 `showBrand` props；只在 `showBrand` 为真时输出 `.brand`。首页 Header 使用 `site-header--home` 和 `header-inner--home`，并给控件容器增加 `data-home-controls`。首页的 `/blog/` 主导航链接增加 `data-home-blog-link` 和 `data-astro-prefetch="load"`。
+在 `SiteHeader.astro` 增加 `homeMode` prop；首页先不输出 `.brand`，并使用 `site-header--home` 与 `header-inner--home`。控件容器增加 `data-home-controls`，首页的 `/blog/` 主导航链接增加 `data-home-blog-link` 和 `data-astro-prefetch="load"`。Task 3 再把无品牌右上布局扩展到全站，并恢复独立 CursorTrail 几何边界。
 
 - [ ] **Step 4: 替换首页结构和样式**
 
@@ -380,9 +380,13 @@ git commit -m "feat: add draggable blog reveal"
 
 ---
 
-### Task 3: 迁移装饰层与导航回归测试
+### Task 3: 统一全站 Header 并迁移装饰层测试
 
 **Files:**
+- Modify: `src/layouts/BaseLayout.astro`
+- Modify: `src/components/SiteHeader.astro`
+- Modify: `tests/e2e/shell.spec.ts`
+- Modify: `tests/e2e/navigation-dropdown.spec.ts`
 - Modify: `tests/e2e/cursor-trail.spec.ts`
 - Modify: `tests/e2e/sakana.spec.ts`
 - Modify: `tests/e2e/post.spec.ts`
@@ -391,10 +395,71 @@ git commit -m "feat: add draggable blog reveal"
 - Modify: `tests/e2e/no-js.spec.ts`
 
 **Interfaces:**
-- Consumes: Task 1 的首页条件渲染和 `[data-home-blog-link]`。
-- Produces: 首页无装饰层的回归覆盖，以及普通页上原有 Sakana/CursorTrail 行为覆盖。
+- Consumes: Task 1 的首页条件渲染、`homeMode` 和 `[data-home-blog-link]`。
+- Produces: 全站 `[data-header-controls]`、独立 `[data-content-boundary]`、无品牌右上 Header、首页无装饰层回归，以及普通页原有 Sakana/CursorTrail 行为覆盖。
 
-- [ ] **Step 1: 迁移冲突测试并确认失败位置**
+- [ ] **Step 1: 先固定全站 Header 契约并确认失败**
+
+在 `shell.spec.ts` 增加代表路由测试：
+
+```ts
+test('all pages share the brandless right-aligned header', async ({ page }) => {
+  for (const path of ['/', '/blog/', '/projects/', '/about/', '/posts/本科数学大杂烩/']) {
+    await page.goto(path);
+    await expect(page.locator('header[data-site-header] .brand')).toHaveCount(0);
+    const controls = page.locator('[data-header-controls]');
+    await expect(controls).toBeVisible();
+    const box = await controls.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    expect((viewport?.width ?? 0) - ((box?.x ?? 0) + (box?.width ?? 0))).toBeLessThanOrEqual(37);
+    await expect(controls.locator('[data-open-search], [data-theme-toggle]')).toHaveCount(2);
+  }
+});
+```
+
+在 `navigation-dropdown.spec.ts` 保留 `769/800/1024/1440` 子菜单视口边界测试，并让其中至少一个普通页面走同一断言。先运行这两个文件；当前普通页面仍有 `.brand` 且不是全视口右对齐，测试应失败。
+
+- [ ] **Step 2: 把 Header 布局扩展到全站**
+
+`BaseLayout.astro` 只传 `homeMode`，不再按页面决定品牌。`SiteHeader.astro` 删除 `.brand` 节点和 `showBrand` prop；控件外层统一增加 `data-header-controls`，`data-home-controls` 只在首页保留。
+
+把 Task 1 的透明背景、白色文字、视口右侧 `36px/16px` 留白、无圆形底色和固定 submenu 视口约束改为所有页面的基础 Header 样式。保留 `site-header--home` 仅供首页拖动 transform 和博客揭开 hook 使用。
+
+Header 内加入不接收事件的几何基准：
+
+```astro
+<div class="header-content-boundary container" data-content-boundary aria-hidden="true"></div>
+<div class="header-inner" data-header-controls data-home-controls={homeMode ? '' : undefined}>
+  <nav class="desktop-nav" aria-label="主导航">...</nav>
+  <div class="header-actions">...</div>
+</div>
+```
+
+```css
+.header-content-boundary {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.header-inner {
+  display: flex;
+  width: 100%;
+  min-height: 60px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.875rem;
+  padding-inline: 36px;
+}
+```
+
+运行 Header、navigation-dropdown 和 CursorTrail 的固定层/左右 gutter 测试，证明右对齐没有破坏普通页轨迹边界。
+
+- [ ] **Step 3: 迁移冲突测试**
 
 将 CursorTrail 的正向入口从 `/` 改成 `/page/2/`，Sakana 的正向入口从 `/` 改成 `/projects/`。持久化测试使用两个普通页面，并加入以下首页 absence 断言：
 
@@ -431,21 +496,21 @@ await page.keyboard.press('Tab');
 await expect(page.locator('[data-theme-toggle]')).toBeFocused();
 ```
 
-- [ ] **Step 2: 运行受影响套件**
+- [ ] **Step 4: 运行受影响套件**
 
 Run:
 
 ```powershell
-corepack pnpm exec playwright test tests/e2e/cursor-trail.spec.ts tests/e2e/sakana.spec.ts tests/e2e/post.spec.ts tests/e2e/blog-index.spec.ts tests/e2e/accessibility.spec.ts tests/e2e/no-js.spec.ts --project=desktop-1440
+corepack pnpm exec playwright test tests/e2e/shell.spec.ts tests/e2e/navigation-dropdown.spec.ts tests/e2e/cursor-trail.spec.ts tests/e2e/sakana.spec.ts tests/e2e/post.spec.ts tests/e2e/blog-index.spec.ts tests/e2e/accessibility.spec.ts tests/e2e/no-js.spec.ts --project=desktop-1440
 ```
 
 Expected: 所有迁移后的普通页装饰层测试和首页 absence 测试通过。
 
-- [ ] **Step 3: 提交**
+- [ ] **Step 5: 提交**
 
 ```powershell
-git add tests/e2e/cursor-trail.spec.ts tests/e2e/sakana.spec.ts tests/e2e/post.spec.ts tests/e2e/blog-index.spec.ts tests/e2e/accessibility.spec.ts tests/e2e/no-js.spec.ts
-git commit -m "test: move decorative coverage off home"
+git add src/layouts/BaseLayout.astro src/components/SiteHeader.astro tests/e2e/shell.spec.ts tests/e2e/navigation-dropdown.spec.ts tests/e2e/cursor-trail.spec.ts tests/e2e/sakana.spec.ts tests/e2e/post.spec.ts tests/e2e/blog-index.spec.ts tests/e2e/accessibility.spec.ts tests/e2e/no-js.spec.ts
+git commit -m "feat: unify the site header layout"
 ```
 
 ---
@@ -462,11 +527,11 @@ git commit -m "test: move decorative coverage off home"
 
 **Interfaces:**
 - Consumes: 完成的首页、交互脚本与稳定 data hooks。
-- Produces: 三张首页视觉基线、完整验证记录和更新后的项目说明。
+- Produces: 18 张更新后的视觉基线、完整验证记录和更新后的项目说明。
 
 - [ ] **Step 1: 让视觉准备逻辑识别首页**
 
-`visual.spec.ts` 对首页不等待 Sakana，也不强制共享内容边界；减少动态效果或直接把打字文案固定为完整状态后截图。普通页面继续等待 Sakana ready，并保持其余 15 张基线零差异。
+`visual.spec.ts` 对首页不等待 Sakana，也不强制共享内容边界；减少动态效果或直接把打字文案固定为完整状态后截图。普通页面继续等待 Sakana ready。所有页面的 Header 都会按新要求变化，截图审阅必须把差异限制在 Header；首页可以改变整个主体。
 
 ```ts
 if (path === '/') {
@@ -477,7 +542,7 @@ if (path === '/') {
 }
 ```
 
-- [ ] **Step 2: 生成并审阅三张首页基线**
+- [ ] **Step 2: 生成并审阅 18 张基线**
 
 Run:
 
@@ -485,7 +550,7 @@ Run:
 corepack pnpm exec playwright test tests/e2e/visual.spec.ts --update-snapshots
 ```
 
-Expected: 只更新 `home-desktop-1440.png`、`home-tablet-768.png` 和 `home-mobile-390.png`。使用图像查看工具逐张检查背景裁切、标题位置、右上控件、底部箭头和无滚动条。
+Expected: 更新 18 张 Windows 基线。使用图像查看工具逐张检查：首页的背景裁切、标题位置、右上控件、底部箭头和无滚动条；其他页面只允许 Header 的品牌移除、右对齐、透明样式和响应式导航发生变化。
 
 - [ ] **Step 3: 同步长期文档**
 
@@ -515,7 +580,7 @@ Expected: 所有命令退出码为 `0`；`check:site` 的链接总数只在页�
 - 搜索、主题和移动菜单可用；
 - 箭头点击及鼠标左拖都进入博客页；
 - 揭开动画期间博客页位于静止下层；
-- 非首页品牌、页脚、Sakana 和 CursorTrail 仍存在。
+- 非首页使用同一无品牌右上 Header，页脚、Sakana 和 CursorTrail 仍存在。
 
 - [ ] **Step 6: 提交**
 
