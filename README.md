@@ -223,6 +223,8 @@ Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows �
 
 生产构建或检查失败时，deploy job 不会运行，线上仍保留上一个 Pages 版本。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
 
+生产构建生成的 `.astro/` 是带密构建状态，里面可能有私有文章正文、渲染 HTML 和源路径，不得缓存、上传或提交。Pages workflow 在上传 `dist/` 前会删除它。
+
 GitHub 需要三个 Secret，值不得写进仓库：
 
 | Secret | 仓库 | 最小用途和权限 |

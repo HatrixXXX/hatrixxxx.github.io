@@ -153,13 +153,6 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
 
-      - name: Restore Astro cache
-        uses: actions/cache@v6
-        with:
-          path: .astro
-          key: astro-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'astro.config.ts', 'src/**') }}-${{ steps.content.outputs.sha }}
-          restore-keys: astro-${{ runner.os }}-
-
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
 
@@ -176,6 +169,11 @@ jobs:
 
       - name: Check built site
         run: corepack pnpm check:site
+
+      - name: Remove secret-bearing Astro build state
+        if: always()
+        shell: bash
+        run: rm -rf -- .astro
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

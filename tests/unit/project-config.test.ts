@@ -259,4 +259,28 @@ describe('Astro project tooling', () => {
     expect(deployJob).toContain('needs: build-production');
     expect(deployJob).toContain('uses: actions/deploy-pages@v5');
   });
+
+  it('never persists secret-bearing Astro state from a Pages build', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+    const productionJob = workflowJob(workflow, 'build-production');
+    const cleanup = workflowStep(productionJob, 'Remove secret-bearing Astro build state');
+    const packageCache = workflowStep(productionJob, 'Restore pnpm store');
+    const upload = workflowStep(productionJob, 'Upload Pages artifact');
+
+    expect(workflow).not.toContain('path: .astro');
+    expect(workflow).not.toContain('key: astro-');
+    expect(workflow.match(/uses: actions\/cache@v6/g)).toHaveLength(2);
+    expect(productionJob.match(/uses: actions\/cache@v6/g)).toHaveLength(1);
+    expect(packageCache).toContain('path: ${{ env.STORE_PATH }}');
+    expect(cleanup).toContain('if: always()');
+    expect(cleanup).toContain('run: rm -rf -- .astro');
+    expect(upload).toContain('path: dist');
+    expect(upload).not.toContain('.astro');
+    expect(productionJob.indexOf('Remove secret-bearing Astro build state')).toBeGreaterThan(
+      productionJob.indexOf('Check built site')
+    );
+    expect(productionJob.indexOf('Remove secret-bearing Astro build state')).toBeLessThan(
+      productionJob.indexOf('Upload Pages artifact')
+    );
+  });
 });
