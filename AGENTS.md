@@ -65,6 +65,7 @@ corepack pnpm test:e2e
 - 不提交 `dist/`、`.astro/`、`reports/`、`test-results/` 或 Playwright trace。
 - 不提交 `.env.local`、`.private-content/` 或其中任何私密内容。
 - 未经用户明确要求，不推送、合并、部署或修改远端 Pages 设置。
+- 用户明确要求推送或部署时，部署确认成功后必须检查公开仓库和 `.private-content` 私有仓库的 `git worktree list`，停止占用待删 worktree 的预览进程，删除已合并、工作区干净且提交已推送的临时 worktree，再执行 `git worktree prune`。仍在开发、含未提交或未推送内容、用途不明的 worktree 不得删除。
 - 不复制参考站源码、文案或个人资产。
 - 每次完成项目改动后，自动启动本地开发预览，并在最终回复中提供可 Ctrl+点击的 `http://127.0.0.1:4321/` Markdown 链接。除非用户明确要求停止，预览保持运行。
 
@@ -95,3 +96,4 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-03-protected-content.md`：加锁内容的任务拆分和验证记录。
 - `docs/superpowers/specs/2026-09-04-contextual-sidebar-design.md`：关于页与文章页共享侧栏、站点统计和点阵时钟设计。
 - `docs/superpowers/plans/2026-09-04-contextual-sidebar.md`：共享侧栏的任务拆分、第三方统计边界和验证步骤。
+- `docs/superpowers/specs/2026-09-04-homepage-cover-reveal-design.md`：首页全屏封面、打字文案、固定视口、博客预取、拖动手势和揭开切换设计。
