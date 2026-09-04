@@ -13,7 +13,7 @@ import {
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 it('tracks the fullscreen homepage local link inventory', () => {
-  expect(EXPECTED_LOCAL_LINKS).toBe(4038);
+  expect(EXPECTED_LOCAL_LINKS).toBe(4037);
 });
 
 async function writeSiteFile(root: string, relativePath: string, contents = ''): Promise<void> {

@@ -14,7 +14,7 @@
 - 背景只使用用户提供的 `public/images/cover.png`，不复制参考站源码、文案或个人素材。
 - 全站 Header 不渲染头像或品牌文字，统一使用右上导航、搜索和主题按钮；首页另不渲染页脚、旧入口卡片、Sakana 或 CursorTrail。
 - 首页在所有测试视口内都不能产生横向或纵向滚动。
-- 首页到 `/blog/` 的揭开动画只使用合成层 `transform`，时长 `620ms`；减少动态效果时直接切换。
+- 首页到 `/blog/` 的揭开动画只使用合成层 `transform`，每次提交固定为 `620ms`；减少动态效果时直接切换。
 - 已发布文章仍只来自 `.private-content/posts/`，不得触碰文章正文或私有资源。
 - 每个任务先写失败测试，再做最小实现；不得用更新非首页视觉基线掩盖回归。
 
@@ -131,7 +131,7 @@ const isHome = pageKind === 'home';
 </html>
 ```
 
-在 `SiteHeader.astro` 增加 `homeMode` prop；首页先不输出 `.brand`，并使用 `site-header--home` 与 `header-inner--home`。控件容器增加 `data-home-controls`，首页的 `/blog/` 主导航链接增加 `data-home-blog-link` 和 `data-astro-prefetch="load"`。Task 3 再把无品牌右上布局扩展到全站，并恢复独立 CursorTrail 几何边界。
+在 `SiteHeader.astro` 增加 `homeMode` prop；首页先不输出 `.brand`，并使用 `site-header--home` 与 `header-inner--home`。控件容器增加 `data-home-controls`，首页的 `/blog/` 主导航链接增加 `data-home-blog-link`。Task 3 再把无品牌右上布局扩展到全站，并恢复独立 CursorTrail 几何边界。
 
 - [ ] **Step 4: 替换首页结构和样式**
 
@@ -141,7 +141,7 @@ const isHome = pageKind === 'home';
 corepack pnpm add @fontsource/ibm-plex-mono@5.3.0
 ```
 
-`index.astro` 导入 `@fontsource/ibm-plex-mono/400.css` 和 `@fontsource/ibm-plex-mono/700.css`，然后改为：
+共享 `BaseLayout.astro` 导入 `@fontsource/ibm-plex-mono/400.css` 和 `@fontsource/ibm-plex-mono/700.css`，保证普通页面直接访问时 Header 也能加载字体。`index.astro` 改为：
 
 ```astro
 <BaseLayout title={SITE.title} image="/images/cover.png" pageKind="home">
@@ -158,7 +158,6 @@ corepack pnpm add @fontsource/ibm-plex-mono@5.3.0
       href="/blog/"
       aria-label="进入博客文章总览"
       data-home-blog-link
-      data-astro-prefetch="load"
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" width="30" height="30">
         <path d="m9 5 7 7-7 7"></path>
@@ -306,28 +305,41 @@ const COMPLETE_HOLD = 700;
 const REVEAL_DURATION = 620;
 
 let cleanupCurrentPage: (() => void) | undefined;
-let pendingReveal: { distance: number; duration: number } | undefined;
+let pendingReveal: { attempt: number; distance: number } | undefined;
+let revealAttempt = 0;
 
-function prepareReveal(distance = 0): void {
-  const width = Math.max(innerWidth, 1);
+function clearPendingReveal(): void {
+  pendingReveal = undefined;
+  if (document.documentElement.dataset.homeReveal === 'pending') {
+    delete document.documentElement.dataset.homeReveal;
+  }
+}
+
+function prepareReveal(distance = 0): number {
+  const attempt = ++revealAttempt;
   pendingReveal = {
-    distance,
-    duration: Math.max(220, REVEAL_DURATION * (1 - Math.min(distance / width, 0.9)))
+    attempt,
+    distance
   };
   document.documentElement.dataset.homeReveal = 'pending';
+  return attempt;
 }
 
 function goToBlog(sourceElement: Element, distance = 0): void {
-  prepareReveal(distance);
-  void navigate(BLOG_PATH, { sourceElement, info: { kind: 'home-reveal' } });
+  const attempt = prepareReveal(distance);
+  void navigate(BLOG_PATH, { sourceElement, info: { kind: 'home-reveal' } }).catch(() => {
+    if (pendingReveal?.attempt !== attempt) return;
+    clearPendingReveal();
+    location.assign(BLOG_PATH);
+  });
 }
 ```
 
 首页初始化时在 `requestIdleCallback` 中调用 `prefetch(BLOG_PATH)`；箭头 `pointerenter/focus` 和拖动 `pointerdown` 再调用一次。打字计时器按 `300/150/700/50ms` 循环，减少动态效果时直接输出完整文案。
 
-拖动只响应主按键和非交互元素。保存起点、上次坐标与时间，使用 pointer capture；将负向位移写入 `--home-drag-x`。距离超过 `16%`，或速度达到 `0.7px/ms` 且距离不少于 `48px` 时调用 `goToBlog`，否则进入 `resetting` 状态并在 `320ms` 后回到 `idle`。
+拖动只响应主按键和非交互元素。保存起点、上次坐标与时间，使用 pointer capture；将负向位移写入 `--home-drag-x`。`pointerup` 和 `pointercancel` 必须匹配活动 pointer。距离超过 `16%`，或释放前 `120ms` 内速度达到 `0.7px/ms` 且距离不少于 `48px` 时调用 `goToBlog`，否则进入 `resetting` 状态并在 `320ms` 后回到 `idle`。
 
-在 `astro:before-swap` 中把揭开属性和 CSS 变量写入 `event.newDocument.documentElement`，在 `event.viewTransition.finished` 后清理。`astro:page-load` 重新初始化首页；`astro:before-swap` 和页面隐藏时停止计时器并释放 pointer 状态。
+`astro:before-preparation` 和 `astro:before-swap` 都要求目标为 `/blog/` 且 `event.info.kind === 'home-reveal'`。只有匹配的胜出导航可把揭开属性和 CSS 变量写入 `event.newDocument.documentElement`；竞争导航会清除待处理状态。动画固定为 `620ms`，在 `event.viewTransition.finished` 后清理。`astro:page-load` 重新初始化首页；`astro:before-swap` 和页面隐藏时停止计时器并释放 pointer 状态。
 
 - [ ] **Step 4: 增加 View Transition CSS**
 

@@ -15,6 +15,37 @@ test('all pages share the brandless right-aligned header', async ({ page }) => {
   }
 });
 
+test('the shared search action uses a visible 20px magnifying-glass SVG', async ({ page }) => {
+  await page.goto('/projects/');
+  const button = page.getByRole('button', { name: '搜索文章' });
+  await expect(button).toBeVisible();
+  const icon = button.locator('svg');
+  await expect(icon).toBeVisible();
+  await expect(icon).toHaveAttribute('width', '20');
+  await expect(icon).toHaveAttribute('height', '20');
+  const geometry = await button.evaluate((element) => {
+    const buttonBox = element.getBoundingClientRect();
+    const svg = element.querySelector('svg');
+    if (!svg) return null;
+    const iconBox = svg.getBoundingClientRect();
+    const style = getComputedStyle(svg);
+    return {
+      button: [buttonBox.width, buttonBox.height],
+      icon: [iconBox.width, iconBox.height],
+      fill: style.fill,
+      stroke: style.stroke,
+      linecap: style.strokeLinecap
+    };
+  });
+  expect(geometry).toEqual({
+    button: [44, 44],
+    icon: [20, 20],
+    fill: 'none',
+    stroke: 'rgb(238, 238, 238)',
+    linecap: 'round'
+  });
+});
+
 test('standard shell renders the compact legal footer', async ({ page }) => {
   await page.goto('/projects/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();

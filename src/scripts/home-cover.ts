@@ -9,11 +9,13 @@ const DELETE_SPEED = 50;
 const COMPLETE_HOLD = 700;
 const REVEAL_DURATION = 620;
 const RESET_DURATION = 320;
+const VELOCITY_FRESHNESS = 120;
 const INTERACTIVE_SELECTOR =
   'a, button, input, textarea, select, summary, [contenteditable="true"], [role="button"], [role="link"]';
 
 let cleanupCurrentPage: (() => void) | undefined;
-let pendingReveal: { distance: number; duration: number } | undefined;
+let pendingReveal: { attempt: number; distance: number } | undefined;
+let revealAttempt = 0;
 
 function prefetchBlog(): void {
   try {
@@ -23,18 +25,38 @@ function prefetchBlog(): void {
   }
 }
 
-function prepareReveal(distance = 0): void {
-  const width = Math.max(innerWidth, 1);
+function clearPendingReveal(): void {
+  pendingReveal = undefined;
+  if (document.documentElement.dataset.homeReveal === 'pending') {
+    delete document.documentElement.dataset.homeReveal;
+  }
+}
+
+function isHomeRevealNavigation(event: { to: URL; info?: unknown }): boolean {
+  return (
+    event.to.pathname === BLOG_PATH &&
+    typeof event.info === 'object' &&
+    event.info !== null &&
+    'kind' in event.info &&
+    event.info.kind === 'home-reveal'
+  );
+}
+
+function prepareReveal(distance = 0): number {
+  const attempt = ++revealAttempt;
   pendingReveal = {
-    distance,
-    duration: Math.max(220, REVEAL_DURATION * (1 - Math.min(distance / width, 0.9)))
+    attempt,
+    distance
   };
   document.documentElement.dataset.homeReveal = 'pending';
+  return attempt;
 }
 
 function goToBlog(sourceElement: Element, distance = 0): void {
-  prepareReveal(distance);
+  const attempt = prepareReveal(distance);
   void navigate(BLOG_PATH, { sourceElement, info: { kind: 'home-reveal' } }).catch(() => {
+    if (pendingReveal?.attempt !== attempt) return;
+    clearPendingReveal();
     location.assign(BLOG_PATH);
   });
 }
@@ -65,6 +87,7 @@ function initializeHome(): void {
   let lastX = 0;
   let lastTime = 0;
   let lastVelocity = 0;
+  let lastVelocityTime = Number.NEGATIVE_INFINITY;
   let dragX = 0;
   let navigating = false;
 
@@ -145,11 +168,13 @@ function initializeHome(): void {
     }, RESET_DURATION);
   };
 
-  const finishDrag = (): void => {
-    if (pointerId === undefined) return;
+  const finishDrag = (event: PointerEvent): void => {
+    if (event.pointerId !== pointerId) return;
     const distance = Math.max(-dragX, 0);
+    const velocityIsFresh = event.timeStamp - lastVelocityTime <= VELOCITY_FRESHNESS;
     const shouldNavigate =
-      distance >= innerWidth * 0.16 || (lastVelocity >= 0.7 && distance >= 48);
+      distance >= innerWidth * 0.16 ||
+      (velocityIsFresh && lastVelocity >= 0.7 && distance >= 48);
     releasePointer();
 
     if (!shouldNavigate) {
@@ -183,6 +208,7 @@ function initializeHome(): void {
       lastX = event.clientX;
       lastTime = event.timeStamp;
       lastVelocity = 0;
+      lastVelocityTime = Number.NEGATIVE_INFINITY;
       dragX = 0;
       if (resetTimer !== undefined) {
         window.clearTimeout(resetTimer);
@@ -206,9 +232,12 @@ function initializeHome(): void {
       }
 
       const elapsed = event.timeStamp - lastTime;
-      if (elapsed >= 8) lastVelocity = Math.max((lastX - event.clientX) / elapsed, 0);
-      lastX = event.clientX;
-      lastTime = event.timeStamp;
+      if (elapsed >= 8) {
+        lastVelocity = Math.max((lastX - event.clientX) / elapsed, 0);
+        lastVelocityTime = event.timeStamp;
+        lastX = event.clientX;
+        lastTime = event.timeStamp;
+      }
       dragX = Math.min(deltaX, 0);
       if (!reducedMotion) root.style.setProperty('--home-drag-x', `${dragX}px`);
     },
@@ -216,8 +245,21 @@ function initializeHome(): void {
   );
 
   root.addEventListener('pointerup', finishDrag, { signal: controller.signal });
-  root.addEventListener('pointercancel', resetDrag, { signal: controller.signal });
-  window.addEventListener('blur', resetDrag, { signal: controller.signal });
+  root.addEventListener(
+    'pointercancel',
+    (event) => {
+      if (event.pointerId !== pointerId) return;
+      resetDrag();
+    },
+    { signal: controller.signal }
+  );
+  window.addEventListener(
+    'blur',
+    () => {
+      if (pointerId !== undefined) resetDrag();
+    },
+    { signal: controller.signal }
+  );
 
   for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-home-blog-link]')) {
     link.addEventListener('pointerenter', prefetchBlog, { signal: controller.signal });
@@ -248,7 +290,7 @@ function initializeHome(): void {
   if (requestIdle) {
     idleHandle = requestIdle(prefetchBlog, { timeout: 1200 });
   } else {
-    idleFallback = window.setTimeout(prefetchBlog, 0);
+    idleFallback = window.setTimeout(prefetchBlog, 1200);
   }
 
   cleanupCurrentPage = () => {
@@ -264,17 +306,25 @@ function initializeHome(): void {
   };
 }
 
+document.addEventListener('astro:before-preparation', (event) => {
+  if (!isHomeRevealNavigation(event)) clearPendingReveal();
+});
+
 document.addEventListener('astro:before-swap', (event) => {
   cleanupCurrentPage?.();
   cleanupCurrentPage = undefined;
 
+  if (!isHomeRevealNavigation(event)) {
+    clearPendingReveal();
+    return;
+  }
   if (!pendingReveal) return;
-  const { distance, duration } = pendingReveal;
+  const { distance } = pendingReveal;
   pendingReveal = undefined;
   const newRoot = event.newDocument.documentElement;
   newRoot.dataset.homeReveal = 'active';
   newRoot.style.setProperty('--home-reveal-distance', `${distance}px`);
-  newRoot.style.setProperty('--home-reveal-duration', `${duration}ms`);
+  newRoot.style.setProperty('--home-reveal-duration', `${REVEAL_DURATION}ms`);
   void event.viewTransition.finished.finally(() => {
     const currentRoot = document.documentElement;
     delete currentRoot.dataset.homeReveal;

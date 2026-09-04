@@ -1,5 +1,42 @@
 import { expect, test } from '@playwright/test';
 
+test('home and shared Header use the exact responsive typography', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+
+  const desktop = await page.evaluate(() => ({
+    title: getComputedStyle(document.querySelector<HTMLElement>('[data-home-title]')!).fontSize,
+    subtitle: getComputedStyle(document.querySelector<HTMLElement>('.home-subtitle')!).fontSize,
+    navigation: getComputedStyle(
+      document.querySelector<HTMLElement>('.desktop-nav > ul > li > a')!
+    ).fontSize,
+    headerFont: getComputedStyle(
+      document.querySelector<HTMLElement>('[data-site-header]')!
+    ).fontFamily
+  }));
+  expect(desktop).toEqual({
+    title: '42.75px',
+    subtitle: '25.8px',
+    navigation: '15.21px',
+    headerFont: expect.stringMatching(/^['"]?IBM Plex Mono['"]?/)
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await page.evaluate(() => ({
+    title: getComputedStyle(document.querySelector<HTMLElement>('[data-home-title]')!).fontSize,
+    subtitle: getComputedStyle(document.querySelector<HTMLElement>('.home-subtitle')!).fontSize
+  }));
+  expect(mobile).toEqual({ title: '27.75px', subtitle: '17.25px' });
+
+  await page.goto('/projects/');
+  await page.evaluate(() => document.fonts.ready);
+  const ordinaryHeaderFont = await page
+    .locator('[data-site-header]')
+    .evaluate((header) => getComputedStyle(header).fontFamily);
+  expect(ordinaryHeaderFont).toMatch(/^['"]?IBM Plex Mono['"]?/);
+});
+
 test('home renders only the fullscreen cover experience', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-home-stage]')).toBeVisible();
@@ -128,6 +165,57 @@ test('home arrow prefetches and reveals the blog', async ({ page }) => {
     .toBe(true);
 });
 
+test('home owns blog prefetch timing at idle and interactive entry points', async ({ browser }) => {
+  for (const trigger of ['idle', 'pointerenter', 'focus', 'drag'] as const) {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      const state = window as typeof window & { __homeIdleCallbacks?: IdleRequestCallback[] };
+      state.__homeIdleCallbacks = [];
+      window.requestIdleCallback = (callback: IdleRequestCallback) => {
+        state.__homeIdleCallbacks?.push(callback);
+        return state.__homeIdleCallbacks?.length ?? 1;
+      };
+      window.cancelIdleCallback = () => undefined;
+    });
+    await page.goto('/');
+    await expect(page.locator('[data-home-blog-link][data-astro-prefetch]')).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as typeof window & { __homeIdleCallbacks?: IdleRequestCallback[] })
+              .__homeIdleCallbacks?.length ?? 0
+        )
+      )
+      .toBeGreaterThan(0);
+    await expect(page.locator('link[rel="prefetch"][href="/blog/"]')).toHaveCount(0);
+
+    if (trigger === 'idle') {
+      await page.evaluate(() => {
+        const state = window as typeof window & { __homeIdleCallbacks?: IdleRequestCallback[] };
+        for (const callback of state.__homeIdleCallbacks ?? []) {
+          callback({ didTimeout: false, timeRemaining: () => 50 });
+        }
+      });
+    } else if (trigger === 'pointerenter') {
+      await page.locator('[data-home-blog-arrow]').dispatchEvent('pointerenter');
+    } else if (trigger === 'focus') {
+      await page.locator('[data-home-blog-arrow]').focus();
+    } else {
+      const stage = page.locator('[data-home-stage]');
+      const box = await stage.boundingBox();
+      if (!box) throw new Error('Missing home stage bounds');
+      await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.65);
+      await page.mouse.down();
+    }
+
+    await expect(page.locator('link[rel="prefetch"][href="/blog/"]')).toHaveCount(1);
+    if (trigger === 'drag') await page.mouse.up();
+    await context.close();
+  }
+});
+
 test('home desktop Blog link uses the shared reveal navigation', async ({ page }) => {
   const clientRouterMarker = crypto.randomUUID();
   await page.goto('/');
@@ -159,6 +247,73 @@ test('home desktop Blog link uses the shared reveal navigation', async ({ page }
       () => (window as typeof window & { __homeHeaderMarker?: string }).__homeHeaderMarker
     )
   ).toBe(clientRouterMarker);
+});
+
+test('a competing route cannot inherit or revive the pending blog reveal', async ({ page }) => {
+  await page.route('**/blog/', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.continue();
+  });
+  await page.goto('/');
+  await page.evaluate(() => {
+    document.addEventListener(
+      'astro:before-swap',
+      (event) => {
+        if (event.to.pathname !== '/projects/') return;
+        const root = event.newDocument.documentElement;
+        (
+          window as typeof window & {
+            __competingSwap?: { reveal: string | null; distance: string; duration: string };
+          }
+        ).__competingSwap = {
+          reveal: root.getAttribute('data-home-reveal'),
+          distance: root.style.getPropertyValue('--home-reveal-distance'),
+          duration: root.style.getPropertyValue('--home-reveal-duration')
+        };
+      },
+      { once: true }
+    );
+  });
+
+  await page.evaluate(() => {
+    const click = (selector: string) => {
+      const link = document.querySelector<HTMLElement>(selector);
+      if (!link) throw new Error(`Missing ${selector}`);
+      link.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, view: window })
+      );
+    };
+    click('[data-home-blog-arrow]');
+    click('.desktop-nav a[href="/projects/"]');
+  });
+
+  await page.waitForURL('**/projects/');
+  await expect(page).toHaveURL('/projects/');
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as typeof window & {
+            __competingSwap?: { reveal: string | null; distance: string; duration: string };
+          }
+        ).__competingSwap
+    )
+  ).toEqual({ reveal: null, distance: '', duration: '' });
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        reveal: document.documentElement.hasAttribute('data-home-reveal'),
+        distance: document.documentElement.style.getPropertyValue('--home-reveal-distance'),
+        duration: document.documentElement.style.getPropertyValue('--home-reveal-duration'),
+        uncover: document
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation instanceof CSSAnimation && animation.animationName === 'home-uncover-left'
+          )
+      }))
+    )
+    .toEqual({ reveal: false, distance: '', duration: '', uncover: false });
 });
 
 test('home drag snaps back below threshold and navigates above it', async ({ page }) => {
@@ -200,6 +355,99 @@ test('home fast flick navigates below the distance threshold', async ({ page }) 
   await page.mouse.move(startX - distance, y);
   await page.mouse.up();
   await page.waitForURL('**/blog/');
+});
+
+test('home ignores a mismatched pointer release until the active pointer ends', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    document.addEventListener(
+      'pointerdown',
+      (event) => {
+        (window as typeof window & { __homePointerId?: number }).__homePointerId = event.pointerId;
+      },
+      { capture: true, once: true }
+    );
+  });
+  const stage = page.locator('[data-home-stage]');
+  const box = await stage.boundingBox();
+  if (!box) throw new Error('Missing home stage bounds');
+  const startX = box.x + box.width * 0.75;
+  const y = box.y + box.height * 0.65;
+  await page.mouse.move(startX, y);
+  await page.mouse.down();
+  await page.mouse.move(startX - 24, y);
+
+  await page.evaluate(() => {
+    document.documentElement.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, isPrimary: true, pointerId: 999 })
+    );
+  });
+
+  await expect(stage).toHaveAttribute('data-home-drag-state', 'dragging');
+  expect(
+    await page.evaluate(() => {
+      const root = document.documentElement;
+      const activePointer = (window as typeof window & { __homePointerId?: number }).__homePointerId;
+      return activePointer === undefined ? false : root.hasPointerCapture(activePointer);
+    })
+  ).toBe(true);
+  await page.waitForTimeout(200);
+  await page.mouse.up();
+  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
+  await expect(page).toHaveURL('/');
+});
+
+test('home rejects a stale flick velocity after a 900ms pause', async ({ page }) => {
+  await page.goto('/');
+  const stage = page.locator('[data-home-stage]');
+  const box = await stage.boundingBox();
+  if (!box) throw new Error('Missing home stage bounds');
+  const startX = box.x + box.width * 0.75;
+  const y = box.y + box.height * 0.65;
+  const distance = 80;
+  expect(distance).toBeGreaterThanOrEqual(48);
+  expect(distance).toBeLessThan(box.width * 0.16);
+
+  await page.mouse.move(startX, y);
+  await page.mouse.down();
+  await page.waitForTimeout(12);
+  await page.mouse.move(startX - distance, y);
+  await page.waitForTimeout(900);
+  await page.mouse.up();
+
+  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
+  await expect(page).toHaveURL('/');
+});
+
+test('a committed 20 percent drag always reveals for 620ms', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    document.addEventListener(
+      'astro:before-swap',
+      (event) => {
+        (window as typeof window & { __homeRevealDuration?: string }).__homeRevealDuration =
+          event.newDocument.documentElement.style.getPropertyValue('--home-reveal-duration');
+      },
+      { once: true }
+    );
+  });
+  const stage = page.locator('[data-home-stage]');
+  const box = await stage.boundingBox();
+  if (!box) throw new Error('Missing home stage bounds');
+  const startX = box.x + box.width * 0.75;
+  const y = box.y + box.height * 0.65;
+
+  await page.mouse.move(startX, y);
+  await page.mouse.down();
+  await page.mouse.move(startX - box.width * 0.2, y, { steps: 4 });
+  await page.mouse.up();
+
+  await page.waitForURL('**/blog/');
+  expect(
+    await page.evaluate(
+      () => (window as typeof window & { __homeRevealDuration?: string }).__homeRevealDuration
+    )
+  ).toBe('620ms');
 });
 
 test('home cancels a vertical-dominant drag without leaving residue', async ({ page }) => {
