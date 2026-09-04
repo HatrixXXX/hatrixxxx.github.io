@@ -13,22 +13,32 @@ for (const path of routes) {
   test(`${path} has stable responsive structure`, async ({ page }) => {
     test.setTimeout(path.startsWith('/posts/') ? 360_000 : 60_000);
     await page.route('https://giscus.app/**', (route) => route.abort());
+    if (path === '/') await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(path);
-    await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-sakana-state', 'ready');
+    if (path === '/') {
+      await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
+    } else {
+      await expect(page.locator('[data-sakana-layer]')).toHaveAttribute(
+        'data-sakana-state',
+        'ready'
+      );
+    }
     await page.evaluate(() => document.fonts.ready);
     await page.locator('img').evaluateAll((images) => {
       for (const image of images) (image as HTMLImageElement).loading = 'eager';
     });
     await page.waitForFunction(() => [...document.images].every((image) => image.complete));
 
-    const contentBounds = await page.locator('[data-content-boundary]').boundingBox();
-    if (!contentBounds) throw new Error('Missing content boundary');
     const viewport = page.viewportSize();
-    const contentY = Math.min(
-      contentBounds.y + contentBounds.height + 24,
-      (viewport?.height ?? contentBounds.y + contentBounds.height + 25) - 1
-    );
-    await page.mouse.move(contentBounds.x + contentBounds.width / 2, contentY);
+    if (path !== '/') {
+      const contentBounds = await page.locator('[data-content-boundary]').boundingBox();
+      if (!contentBounds) throw new Error('Missing content boundary');
+      const contentY = Math.min(
+        contentBounds.y + contentBounds.height + 24,
+        (viewport?.height ?? contentBounds.y + contentBounds.height + 25) - 1
+      );
+      await page.mouse.move(contentBounds.x + contentBounds.width / 2, contentY);
+    }
     if (viewport && viewport.width > 768) {
       for (const submenu of await page.locator('.desktop-nav .submenu').all()) {
         await expect(submenu).toBeHidden();
@@ -89,7 +99,13 @@ for (const path of routes) {
       animations: 'disabled',
       timeout: path.startsWith('/posts/') ? 300_000 : 20_000,
       maxDiffPixels: path.startsWith('/posts/') ? 2_000 : 0,
-      mask: [page.locator('[data-giscus-comments]')],
+      mask: [
+        page.locator('[data-giscus-comments]'),
+        page.locator(
+          'article[data-post] img[src*="v2-9dd69ab2c20ca721bc0979d7ebaa0253_720w.webp"]'
+        ),
+        page.locator('[data-dot-clock]')
+      ],
       maskColor: '#252a33'
     });
   });

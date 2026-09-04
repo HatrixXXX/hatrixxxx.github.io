@@ -4,12 +4,17 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../../src/config/security';
 import {
+  EXPECTED_LOCAL_LINKS,
   inspectBuiltSite,
   inspectProjectBuiltSite,
   securityErrorsForHtml
 } from '../../scripts/check-built-site';
 
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
+
+it('tracks the fullscreen homepage local link inventory', () => {
+  expect(EXPECTED_LOCAL_LINKS).toBe(4038);
+});
 
 async function writeSiteFile(root: string, relativePath: string, contents = ''): Promise<void> {
   const target = join(root, ...relativePath.split('/'));
