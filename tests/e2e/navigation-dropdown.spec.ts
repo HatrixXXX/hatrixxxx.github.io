@@ -133,6 +133,26 @@ test('open mobile navigation does not add document scrolling', async ({ page }) 
     }));
     expect(documentHeight.scrollHeight).toBeLessThanOrEqual(documentHeight.clientHeight);
 
+    const mobileMenu = page.locator('[data-mobile-menu]');
+    const menuState = await mobileMenu.evaluate((element) => {
+      element.scrollTo(0, element.scrollHeight);
+      return {
+        scrollHeight: element.scrollHeight,
+        clientHeight: element.clientHeight,
+        scrollTop: element.scrollTop,
+        overflowY: getComputedStyle(element).overflowY
+      };
+    });
+    expect(menuState.scrollHeight).toBeGreaterThan(menuState.clientHeight);
+    expect(['auto', 'scroll']).toContain(menuState.overflowY);
+    expect(menuState.scrollTop).toBeGreaterThan(0);
+
+    const menuBox = await mobileMenu.boundingBox();
+    const lastLinkBox = await mobileMenu.getByRole('link', { name: '我的友链', exact: true }).boundingBox();
+    if (!menuBox || !lastLinkBox) throw new Error('Missing mobile menu bounds');
+    expect(lastLinkBox.y).toBeGreaterThanOrEqual(menuBox.y);
+    expect(lastLinkBox.y + lastLinkBox.height).toBeLessThanOrEqual(menuBox.y + menuBox.height);
+
     await page.evaluate(() => window.scrollTo(0, 9_999));
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   }

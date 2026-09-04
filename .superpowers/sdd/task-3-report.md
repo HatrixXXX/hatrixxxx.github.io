@@ -56,3 +56,11 @@ The only observed concern was the one-off local navigation abort noted above; it
 - Root cause: the Header and its inner row use 60px, while the mobile menu still subtracted the old global 56px Header token. Their combined 848px height made the root document scroll by 4px.
 - GREEN: the Header now owns `--site-header-height: 60px`; the Header, inner row, and mobile menu height calculation use it, with the menu using `100dvh`. The navigation suite passed all 6 tests, including 390×844 and 390×600 menu cases.
 - Related regression: `corepack pnpm exec playwright test tests/e2e/home.spec.ts tests/e2e/navigation-dropdown.spec.ts --project=desktop-1440` exited 0: 26 passed. `corepack pnpm test:run` exited 0 with 291 tests, and `corepack pnpm check` exited 0 with 0 Astro diagnostics.
+
+## Review follow-up: mobile menu owns its overflow
+
+- This is coverage strengthening on the already-correct Header implementation, not a new bug fix; no RED run was expected or used.
+- The 390×600 case now verifies that `[data-mobile-menu]` has `overflow-y: auto` or `scroll`, that its content exceeds its client height, and that it can scroll to a positive `scrollTop`. It also checks the final `我的友链` link is inside the menu viewport after that scroll, while the document `scrollY` remains zero.
+- `corepack pnpm exec playwright test tests/e2e/navigation-dropdown.spec.ts --project=desktop-1440` exited 0: 6 passed. This project explicitly exercises the 390×844 and 390×600 viewports; tablet/mobile Playwright projects do not match this spec by configuration.
+- `corepack pnpm test:run` exited 0 with 291 tests, and `corepack pnpm check` exited 0 with 0 Astro diagnostics.
+- A later `home.spec.ts` run failed in the shared worktree's uncommitted Task 4 homepage reveal/drag changes. This follow-up did not modify production code, home tests, snapshots, scripts, or documentation outside this report.
