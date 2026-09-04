@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 
 const DEFAULT_CONCURRENCY = 12;
 const REQUEST_TIMEOUT_MS = 10_000;
+const NETWORK_ATTEMPTS = 3;
 const JSD_DELIVR_HOST = 'cdn.jsdelivr.net';
 const IMAGE_EXTENSION = /\.(?:avif|gif|jpe?g|png|svg|webp)(?:$|[?#]|![A-Za-z0-9._-]+(?:$|[?#]))/i;
 
@@ -97,23 +98,31 @@ function fallbackToRangeGet(status: number): boolean {
   return status === 403 || status === 405 || status === 501;
 }
 
-async function checkUrl(url: string): Promise<string | undefined> {
+async function checkUrlOnce(url: string): Promise<string | undefined> {
   const fetchWithTimeout = async (init: RequestInit) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timeout));
   };
 
-  try {
-    const head = await fetchWithTimeout({ method: 'HEAD' });
-    if (head.ok) return undefined;
-    if (!fallbackToRangeGet(head.status)) return `HEAD ${head.status} ${head.statusText}`.trim();
+  const head = await fetchWithTimeout({ method: 'HEAD' });
+  if (head.ok) return undefined;
+  if (!fallbackToRangeGet(head.status)) return `HEAD ${head.status} ${head.statusText}`.trim();
 
-    const rangedGet = await fetchWithTimeout({ method: 'GET', headers: { Range: 'bytes=0-0' } });
-    return rangedGet.ok ? undefined : `GET ${rangedGet.status} ${rangedGet.statusText}`.trim();
-  } catch (error) {
-    return error instanceof Error ? error.message : String(error);
+  const rangedGet = await fetchWithTimeout({ method: 'GET', headers: { Range: 'bytes=0-0' } });
+  return rangedGet.ok ? undefined : `GET ${rangedGet.status} ${rangedGet.statusText}`.trim();
+}
+
+async function checkUrl(url: string): Promise<string | undefined> {
+  let lastNetworkError = '';
+  for (let attempt = 0; attempt < NETWORK_ATTEMPTS; attempt += 1) {
+    try {
+      return await checkUrlOnce(url);
+    } catch (error) {
+      lastNetworkError = error instanceof Error ? error.message : String(error);
+    }
   }
+  return lastNetworkError;
 }
 
 /** Checks each unique URL using at most 12 concurrent, ten-second requests. */

@@ -76,6 +76,41 @@ describe('remote image checking', () => {
     expect(result.failed.get('https://x/missing.png')).toContain('404');
   });
 
+  it('retries a transient network error and keeps the recovered URL', async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await checkImages(['https://x/transient.png'], 12);
+
+    expect(result.ok.has('https://x/transient.png')).toBe(true);
+    expect(result.failed.size).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops after three persistent network failures', async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new TypeError('fetch failed');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await checkImages(['https://x/network-down.png'], 12);
+
+    expect(result.failed.get('https://x/network-down.png')).toBe('fetch failed');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not retry a definitive HTTP failure', async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 404 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await checkImages(['https://x/not-found.png'], 12);
+
+    expect(result.failed.get('https://x/not-found.png')).toContain('404');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('uses a ranged GET when HEAD is rejected', async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       if (init?.method === 'HEAD') return new Response(null, { status: 405 });
@@ -109,16 +144,18 @@ describe('remote image checking', () => {
     expect(maxActive).toBe(12);
   });
 
-  it('aborts a hanging request after ten seconds', async () => {
+  it('retries hanging requests three times with a ten-second timeout per attempt', async () => {
     vi.useFakeTimers();
-    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => new Promise<never>((_resolve, reject) => {
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => new Promise<never>((_resolve, reject) => {
       init?.signal?.addEventListener('abort', () => reject(new DOMException('request timed out', 'AbortError')));
-    })));
+    }));
+    vi.stubGlobal('fetch', fetchMock);
 
     const result = checkImages(['https://x/hangs.png'], 12);
-    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(30_000);
 
     await expect(result).resolves.toMatchObject({ failed: new Map([['https://x/hangs.png', 'request timed out']]) });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
 
