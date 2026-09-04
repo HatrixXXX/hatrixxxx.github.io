@@ -10,7 +10,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <section class="home-copy">
       <h1 id="home-title" data-home-title>Hatrixの窝</h1>
       <p class="home-subtitle" aria-label="轻松即单纯，速成即精准">
-        <span data-home-typing aria-label="轻松即单纯，速成即精准" aria-hidden="true"></span>
+        <span data-home-typing aria-hidden="true"></span>
         <span data-home-typing-cursor aria-hidden="true">|</span>
       </p>
     </section>
@@ -19,6 +19,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       href="/blog/"
       aria-label="进入博客文章总览"
       data-home-blog-link
+      data-home-blog-arrow
       data-astro-prefetch="load"
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" width="30" height="30">
@@ -44,7 +45,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     overflow: hidden;
     background: url('/images/cover.png') center / cover no-repeat;
     color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, 'IBM Plex Mono', 'Microsoft YaHei', sans-serif;
+    font-family: 'IBM Plex Mono', -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
     isolation: isolate;
   }
 

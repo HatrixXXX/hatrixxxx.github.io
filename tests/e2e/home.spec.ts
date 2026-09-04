@@ -4,12 +4,18 @@ test('home renders only the fullscreen cover experience', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-home-stage]')).toBeVisible();
   await expect(page.locator('[data-home-title]')).toHaveText('Hatrixの窝');
-  await expect(page.locator('[data-home-typing]')).toHaveAttribute(
+  await expect(page.locator('.home-subtitle')).toHaveAttribute(
     'aria-label',
     '轻松即单纯，速成即精准'
   );
+  await expect(page.locator('[data-home-typing]')).toHaveAttribute('aria-hidden', 'true');
   await expect(page.locator('[data-home-typing-cursor]')).toHaveText('|');
-  await expect(page.locator('.home-blog-link[data-home-blog-link]')).toHaveAttribute('href', '/blog/');
+  await expect(page.locator('header[data-site-header] [data-home-blog-link]')).toHaveCount(2);
+  const blogArrow = page.locator(
+    '[data-home-stage] [data-home-blog-arrow][data-home-blog-link]'
+  );
+  await expect(blogArrow).toHaveCount(1);
+  await expect(blogArrow).toHaveAttribute('href', '/blog/');
   await expect(page.locator('.brand, .home-blog-entry, footer[data-site-footer]')).toHaveCount(0);
   await expect(page.locator('[data-sakana-layer], [data-cursor-trail]')).toHaveCount(0);
   await expect(page.locator('article[data-post-card], .pagination')).toHaveCount(0);
@@ -18,6 +24,10 @@ test('home renders only the fullscreen cover experience', async ({ page }) => {
     (node) => getComputedStyle(node).backgroundImage
   );
   expect(background).toContain('/images/cover.png');
+  const fontFamily = await page.locator('[data-home-stage]').evaluate(
+    (node) => getComputedStyle(node).fontFamily
+  );
+  expect(fontFamily).toMatch(/^['"]?IBM Plex Mono['"]?/);
   expect((await page.request.get('/images/cover.png')).status()).toBe(200);
 });
 
