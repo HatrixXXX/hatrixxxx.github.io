@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-test('home keeps its full hero without a wave divider', async ({ page }) => {
+test('home stage fills the viewport without a wave divider', async ({ page }) => {
   await page.goto('/');
 
-  expect((await page.locator('[data-hero]').boundingBox())?.height).toBeGreaterThan(240);
+  const homeStage = page.locator('[data-home-stage]');
+  await expect(homeStage).toBeVisible();
+  const stage = await homeStage.boundingBox();
+  expect(stage?.height).toBe(await page.evaluate(() => document.documentElement.clientHeight));
   await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
 });
 

@@ -22,6 +22,7 @@ interface Props {
   bodyClass?: string;
   canonicalPath?: string;
   noindex?: boolean;
+  pageKind?: 'default' | 'home';
 }
 
 const {
@@ -30,8 +31,10 @@ const {
   image = '/images/default-cover.svg',
   bodyClass,
   canonicalPath,
-  noindex = false
+  noindex = false,
+  pageKind = 'default'
 } = Astro.props;
+const isHome = pageKind === 'home';
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
 const socialImage = new URL(image, SITE.url);
@@ -40,7 +43,7 @@ const excludeFromIndex = pageLocked || noindex;
 ---
 
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="dark" data-page-kind={isHome ? 'home' : undefined}>
   <head>
     {
       import.meta.env.PROD && (
@@ -69,6 +72,7 @@ const excludeFromIndex = pageLocked || noindex;
     <link rel="alternate icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
+    {isHome && <link rel="preload" as="image" href="/images/cover.png" />}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.title} />
     <meta property="og:title" content={pageTitle} />
@@ -83,14 +87,14 @@ const excludeFromIndex = pageLocked || noindex;
     <ClientRouter />
   </head>
   <body class={bodyClass}>
-    <SiteHeader />
+    <SiteHeader homeMode={isHome} showBrand={!isHome} />
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
     </ProtectedContent>
-    <SiteFooter />
-    <SakanaCharacters />
+    {!isHome && <SiteFooter />}
+    {!isHome && <SakanaCharacters />}
     <ThemeTransition />
-    <CursorTrail />
+    {!isHome && <CursorTrail />}
     <SearchOverlay />
     <span
       id="vercount_value_site_uv"

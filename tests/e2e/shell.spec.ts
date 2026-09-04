@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test('home shell renders the compact legal footer', async ({ page }) => {
-  await page.goto('/');
+test('standard shell renders the compact legal footer', async ({ page }) => {
+  await page.goto('/projects/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();
   await expect(page.locator('[data-hero]')).toBeVisible();
   await expect(page.locator('[data-wave-divider]')).toHaveCount(0);

@@ -1,70 +1,118 @@
 ---
-import HeroBanner from '@/components/HeroBanner.astro';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/700.css';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title={SITE.title}>
-  <HeroBanner title={SITE.title} subtitle={SITE.tagline} image="/images/default-cover.svg" />
-  <main id="articles" class="home-main container">
-    <section class="home-blog-entry" aria-labelledby="home-blog-heading">
-      <h2 id="home-blog-heading">博客文章</h2>
-      <p>所有文章都放在博客页面，可以浏览全部内容，也可以按文章类型查看。</p>
-      <a href="/blog/" data-blog-entry>浏览全部博客文章 <span aria-hidden="true">→</span></a>
+<BaseLayout title={SITE.title} image="/images/cover.png" pageKind="home">
+  <main data-home-stage aria-labelledby="home-title" class="home-stage">
+    <section class="home-copy">
+      <h1 id="home-title" data-home-title>Hatrixの窝</h1>
+      <p class="home-subtitle" aria-label="轻松即单纯，速成即精准">
+        <span data-home-typing aria-label="轻松即单纯，速成即精准" aria-hidden="true"></span>
+        <span data-home-typing-cursor aria-hidden="true">|</span>
+      </p>
     </section>
+    <a
+      class="home-blog-link"
+      href="/blog/"
+      aria-label="进入博客文章总览"
+      data-home-blog-link
+      data-astro-prefetch="load"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="30" height="30">
+        <path d="m9 5 7 7-7 7"></path>
+      </svg>
+    </a>
   </main>
 </BaseLayout>
 
 <style>
-  .home-main {
-    display: grid;
-    align-items: start;
-    padding-block: clamp(2.5rem, 6vw, 5rem);
+  :global(html[data-page-kind='home']),
+  :global(html[data-page-kind='home'] body) {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
-  .home-blog-entry {
-    min-width: 0;
+  .home-stage {
+    position: fixed;
+    inset: 0;
+    min-height: 100dvh;
+    overflow: hidden;
+    background: url('/images/cover.png') center / cover no-repeat;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'IBM Plex Mono', 'Microsoft YaHei', sans-serif;
+    isolation: isolate;
   }
 
-  .home-blog-entry {
-    display: grid;
-    min-height: 300px;
-    place-content: center;
-    justify-items: center;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
-    padding: clamp(2rem, 6vw, 4rem);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-panel);
+  .home-stage::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: rgb(0 0 0 / 30%);
+    content: '';
+  }
+
+  .home-copy {
+    position: absolute;
+    top: 43%;
+    left: 50%;
+    width: min(calc(100% - 2rem), 54rem);
+    transform: translateX(-50%);
     text-align: center;
   }
 
-  .home-blog-entry h2 {
+  .home-copy h1 {
     margin: 0;
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: #fff;
+    font-size: 2.85rem;
+    font-weight: 700;
+    line-height: 1.5;
+    text-shadow: 2px 2px 4px rgb(0 0 0 / 15%);
   }
 
-  .home-blog-entry p {
-    max-width: 34rem;
-    margin: 0.8rem 0 1.5rem;
-    color: var(--color-muted);
+  .home-subtitle {
+    min-height: 1.5em;
+    margin: 0;
+    color: #eee;
+    font-size: 1.72rem;
+    font-weight: 400;
+    line-height: 1.5;
+    text-shadow: 2px 2px 4px rgb(0 0 0 / 15%);
   }
 
-  .home-blog-entry a {
+  .home-blog-link {
+    position: absolute;
+    bottom: clamp(1.25rem, 4vh, 2.5rem);
+    left: 50%;
     display: inline-flex;
-    min-height: 44px;
+    width: 44px;
+    height: 44px;
     align-items: center;
-    gap: 0.55rem;
-    border: 1px solid var(--color-accent);
-    border-radius: 999px;
-    padding: 0.65rem 1.25rem;
-    background: var(--color-accent);
-    color: #161a20;
-    font-weight: 800;
+    justify-content: center;
+    color: #eee;
+    filter: drop-shadow(1px 1px 2px rgb(0 0 0 / 30%));
+    transform: translateX(-50%);
   }
 
-  .home-blog-entry a:hover {
-    background: var(--color-accent-strong);
+  .home-blog-link svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
   }
 
+  @media (max-width: 768px) {
+    .home-copy h1 {
+      font-size: 1.85rem;
+    }
+
+    .home-subtitle {
+      font-size: 1.15rem;
+    }
+  }
 </style>

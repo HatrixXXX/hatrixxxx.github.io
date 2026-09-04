@@ -2,21 +2,40 @@
 import { SITE } from '@/config/site';
 import { PRIMARY_NAV_ITEMS } from '@/config/navigation';
 
+interface Props {
+  homeMode?: boolean;
+  showBrand?: boolean;
+}
+
+const { homeMode = false, showBrand = true } = Astro.props;
 const isCurrent = (href: string) => Astro.url.pathname === href;
 ---
 
-<header data-site-header class="site-header">
-  <div class="header-inner container" data-content-boundary>
-    <a class="brand" href="/" aria-label={`${SITE.title} 首页`}>
-      <img src={SITE.author.avatar} alt="" width="34" height="34" />
-      <span>{SITE.author.name}</span>
-    </a>
+<header data-site-header class:list={['site-header', { 'site-header--home': homeMode }]}>
+  <div
+    class:list={['header-inner', 'container', { 'header-inner--home': homeMode }]}
+    data-content-boundary
+    data-home-controls={homeMode ? '' : undefined}
+  >
+    {
+      showBrand && (
+        <a class="brand" href="/" aria-label={`${SITE.title} 首页`}>
+          <img src={SITE.author.avatar} alt="" width="34" height="34" />
+          <span>{SITE.author.name}</span>
+        </a>
+      )
+    }
 
     <nav class="desktop-nav" aria-label="主导航">
       <ul>
         {PRIMARY_NAV_ITEMS.map((item) => (
           <li data-nav-item={item.label}>
-            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+            <a
+              href={item.href}
+              aria-current={isCurrent(item.href) ? 'page' : undefined}
+              data-home-blog-link={homeMode && item.href === '/blog/' ? '' : undefined}
+              data-astro-prefetch={homeMode && item.href === '/blog/' ? 'load' : undefined}
+            >
               {item.label}
               {'children' in item && <span class="nav-caret" aria-hidden="true"></span>}
             </a>
@@ -76,7 +95,12 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     <ul class="mobile-nav__list container">
       {PRIMARY_NAV_ITEMS.map((item) => (
         <li>
-          <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+          <a
+            href={item.href}
+            aria-current={isCurrent(item.href) ? 'page' : undefined}
+            data-home-blog-link={homeMode && item.href === '/blog/' ? '' : undefined}
+            data-astro-prefetch={homeMode && item.href === '/blog/' ? 'load' : undefined}
+          >
             {item.label}
           </a>
           {'children' in item && (
@@ -114,6 +138,23 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     min-height: var(--header-height);
     align-items: center;
     justify-content: space-between;
+  }
+
+  .site-header--home {
+    min-height: 60px;
+    border-bottom: 0;
+    background: transparent;
+    color: #eee;
+  }
+
+  .header-inner--home {
+    width: 100%;
+    max-width: none;
+    min-height: 60px;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    margin-inline: 0;
+    padding-inline: 36px;
   }
 
   .brand {
@@ -159,6 +200,17 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     font-size: 0.9rem;
     text-shadow: 0 1px 8px rgb(0 0 0 / 55%);
     transition: color 160ms ease, background-color 160ms ease;
+  }
+
+  .site-header--home .desktop-nav > ul > li > a {
+    color: #eee;
+    font-size: 1.014rem;
+    text-shadow: 1px 1px 2px rgb(0 0 0 / 30%);
+  }
+
+  .site-header--home .desktop-nav a:hover {
+    background: transparent;
+    color: #eee;
   }
 
   .desktop-nav a:hover {
@@ -223,6 +275,17 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     transform: translate(-50%, -0.35rem);
   }
 
+  .site-header--home .desktop-nav .submenu {
+    right: 0;
+    left: auto;
+    transform: translateY(-0.35rem);
+  }
+
+  .site-header--home .desktop-nav > ul > li:hover > .submenu,
+  .site-header--home .desktop-nav > ul > li:focus-within > .submenu {
+    transform: translateY(0);
+  }
+
   .header-actions {
     display: flex;
     align-items: center;
@@ -256,6 +319,20 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     background: rgb(17 20 25 / 56%);
     color: #fff;
     cursor: pointer;
+  }
+
+  .site-header--home .header-action,
+  .site-header--home .menu-toggle {
+    border-radius: 0;
+    background: transparent;
+    color: #eee;
+    text-shadow: 1px 1px 2px rgb(0 0 0 / 30%);
+  }
+
+  .site-header--home .header-action:hover,
+  .site-header--home .menu-toggle:hover {
+    background: transparent;
+    color: #eee;
   }
 
   .header-action:hover,
@@ -328,6 +405,11 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   }
 
   @media (max-width: 768px) {
+    .header-inner--home {
+      width: 100%;
+      padding-inline: 16px;
+    }
+
     .admin-logout {
       max-width: 8.5rem;
       font-size: 0.72rem;
