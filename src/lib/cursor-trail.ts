@@ -44,8 +44,11 @@ export type Tendril = {
 
 export type TrailState = {
   target: { x: number; y: number };
-  phase: number;
   tendrils: Tendril[];
+};
+
+export type TrailHueState = {
+  phase: number;
 };
 
 export function createTrailState(x: number, y: number, random: () => number = Math.random): TrailState {
@@ -60,7 +63,11 @@ export function createTrailState(x: number, y: number, random: () => number = Ma
     });
   }
 
-  return { target: { x, y }, phase: 0, tendrils };
+  return { target: { x, y }, tendrils };
+}
+
+export function createTrailHueState(): TrailHueState {
+  return { phase: 0 };
 }
 
 export function setTrailTarget(state: TrailState, x: number, y: number): void {
@@ -95,7 +102,7 @@ export function updateTrailState(state: TrailState): void {
   }
 }
 
-export function advanceTrailHue(state: TrailState): number {
+export function advanceTrailHue(state: TrailHueState): number {
   state.phase += TRAIL_SETTINGS.hueFrequency;
   return TRAIL_SETTINGS.hueOffset + Math.sin(state.phase) * TRAIL_SETTINGS.hueAmplitude;
 }

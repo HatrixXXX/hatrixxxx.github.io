@@ -52,6 +52,25 @@ const alphaPixelsInRect = (
   return count;
 };
 
+const alphaSumInRect = (
+  canvas: HTMLCanvasElement,
+  area: { left: number; right: number; top: number; bottom: number }
+) => {
+  const context = canvas.getContext('2d');
+  if (!context) return -1;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const left = Math.max(0, Math.floor((area.left - rect.left) * scaleX));
+  const right = Math.min(canvas.width, Math.ceil((area.right - rect.left) * scaleX));
+  const top = Math.max(0, Math.floor((area.top - rect.top) * scaleY));
+  const bottom = Math.min(canvas.height, Math.ceil((area.bottom - rect.top) * scaleY));
+  const data = context.getImageData(left, top, right - left, bottom - top).data;
+  let sum = 0;
+  for (let index = 3; index < data.length; index += 4) sum += data[index];
+  return sum;
+};
+
 async function activationGeometry(page: Page) {
   const horizontal = await page.locator('[data-content-boundary]').boundingBox();
   const region = page.locator('main, [data-cursor-trail-region]').first();
@@ -292,8 +311,41 @@ test('three same-side sessions retain separate fading remnants', async ({ page }
     if (index < offsets.length - 1) await page.mouse.move(geometry.centerX, geometry.y);
   }
 
-  for (const area of areas) expect(await canvas.evaluate(alphaPixelsInRect, area)).toBeGreaterThan(0);
+  const alphaTimeline: Array<{ elapsed: number; sums: number[] }> = [];
+  for (const elapsed of [0, 50, 100, 200, 350]) {
+    const previousElapsed = alphaTimeline.at(-1)?.elapsed ?? 0;
+    if (elapsed > previousElapsed) await page.waitForTimeout(elapsed - previousElapsed);
+    alphaTimeline.push({
+      elapsed,
+      sums: await Promise.all(areas.map((area) => canvas.evaluate(alphaSumInRect, area)))
+    });
+  }
+  for (const sum of alphaTimeline.at(-1)?.sums ?? []) {
+    expect(sum, `alpha timeline: ${JSON.stringify(alphaTimeline)}`).toBeGreaterThan(0);
+  }
   for (const area of areas) await expect.poll(() => canvas.evaluate(alphaPixelsInRect, area)).toBe(0);
+});
+
+test('a settled new session never clears an older retiring trail', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.locator('[data-cursor-trail]');
+  const geometry = await activationGeometry(page);
+  const oldArea = {
+    left: 0,
+    right: geometry.content.left,
+    top: geometry.y - 120,
+    bottom: geometry.y + 120
+  };
+
+  await page.mouse.move(geometry.leftX, geometry.y - 90);
+  await page.mouse.move(geometry.leftX, geometry.y + 90);
+  await expect.poll(() => canvas.evaluate(alphaSumInRect, oldArea)).toBeGreaterThan(0);
+
+  await page.mouse.move(geometry.centerX, geometry.y);
+  await page.mouse.move(geometry.rightX, geometry.y);
+  await page.waitForTimeout(500);
+  expect(await canvas.evaluate(alphaSumInRect, oldArea)).toBeGreaterThan(0);
+  await expect.poll(() => canvas.evaluate(alphaSumInRect, oldArea), { timeout: 10_000 }).toBe(0);
 });
 
 test('a top-level pointer exit starts a disconnected gutter session on re-entry', async ({ page }) => {
