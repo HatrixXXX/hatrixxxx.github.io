@@ -79,6 +79,10 @@ describe('Astro project tooling', () => {
     ]);
   });
 
+  it('prebundles lazy browser dependencies before the dev server accepts requests', () => {
+    expect(astroConfig.vite?.optimizeDeps?.include).toEqual(['mermaid', 'sakana']);
+  });
+
   it('does not retain legacy toolchain ignore entries', () => {
     const entries = readFileSync('.gitignore', 'utf8')
       .split(/\r?\n/)

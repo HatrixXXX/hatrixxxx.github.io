@@ -67,5 +67,8 @@ export default defineConfig({
       }
     ]
   },
+  vite: {
+    optimizeDeps: { include: ['mermaid', 'sakana'] }
+  },
   markdown: siteMarkdownConfig
 });
