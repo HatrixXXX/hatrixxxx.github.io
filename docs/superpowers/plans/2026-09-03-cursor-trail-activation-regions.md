@@ -14,7 +14,7 @@
 - 保持纯静态输出，不增加依赖，不改文章正文、公开 URL 或视觉基线图片。
 - Hero、文章封面、WaveDivider、整个页脚和打开的 PhotoSwipe 都不得生成轨迹。
 - 同一侧曲线可以因弹簧弯曲自然伸入正文；禁止的是离区或左右切换造成的节点目标连接线。
-- 切区时保留旧 Canvas 像素并让其淡出，不增加多轨迹数组。
+- 切区时保留旧 Canvas 像素并让其淡出；同一侧可同时显示多段历史残影，但不增加多轨迹数组。
 - 继续支持 60 FPS 固定步长、DPR、reduced motion、非精细指针和 Astro 客户端导航。
 - 另有 Codex 会话使用同一仓库；每次编辑和提交前检查 HEAD/status，禁止覆盖范围外改动。
 
@@ -270,6 +270,8 @@ test('leaving and re-entering one gutter starts a disconnected trail', async ({ 
   })).toBe(0);
 });
 ```
+
+在同一 left gutter 内再覆盖三次连续会话。三段使用互不重叠、且不越过 content 边界的小矩形；每段用两个坐标产生线条，段间移入 center 结束会话。第三段出现后必须同时断言三个矩形均有非透明像素，再分别轮询为 0。该测试要能发现切区时调用 `clearTrail()` 或只保留一段历史轨迹的回归。
 
 - [ ] **Step 3: 确认 E2E RED**
 

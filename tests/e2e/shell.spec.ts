@@ -9,10 +9,9 @@ test('home shell renders the compact legal footer', async ({ page }) => {
   const footer = page.locator('footer[data-site-footer]');
   await expect(footer).toHaveCount(1);
   await expect(footer).toContainText(`© 2025–${new Date().getFullYear()} Hatrix`);
-  await expect(footer.getByRole('link', { name: '第三方许可' })).toHaveAttribute(
-    'href',
-    '/third-party-notices.txt'
-  );
+  await expect(footer.getByRole('link', { name: '第三方许可' })).toHaveCount(0);
+  const notices = await page.request.get('/third-party-notices.txt');
+  expect(notices.ok()).toBe(true);
   await expect(footer.locator('[data-site-filing]')).toHaveCount(0);
 });
 
