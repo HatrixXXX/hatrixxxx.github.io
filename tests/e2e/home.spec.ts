@@ -249,6 +249,74 @@ test('home desktop Blog link uses the shared reveal navigation', async ({ page }
   ).toBe(clientRouterMarker);
 });
 
+test('repeated ordinary clicks keep one marked reveal navigation', async ({ page }) => {
+  await page.route('**/blog/', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.continue();
+  });
+  const marker = crypto.randomUUID();
+  await page.goto('/');
+  await page.evaluate((value) => {
+    const state = window as typeof window & { __repeatClickMarker?: string };
+    state.__repeatClickMarker = value;
+    sessionStorage.setItem('__blogPreparations', '[]');
+    sessionStorage.removeItem('__homeUncoverSeen');
+    document.addEventListener('astro:before-preparation', (event) => {
+      if (event.to.pathname === '/blog/') {
+        const preparations = JSON.parse(
+          sessionStorage.getItem('__blogPreparations') ?? '[]'
+        ) as Array<{ kind: unknown }>;
+        preparations.push({ kind: event.info?.kind ?? null });
+        sessionStorage.setItem('__blogPreparations', JSON.stringify(preparations));
+      }
+    });
+    document.addEventListener('astro:after-swap', () => {
+      requestAnimationFrame(() => {
+        const seen = document
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation instanceof CSSAnimation && animation.animationName === 'home-uncover-left'
+          );
+        sessionStorage.setItem('__homeUncoverSeen', String(seen));
+      });
+    });
+  }, marker);
+
+  await page.locator('[data-home-blog-arrow]').evaluate((link) => {
+    const click = () =>
+      link.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, view: window })
+      );
+    click();
+    click();
+  });
+
+  await page.waitForURL('**/blog/');
+  expect(
+    await page.evaluate(
+      () => JSON.parse(sessionStorage.getItem('__blogPreparations') ?? '[]') as unknown[]
+    )
+  ).toEqual([{ kind: 'home-reveal' }]);
+  expect(
+    await page.evaluate(
+      () => (window as typeof window & { __repeatClickMarker?: string }).__repeatClickMarker
+    )
+  ).toBe(marker);
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('__homeUncoverSeen')))
+    .toBe('true');
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        reveal: document.documentElement.hasAttribute('data-home-reveal'),
+        distance: document.documentElement.style.getPropertyValue('--home-reveal-distance'),
+        duration: document.documentElement.style.getPropertyValue('--home-reveal-duration')
+      }))
+    )
+    .toEqual({ reveal: false, distance: '', duration: '' });
+});
+
 test('a competing route cannot inherit or revive the pending blog reveal', async ({ page }) => {
   await page.route('**/blog/', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
