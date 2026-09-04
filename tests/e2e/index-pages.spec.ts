@@ -55,7 +55,14 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
 });
 
 test('blog and archive indexes omit contextual sidebar cards', async ({ page }) => {
-  for (const path of ['/blog/', '/archives/']) {
+  for (const path of [
+    '/blog/',
+    '/blog/tech-notes/',
+    '/archives/',
+    '/projects/',
+    '/guestbook/',
+    '/404.html'
+  ]) {
     await page.goto(path);
     await expect(page.locator('[data-sidebar-stack], [data-music-player]')).toHaveCount(0);
   }

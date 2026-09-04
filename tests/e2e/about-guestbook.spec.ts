@@ -88,7 +88,9 @@ test('about sidebar exposes the requested profile, social links and static stati
   const wechat = profile.locator('span[data-social-id="wechat"]');
   await expect(wechat).toHaveAttribute('data-social-pending', 'wechat');
   await expect(wechat).toHaveAttribute('aria-disabled', 'true');
-  await expect(wechat).toHaveAttribute('aria-label', '微信');
+  await expect(wechat).toHaveAccessibleName(/微信.*待补充/);
+  await expect(wechat.getByText('待补充', { exact: true })).toBeVisible();
+  await expect(wechat.locator('a, button, [tabindex]')).toHaveCount(0);
 
   for (const absent of ['Gitee', 'Stack Overflow', 'Twitter', 'Telegram', 'QQ']) {
     await expect(profile.getByRole('link', { name: absent, exact: true })).toHaveCount(0);
@@ -103,6 +105,7 @@ test('contextual sidebar cards remain readable in the light theme', async ({ pag
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.goto('/about/');
 
+  await expect(page.locator('.about-main article > h1')).toHaveCSS('color', 'rgb(22, 26, 32)');
   await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(22, 26, 32)');
   await expect(page.locator('[data-site-stats] h2')).toHaveCSS('color', 'rgb(22, 26, 32)');
   await expect(page.locator('[data-site-stats] dd').first()).toHaveCSS(
@@ -113,4 +116,27 @@ test('contextual sidebar cards remain readable in the light theme', async ({ pag
     'color',
     'rgb(48, 52, 59)'
   );
+});
+
+test('Sakana does not capture pointer input from mobile sidebar links', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/about/');
+  await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-sakana-state', 'ready');
+
+  const socialLink = page.getByRole('link', { name: '知乎', exact: true });
+  await socialLink.evaluate((link) => link.scrollIntoView({ block: 'end' }));
+  await expect(socialLink).toBeInViewport();
+
+  const hitTarget = await socialLink.evaluate((link) => {
+    const bounds = link.getBoundingClientRect();
+    const hit = document.elementFromPoint(
+      bounds.left + bounds.width / 2,
+      bounds.top + bounds.height / 2
+    );
+    return {
+      socialId: hit?.closest('[data-social-id]')?.getAttribute('data-social-id') ?? null,
+      interceptedBySakana: hit?.closest('.sakana-character') !== null
+    };
+  });
+  expect(hitTarget).toEqual({ socialId: 'zhihu', interceptedBySakana: false });
 });

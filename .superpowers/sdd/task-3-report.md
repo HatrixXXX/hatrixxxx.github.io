@@ -1,113 +1,64 @@
-# Task 3 Report: Static Cards and Page Layout
+# Task 3 migration report
 
-Date: 2026-09-04
+> 历史记录：本文描述的是最初迁移结果；文章分类与标签后来由 `docs/superpowers/specs/2026-09-03-remove-taxonomy-design.md` 废止。
 
-## Outcome
+## RED / GREEN evidence
 
-Implemented the contextual sidebar as a shared, static three-card stack. The stack is present only on published article and About routes, in this direct-child order:
+- RED: `corepack pnpm vitest run tests/unit/classify-post.test.ts tests/unit/migrate-posts.test.ts`
+  exited 1 with two expected missing-module failures for
+  `scripts/migration/classify-post` and `scripts/migration/migrate-posts`.
+- RED: `corepack pnpm vitest run tests/unit/migrate-posts.test.ts`
+  exited 1 after adding the malformed-title regression case:
+  `expected undefined to be 'FPGA 开发'`.
+- GREEN: `corepack pnpm vitest run tests/unit/classify-post.test.ts tests/unit/migrate-posts.test.ts`
+  exited 0: 2 files, 9 tests passed.
+- Full suite: `corepack pnpm test:run` exited 0: 5 files, 15 tests passed.
+- Type/content check: `corepack pnpm check` exited 0: 0 errors, 0 warnings.
+- Production build: `corepack pnpm build` exited 0.
 
-1. profile card (`data-profile-card`)
-2. site statistics (`data-site-stats`)
-3. music player (`data-music-player`)
+## Migration evidence
 
-Home, paginated article lists, the blog index, and archives no longer render either the contextual stack or the player. No Task 4 timers, visitor loading, clock animation, or particles were added.
+- Published posts: `_posts` 40; `src/content/posts` 40.
+- Drafts: `_draft` 2 Markdown files; `src/drafts` 2 Markdown files.
+- Parsed Markdown-body comparison: 0 mismatches across all 40 posts.
+- Draft byte comparison: 0 mismatches across both drafts.
+- Every migrated post has `legacySlug` and `category`; all six configured categories occur.
+- 18 posts have series metadata across the five specified numbered series. The one
+  source-title typo (`PGA开发`) retains its original title while using its filename
+  identity to retain the `FPGA 开发` series association.
+- A second migration run produced identical directory hashes:
+  posts `a97f849d35a2023a43745a8cccab4183999a8efaade654792d5ff7fd7dc89f57`,
+  drafts `a0b24698340a957538a9e6878e84c6aa22d54451eb6c896be1dfc796956ade5b`.
 
-## TDD Evidence
+## Commit
 
-### RED
+`feat: migrate Jekyll posts into Astro collections`
 
-Command:
+## Concerns
 
-```powershell
-corepack pnpm playwright test tests/e2e/home.spec.ts tests/e2e/post.spec.ts tests/e2e/about-guestbook.spec.ts tests/e2e/index-pages.spec.ts tests/e2e/interactions.spec.ts --project=desktop-1440
-```
+`pnpm check` and `pnpm build` retain existing warnings: the configured Markdown
+plugin API is deprecated, `src/content/projects` is empty, and legacy article
+math contains KaTeX-incompatible input. No article body was changed to silence
+these warnings.
 
-Result: **9 failed, 40 passed (49 total)**.
+## Reviewer follow-up: non-empty tags
 
-The task-specific failures were the expected ones:
+- RED: `corepack pnpm vitest run tests/unit/classify-post.test.ts` exited 1:
+  `设计模式简介` and `计算机组成结构` each produced `[]` instead of their
+  required precise tags.
+- GREEN: the same focused command exited 0: 1 file, 9 tests passed after adding
+  the deterministic `设计模式` and `计算机组成` tag rules.
+- Regenerated with `corepack pnpm migrate:posts`.
+- Full migration verification reported: 40 source posts and 40 migrated posts;
+  2 source drafts and 2 copied drafts; `bodyMismatches: []`,
+  `draftByteMismatches: []`, and `emptyTagPosts: []`.
+- `corepack pnpm test:run` exited 0: 5 files, 17 tests passed.
+- `corepack pnpm check` exited 0 and its Astro diagnostic summary was
+  `0 errors`, `0 warnings`, `0 hints`; `corepack pnpm build` exited 0.
 
-- `about and article routes render the ordered contextual sidebar stack`: no `data-sidebar-stack` existed.
-- `about sidebar exposes the requested profile, social links and static statistics`: no new profile card existed.
-- `home and paginated routes omit contextual sidebar cards`: the old global player still existed.
-- `blog and archive indexes omit contextual sidebar cards`: the old global player still existed.
-- `post layout places the sidebar, article and TOC in responsive reading order`: no stack existed for the geometry probe.
-
-Four pre-existing checks also failed because Playwright reused an already-running stale service on the default port: the locked-route fixtures were missing, PhotoSwipe CSS was already loaded, and the Giscus theme was a production URL. These failures were unrelated to the working-tree test changes. The later isolated-port run started a clean Astro dev server and all four passed unchanged.
-
-### GREEN
-
-The default Playwright port was occupied by a stale service, so the same focused command was run with an isolated server port:
-
-```powershell
-$env:PLAYWRIGHT_PORT='4333'
-corepack pnpm playwright test tests/e2e/home.spec.ts tests/e2e/post.spec.ts tests/e2e/about-guestbook.spec.ts tests/e2e/index-pages.spec.ts tests/e2e/interactions.spec.ts --project=desktop-1440
-```
-
-Result: **49 passed (49 total), 1.1 minutes**.
-
-This run covered route inclusion/exclusion, direct-child card order, all eight social controls and their navigation behavior, desktop/mobile article geometry, TOC behavior, Giscus navigation behavior, the empty player, and player node persistence across an adjacent-article navigation.
-
-### Full unit suite
-
-Command:
-
-```powershell
-corepack pnpm test:run
-```
-
-Result: **20 test files passed; 288 tests passed; 0 failed**.
-
-### Astro diagnostics
-
-Command:
-
-```powershell
-corepack pnpm check
-```
-
-Result: **123 files checked; 0 errors; 0 warnings; 2 hints**. The two hints are existing Vitest `toThrowError` deprecation hints in the Task 1 and Task 2 unit tests.
-
-## Files Changed
-
-Production:
-
-- `src/config/site.ts`: replaced the social configuration with the requested eight entries and colors.
-- `src/components/SocialIcon.astro`: added local inline SVG artwork for every social entry.
-- `src/components/ProfileSidebar.astro`: removed the post-count prop and added the title, tagline, icon grid, external-link behavior, and pending WeChat control.
-- `src/components/SiteStats.astro`: added static post/word/day/visitor/update/clock rendering and the clock canvas.
-- `src/components/SidebarStack.astro`: added the shared ordered stack and the 1280px by 760px sticky gate.
-- `src/components/MusicPlayer.astro`: converted the player from fixed viewport UI to a card-sized grid.
-- `src/layouts/BaseLayout.astro`: removed the global player instance.
-- `src/layouts/PostLayout.astro`: queried published posts, mounted the stack, and introduced the mobile-first/1280px three-column layout capped at 1440px.
-- `src/components/TableOfContents.astro`: moved the desktop TOC to column 3 at the 1280px breakpoint and retained the collapsible mobile TOC below it.
-- `src/pages/about.astro`: mounted the stack after the introduction in DOM order and removed duplicated avatar/social UI.
-- `src/pages/about/[section].astro`: retained each empty state and mounted the stack after its content.
-- `src/pages/index.astro`: removed the old profile sidebar and its layout CSS.
-- `src/pages/page/[page].astro`: removed the old profile sidebar and the unused full-posts static-path prop.
-- `src/pages/archives/index.astro`: removed the old profile sidebar and its layout CSS.
-
-Tests:
-
-- `tests/e2e/home.spec.ts`
-- `tests/e2e/post.spec.ts`
-- `tests/e2e/about-guestbook.spec.ts`
-- `tests/e2e/index-pages.spec.ts`
-- `tests/e2e/interactions.spec.ts`
-
-## Self-Review
-
-- Confirmed the only component-level `ProfileSidebar` and `MusicPlayer` mounts now originate from `SidebarStack`.
-- Confirmed `BaseLayout` retains the existing player initializer but no longer renders a player on routes without a stack; the initializer safely returns when the node is absent.
-- Confirmed article DOM order is TOC, article column, then stack, while desktop CSS maps them to columns 3, 2, and 1 respectively.
-- Confirmed both About routes keep content before the stack in DOM order and reverse only the visual wide-layout columns.
-- Confirmed stack stickiness is gated by both `min-width: 1280px` and `min-height: 760px`.
-- Confirmed external HTTP social links receive `target="_blank" rel="me noreferrer"`; RSS and email remain native same-tab/scheme navigation; pending WeChat is a non-focusable span.
-- Confirmed `SiteStats` uses the Task 1 helpers and initializes the visible clock with `formatClockTime(new Date())` without client updates.
-- Confirmed no dependency, article body, playlist data, generated directory, security policy, or Task 4 runtime behavior changed.
-- Independent read-only review found no Critical issues. Its initial concern about expecting two `Audio` instances was withdrawn after confirming those two data-URI instances are Sakana effects; the exact count and URI-prefix assertions still reject any added playlist audio.
-
-## Concerns and Follow-up
-
-- Port 4322 was occupied during verification and caused Playwright to reuse stale page output. The authoritative GREEN result is the clean isolated-port run on 4333.
-- The static canvas and visitor fallback are intentionally inert. Their runtime updates belong to Task 4.
-- The two Astro-check hints are outside Task 3 ownership and do not affect compilation.
+The diagnostic summary counts only Astro's analysed file diagnostics. It does
+not count CLI logger messages emitted before that summary. In the follow-up
+check/build output, those separate messages were the deprecated Markdown-plugin
+API notice and the empty `src/content/projects` glob warning; neither is an
+Astro diagnostic warning. Article bodies and existing frontmatter values were
+not changed to suppress either message.

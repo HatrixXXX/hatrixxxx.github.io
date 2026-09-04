@@ -148,6 +148,25 @@ test('post layout places the sidebar, article and TOC in responsive reading orde
   expect(sizes.scroll).toBe(sizes.client);
 });
 
+test('sidebar stickiness is limited to desktop viewports tall enough for the full stack', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 760 });
+  await page.goto('/posts/本科数学大杂烩/');
+
+  const stack = page.locator('[data-sidebar-stack]');
+  await expect(stack).toHaveCSS('position', 'relative');
+  const finalControl = stack.getByRole('button', { name: '下一首' });
+  await finalControl.scrollIntoViewIfNeeded();
+  const shortViewportControl = await finalControl.boundingBox();
+  expect((shortViewportControl?.y ?? Infinity) + (shortViewportControl?.height ?? 0)).toBeLessThanOrEqual(760);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.reload();
+  await expect(stack).toHaveCSS('position', 'sticky');
+  await page.evaluate(() => window.scrollTo(0, 2_000));
+  const tallViewportStack = await stack.boundingBox();
+  expect((tallViewportStack?.y ?? Infinity) + (tallViewportStack?.height ?? 0)).toBeLessThanOrEqual(900);
+});
+
 test('Giscus uses the site dark theme and remounts once after client navigation', async ({
   page
 }) => {

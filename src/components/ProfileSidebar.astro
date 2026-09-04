@@ -11,13 +11,14 @@ import SocialIcon from '@/components/SocialIcon.astro';
     {SITE.socials.map((social) => (
       social.url === null ? (
         <span
-          aria-label={social.label}
+          aria-label={`${social.label}，待补充`}
           aria-disabled="true"
           data-social-id={social.id}
           data-social-pending="wechat"
           style={`--social-color: ${social.color}`}
         >
           <SocialIcon id={social.id} />
+          <span class="pending-badge" aria-hidden="true">待补充</span>
         </span>
       ) : (
         <a
@@ -74,8 +75,9 @@ import SocialIcon from '@/components/SocialIcon.astro';
     margin-top: 1.25rem;
   }
 
-  nav a,
-  nav span {
+  nav > a,
+  nav > span {
+    position: relative;
     display: grid;
     width: 42px;
     height: 42px;
@@ -92,7 +94,21 @@ import SocialIcon from '@/components/SocialIcon.astro';
     background: color-mix(in srgb, var(--social-color) 20%, transparent);
   }
 
-  nav span {
+  nav > span {
     opacity: 0.65;
+  }
+
+  .pending-badge {
+    position: absolute;
+    right: -0.45rem;
+    bottom: -0.3rem;
+    border: 1px solid color-mix(in srgb, var(--social-color) 45%, var(--color-line));
+    border-radius: 999px;
+    padding: 0.08rem 0.24rem;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.55rem;
+    line-height: 1.1;
+    white-space: nowrap;
   }
 </style>

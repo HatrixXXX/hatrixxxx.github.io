@@ -20,6 +20,8 @@ const { posts } = Astro.props;
 
 <style>
   .sidebar-stack {
+    position: relative;
+    z-index: 16;
     display: grid;
     width: min(100%, 280px);
     min-width: 0;
@@ -27,7 +29,7 @@ const { posts } = Astro.props;
     justify-self: center;
   }
 
-  @media (min-width: 1280px) and (min-height: 760px) {
+  @media (min-width: 1280px) and (min-height: 900px) {
     .sidebar-stack {
       position: sticky;
       top: 1.5rem;
