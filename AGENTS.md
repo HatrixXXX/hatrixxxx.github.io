@@ -97,3 +97,4 @@ corepack pnpm test:e2e
 - `docs/superpowers/specs/2026-09-04-contextual-sidebar-design.md`：关于页与文章页共享侧栏、站点统计和点阵时钟设计。
 - `docs/superpowers/plans/2026-09-04-contextual-sidebar.md`：共享侧栏的任务拆分、第三方统计边界和验证步骤。
 - `docs/superpowers/specs/2026-09-04-homepage-cover-reveal-design.md`：首页全屏封面、打字文案、固定视口、博客预取、拖动手势和揭开切换设计。
+- `docs/superpowers/plans/2026-09-04-homepage-cover-reveal.md`：首页全屏封面和博客揭开切换的测试与实施步骤。
