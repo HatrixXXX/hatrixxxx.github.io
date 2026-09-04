@@ -678,7 +678,7 @@ Add a `## 安全边界` section before `## 部署` in `README.md`:
 
 已发布 Markdown 会在构建期拒绝可执行原始 HTML、事件属性、危险 URL scheme 和未固定的远程图片。检查失败时修改内容或明确更新允许边界，不要用 sanitizer 静默删除正文。
 
-GitHub Pages 无法由仓库配置 HSTS、`nosniff`、`frame-ancestors`、WAF、限流或可控 DDoS 防护。这些项目留给后续 Cloudflare 阶段；当前流量仍由 DNSPod 直接指向 GitHub Pages。
+本计划只覆盖仓库内加固。后续 Cloudflare 阶段已单独完成，当前流量由 Cloudflare 代理到 GitHub Pages；现行外部配置见 `docs/operations/cloudflare.md`。
 
 Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留凭据，手动部署只能使用 `master`。升级 Action 时同时更新版本注释和项目配置测试。
 ```

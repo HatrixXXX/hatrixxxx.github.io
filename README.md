@@ -232,7 +232,9 @@ Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows �
 
 已发布 Markdown 会在构建期拒绝可执行原始 HTML、事件属性、危险 URL scheme 和未固定的远程图片。检查失败时修改内容或明确更新允许边界，不要用 sanitizer 静默删除正文。
 
-GitHub Pages 无法由仓库配置 HSTS、`nosniff`、`frame-ancestors`、WAF、限流或可控 DDoS 防护。这些项目留给后续 Cloudflare 阶段；当前流量仍由 DNSPod 直接指向 GitHub Pages。
+生产流量现在由 Cloudflare 代理到 GitHub Pages。Cloudflare 使用 Full (strict) TLS、强制 HTTPS、最低 TLS 1.2 和六个月 HSTS，并在边缘补充 `frame-ancestors`、Permissions Policy、`nosniff` 等响应头；权威 DNS 同时启用 DNSSEC。仓库中的完整资源 CSP 仍以 `src/config/security.ts` 为唯一来源，边缘只补充无法通过 HTML `<meta>` 生效的策略，避免维护两份完整 CSP。
+
+Cloudflare 没有启用 HSTS preload、Bot Fight Mode、全站验证码、全站限流或自定义缓存规则。外部配置、验证命令和回退顺序见 [`docs/operations/cloudflare.md`](docs/operations/cloudflare.md)。
 
 Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留凭据，手动部署只能使用 `master`。升级 Action 时同时更新版本注释和项目配置测试。
 

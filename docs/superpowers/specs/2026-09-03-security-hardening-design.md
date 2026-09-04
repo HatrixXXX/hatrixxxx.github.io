@@ -1,14 +1,14 @@
-# GitHub Pages 仓库安全加固设计
+# GitHub Pages 与 Cloudflare 安全加固设计
 
 ## 目标
 
 第一阶段保留 DNSPod、GitHub Pages、自定义域名和纯静态输出，只修改仓库。加固范围包括浏览器安全策略、内容输入边界、构建产物检查和发布供应链。页面布局、主题切换、客户端路由、搜索、Giscus、Mermaid、灯箱、Sakana、音乐播放器和旧文章 URL 必须保持现状。
 
-第二阶段再接入 Cloudflare。两个阶段分开实施和验收，DNS 切换不会与代码变化同时发生。
+第二阶段在仓库加固通过验收后接入 Cloudflare。两个阶段分开实施和验收，DNS 切换没有与代码变化同时发生。当前两个阶段均已落地。
 
 ## 当前边界
 
-`hatrix.site` 目前直接解析到 GitHub Pages。HTTP 会跳转到 HTTPS，TLS 1.0 和 1.1 已禁用，线上没有发现公开的 `.env`、`.git/config` 或错误堆栈。站点没有服务端 API、数据库、登录 Cookie、上传和支付入口，因此不需要为 SQL 注入、CSRF 或服务端命令执行增加无效代码。
+`hatrix.site` 的权威 DNS 和网站代理目前位于 Cloudflare，源站仍是 GitHub Pages。HTTP 在边缘跳转到 HTTPS，访客侧最低 TLS 版本为 1.2，Cloudflare 到 GitHub Pages 使用 Full (strict)。站点没有服务端 API、数据库、登录 Cookie、上传和支付入口，因此不需要为 SQL 注入、CSRF 或服务端命令执行增加无效代码。
 
 仓库已有以下基础：
 
@@ -19,7 +19,7 @@
 - Actions 默认只有 `contents: read`，Pages 写权限只在部署 job 中出现。
 - lockfile 固定依赖解析结果，Dependabot 每周检查 npm 和 Actions 更新。
 
-GitHub Pages 不提供仓库级任意响应头配置。第一阶段可以用 HTML CSP 和 Referrer Policy 约束浏览器，但 HSTS、`X-Content-Type-Options`、CSP Report-Only、`frame-ancestors`、WAF、限流和可控 DDoS 防护留到 Cloudflare 阶段。
+GitHub Pages 不提供仓库级任意响应头配置。仓库用 HTML CSP 和 Referrer Policy 约束资源加载；Cloudflare 边缘负责 HSTS、`X-Content-Type-Options`、`frame-ancestors`、Permissions Policy、自动 DDoS 防护和 Browser Integrity Check。
 
 ## 工作区隔离
 
@@ -119,18 +119,19 @@ Mermaid 初始化显式设置 `securityLevel: 'strict'`，不依赖上游默认�
 
 完成项目改动后启动普通本地预览并保持运行。
 
-## 第二阶段入口
+## Cloudflare 边缘层
 
-第一阶段通过全部门禁后再设计 Cloudflare 配置。第二阶段包括：
+仓库门禁通过后，Cloudflare 按以下配置接入：
 
-- 迁移权威 NS 前复制并核对全部 DNS 记录；
-- 橙云代理网站记录，使用 Full (strict) TLS；
-- 启用自动 DDoS 和低误伤 WAF，不默认启用全站验证码或全站限流；
-- 通过响应头补齐 HSTS、`nosniff`、`frame-ancestors`、Permissions Policy 和强制 CSP；
-- 保守配置缓存，发布后主动清理必要资源；
-- 对比切换前后的中国大陆和海外访问结果，准备 NS 回退步骤。
+- 权威 NS 使用 `eugene.ns.cloudflare.com` 和 `millie.ns.cloudflare.com`，迁移前复制并核对原 DNS 记录；
+- apex 与 `www` 网站记录开启代理，源站保持 GitHub Pages；
+- TLS 使用 Full (strict)，强制 HTTPS，最低 TLS 1.2，TLS 1.3 保持开启；
+- HSTS 使用六个月 `max-age` 和 `includeSubDomains`，不启用 preload；
+- 全站响应头规则补充 `frame-ancestors 'none'`、Permissions Policy、Referrer Policy、`nosniff`、`X-Frame-Options` 和跨域策略文件限制；
+- 启用 Cloudflare 自动 DDoS 防护和 Browser Integrity Check；不启用 Bot Fight Mode、全站验证码、全站限流和自定义缓存规则；
+- Cloudflare 与注册商同时配置 DNSSEC，公共递归解析器必须能查到 DS 和 DNSKEY。
 
-Cloudflare 账户登录、注册商 NS 修改和 GitHub 域名验证不能由本仓库代替。涉及这些外部权限时再提供逐项操作值，不把 API token、账户 ID 或验证秘密提交进 Git。
+这些配置不由仓库部署。日常验证和回退顺序见 `docs/operations/cloudflare.md`；API token、账户 ID、DS 摘要和验证秘密不得提交进 Git。
 
 ## 不做的内容
 
@@ -139,4 +140,4 @@ Cloudflare 账户登录、注册商 NS 修改和 GitHub 域名验证不能由本
 - 不重写文章正文，不用 sanitizer 静默删除内容。
 - 不自托管 Giscus，不移除主题动效、ClientRouter、Sakana 或远程图片。
 - 不为提高安全扫描评分盲目添加 COEP、COOP、CORP、HSTS preload 或激进限流。
-- 不推送、部署或修改远端 Pages 设置，除非用户在对应阶段明确提供所需外部访问条件。
+- 后续修改远端 Pages、Cloudflare 或注册商设置前，必须取得用户明确授权并保留可验证的回退路径。

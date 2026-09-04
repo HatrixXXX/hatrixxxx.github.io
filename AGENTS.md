@@ -54,6 +54,7 @@ corepack pnpm test:e2e
 - 生产 CSP 和 Referrer Policy 的唯一来源是 `src/config/security.ts`。`hash-wasm` 的 Argon2 依赖 `'wasm-unsafe-eval'`，不得换成通用 `'unsafe-eval'`。新增第三方脚本、框架、远程图片或媒体来源时，必须同时更新策略、构建产物测试和生产预览取证，不能只放宽 `default-src`。
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
+- `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
 - `check:site` 固定校验 4102 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
@@ -89,6 +90,7 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-03-compact-legal-footer.md`：法律页脚的实施与验证记录。
 - `docs/superpowers/specs/2026-09-03-security-hardening-design.md`：仓库安全策略、内容边界和 Cloudflare 分阶段方案。
 - `docs/superpowers/plans/2026-09-03-security-hardening.md`：仓库安全加固的测试与实施步骤。
+- `docs/operations/cloudflare.md`：Cloudflare、权威 DNS、DNSSEC、响应头和回退操作。
 - `docs/superpowers/specs/2026-09-03-protected-content-design.md`：私有内容仓库、SSR 加密、浏览器凭据、部署与安全边界。
 - `docs/superpowers/plans/2026-09-03-protected-content.md`：加锁内容的任务拆分和验证记录。
 - `docs/superpowers/specs/2026-09-04-contextual-sidebar-design.md`：关于页与文章页共享侧栏、站点统计和点阵时钟设计。
