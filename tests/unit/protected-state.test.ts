@@ -1,10 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PROTECTED_CONTENT } from '../../src/config/protected-content';
 import {
   cooldownMs,
   credentialExpired,
+  loadProtectedManifest,
   parseCredentialReference,
   remainingCooldown
 } from '../../src/lib/protected-content/state';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('protected content browser state', () => {
   it('uses the fixed failure cooldown sequence', () => {
@@ -54,5 +60,39 @@ describe('protected content browser state', () => {
       true,
       1_000
     )).toBeNull();
+  });
+
+  it.each([
+    ['salt', 'salt', 'AAAAAAAAAAAAAAAAAAAAAA=='],
+    ['below-floor memory', 'memorySizeKiB', PROTECTED_CONTENT.argon2.memorySizeKiB - 1],
+    ['absurd memory', 'memorySizeKiB', Number.MAX_SAFE_INTEGER],
+    ['fractional memory', 'memorySizeKiB', PROTECTED_CONTENT.argon2.memorySizeKiB + 0.5],
+    ['below-floor iterations', 'iterations', PROTECTED_CONTENT.argon2.iterations - 1],
+    ['absurd iterations', 'iterations', 1_000_000_000],
+    ['malformed iterations', 'iterations', String(PROTECTED_CONTENT.argon2.iterations)],
+    ['below-floor parallelism', 'parallelism', PROTECTED_CONTENT.argon2.parallelism - 1],
+    ['absurd parallelism', 'parallelism', 1_024],
+    ['fractional parallelism', 'parallelism', PROTECTED_CONTENT.argon2.parallelism + 0.5],
+    ['tampered hash length', 'hashLength', PROTECTED_CONTENT.argon2.hashLength + 1],
+    ['tampered remember duration', 'rememberForMs', PROTECTED_CONTENT.rememberForMs + 1]
+  ])('rejects %s before returning a manifest to the protected runtime', async (_label, field, value) => {
+    const manifest = {
+      version: PROTECTED_CONTENT.formatVersion,
+      salt: String(PROTECTED_CONTENT.saltBase64),
+      argon2: { ...PROTECTED_CONTENT.argon2 },
+      rememberForMs: PROTECTED_CONTENT.rememberForMs,
+      routes: ['/protected/'],
+      verifier: {
+        version: PROTECTED_CONTENT.formatVersion,
+        iv: 'AAAAAAAAAAAAAAAA',
+        ciphertext: 'AAAAAAAAAAAAAAAAAAAAAA=='
+      }
+    };
+    if (field === 'salt') manifest.salt = value as string;
+    else if (field === 'rememberForMs') manifest.rememberForMs = value as number;
+    else (manifest.argon2 as Record<string, unknown>)[field] = value;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(manifest))));
+
+    await expect(loadProtectedManifest()).rejects.toMatchObject({ kind: 'corrupt' });
   });
 });

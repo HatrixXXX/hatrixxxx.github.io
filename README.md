@@ -186,6 +186,8 @@ export const playlist: readonly Track[] = [
 
 浏览器只拿到公开 metadata、解锁外壳、KDF 参数和密文。正确解锁后，页面 HTML 在内存中挂载，图片解密为 Blob URL。原始 key 不会保存；浏览器在 IndexedDB 中保存不可导出的 AES `CryptoKey`，session 模式用 `sessionStorage` 引用，勾选“7 天免解锁”后用带到期时间的 `localStorage` 引用。凭据只对同一浏览器资料有效。
 
+key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、自动填写 key 不受站点控制。
+
 解锁界面会区分空输入、验证中、错误 key、密文损坏和网络失败。错误 key 前两次没有额外等待，第 3 次等待 5 秒、第 4 次 15 秒、第 5 次 60 秒，之后每次 5 分钟；冷却保存在 `localStorage`，刷新后仍在。成功解锁会清除失败计数。页头的“退出管理员身份”会删除 session 和七天凭据、清空 IndexedDB、撤销 Blob URL，并重新锁住当前页面。
 
 纯静态方案不能阻止别人下载密文后离线猜测 key，前端冷却也可以被绕过。不可导出的 `CryptoKey` 不能防住恶意扩展、设备恶意软件或读取已解锁 DOM 的脚本。不要用这套功能保存真正敏感的信息。
@@ -206,7 +208,7 @@ export const playlist: readonly Track[] = [
 | `pnpm build` | 图片预检与 67 页静态构建 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
 | `pnpm check:site` | 旧文章路由、CNAME、5352 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 117 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 120 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 

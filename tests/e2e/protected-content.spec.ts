@@ -22,7 +22,7 @@ interface ProtectedFixtures {
 }
 
 interface EndpointOptions {
-  manifest?: 'valid' | 'corrupt-verifier' | 'network-error';
+  manifest?: 'valid' | 'corrupt-verifier' | 'tampered-kdf' | 'network-error';
   asset?: 'valid' | 'corrupt' | 'network-error';
   manifestDelayMs?: number;
 }
@@ -69,6 +69,10 @@ async function mockProtectedEndpoints(page: Page, options: EndpointOptions = {})
     const manifest = structuredClone(fixtures.manifest);
     if (options.manifest === 'corrupt-verifier') {
       (manifest.verifier as EncryptedEnvelope).ciphertext = '***';
+    }
+    if (options.manifest === 'tampered-kdf') {
+      (manifest.argon2 as Record<string, unknown>).memorySizeKiB =
+        PROTECTED_CONTENT.argon2.memorySizeKiB + 1;
     }
     await route.fulfill({
       status: 200,
@@ -152,6 +156,7 @@ test('guest sees the complete gate and empty input has its own accessible error'
   await expect(page.getByRole('button', { name: '退出管理员身份' })).toBeHidden();
 
   const input = page.getByLabel('管理员 key', { exact: true });
+  await expect(input).toHaveAttribute('autocomplete', 'off');
   await expect(input).toBeFocused();
   await page.getByRole('button', { name: '解锁' }).click();
   await expect(page.locator('[data-unlock-status]')).toHaveText('请输入管理员 key');
@@ -229,6 +234,78 @@ test('a structurally corrupt verifier reports corruption without adding cooldown
     '加密内容无法读取，请稍后再试'
   );
   expect(await page.evaluate(() => localStorage.getItem('hatrix-admin-cooldown'))).toBeNull();
+});
+
+test('a tampered KDF manifest is rejected before Argon2 without adding cooldown', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = { compileCount: 0 };
+    (window as unknown as { __argon2Probe: typeof state }).__argon2Probe = state;
+    const compile = WebAssembly.compile.bind(WebAssembly);
+    WebAssembly.compile = async (bytes: BufferSource) => {
+      state.compileCount += 1;
+      return compile(bytes);
+    };
+  });
+  await mockProtectedEndpoints(page, { manifest: 'tampered-kdf' });
+  await page.goto(FIRST_PAGE);
+  await submitKey(page, TEST_KEY);
+
+  await expect(page.locator('[data-unlock-status]')).toHaveText(
+    '加密内容无法读取，请稍后再试'
+  );
+  expect(await page.evaluate(() => localStorage.getItem('hatrix-admin-cooldown'))).toBeNull();
+  expect(await page.evaluate(() => (
+    window as unknown as { __argon2Probe: { compileCount: number } }
+  ).__argon2Probe.compileCount)).toBe(0);
+
+  await page.unrouteAll({ behavior: 'wait' });
+  await mockProtectedEndpoints(page);
+  await page.reload();
+  await submitKey(page, TEST_KEY);
+  await expect(page.getByText('protected-e2e-secret-protected')).toBeVisible();
+  expect(await page.evaluate(() => (
+    window as unknown as { __argon2Probe: { compileCount: number } }
+  ).__argon2Probe.compileCount)).toBeGreaterThan(0);
+});
+
+test('a public page without credential state does not request the protected runtime', async ({ page }) => {
+  const runtimeRequests: string[] = [];
+  page.on('request', (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname.endsWith('/src/scripts/protected-content.ts')) runtimeRequests.push(pathname);
+  });
+
+  await page.goto('/');
+
+  expect(runtimeRequests).toEqual([]);
+});
+
+test('a failed protected runtime import is retried on the next Astro page load', async ({ page }) => {
+  let runtimeRequests = 0;
+  let allowRuntime = false;
+  await page.route('**/src/scripts/protected-content.ts', async (route) => {
+    runtimeRequests += 1;
+    if (!allowRuntime) await route.abort('failed');
+    else await route.continue();
+  });
+  await mockProtectedEndpoints(page);
+  await page.goto(FIRST_PAGE);
+  await expect.poll(() => runtimeRequests).toBeGreaterThan(0);
+  await expect(page.locator('[data-unlock-status]')).toHaveText(
+    '加密内容加载失败，请检查网络后重试'
+  );
+  await expect(page.getByRole('button', { name: '解锁' })).toBeDisabled();
+  await page.waitForTimeout(250);
+  const failedRequests = runtimeRequests;
+  allowRuntime = true;
+
+  await page.evaluate((path) => {
+    history.pushState({}, '', path);
+    document.dispatchEvent(new Event('astro:page-load'));
+  }, SECOND_PAGE);
+
+  await expect.poll(() => runtimeRequests).toBeGreaterThan(failedRequests);
+  await expect(page.getByLabel('管理员 key', { exact: true })).toBeFocused();
 });
 
 test('a page transition during credential persistence revokes prepared Blob URLs', async ({ page }) => {
@@ -313,6 +390,10 @@ test('session unlock restores assets and integrations across navigation and refr
   });
   await expect(page.locator('.mermaid svg')).toHaveCount(1);
   await expect(page.locator('[data-giscus-comments] script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+
+  await page.goto('/');
+  await expect(page.locator('[data-protected-gate]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '退出管理员身份' })).toBeVisible();
 });
 
 test('unlock snapshots remember mode and restores every control after loading', async ({ page }) => {

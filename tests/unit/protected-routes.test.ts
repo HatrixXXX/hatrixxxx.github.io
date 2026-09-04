@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PostEntry } from '../../src/lib/content';
 import {
@@ -133,7 +133,27 @@ describe('protected rendering source contracts', () => {
     expect(source).toContain('data-protected-envelope');
     expect(source).toContain('data-protected-mount');
     expect(source).toContain('data-unlock-form');
+    expect(source).toContain('autocomplete="off"');
+    expect(source).not.toContain('autocomplete="current-password"');
     expect(source).toMatch(/locked[\s\S]*<slot\s*\/>/);
+  });
+
+  it('loads the protected runtime only through the small conditional bootstrap', () => {
+    const bootstrapPath = 'src/scripts/protected-content-bootstrap.ts';
+    const baseLayout = readFileSync('src/layouts/BaseLayout.astro', 'utf8');
+
+    expect(existsSync(bootstrapPath)).toBe(true);
+    if (!existsSync(bootstrapPath)) return;
+
+    const bootstrap = readFileSync(bootstrapPath, 'utf8');
+    expect(baseLayout).toContain("import '@/scripts/protected-content-bootstrap';");
+    expect(baseLayout).not.toContain("import '@/scripts/protected-content';");
+    expect(bootstrap).toContain("import('@/scripts/protected-content')");
+    expect(bootstrap).toContain('[data-protected-gate]');
+    expect(bootstrap).toContain('hatrix-admin-session');
+    expect(bootstrap).toContain('hatrix-admin-remembered');
+    expect(bootstrap).toContain('runtime = undefined');
+    expect(bootstrap).toContain("document.addEventListener('astro:page-load'");
   });
 
   it('locks configured ordinary pages at BaseLayout and only the post grid at PostLayout', () => {

@@ -33,6 +33,7 @@ export interface ProtectedManifest {
     memorySizeKiB: number;
     iterations: number;
     parallelism: number;
+    hashLength: number;
   };
   rememberForMs: number;
   routes: string[];
@@ -92,14 +93,14 @@ function parseManifest(value: unknown): ProtectedManifest {
   const manifest = value as Record<string, unknown> & { argon2: Record<string, unknown> };
   if (
     manifest.version !== PROTECTED_CONTENT.formatVersion
-    || typeof manifest.salt !== 'string'
-    || typeof manifest.rememberForMs !== 'number'
-    || !Number.isFinite(manifest.rememberForMs)
+    || manifest.salt !== PROTECTED_CONTENT.saltBase64
+    || manifest.rememberForMs !== PROTECTED_CONTENT.rememberForMs
     || !Array.isArray(manifest.routes)
     || !manifest.routes.every((route) => typeof route === 'string')
-    || typeof manifest.argon2.memorySizeKiB !== 'number'
-    || typeof manifest.argon2.iterations !== 'number'
-    || typeof manifest.argon2.parallelism !== 'number'
+    || manifest.argon2.memorySizeKiB !== PROTECTED_CONTENT.argon2.memorySizeKiB
+    || manifest.argon2.iterations !== PROTECTED_CONTENT.argon2.iterations
+    || manifest.argon2.parallelism !== PROTECTED_CONTENT.argon2.parallelism
+    || manifest.argon2.hashLength !== PROTECTED_CONTENT.argon2.hashLength
   ) {
     throw new ProtectedContentError('corrupt');
   }
@@ -109,7 +110,8 @@ function parseManifest(value: unknown): ProtectedManifest {
     argon2: {
       memorySizeKiB: manifest.argon2.memorySizeKiB,
       iterations: manifest.argon2.iterations,
-      parallelism: manifest.argon2.parallelism
+      parallelism: manifest.argon2.parallelism,
+      hashLength: manifest.argon2.hashLength
     },
     rememberForMs: manifest.rememberForMs,
     routes: manifest.routes,

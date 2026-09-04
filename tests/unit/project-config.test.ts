@@ -136,6 +136,22 @@ describe('Astro project tooling', () => {
     expect(agents).not.toContain('`src/content/posts/`：40 篇已发布文章');
   });
 
+  it('documents Astro build state as secret-bearing and never safe to persist', () => {
+    const readme = readFileSync('README.md', 'utf8');
+    const agents = readFileSync('AGENTS.md', 'utf8');
+
+    expect(readme).toContain('生产构建生成的 `.astro/` 是带密构建状态');
+    expect(readme).toContain('不得缓存、上传或提交');
+    expect(agents).toContain('生产构建生成的 `.astro/` 是带密构建状态');
+    expect(agents).toContain('不得缓存、上传或提交');
+  });
+
+  it('documents that browser credential managers remain outside application control', () => {
+    const readme = readFileSync('README.md', 'utf8');
+
+    expect(readme).toContain('浏览器或扩展是否保存、自动填写 key 不受站点控制');
+  });
+
   it('starts the Playwright server through the project package manager', () => {
     expect(playwrightConfig.webServer).toMatchObject({
       command: 'corepack pnpm dev --host 127.0.0.1 --port 4322',
