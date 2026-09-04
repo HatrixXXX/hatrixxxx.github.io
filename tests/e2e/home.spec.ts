@@ -41,12 +41,105 @@ test('home types the tagline with a bar cursor', async ({ page }) => {
 
 test('home arrow prefetches and reveals the blog', async ({ page }) => {
   const blogRequests: string[] = [];
+  const clientRouterMarker = crypto.randomUUID();
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/blog/') blogRequests.push(request.url());
   });
   await page.goto('/');
+  await page.evaluate((marker) => {
+    (window as typeof window & { __homeClientRouterMarker?: string }).__homeClientRouterMarker =
+      marker;
+  }, clientRouterMarker);
   await expect.poll(() => blogRequests.length).toBeGreaterThan(0);
   await page.locator('[data-home-blog-arrow]').click({ noWaitAfter: true });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const animations = document.getAnimations();
+        return {
+          uncover: animations
+            .filter(
+              (animation) =>
+                animation instanceof CSSAnimation &&
+                animation.animationName === 'home-uncover-left'
+            )
+            .map((animation) => ({
+              animationName: (animation as CSSAnimation).animationName,
+              pseudoElement: (animation.effect as KeyframeEffect | null)?.pseudoElement ?? null
+            })),
+          newRoot: animations.filter(
+            (animation) =>
+              (animation.effect as KeyframeEffect | null)?.pseudoElement ===
+              '::view-transition-new(root)'
+          ).length
+        };
+      })
+    )
+    .toEqual({
+      uncover: [
+        {
+          animationName: 'home-uncover-left',
+          pseudoElement: '::view-transition-old(root)'
+        }
+      ],
+      newRoot: 0
+    });
+  await page.waitForURL('**/blog/');
+  await expect(page).toHaveURL('/blog/');
+  expect(
+    await page.evaluate(
+      () =>
+        (window as typeof window & { __homeClientRouterMarker?: string })
+          .__homeClientRouterMarker
+    )
+  ).toBe(clientRouterMarker);
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        reveal: document.documentElement.hasAttribute('data-home-reveal'),
+        distance: document.documentElement.style.getPropertyValue('--home-reveal-distance'),
+        duration: document.documentElement.style.getPropertyValue('--home-reveal-duration')
+      }))
+    )
+    .toEqual({ reveal: false, distance: '', duration: '' });
+
+  await page.goBack();
+  await page.waitForURL((url) => url.pathname === '/');
+  const typing = page.locator('[data-home-typing]');
+  await expect(typing).toHaveAttribute('data-home-typing-state', /^(typing|complete)$/);
+  await expect.poll(() => typing.textContent()).toContain('轻');
+  await expect(page.locator('[data-home-stage]')).toHaveAttribute('data-home-drag-state', 'idle');
+
+  const mutationTimes = await typing.evaluate(
+    (node) =>
+      new Promise<number[]>((resolve) => {
+        const startedAt = performance.now();
+        const times: number[] = [];
+        const observer = new MutationObserver(() => times.push(performance.now() - startedAt));
+        observer.observe(node, { childList: true });
+        window.setTimeout(() => {
+          observer.disconnect();
+          resolve(times);
+        }, 520);
+      })
+  );
+  expect(mutationTimes.length).toBeGreaterThanOrEqual(2);
+  expect(mutationTimes.every((time, index) => index === 0 || time - mutationTimes[index - 1] > 100))
+    .toBe(true);
+});
+
+test('home desktop Blog link uses the shared reveal navigation', async ({ page }) => {
+  const clientRouterMarker = crypto.randomUUID();
+  await page.goto('/');
+  await page.evaluate((marker) => {
+    (window as typeof window & { __homeHeaderMarker?: string }).__homeHeaderMarker = marker;
+  }, clientRouterMarker);
+
+  const blogLink = page
+    .getByRole('navigation', { name: '主导航' })
+    .getByRole('link', { name: '博客文章', exact: true });
+  await expect(blogLink).toBeVisible();
+  await blogLink.click({ noWaitAfter: true });
   await expect
     .poll(() =>
       page.evaluate(() =>
@@ -60,6 +153,12 @@ test('home arrow prefetches and reveals the blog', async ({ page }) => {
     )
     .toBe(true);
   await page.waitForURL('**/blog/');
+  await expect(page).toHaveURL('/blog/');
+  expect(
+    await page.evaluate(
+      () => (window as typeof window & { __homeHeaderMarker?: string }).__homeHeaderMarker
+    )
+  ).toBe(clientRouterMarker);
 });
 
 test('home drag snaps back below threshold and navigates above it', async ({ page }) => {
@@ -82,6 +181,98 @@ test('home drag snaps back below threshold and navigates above it', async ({ pag
   await page.mouse.move(box.width * 0.5, box.height * 0.55, { steps: 8 });
   await page.mouse.up();
   await page.waitForURL('**/blog/');
+});
+
+test('home fast flick navigates below the distance threshold', async ({ page }) => {
+  await page.goto('/');
+  const stage = page.locator('[data-home-stage]');
+  const box = await stage.boundingBox();
+  if (!box) throw new Error('Missing home stage bounds');
+  const startX = box.x + box.width * 0.75;
+  const y = box.y + box.height * 0.65;
+  const distance = 80;
+  expect(distance).toBeGreaterThanOrEqual(48);
+  expect(distance).toBeLessThan(box.width * 0.16);
+
+  await page.mouse.move(startX, y);
+  await page.mouse.down();
+  await page.waitForTimeout(12);
+  await page.mouse.move(startX - distance, y);
+  await page.mouse.up();
+  await page.waitForURL('**/blog/');
+});
+
+test('home cancels a vertical-dominant drag without leaving residue', async ({ page }) => {
+  await page.goto('/');
+  const stage = page.locator('[data-home-stage]');
+  const box = await stage.boundingBox();
+  if (!box) throw new Error('Missing home stage bounds');
+  const startX = box.x + box.width * 0.75;
+  const startY = box.y + box.height * 0.65;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX - 24, startY + 120, { steps: 4 });
+  await page.mouse.up();
+  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
+  await expect(page).toHaveURL('/');
+  expect(
+    await page.evaluate(() =>
+      document.documentElement.style.getPropertyValue('--home-drag-x')
+    )
+  ).toBe('');
+});
+
+test('home releases active drags on pointer cancel and window blur', async ({ page }) => {
+  for (const cancellation of ['pointercancel', 'blur'] as const) {
+    await page.goto('/');
+    await page.evaluate(() => {
+      document.addEventListener(
+        'pointerdown',
+        (event) => {
+          (window as typeof window & { __homePointerId?: number }).__homePointerId =
+            event.pointerId;
+        },
+        { capture: true, once: true }
+      );
+    });
+    const stage = page.locator('[data-home-stage]');
+    const box = await stage.boundingBox();
+    if (!box) throw new Error('Missing home stage bounds');
+    const startX = box.x + box.width * 0.75;
+    const y = box.y + box.height * 0.65;
+    await page.mouse.move(startX, y);
+    await page.mouse.down();
+    await page.mouse.move(startX - 80, y, { steps: 3 });
+
+    if (cancellation === 'pointercancel') {
+      await page.evaluate(() => {
+        const pointerId = (window as typeof window & { __homePointerId?: number }).__homePointerId;
+        document.documentElement.dispatchEvent(
+          new PointerEvent('pointercancel', {
+            bubbles: true,
+            isPrimary: true,
+            pointerId
+          })
+        );
+      });
+    } else {
+      await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    }
+    await page.mouse.up();
+
+    await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
+    const residue = await page.evaluate(() => {
+      const root = document.documentElement;
+      const pointerId = (window as typeof window & { __homePointerId?: number }).__homePointerId;
+      return {
+        capture: pointerId === undefined ? null : root.hasPointerCapture(pointerId),
+        dragX: root.style.getPropertyValue('--home-drag-x')
+      };
+    });
+    expect(residue).toEqual({ capture: false, dragX: '' });
+    await expect(page).toHaveURL('/');
+  }
 });
 
 test('home controls do not start the drag gesture', async ({ page }) => {
