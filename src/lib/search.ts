@@ -6,6 +6,7 @@ export interface SearchDocument {
   url: string;
   title: string;
   description: string;
+  locked: boolean;
   text: string;
 }
 
@@ -28,15 +29,17 @@ export function markdownToPlainText(markdown: string, maxLength = Number.POSITIV
 }
 
 export function toSearchDocument(post: PostEntry): SearchDocument {
-  const body = (post as PostEntry & { body?: string }).body ?? '';
   const metadata = markdownToPlainText(`${post.data.title} ${post.data.description}`);
-  const summary = markdownToPlainText(body, 2000);
+  const summary = post.data.locked
+    ? ''
+    : markdownToPlainText((post as PostEntry & { body?: string }).body ?? '', 2000);
 
   return {
     id: post.id,
     url: postPath(post.data.legacySlug),
     title: post.data.title,
     description: post.data.description,
+    locked: post.data.locked,
     text: [metadata, summary].filter(Boolean).join(' ')
   };
 }

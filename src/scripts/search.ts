@@ -18,7 +18,7 @@ async function searchIndex(): Promise<MiniSearch<SearchDocument>> {
       .then((documents) => {
         const index = new MiniSearch<SearchDocument>({
           fields: ['title', 'description', 'text'],
-          storeFields: ['url', 'title', 'description']
+          storeFields: ['url', 'title', 'description', 'locked']
         });
         index.addAll(documents);
         return index;
@@ -78,6 +78,15 @@ async function renderResults(input: HTMLInputElement): Promise<void> {
       link.dataset.searchResult = '';
       title.textContent = String(match.title);
       meta.textContent = String(match.description);
+      if (match.locked) {
+        link.dataset.lockedLink = '';
+        const lock = document.createElement('span');
+        lock.className = 'search-lock-indicator';
+        lock.setAttribute('role', 'img');
+        lock.setAttribute('aria-label', '加锁内容');
+        lock.textContent = '🔒';
+        title.append(' ', lock);
+      }
       link.append(title, meta);
       item.append(link);
       results.append(item);

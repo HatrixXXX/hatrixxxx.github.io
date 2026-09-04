@@ -6,6 +6,7 @@ import { ident, parse as parseCss, walk as walkCss } from 'css-tree';
 import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
+import { contentRoot } from '../src/lib/content-root';
 import {
   dangerousBrowserUrlKind,
   isApprovedRemoteImageUrl,
@@ -45,6 +46,7 @@ export interface BuiltSiteCheckOptions {
 
 export interface ProjectBuiltSiteCheckOptions {
   expectedLocalLinks?: number;
+  sourceContentRoot?: string;
 }
 
 export interface BuiltSiteCheckResult {
@@ -557,7 +559,8 @@ export async function inspectProjectBuiltSite(
   options: ProjectBuiltSiteCheckOptions = {}
 ): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
-  const postsDirectory = resolve(projectRoot, 'src/content/posts');
+  const sourceContentRoot = resolve(projectRoot, options.sourceContentRoot ?? '.private-content');
+  const postsDirectory = resolve(sourceContentRoot, 'posts');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
   const routes: string[] = [];
   for (const file of postFiles) {
@@ -590,7 +593,8 @@ export async function inspectProjectBuiltSite(
 
 async function main(): Promise<void> {
   const result = await inspectProjectBuiltSite(process.cwd(), {
-    expectedLocalLinks: EXPECTED_LOCAL_LINKS
+    expectedLocalLinks: EXPECTED_LOCAL_LINKS,
+    sourceContentRoot: contentRoot()
   });
 
   console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);

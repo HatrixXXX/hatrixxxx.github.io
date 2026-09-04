@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import ProtectedContent from '@/components/ProtectedContent.astro';
 import SiteFooter from '@/components/SiteFooter.astro';
 import SiteHeader from '@/components/SiteHeader.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
@@ -7,11 +8,13 @@ import SearchOverlay from '@/components/SearchOverlay.astro';
 import ThemeTransition from '@/components/ThemeTransition.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
 import CursorTrail from '@/components/CursorTrail.astro';
+import { isConfiguredLockedPage } from '@/config/protected-content';
 import { SITE } from '@/config/site';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '@/config/security';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
 import '@/styles/prose.css';
+import '@/styles/protected-content.css';
 
 interface Props {
   title: string;
@@ -19,6 +22,7 @@ interface Props {
   image?: string;
   bodyClass?: string;
   canonicalPath?: string;
+  noindex?: boolean;
 }
 
 const {
@@ -26,11 +30,14 @@ const {
   description = SITE.description,
   image = '/images/default-cover.svg',
   bodyClass,
-  canonicalPath
+  canonicalPath,
+  noindex = false
 } = Astro.props;
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
 const socialImage = new URL(image, SITE.url);
+const pageLocked = isConfiguredLockedPage(Astro.url.pathname);
+const excludeFromIndex = pageLocked || noindex;
 ---
 
 <!doctype html>
@@ -55,6 +62,7 @@ const socialImage = new URL(image, SITE.url);
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    {excludeFromIndex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content="#161a20" />
     <meta name="msvalidate.01" content={SITE.verification.bing} />
     <link rel="canonical" href={canonical} />
@@ -77,7 +85,9 @@ const socialImage = new URL(image, SITE.url);
   </head>
   <body class={bodyClass}>
     <SiteHeader />
-    <slot />
+    <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
+      <slot />
+    </ProtectedContent>
     <SiteFooter />
     <SakanaCharacters />
     <ThemeTransition />
@@ -88,6 +98,8 @@ const socialImage = new URL(image, SITE.url);
       import '@/scripts/lightbox';
       import '@/scripts/music-player';
       import '@/scripts/navigation';
+      import '@/scripts/giscus';
+      import '@/scripts/protected-content-bootstrap';
       import '@/scripts/cursor-trail';
       import '@/scripts/sakana';
       import '@/scripts/search';

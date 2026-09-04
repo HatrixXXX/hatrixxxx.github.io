@@ -5,6 +5,8 @@ node_modules
 # Astro output and cache
 dist/
 .astro/
+.private-content/
+.env.local
 
 # Test and audit output
 playwright-report/

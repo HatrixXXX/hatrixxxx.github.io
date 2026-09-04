@@ -6,14 +6,15 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "cross-env-shell NODE_USE_ENV_PROXY=1 \"tsx scripts/check-images.ts && astro build\"",
+    "build": "cross-env-shell NODE_USE_ENV_PROXY=1 \"tsx scripts/check-images.ts && astro build && tsx scripts/check-protected-output.ts\"",
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest",
     "test:run": "vitest run",
     "test:e2e": "playwright test",
     "check:images": "cross-env NODE_USE_ENV_PROXY=1 tsx scripts/check-images.ts",
-    "check:site": "tsx scripts/check-built-site.ts"
+    "check:site": "tsx scripts/check-built-site.ts",
+    "check:protected": "tsx scripts/check-protected-output.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
@@ -23,6 +24,7 @@
     "astro": "^7.2.9",
     "css-tree": "3.2.1",
     "gray-matter": "^4.0.3",
+    "hash-wasm": "4.12.0",
     "katex": "^0.18.4",
     "mermaid": "^11.17.2",
     "minisearch": "^7.2.0",
@@ -33,7 +35,8 @@
     "remark-math": "^6.0.0",
     "sakana": "1.0.8",
     "sharp": "^0.35.4",
-    "srcset": "5.0.3"
+    "srcset": "5.0.3",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

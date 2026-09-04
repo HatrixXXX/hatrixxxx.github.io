@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
+import { contentRoot } from '../src/lib/content-root';
 
 const DEFAULT_CONCURRENCY = 12;
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -172,7 +173,7 @@ export function coverFailuresFor(result: ImageCheckResult, coverUrls: ReadonlySe
 
 async function main(): Promise<void> {
   const root = process.cwd();
-  const { urls, coverUrls } = await collectImageSources(resolve(root, 'src/content/posts'));
+  const { urls, coverUrls } = await collectImageSources(contentRoot('posts'));
   const result = await checkImages(urls, DEFAULT_CONCURRENCY);
   const coverFailures = await writeReport(resolve(root, 'reports/image-check.json'), urls.length, result, coverUrls);
 

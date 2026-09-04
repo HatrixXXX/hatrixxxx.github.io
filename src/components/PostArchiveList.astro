@@ -1,6 +1,6 @@
 ---
+import PostLink from '@/components/PostLink.astro';
 import type { ArchiveMonth } from '@/lib/content';
-import { postPath } from '@/lib/urls';
 
 interface Props {
   archives: ArchiveMonth[];
@@ -17,7 +17,7 @@ const { archives } = Astro.props;
         {archive.posts.map((post) => (
           <li>
             <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.getDate()} 日</time>
-            <a href={postPath(post.data.legacySlug)}>{post.data.title}</a>
+            <PostLink post={post} />
           </li>
         ))}
       </ul>
@@ -66,11 +66,11 @@ const { archives } = Astro.props;
     font-size: 0.85rem;
   }
 
-  a {
+  .archive-groups :global(a) {
     overflow-wrap: anywhere;
   }
 
-  a:hover {
+  .archive-groups :global(a:hover) {
     color: var(--color-accent);
   }
 </style>

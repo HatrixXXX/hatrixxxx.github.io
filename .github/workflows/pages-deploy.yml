@@ -5,6 +5,8 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+  repository_dispatch:
+    types: [content-updated]
 
 permissions:
   contents: read
@@ -14,15 +16,132 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  validate-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      HATRIX_CONTENT_DIR: tests/fixtures/private-content
+      HATRIX_ADMIN_KEY: test-admin
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Find pnpm store
+        shell: bash
+        run: echo "STORE_PATH=$(corepack pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Restore pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies
+        run: corepack pnpm audit --prod --audit-level high
+
+      - name: Run unit tests
+        run: corepack pnpm test:run
+
+      - name: Check Astro types
+        run: corepack pnpm check
+
+      - name: Build fixture site
+        run: corepack pnpm build
+
+  build-production:
+    if: >-
+      github.event_name == 'repository_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HATRIX_CONTENT_DIR: .private-content
+    steps:
+      - name: Checkout site
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require production secrets
+        shell: bash
+        env:
+          HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}
+        run: |
+          if [[ -z "$HATRIX_ADMIN_KEY" ]]; then
+            echo "::error::Required secret HATRIX_ADMIN_KEY is not configured."
+            exit 1
+          fi
+          if (( ${#HATRIX_ADMIN_KEY} < 8 )); then
+            echo "::error::Required secret HATRIX_ADMIN_KEY is shorter than 8 characters."
+            exit 1
+          fi
+
+      - name: Validate dispatched content SHA
+        if: github.event_name == 'repository_dispatch'
+        shell: bash
+        env:
+          DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}
+        run: |
+          if [[ ! "$DISPATCH_CONTENT_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Dispatched content SHA must be a 40-character hexadecimal commit."
+            exit 1
+          fi
+
+      - name: Checkout dispatched private content
+        if: github.event_name == 'repository_dispatch'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: HatrixXXX/hatrix-content
+          token: ${{ secrets.HATRIX_CONTENT_TOKEN }}
+          ref: ${{ github.event.client_payload.content_sha }}
+          path: .private-content
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout latest private content
+        if: github.event_name != 'repository_dispatch'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: HatrixXXX/hatrix-content
+          token: ${{ secrets.HATRIX_CONTENT_TOKEN }}
+          path: .private-content
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Record private content SHA
+        id: content
+        shell: bash
+        env:
+          DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}
+        run: |
+          content_sha="$(git -C .private-content rev-parse HEAD)"
+          if [[ ! "$content_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Checked-out content SHA is not a 40-character hexadecimal commit."
+            exit 1
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" && "$content_sha" != "$DISPATCH_CONTENT_SHA" ]]; then
+            echo "::error::Checked-out content SHA does not match the dispatch payload."
+            exit 1
+          fi
+          echo "sha=$content_sha" >> "$GITHUB_OUTPUT"
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
@@ -46,13 +165,6 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
 
-      - name: Restore Astro cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: .astro
-          key: astro-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'astro.config.ts', 'src/content/**', 'src/plugins/**') }}
-          restore-keys: astro-${{ runner.os }}-
-
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
 
@@ -66,24 +178,29 @@ jobs:
         run: corepack pnpm check
 
       - name: Build site
+        env:
+          HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}
         run: corepack pnpm build
 
       - name: Check built site
         run: corepack pnpm check:site
 
+      - name: Remove secret-bearing Astro build state
+        if: always()
+        shell: bash
+        run: rm -rf -- .astro
+
       - name: Upload Pages artifact
-        if: >-
-          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-          (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: dist
 
   deploy:
     if: >-
+      github.event_name == 'repository_dispatch' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
       (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    needs: build
+    needs: build-production
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

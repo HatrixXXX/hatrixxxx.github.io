@@ -1,31 +1,14 @@
+import { pathToFileURL } from 'node:url';
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { POST_TYPES } from './config/navigation';
 import { isHttpsUrl } from './lib/safe-url';
+import { contentRoot } from './lib/content-root';
+import { postSchema } from './lib/post-schema';
 
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' }),
-  schema: z
-    .object({
-      title: z.string().min(1),
-      description: z.string().min(1),
-      pubDate: z.coerce.date(),
-      updatedDate: z.coerce.date().optional(),
-      cover: z.string().min(1),
-      type: z.enum(POST_TYPES),
-      series: z.string().optional(),
-      seriesOrder: z.number().int().nonnegative().optional(),
-      draft: z.boolean().default(false),
-      math: z.boolean().default(false),
-      mermaid: z.boolean().default(false),
-      legacySlug: z.string().min(1)
-    })
-    .superRefine((value, ctx) => {
-      if ((value.series === undefined) !== (value.seriesOrder === undefined)) {
-        ctx.addIssue({ code: 'custom', message: 'series and seriesOrder must be set together' });
-      }
-    })
+  loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(contentRoot('posts')).href }),
+  schema: postSchema
 });
 
 const projects = defineCollection({

@@ -1,0 +1,32 @@
+---
+import LockIndicator from '@/components/LockIndicator.astro';
+import type { PostEntry } from '@/lib/content';
+import { postPath } from '@/lib/urls';
+
+interface Props {
+  post: PostEntry;
+  rel?: string;
+  direction?: string;
+  [attribute: string]: unknown;
+}
+
+const { post, rel, direction, ...attributes } = Astro.props;
+---
+
+<a
+  {...attributes}
+  href={postPath(post.data.legacySlug)}
+  rel={rel}
+  data-locked-link={post.data.locked ? '' : undefined}
+>
+  {
+    direction ? (
+      <>
+        <span>{direction}</span>
+        <strong>{post.data.title}{post.data.locked && <LockIndicator />}</strong>
+      </>
+    ) : (
+      <>{post.data.title}{post.data.locked && <LockIndicator />}</>
+    )
+  }
+</a>

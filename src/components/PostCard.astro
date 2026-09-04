@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import readingTime from 'reading-time';
+import LockIndicator from '@/components/LockIndicator.astro';
 import type { PostEntry } from '@/lib/content';
 import { postPath } from '@/lib/urls';
 
@@ -19,7 +20,13 @@ const published = new Intl.DateTimeFormat('zh-CN', {
 ---
 
 <article data-post-card class="post-card">
-  <a class="post-card-media" href={href} tabindex="-1" aria-hidden="true">
+  <a
+    class="post-card-media"
+    href={href}
+    tabindex="-1"
+    aria-hidden="true"
+    data-locked-link={post.data.locked ? '' : undefined}
+  >
     <Image
       src={post.data.cover || '/images/default-cover.svg'}
       alt=""
@@ -33,7 +40,11 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     />
   </a>
   <div class="post-card-content">
-    <h2><a href={href}>{post.data.title}</a></h2>
+    <h2>
+      <a href={href} data-locked-link={post.data.locked ? '' : undefined}>
+        {post.data.title}{post.data.locked && <LockIndicator />}
+      </a>
+    </h2>
     <p>{post.data.description}</p>
     <div class="post-meta">
       <time datetime={post.data.pubDate.toISOString()}>{published}</time>

@@ -369,7 +369,7 @@ it('reports when the local link inventory is one below the expected count', asyn
 it('aggregates missing post output errors without throwing', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
-  await writeSiteFile(root, 'src/content/posts/example.md', '---\nlegacySlug: absent\n---\n');
+  await writeSiteFile(root, '.private-content/posts/example.md', '---\nlegacySlug: absent\n---\n');
   await writeSiteFile(root, 'dist/index.html');
   await writeSiteFile(root, 'dist/404.html');
   await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');

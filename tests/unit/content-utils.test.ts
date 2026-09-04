@@ -15,6 +15,7 @@ const post = (id: string, date: string) => ({
     cover: '/x.svg',
     type: '技术笔记',
     draft: false,
+    locked: false,
     math: false,
     mermaid: false,
     legacySlug: id
@@ -69,12 +70,35 @@ describe('content utilities', () => {
       id: 'FPGA',
       url: '/posts/FPGA/',
       title: 'FPGA',
-      description: 'description for FPGA'
+      description: 'description for FPGA',
+      locked: false
     });
     expect(document).not.toHaveProperty('category');
     expect(document).not.toHaveProperty('tags');
     expect(document.text).toContain('FPGA description for FPGA');
     expect(document.text.endsWith('a'.repeat(2000))).toBe(true);
+  });
+
+  it('keeps locked post body text out of the search document', () => {
+    const source = {
+      ...post('locked-post', '2026-02-03'),
+      body: 'distinctive-private-body-marker',
+      data: {
+        ...post('locked-post', '2026-02-03').data,
+        title: 'Public locked title',
+        description: 'Public locked description',
+        locked: true
+      }
+    } as PostEntry & { body: string };
+
+    expect(search.toSearchDocument(source)).toEqual({
+      id: 'locked-post',
+      url: '/posts/locked-post/',
+      title: 'Public locked title',
+      description: 'Public locked description',
+      locked: true,
+      text: 'Public locked title Public locked description'
+    });
   });
 
   it('normalizes Markdown into searchable plain text', () => {

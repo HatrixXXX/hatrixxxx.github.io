@@ -2,7 +2,9 @@
 import 'katex/dist/katex.min.css';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import GiscusComments from '@/components/GiscusComments.astro';
+import PostLink from '@/components/PostLink.astro';
 import PostMeta from '@/components/PostMeta.astro';
+import ProtectedContent from '@/components/ProtectedContent.astro';
 import TableOfContents from '@/components/TableOfContents.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { AdjacentPosts, PostEntry } from '@/lib/content';
@@ -30,6 +32,7 @@ const canonicalPath = postPath(post.data.legacySlug);
   image={post.data.cover}
   canonicalPath={canonicalPath}
   bodyClass="post-page"
+  noindex={post.data.locked}
 >
   <article data-post>
     <header class="post-hero" data-hero>
@@ -46,37 +49,33 @@ const canonicalPath = postPath(post.data.legacySlug);
       <PostMeta post={post} />
     </div>
 
-    <div class="post-grid container" data-cursor-trail-region>
-      <TableOfContents headings={headings} />
-      <div class="post-column">
-        <div class="prose">
-          <slot />
+    <ProtectedContent locked={post.data.locked} route={canonicalPath} title={post.data.title}>
+      <div class="post-grid container" data-cursor-trail-region>
+        <TableOfContents headings={headings} />
+        <div class="post-column">
+          <div class="prose">
+            <slot />
+          </div>
+
+          <nav class="adjacent-posts" aria-label="相邻文章" data-adjacent-posts>
+            {
+              adjacent.previous ? (
+                <PostLink post={adjacent.previous} rel="prev" direction="上一篇" />
+              ) : (
+                <span aria-hidden="true" />
+              )
+            }
+            {
+              adjacent.next && (
+                <PostLink post={adjacent.next} rel="next" direction="下一篇" />
+              )
+            }
+          </nav>
+
+          <GiscusComments />
         </div>
-
-        <nav class="adjacent-posts" aria-label="相邻文章" data-adjacent-posts>
-          {
-            adjacent.previous ? (
-              <a href={postPath(adjacent.previous.data.legacySlug)} rel="prev">
-                <span>上一篇</span>
-                <strong>{adjacent.previous.data.title}</strong>
-              </a>
-            ) : (
-              <span aria-hidden="true" />
-            )
-          }
-          {
-            adjacent.next && (
-              <a href={postPath(adjacent.next.data.legacySlug)} rel="next">
-                <span>下一篇</span>
-                <strong>{adjacent.next.data.title}</strong>
-              </a>
-            )
-          }
-        </nav>
-
-        <GiscusComments />
       </div>
-    </div>
+    </ProtectedContent>
   </article>
 </BaseLayout>
 
@@ -183,7 +182,7 @@ const canonicalPath = postPath(post.data.legacySlug);
     margin-top: 2rem;
   }
 
-  .adjacent-posts a {
+  .adjacent-posts :global(a) {
     display: flex;
     min-width: 0;
     flex-direction: column;
@@ -194,21 +193,21 @@ const canonicalPath = postPath(post.data.legacySlug);
     background: var(--color-surface);
   }
 
-  .adjacent-posts a:last-child {
+  .adjacent-posts :global(a:last-child) {
     text-align: right;
   }
 
-  .adjacent-posts span {
+  .adjacent-posts :global(a > span) {
     color: var(--color-muted);
     font-size: 0.75rem;
   }
 
-  .adjacent-posts strong {
+  .adjacent-posts :global(a > strong) {
     color: #fff;
     overflow-wrap: anywhere;
   }
 
-  .adjacent-posts a:hover strong {
+  .adjacent-posts :global(a:hover > strong) {
     color: var(--color-accent);
   }
 
@@ -231,7 +230,7 @@ const canonicalPath = postPath(post.data.legacySlug);
       display: none;
     }
 
-    .adjacent-posts a:last-child {
+    .adjacent-posts :global(a:last-child) {
       text-align: left;
     }
   }
