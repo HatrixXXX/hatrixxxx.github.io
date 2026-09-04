@@ -18,6 +18,16 @@ test('header keyboard navigation exposes a visible focus outline', async ({ page
   }
 });
 
+test('home keyboard navigation reaches header controls after the primary links', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: '首页', exact: true })).toBeFocused();
+  for (let index = 0; index < 5; index += 1) await page.keyboard.press('Tab');
+  await expect(page.locator('[data-open-search]')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('[data-theme-toggle]')).toBeFocused();
+});
+
 test('decorative motion stops when reduced motion is requested', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/blog/');

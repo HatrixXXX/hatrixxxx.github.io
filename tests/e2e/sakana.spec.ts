@@ -69,7 +69,7 @@ async function readSakanaLayout(page: import('@playwright/test').Page) {
 }
 
 test('renders mirrored artwork and responsive mounts without horizontal overflow', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/projects/');
 
   const layer = page.locator('[data-sakana-layer]');
   await expect(layer).toHaveCount(1);
@@ -122,7 +122,7 @@ test('initializes locked roles once and persists them across client navigation',
     }
   });
 
-  await page.goto('/');
+  await page.goto('/projects/');
   const layer = page.locator('[data-sakana-layer]');
   await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
   await expect(layer).toHaveAttribute('data-sakana-motion', 'full');
@@ -166,40 +166,36 @@ test('initializes locked roles once and persists them across client navigation',
   await expect(takina.locator('.sakana-bed')).toBeHidden();
 
   await layer.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
-  await page.getByRole('link', { name: '浏览全部博客文章' }).click();
-  await expect(page).toHaveURL(/\/blog\/$/);
-  await page.locator('article[data-post-card] h2 a').first().click();
-  await expect(page.locator('article[data-post]')).toBeVisible();
+  await page.getByRole('link', { name: '关于我', exact: true }).click();
+  await expect(page).toHaveURL(/\/about\/$/);
+  await expect(page.locator('main.about-main')).toBeVisible();
 
   const persistedLayer = page.locator('[data-sakana-layer]');
   await expect(persistedLayer).toHaveAttribute('data-persist-probe', 'same-node');
   await expect(persistedLayer.locator('canvas')).toHaveCount(2);
-  const articleCharacters = persistedLayer.locator('.sakana-character');
-  await expect(articleCharacters).toHaveCount(2);
-  await expect(articleCharacters.first()).toBeVisible();
-  await expect(articleCharacters.last()).toBeVisible();
+  const aboutCharacters = persistedLayer.locator('.sakana-character');
+  await expect(aboutCharacters).toHaveCount(2);
+  await expect(aboutCharacters.first()).toBeVisible();
+  await expect(aboutCharacters.last()).toBeVisible();
   await expect(page.locator('head style[data-sakana-runtime-style]')).toHaveCount(1);
 
-  await page
-    .locator('header[data-site-header]')
-    .getByRole('link', { name: '首页', exact: true })
-    .click();
-  await expect(page.locator('[data-hero]')).toBeVisible();
+  await page.getByRole('link', { name: '作品橱窗', exact: true }).click();
+  await expect(page.locator('main.projects-main')).toBeVisible();
   await expect(page.locator('[data-sakana-layer]')).toHaveAttribute(
     'data-persist-probe',
     'same-node'
   );
-  const homeCharacters = page.locator('[data-sakana-layer] .sakana-character');
-  await expect(homeCharacters).toHaveCount(2);
-  await expect(homeCharacters.first()).toBeVisible();
-  await expect(homeCharacters.last()).toBeVisible();
+  const projectCharacters = page.locator('[data-sakana-layer] .sakana-character');
+  await expect(projectCharacters).toHaveCount(2);
+  await expect(projectCharacters.first()).toBeVisible();
+  await expect(projectCharacters.last()).toBeVisible();
   await expect(page.locator('head style[data-sakana-runtime-style]')).toHaveCount(1);
   expect(remoteSakanaRequests).toEqual([]);
 });
 
 test('dragging Chisato follows the pointer and moves only that instance', async ({ page }) => {
   for (const deltaX of [60, -60]) {
-    await page.goto('/');
+    await page.goto('/projects/');
     const layer = page.locator('[data-sakana-layer]');
     await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
 
@@ -229,7 +225,7 @@ test('dragging Chisato follows the pointer and moves only that instance', async 
 
 test('Takina moves independently and plays its embedded voice', async ({ page }) => {
   await installSakanaVoiceProbe(page);
-  await page.goto('/');
+  await page.goto('/projects/');
   const layer = page.locator('[data-sakana-layer]');
   await expect(layer).toHaveAttribute('data-sakana-state', 'ready');
   await expect(layer).toHaveAttribute('data-sakana-motion', 'full');

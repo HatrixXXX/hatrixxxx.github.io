@@ -50,11 +50,13 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
 
 test('blog navigation and the home entry target the blog index', async ({ page }) => {
   await page.goto('/');
-
-  await expect(page.getByRole('link', { name: '博客文章', exact: true }).first()).toHaveAttribute('href', '/blog/');
-  await expect(page.locator('main#articles')).toBeVisible();
-  await expect(page.locator('article[data-post-card]')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: '浏览全部博客文章' })).toHaveAttribute('href', '/blog/');
+  const blogNavigation = page
+    .getByRole('navigation', { name: '主导航' })
+    .getByRole('link', { name: '博客文章', exact: true });
+  await expect(blogNavigation).toHaveAttribute('href', '/blog/');
+  await blogNavigation.click();
+  await page.waitForURL('**/blog/');
+  await expect(page.locator('[data-blog-total]')).toHaveText('40');
 });
 
 test('all legacy slugs resolve, including the spaced slug clicked from pagination', async ({

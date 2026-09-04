@@ -130,13 +130,19 @@ test('focused post rail supports native arrow-key scrolling', async ({ page }) =
 
 test('client navigation restores the default blog card view', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: '浏览全部博客文章' }).click();
+  const blogNavigation = page
+    .getByRole('navigation', { name: '主导航' })
+    .getByRole('link', { name: '博客文章', exact: true });
+  await expect(blogNavigation).toHaveAttribute('href', '/blog/');
+  await blogNavigation.click();
+  await page.waitForURL('**/blog/');
   const toggle = page.locator('[data-blog-view-toggle]');
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByRole('link', { name: '首页', exact: true }).first().click();
-  await page.getByRole('link', { name: '浏览全部博客文章' }).click();
+  await blogNavigation.click();
+  await page.waitForURL('**/blog/');
   await expect(toggle).toBeVisible();
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('[data-blog-card-view]')).toBeVisible();

@@ -1,5 +1,20 @@
 import { expect, test } from '@playwright/test';
 
+test('all pages share the brandless right-aligned header', async ({ page }) => {
+  for (const path of ['/', '/blog/', '/projects/', '/about/', '/posts/本科数学大杂烩/']) {
+    await page.goto(path);
+    await expect(page.locator('header[data-site-header] .brand')).toHaveCount(0);
+    const controls = page.locator('[data-header-controls]');
+    await expect(controls).toBeVisible();
+    const box = await controls.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    expect((viewport?.width ?? 0) - ((box?.x ?? 0) + (box?.width ?? 0))).toBeLessThanOrEqual(37);
+    await expect(controls.locator('[data-open-search], [data-theme-toggle]')).toHaveCount(2);
+  }
+});
+
 test('standard shell renders the compact legal footer', async ({ page }) => {
   await page.goto('/projects/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();

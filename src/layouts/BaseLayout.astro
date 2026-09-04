@@ -87,7 +87,7 @@ const excludeFromIndex = pageLocked || noindex;
     <ClientRouter />
   </head>
   <body class={bodyClass}>
-    <SiteHeader homeMode={isHome} showBrand={!isHome} />
+    <SiteHeader homeMode={isHome} />
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
     </ProtectedContent>

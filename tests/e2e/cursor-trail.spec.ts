@@ -103,8 +103,16 @@ async function waitForAnimationFrames(page: Page) {
   }));
 }
 
-test('cursor trail is a non-interactive fixed viewport layer', async ({ page }) => {
+test('home omits decorative runtimes', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('[data-cursor-trail], [data-sakana-layer]')).toHaveCount(0);
+  await page.goto('/projects/');
+  await expect(page.locator('[data-cursor-trail]')).toHaveCount(1);
+  await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-sakana-state', 'ready');
+});
+
+test('cursor trail is a non-interactive fixed viewport layer', async ({ page }) => {
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   await expect(canvas).toHaveCount(1);
   await expect(canvas).toHaveAttribute('aria-hidden', 'true');
@@ -126,7 +134,7 @@ test('cursor trail scales its backing store for a high-DPR viewport', async ({ b
   });
   try {
     const page = await context.newPage();
-    await page.goto('/');
+    await page.goto('/page/2/');
     const canvas = page.locator('[data-cursor-trail]');
     expect(await canvas.evaluate((element) => {
       const canvasElement = element as HTMLCanvasElement;
@@ -144,7 +152,7 @@ test('cursor trail scales its backing store for a high-DPR viewport', async ({ b
 });
 
 test('moving only inside the content band leaves the canvas transparent', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(geometry.centerX, geometry.y - 60);
@@ -160,7 +168,7 @@ test('moving only inside the content band leaves the canvas transparent', async 
 
 for (const side of ['left', 'right'] as const) {
   test(`${side} gutter creates a visible trail`, async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/page/2/');
     const canvas = page.locator('[data-cursor-trail]');
     const geometry = await activationGeometry(page);
     const x = side === 'left' ? geometry.leftX : geometry.rightX;
@@ -170,7 +178,7 @@ for (const side of ['left', 'right'] as const) {
 }
 
 test('an idle gutter trail fades completely', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const x = geometry.leftX;
@@ -180,7 +188,7 @@ test('an idle gutter trail fades completely', async ({ page }) => {
 });
 
 test('a slowly moving gutter trail remains visible', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const x = geometry.leftX;
@@ -192,7 +200,7 @@ test('a slowly moving gutter trail remains visible', async ({ page }) => {
 });
 
 test('hero gutters do not create trails', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const horizontal = await page.locator('[data-content-boundary]').boundingBox();
   const hero = await page.locator('[data-hero]').boundingBox();
@@ -237,7 +245,7 @@ test('the visible area below a short main does not create trails', async ({ page
 });
 
 test('switching gutters starts a new trail without a content bridge', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const oldArea = {
@@ -262,7 +270,7 @@ test('switching gutters starts a new trail without a content bridge', async ({ p
 });
 
 test('leaving and re-entering one gutter starts a disconnected trail', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const oldArea = {
@@ -297,7 +305,7 @@ test('leaving and re-entering one gutter starts a disconnected trail', async ({ 
 });
 
 test('three same-side sessions retain separate fading remnants', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const x = geometry.leftX;
@@ -342,7 +350,7 @@ test('three same-side sessions retain separate fading remnants', async ({ page }
 });
 
 test('a settled new session never clears an older retiring trail', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const oldArea = {
@@ -364,7 +372,7 @@ test('a settled new session never clears an older retiring trail', async ({ page
 });
 
 test('a top-level pointer exit starts a disconnected gutter session on re-entry', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(geometry.leftX, geometry.y - 180);
@@ -399,7 +407,7 @@ test('a top-level pointer exit starts a disconnected gutter session on re-entry'
 
 test('reduced motion disables drawing', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(geometry.leftX, geometry.y - 40);
@@ -409,7 +417,7 @@ test('reduced motion disables drawing', async ({ page }) => {
 });
 
 test('changing reduced motion clears and gates the trail until the next gutter input', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const range = { left: 0, right: geometry.content.left };
@@ -437,7 +445,7 @@ test('a non-fine pointer disables drawing', async ({ browser }) => {
     viewport: { width: 1440, height: 900 }
   });
   const page = await context.newPage();
-  await page.goto('/');
+  await page.goto('/page/2/');
   expect(await page.evaluate(() => (
     matchMedia('(hover: hover) and (pointer: fine)').matches
   ))).toBe(false);
@@ -451,7 +459,7 @@ test('a non-fine pointer disables drawing', async ({ browser }) => {
 });
 
 test('an unmasked left-gutter curve may enter the content band', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(8, geometry.y);
@@ -488,7 +496,7 @@ test('blog menu routes hide and disable the cursor trail', async ({ page }) => {
 });
 
 test('entering a blog menu clears existing trails until an allowed route resumes', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   const oldGeometry = await activationGeometry(page);
   await page.mouse.move(oldGeometry.leftX, oldGeometry.y - 80);
@@ -504,8 +512,8 @@ test('entering a blog menu clears existing trails until an allowed route resumes
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
 
   await Promise.all([
-    page.waitForURL((url) => url.pathname === '/'),
-    page.getByRole('link', { name: '首页', exact: true }).click()
+    page.waitForURL(/\/projects\/$/),
+    page.getByRole('link', { name: '作品橱窗', exact: true }).click()
   ]);
   await expect(canvas).toBeVisible();
   expect(await canvas.evaluate(alphaPixels)).toBe(0);
@@ -516,7 +524,7 @@ test('entering a blog menu clears existing trails until an allowed route resumes
 });
 
 test('the canvas persists once across client navigation', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/page/2/');
   const canvas = page.locator('[data-cursor-trail]');
   await canvas.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
   const oldGeometry = await activationGeometry(page);
