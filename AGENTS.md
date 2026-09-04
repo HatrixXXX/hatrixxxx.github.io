@@ -42,7 +42,7 @@ corepack pnpm test:e2e
 - `series` 与 `seriesOrder` 必须成对出现。
 - 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。音乐播放器是关于页、关于子页和文章页共享侧栏的第三张卡片，不使用固定定位；空歌单不会创建 `Audio` 对象。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。草稿不参与 inventory。
-- Playwright 有 184 项检查和 18 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
+- Playwright 有 185 项检查和 18 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
 - 首页是固定视口、无滚动的全屏封面，不渲染页脚、Sakana 或 CursorTrail。所有非首页普通 Hero 与文章题图在同一视口下等高：桌面和平板为 `240px`，宽度不超过 `768px` 时为 `200px`；全站不渲染波浪分隔。
 - 当前页脚只显示版权与“保留所有权利”纯文本，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
 - 作者资料、站点统计和音乐播放器组成的共享侧栏只出现在关于页、关于子页和文章页。Vercount 只在生产环境加载固定脚本 `https://events.vercount.one/js`；开发和测试不得请求该服务，加载失败时访客数保持 `—`。
