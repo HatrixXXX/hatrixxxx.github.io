@@ -34,31 +34,17 @@ const { posts } = Astro.props;
     gap: clamp(1rem, 2.2vw, 1.5rem);
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 0.25rem 0.125rem 1rem;
+    padding: 0.25rem 0.125rem;
     cursor: grab;
-    scroll-padding-inline: 0.125rem;
-    scroll-snap-type: x proximity;
-    scrollbar-color: var(--color-accent) var(--color-surface-raised);
-    scrollbar-width: thin;
+    scrollbar-width: none;
   }
 
   .post-list::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  .post-list::-webkit-scrollbar-track {
-    border-radius: 999px;
-    background: var(--color-surface-raised);
-  }
-
-  .post-list::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: var(--color-accent);
+    display: none;
   }
 
   .post-list[data-dragging='true'] {
     cursor: grabbing;
-    scroll-snap-type: none;
   }
 
   .post-list[data-dragging='true'] :global(*) {
@@ -75,4 +61,5 @@ const { posts } = Astro.props;
     clip-path: inset(50%);
     white-space: nowrap;
   }
+
 </style>
