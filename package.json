@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "corepack pnpm check:images && astro build && corepack pnpm check:protected",
+    "build": "corepack pnpm check:images && cross-env NODE_USE_ENV_PROXY=1 astro build && corepack pnpm check:protected",
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest",
