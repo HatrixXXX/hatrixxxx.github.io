@@ -345,7 +345,6 @@ function bindGate(gate: HTMLElement): void {
     event.preventDefault();
     void handleSubmit(form, gate);
   });
-  if (!startCooldown(form, readFailureState().until)) parts.key.focus();
 }
 
 function bindLogoutButtons(): void {
@@ -367,6 +366,7 @@ async function restoreStoredCredential(
   const stored = readCredentialReference();
   if (!stored.reference) {
     if (stored.invalid) await clearCredentialState();
+    restoreGuestForm(gate);
     return;
   }
 

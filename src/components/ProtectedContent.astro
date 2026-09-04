@@ -28,18 +28,19 @@ if (locked) {
         <h2>{title}需要管理员权限</h2>
         <label>
           管理员 key
-          <input name="key" type="password" autocomplete="off" required />
+          <input name="key" type="password" autocomplete="off" required disabled />
         </label>
         <label>
-          <input name="showKey" type="checkbox" />
+          <input name="showKey" type="checkbox" disabled />
           显示 key
         </label>
         <label>
-          <input name="remember" type="checkbox" />
+          <input name="remember" type="checkbox" disabled />
           7 天免解锁
         </label>
-        <button type="submit">解锁</button>
+        <button type="submit" disabled>解锁</button>
         <p aria-live="polite" data-unlock-status></p>
+        <noscript><p>解锁加密内容需要启用 JavaScript。</p></noscript>
       </form>
       <script
         is:inline

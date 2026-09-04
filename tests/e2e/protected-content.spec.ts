@@ -454,6 +454,7 @@ test('remembered unlock crosses pages and an expired reference returns to guest'
 
   await expect(page.locator('[data-protected-gate]')).toBeVisible();
   await expect(page.locator('[data-protected-test-content]')).toHaveCount(0);
+  await expect(page.getByLabel('管理员 key', { exact: true })).toBeFocused();
   stored = await storedCredentialDetails(page);
   expect(stored.remembered).toBeNull();
   expect(stored.count).toBe(0);

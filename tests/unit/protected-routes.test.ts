@@ -134,6 +134,7 @@ describe('protected rendering source contracts', () => {
     expect(source).toContain('data-protected-mount');
     expect(source).toContain('data-unlock-form');
     expect(source).toContain('autocomplete="off"');
+    expect(source.match(/\bdisabled\b/g)).toHaveLength(4);
     expect(source).not.toContain('autocomplete="current-password"');
     expect(source).toMatch(/locked[\s\S]*<slot\s*\/>/);
   });
