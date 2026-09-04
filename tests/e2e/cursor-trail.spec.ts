@@ -303,11 +303,13 @@ test('three same-side sessions retain separate fading remnants', async ({ page }
     top: geometry.y + offset - 20,
     bottom: geometry.y + offset + 20
   }));
+  const baselines: number[] = [];
 
   for (const [index, offset] of offsets.entries()) {
     await page.mouse.move(x, geometry.y + offset - 16);
     await page.mouse.move(x, geometry.y + offset + 16);
     await waitForAnimationFrames(page);
+    baselines.push(await canvas.evaluate(alphaSumInRect, areas[index]));
     if (index < offsets.length - 1) await page.mouse.move(geometry.centerX, geometry.y);
   }
 
@@ -320,9 +322,15 @@ test('three same-side sessions retain separate fading remnants', async ({ page }
       sums: await Promise.all(areas.map((area) => canvas.evaluate(alphaSumInRect, area)))
     });
   }
-  for (const sum of alphaTimeline.at(-1)?.sums ?? []) {
-    expect(sum, `alpha timeline: ${JSON.stringify(alphaTimeline)}`).toBeGreaterThan(0);
+  for (const baseline of baselines) expect(baseline).toBeGreaterThan(0);
+  const after350 = alphaTimeline.at(-1)?.sums ?? [];
+  for (const index of [0, 1]) {
+    expect(
+      after350[index],
+      `perceptibility: ${JSON.stringify({ baselines, alphaTimeline })}`
+    ).toBeGreaterThanOrEqual(baselines[index] * 0.5);
   }
+  expect(after350[2]).toBeGreaterThan(0);
   for (const area of areas) await expect.poll(() => canvas.evaluate(alphaPixelsInRect, area)).toBe(0);
 });
 
