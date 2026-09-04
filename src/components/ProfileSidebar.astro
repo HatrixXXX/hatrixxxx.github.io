@@ -98,6 +98,10 @@ import SocialIcon from '@/components/SocialIcon.astro';
     opacity: 0.65;
   }
 
+  [data-social-id='qqmusic'] {
+    --qqmusic-cutout: color-mix(in srgb, var(--social-color) 12%, var(--color-surface));
+  }
+
   .pending-badge {
     position: absolute;
     right: -0.45rem;

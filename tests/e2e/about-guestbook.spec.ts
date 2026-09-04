@@ -92,14 +92,25 @@ test('about sidebar exposes the requested profile, social links and static stati
   await expect(wechat.getByText('待补充', { exact: true })).toBeVisible();
   await expect(wechat.locator('a, button, [tabindex]')).toHaveCount(0);
 
+  await expect(profile.locator('[data-social-id="zhihu"] text')).toHaveAttribute(
+    'font-size',
+    '16'
+  );
+  await expect(profile.locator('[data-social-id="xiaohongshu"] text')).toHaveAttribute(
+    'font-size',
+    '16'
+  );
+
   const qqMusicIcon = profile.getByRole('link', { name: 'QQ 音乐' }).locator('svg');
-  await expect(qqMusicIcon.locator('[data-qqmusic-logo="disc"]')).toHaveCount(0);
-  await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveCount(1);
-  await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveAttribute(
+  await expect(qqMusicIcon.locator('[data-qqmusic-logo="disc"]')).toHaveAttribute(
     'fill',
     'currentColor'
   );
-
+  await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveCount(1);
+  await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveAttribute(
+    'fill',
+    'var(--qqmusic-cutout)'
+  );
   for (const absent of ['Gitee', 'Stack Overflow', 'Twitter', 'Telegram', 'QQ']) {
     await expect(profile.getByRole('link', { name: absent, exact: true })).toHaveCount(0);
   }
