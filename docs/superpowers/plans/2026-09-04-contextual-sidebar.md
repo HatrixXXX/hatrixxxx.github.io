@@ -1,6 +1,6 @@
 # Contextual Sidebar Implementation Plan
 
-> 后续修正：QQ 音乐分享地址缺少用户参数，入口与微信一样暂时显示为“待补充”；小红书改用官方 App 深链；时钟只显示加粗后的 Canvas 点阵，语义 `<time>` 视觉隐藏。
+> 后续修正：QQ 音乐改用带 `uin` 的个人资料链接；小红书改用官方 App 深链；时钟只显示加粗后的 Canvas 点阵，语义 `<time>` 视觉隐藏。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -19,7 +19,7 @@
 - 不复制参考站源码、文案或个人素材；点阵时钟使用独立的 5×7 点阵实现。
 - Vercount 只在生产构建加载，本地开发和 Playwright 不发送统计请求。
 - 首页、分页、博客列表、归档、作品、留言板和 404 不显示侧栏或播放器。
-- 微信和 QQ 音乐入口保留不可点击状态，不猜测缺失的用户参数。
+- 微信入口保留不可点击状态；QQ 音乐使用带 `uin` 的个人资料链接。
 - 减少动态效果时，时钟继续更新时间但不生成粒子。
 - 不提交 `dist/`、`.astro/`、`reports/`、`test-results/` 或 Playwright trace。
 
@@ -324,7 +324,7 @@ socials: [
   { id: 'zhihu', label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx', color: '#2f88ff' },
   { id: 'xiaohongshu', label: '小红书', url: 'xhsdiscover://user/62a6030000000000190299d', color: '#ff2442' },
   { id: 'wechat', label: '微信', url: null, color: '#07c160' },
-  { id: 'qqmusic', label: 'QQ 音乐', url: null, color: '#e6b800' },
+  { id: 'qqmusic', label: 'QQ 音乐', url: 'https://y.qq.com/n/ryqq_v2/profile/like/song?uin=oi65oiCA7e4A7c', color: '#e6b800' },
   { id: 'email', label: '邮件', url: 'mailto:3113624526@qq.com', color: '#f97316' }
 ]
 ```

@@ -15,7 +15,7 @@ export const SITE = {
     { id: 'zhihu', label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx', color: '#2f88ff' },
     { id: 'xiaohongshu', label: '小红书', url: 'xhsdiscover://user/62a6030000000000190299d', color: '#ff2442' },
     { id: 'wechat', label: '微信', url: null, color: '#07c160' },
-    { id: 'qqmusic', label: 'QQ 音乐', url: null, color: '#e6b800' },
+    { id: 'qqmusic', label: 'QQ 音乐', url: 'https://y.qq.com/n/ryqq_v2/profile/like/song?uin=oi65oiCA7e4A7c', color: '#e6b800' },
     { id: 'email', label: '邮件', url: 'mailto:3113624526@qq.com', color: '#f97316' }
   ],
   filings: [] as readonly { label: string; url: string }[],

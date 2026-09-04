@@ -12,6 +12,12 @@ const expectedSocials = [
     href: 'xhsdiscover://user/62a6030000000000190299d',
     external: false
   },
+  {
+    id: 'qqmusic',
+    label: 'QQ 音乐',
+    href: 'https://y.qq.com/n/ryqq_v2/profile/like/song?uin=oi65oiCA7e4A7c',
+    external: true
+  },
   { id: 'email', label: '邮件', href: 'mailto:3113624526@qq.com', external: false }
 ] as const;
 
@@ -86,14 +92,7 @@ test('about sidebar exposes the requested profile, social links and static stati
   await expect(wechat.getByText('待补充', { exact: true })).toBeVisible();
   await expect(wechat.locator('a, button, [tabindex]')).toHaveCount(0);
 
-  const qqMusic = profile.locator('span[data-social-id="qqmusic"]');
-  await expect(qqMusic).toHaveAttribute('data-social-pending', 'qqmusic');
-  await expect(qqMusic).toHaveAttribute('aria-disabled', 'true');
-  await expect(qqMusic).toHaveAccessibleName(/QQ 音乐.*待补充/);
-  await expect(qqMusic.getByText('待补充', { exact: true })).toBeVisible();
-  await expect(qqMusic.locator('a, button, [tabindex]')).toHaveCount(0);
-
-  const qqMusicIcon = qqMusic.locator('svg');
+  const qqMusicIcon = profile.getByRole('link', { name: 'QQ 音乐' }).locator('svg');
   await expect(qqMusicIcon.locator('[data-qqmusic-logo="disc"]')).toHaveCount(0);
   await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveCount(1);
   await expect(qqMusicIcon.locator('[data-qqmusic-logo="mark"]')).toHaveAttribute(
