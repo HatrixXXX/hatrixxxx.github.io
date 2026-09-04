@@ -1,4 +1,4 @@
-import { realpath } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createMarkdownProcessor, type RemarkPlugin } from '@astrojs/markdown-remark';
@@ -122,10 +122,13 @@ async function protectImage(reference: string, context: ProtectedImageContext): 
   }
 
   const stablePath = relative(context.contentRoot, sourcePath).split(sep).join('/');
+  const sourceDigest = base64url(new Uint8Array(
+    await crypto.subtle.digest('SHA-256', new Uint8Array(await readFile(sourcePath)))
+  ));
   const digest = await crypto.subtle.sign(
     'HMAC',
     context.key,
-    new Uint8Array(utf8(`asset:${stablePath}`))
+    new Uint8Array(utf8(`asset:${stablePath}:${sourceDigest}`))
   );
   const id = base64url(new Uint8Array(digest));
   const existing = context.assets.get(id);

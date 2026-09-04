@@ -110,4 +110,30 @@ describe('protected asset endpoint', () => {
       name: 'OperationError'
     });
   });
+
+  it('emits a new decryptable URL when an image is replaced at the same path', async () => {
+    contentState.posts = [fixturePost('locked')];
+    const [firstPath] = await getStaticPaths();
+    const firstResponse = await GET({ props: firstPath.props } as never);
+    const firstEnvelope = await firstResponse.json() as EncryptedEnvelope;
+    const replacementBytes = new Uint8Array([9, 8, 7, 6, 5]);
+    await writeFile(imagePath, replacementBytes);
+
+    const [replacementPath] = await getStaticPaths();
+    const replacementResponse = await GET({ props: replacementPath.props } as never);
+    const replacementEnvelope = await replacementResponse.json() as EncryptedEnvelope;
+    const keyBytes = await deriveContentKeyBytes('test-admin');
+    const key = await importContentKey(keyBytes, ['decrypt']);
+
+    expect(replacementPath.params.id).not.toBe(firstPath.params.id);
+    expect(`/protected-content/assets/${replacementPath.params.id}.bin`).not.toBe(
+      `/protected-content/assets/${firstPath.params.id}.bin`
+    );
+    await expect(
+      decryptEnvelope(firstEnvelope, key, `asset:${firstPath.params.id}`)
+    ).resolves.not.toEqual(replacementBytes);
+    await expect(
+      decryptEnvelope(replacementEnvelope, key, `asset:${replacementPath.params.id}`)
+    ).resolves.toEqual(replacementBytes);
+  });
 });

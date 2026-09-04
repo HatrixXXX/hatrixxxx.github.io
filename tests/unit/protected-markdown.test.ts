@@ -91,6 +91,17 @@ describe('protected Markdown', () => {
     expect(first.html.match(/data-protected-src=/g)).toHaveLength(2);
   });
 
+  it('changes the opaque asset ID and URL when bytes change at the same path', async () => {
+    const body = '![secret](./private-image.png)';
+    const first = await renderProtectedMarkdown(fixturePost(body), keyBytes);
+    await writeFile(join(postsRoot, 'nested', 'private-image.png'), new Uint8Array([1, 2, 3, 4]));
+    const replacement = await renderProtectedMarkdown(fixturePost(body), keyBytes);
+
+    expect(first.assets[0].id).not.toBe(replacement.assets[0].id);
+    expect(first.assets[0].url).not.toBe(replacement.assets[0].url);
+    expect(replacement.assets[0].aad).toBe(`asset:${replacement.assets[0].id}`);
+  });
+
   it.each([
     '![x](https://example.com/x.png)',
     '![x](/images/x.png)',
