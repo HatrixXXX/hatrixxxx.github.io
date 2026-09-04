@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> 当前仓库已去除分类与标签路由。下文的 67 项检查、21 张视觉基线、80 个页面和 4,653 条链接是当时的执行记录；当前验收口径为 92 项检查、18 张视觉基线、67 个页面和 5,352 条链接。
+> 当前仓库已去除分类与标签路由。下文的 67 项检查、21 张视觉基线、80 个页面和 4,653 条链接是当时的执行记录；当前验收口径为 123 项检查、18 张视觉基线、67 个页面和 3,961 条链接。
 
 **Goal:** 修复首次加载缺少连接杆和第三方告知的问题，并补齐泷奈拖拽、普通音效及最终视觉回归证据。
 

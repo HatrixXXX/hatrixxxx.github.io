@@ -1,5 +1,7 @@
 # Remove Site Footer Implementation Plan
 
+> 历史说明：本文记录的是移除旧版内容型页脚的实施过程。当前站点已按 `2026-09-03-compact-legal-footer.md` 恢复极简法律页脚。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 删除全站页脚及其文章列表逻辑，不保留替代页脚。
