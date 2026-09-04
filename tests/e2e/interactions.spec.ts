@@ -1,5 +1,99 @@
 import { expect, test } from '@playwright/test';
 
+test.use({ timezoneId: 'Asia/Shanghai' });
+
+test('site statistics and dot clock stay live across Shanghai midnight', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-04T15:59:59.000Z') });
+  await page.goto('/about/');
+
+  const clock = page.locator('[data-clock-text]');
+  const runningDays = page.locator('[data-running-days]');
+  const beforeDays = Number(await runningDays.textContent());
+  await expect(clock).toHaveText('23:59:59');
+
+  await page.clock.fastForward(1_000);
+
+  await expect(clock).toHaveText('00:00:00');
+  await expect(runningDays).toHaveText(String(beforeDays + 1));
+});
+
+test('site statistics synchronize the persistent visitor source after client navigation', async ({
+  page
+}) => {
+  const vercountRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('events.vercount.one')) vercountRequests.push(request.url());
+  });
+
+  await page.goto('/');
+  await page.locator('[data-visitor-count-source]').evaluate((source) => {
+    source.textContent = '1,234';
+  });
+  await page.getByRole('link', { name: '关于我', exact: true }).click();
+
+  const visitors = page.locator('[data-visitor-count]');
+  await expect(visitors).toHaveText('1,234');
+  await page.locator('[data-visitor-count-source]').evaluate((source) => {
+    source.textContent = '2,345';
+  });
+  await expect(visitors).toHaveText('2,345');
+  await page.locator('[data-visitor-count-source]').evaluate((source) => {
+    source.textContent = 'Loading';
+  });
+  await expect(visitors).toHaveText('2,345');
+  expect(vercountRequests).toEqual([]);
+});
+
+test('dot clock skips particles for reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.install({ time: new Date('2026-09-04T12:00:00.000Z') });
+  await page.goto('/about/');
+
+  const clock = page.locator('[data-clock-text]');
+  const canvas = page.locator('[data-dot-clock]');
+  const before = await clock.textContent();
+  await page.clock.fastForward(1_000);
+
+  await expect(clock).not.toHaveText(before ?? '');
+  await expect(canvas).not.toHaveAttribute('data-clock-particles', 'active');
+});
+
+test('dot clock clears stale particles and resynchronizes after visibility returns', async ({
+  page
+}) => {
+  await page.addInitScript(() => {
+    let hidden = false;
+    Object.defineProperties(document, {
+      hidden: { configurable: true, get: () => hidden },
+      visibilityState: { configurable: true, get: () => (hidden ? 'hidden' : 'visible') }
+    });
+    (window as Window & { setTestDocumentHidden?: (value: boolean) => void })
+      .setTestDocumentHidden = (value) => {
+        hidden = value;
+        document.dispatchEvent(new Event('visibilitychange'));
+      };
+  });
+  await page.clock.install({ time: new Date('2026-09-04T12:00:00.000Z') });
+  await page.goto('/about/');
+
+  const canvas = page.locator('[data-dot-clock]');
+  await page.clock.fastForward(1_000);
+  await expect(canvas).toHaveAttribute('data-clock-particles', 'active');
+
+  await page.evaluate(() => {
+    (window as Window & { setTestDocumentHidden?: (value: boolean) => void })
+      .setTestDocumentHidden?.(true);
+  });
+  await page.clock.fastForward(5_000);
+  await page.evaluate(() => {
+    (window as Window & { setTestDocumentHidden?: (value: boolean) => void })
+      .setTestDocumentHidden?.(false);
+  });
+
+  await expect(page.locator('[data-clock-text]')).toHaveText('20:00:06');
+  await expect(canvas).not.toHaveAttribute('data-clock-particles', 'active');
+});
+
 test('search loads its index once, limits results and closes with Escape', async ({ page }) => {
   let indexRequests = 0;
   page.on('request', (request) => {

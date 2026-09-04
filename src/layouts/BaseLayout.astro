@@ -92,6 +92,13 @@ const excludeFromIndex = pageLocked || noindex;
     <ThemeTransition />
     <CursorTrail />
     <SearchOverlay />
+    <span
+      id="vercount_value_site_uv"
+      data-visitor-count-source
+      class="visually-hidden"
+      transition:persist="visitor-counter"
+    >—</span>
+    {import.meta.env.PROD && <script is:inline defer src="https://events.vercount.one/js"></script>}
     <script>
       import '@/scripts/lightbox';
       import '@/scripts/music-player';
@@ -102,6 +109,7 @@ const excludeFromIndex = pageLocked || noindex;
       import '@/scripts/sakana';
       import '@/scripts/search';
       import '@/scripts/theme';
+      import '@/scripts/site-stats';
     </script>
   </body>
 </html>
