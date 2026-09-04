@@ -214,7 +214,7 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm build` | 图片预检、67 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
 | `pnpm check:site` | 旧文章路由、CNAME、3961 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 125 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 143 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 

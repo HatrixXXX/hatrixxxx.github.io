@@ -32,7 +32,7 @@ describe('Astro project tooling', () => {
       'cross-env NODE_USE_ENV_PROXY=1 tsx scripts/check-images.ts'
     );
     expect(packageJson.scripts.build).toBe(
-      'cross-env-shell NODE_USE_ENV_PROXY=1 "tsx scripts/check-images.ts && astro build && tsx scripts/check-protected-output.ts"'
+      'corepack pnpm check:images && astro build && corepack pnpm check:protected'
     );
     expect(packageJson.scripts['check:protected']).toBe('tsx scripts/check-protected-output.ts');
   });

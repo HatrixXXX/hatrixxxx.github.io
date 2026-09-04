@@ -9,7 +9,7 @@ describe('Astro project bootstrap', () => {
   it('runs image preflight before the static build', () => {
     const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
     expect(pkg.scripts.build).toBe(
-      'cross-env-shell NODE_USE_ENV_PROXY=1 "tsx scripts/check-images.ts && astro build && tsx scripts/check-protected-output.ts"'
+      'corepack pnpm check:images && astro build && corepack pnpm check:protected'
     );
   });
 });
