@@ -28,7 +28,7 @@
 - Consumes: `HATRIX_ADMIN_KEY`、现有文章 schema 和 `legacySlug` 路由规则。
 - Produces: 本地 `/posts/加锁功能测试/` 加锁页面；用户填写 key 并重启预览后可解锁。
 
-- [ ] **Step 1: 确认目标不存在且工作区没有同名改动**
+- [x] **Step 1: 确认目标不存在且工作区没有同名改动**
 
 Run:
 
@@ -41,7 +41,7 @@ git -C .private-content status --short
 
 Expected: 两个 `Test-Path` 都返回 `False`；已存在的其他会话改动保持原样。
 
-- [ ] **Step 2: 创建空的本地 key 配置**
+- [x] **Step 2: 创建空的本地 key 配置**
 
 Create `.env.local`:
 
@@ -50,7 +50,7 @@ Create `.env.local`:
 HATRIX_ADMIN_KEY=
 ```
 
-- [ ] **Step 3: 创建真实的加锁测试文章**
+- [x] **Step 3: 创建真实的加锁测试文章**
 
 Create `.private-content/posts/2026-09-04-加锁功能测试.md`:
 
@@ -77,7 +77,7 @@ legacySlug: 加锁功能测试
 如果能看到这段文字，说明正文已经在浏览器中成功解密。
 ```
 
-- [ ] **Step 4: 验证忽略规则、文件内容和 schema**
+- [x] **Step 4: 验证忽略规则、文件内容和 schema**
 
 Run:
 
@@ -90,7 +90,7 @@ corepack pnpm check
 
 Expected: `.env.local` 命中 `.gitignore`；公共仓库不会列出该文件；私有内容仓库只列出新测试文章；Astro check 为 0 errors。
 
-- [ ] **Step 5: 保留用户填写和运行步骤**
+- [x] **Step 5: 保留用户填写和运行步骤**
 
 用户在 `.env.local` 的等号后填写与 GitHub Secret 相同的 key，然后运行：
 
