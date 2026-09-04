@@ -1,36 +1,46 @@
 ---
 import { SITE } from '@/config/site';
-
-interface Props {
-  postCount: number;
-}
-
-const { postCount } = Astro.props;
+import SocialIcon from '@/components/SocialIcon.astro';
 ---
 
-<aside class="profile-sidebar" aria-label="作者资料">
+<section class="profile-sidebar" aria-label="作者资料" data-profile-card>
   <img src={SITE.author.avatar} alt={`${SITE.author.name} 的头像`} width="112" height="112" loading="lazy" />
-  <h2>{SITE.author.name}</h2>
-  <p>{SITE.description}</p>
-  <dl>
-    <div>
-      <dt>文章</dt>
-      <dd data-post-count>{postCount}</dd>
-    </div>
-  </dl>
+  <h2>{SITE.title}</h2>
+  <p>{SITE.tagline}</p>
   <nav aria-label="作者链接">
     {SITE.socials.map((social) => (
-      <a href={social.url} target="_blank" rel="me noreferrer">{social.label}</a>
+      social.url === null ? (
+        <span
+          aria-label={social.label}
+          aria-disabled="true"
+          data-social-id={social.id}
+          data-social-pending="wechat"
+          style={`--social-color: ${social.color}`}
+        >
+          <SocialIcon id={social.id} />
+        </span>
+      ) : (
+        <a
+          href={social.url}
+          aria-label={social.label}
+          data-social-id={social.id}
+          style={`--social-color: ${social.color}`}
+          target={social.url.startsWith('http') ? '_blank' : undefined}
+          rel={social.url.startsWith('http') ? 'me noreferrer' : undefined}
+        >
+          <SocialIcon id={social.id} />
+        </a>
+      )
     ))}
   </nav>
-</aside>
+</section>
 
 <style>
   .profile-sidebar {
     min-width: 0;
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
-    padding: 2rem 1.4rem;
+    padding: 1.5rem 1.25rem;
     background: var(--color-surface);
     box-shadow: var(--shadow-panel);
     text-align: center;
@@ -57,44 +67,32 @@ const { postCount } = Astro.props;
     font-size: 0.9rem;
   }
 
-  dl {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    margin: 1.5rem 0;
-  }
-
-  dt {
-    color: var(--color-muted);
-    font-size: 0.75rem;
-  }
-
-  dd {
-    margin: 0;
-    color: #fff;
-    font-size: 1.15rem;
-    font-weight: 800;
-  }
-
   nav {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.45rem 0.8rem;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-top: 1.25rem;
   }
 
-  nav a {
-    color: var(--color-muted);
-    font-size: 0.8rem;
+  nav a,
+  nav span {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    justify-self: center;
+    border: 1px solid color-mix(in srgb, var(--social-color) 45%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--social-color) 12%, transparent);
+    color: var(--social-color);
   }
 
   nav a:hover {
-    color: var(--color-accent);
+    border-color: var(--social-color);
+    background: color-mix(in srgb, var(--social-color) 20%, transparent);
   }
 
-  @media (min-width: 1025px) {
-    .profile-sidebar {
-      position: sticky;
-      top: 1.5rem;
-    }
+  nav span {
+    opacity: 0.65;
   }
 </style>

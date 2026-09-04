@@ -49,13 +49,10 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
 
 <style>
   .toc {
-    position: sticky;
-    top: 1.25rem;
-    grid-column: 2;
+    position: static;
+    grid-column: 1;
     grid-row: 1;
     min-width: 0;
-    max-height: calc(100vh - 2.5rem);
-    overflow: auto;
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
     background: var(--color-surface);
@@ -68,7 +65,7 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
   }
 
   .toc-mobile {
-    display: none;
+    display: block;
   }
 
   h2,
@@ -120,20 +117,26 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
     color: var(--color-accent);
   }
 
-  @media (max-width: 1024px) {
+  .toc-desktop {
+    display: none;
+  }
+
+  @media (min-width: 1280px) {
     .toc {
-      position: static;
-      grid-column: 1;
+      position: sticky;
+      top: 1.25rem;
+      grid-column: 3;
       grid-row: 1;
-      max-height: none;
+      max-height: calc(100vh - 2.5rem);
+      overflow: auto;
     }
 
     .toc-desktop {
-      display: none;
+      display: block;
     }
 
     .toc-mobile {
-      display: block;
+      display: none;
     }
   }
 </style>

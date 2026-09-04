@@ -9,10 +9,14 @@ export const SITE = {
     avatar: '/images/avatar.jpg'
   },
   socials: [
-    { label: 'GitHub', url: 'https://github.com/HatrixXXX' },
-    { label: 'Gitee', url: 'https://gitee.com/hatrixxxx' },
-    { label: 'Bilibili', url: 'https://space.bilibili.com/352420563' },
-    { label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx' }
+    { id: 'rss', label: 'RSS', url: '/rss.xml', color: '#f59e0b' },
+    { id: 'github', label: 'GitHub', url: 'https://github.com/HatrixXXX', color: '#a78bfa' },
+    { id: 'bilibili', label: 'Bilibili', url: 'https://space.bilibili.com/352420563', color: '#fb7299' },
+    { id: 'zhihu', label: '知乎', url: 'https://www.zhihu.com/people/hatrixxxx', color: '#2f88ff' },
+    { id: 'xiaohongshu', label: '小红书', url: 'https://www.xiaohongshu.com/user/profile/62a6030000000000190299d', color: '#ff2442' },
+    { id: 'wechat', label: '微信', url: null, color: '#07c160' },
+    { id: 'qqmusic', label: 'QQ 音乐', url: 'https://i2.y.qq.com/n3/other/pages/share/profile_v2/index.html', color: '#22c55e' },
+    { id: 'email', label: '邮件', url: 'mailto:3113624526@qq.com', color: '#f97316' }
   ],
   filings: [] as readonly { label: string; url: string }[],
   giscus: {

@@ -116,6 +116,38 @@ test('post layout has no mobile horizontal overflow', async ({ page }) => {
   expect(sizes.scroll).toBe(sizes.client);
 });
 
+test('post layout places the sidebar, article and TOC in responsive reading order', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/posts/本科数学大杂烩/');
+
+  const desktopStack = await page.locator('[data-sidebar-stack]').boundingBox();
+  const desktopPost = await page.locator('.post-column').boundingBox();
+  const desktopToc = await page.locator('[data-toc-desktop]').boundingBox();
+  expect((desktopStack?.x ?? Infinity) + (desktopStack?.width ?? 0)).toBeLessThanOrEqual(
+    desktopPost?.x ?? -Infinity
+  );
+  expect((desktopPost?.x ?? Infinity) + (desktopPost?.width ?? 0)).toBeLessThanOrEqual(
+    desktopToc?.x ?? -Infinity
+  );
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const mobileToc = await page.locator('[data-table-of-contents]').boundingBox();
+  const mobilePost = await page.locator('.post-column').boundingBox();
+  const mobileStack = await page.locator('[data-sidebar-stack]').boundingBox();
+  expect((mobileToc?.y ?? Infinity) + (mobileToc?.height ?? 0)).toBeLessThanOrEqual(
+    mobilePost?.y ?? -Infinity
+  );
+  expect((mobilePost?.y ?? Infinity) + (mobilePost?.height ?? 0)).toBeLessThanOrEqual(
+    mobileStack?.y ?? -Infinity
+  );
+  const sizes = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    client: document.documentElement.clientWidth
+  }));
+  expect(sizes.scroll).toBe(sizes.client);
+});
+
 test('Giscus uses the site dark theme and remounts once after client navigation', async ({
   page
 }) => {

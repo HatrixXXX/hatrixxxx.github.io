@@ -4,14 +4,12 @@ import type { GetStaticPaths } from 'astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import Pagination from '@/components/Pagination.astro';
 import PostList from '@/components/PostList.astro';
-import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { paginatePosts, sortPosts, type Page, type PostEntry } from '@/lib/content';
 
 interface Props {
   page: Page<PostEntry>;
-  posts: PostEntry[];
 }
 
 export const getStaticPaths = (async () => {
@@ -22,12 +20,12 @@ export const getStaticPaths = (async () => {
     const current = index + 2;
     return {
       params: { page: String(current) },
-      props: { page: paginatePosts(posts, current, 6), posts }
+      props: { page: paginatePosts(posts, current, 6) }
     };
   });
 }) satisfies GetStaticPaths;
 
-const { page, posts } = Astro.props;
+const { page } = Astro.props;
 ---
 
 <BaseLayout title={`文章列表 · 第 ${page.current} 页`}>
@@ -37,13 +35,10 @@ const { page, posts } = Astro.props;
     image="/images/default-cover.svg"
     compact
   />
-  <main class="home-main container with-sidebar">
+  <main class="home-main container">
     <div class="home-feed">
       <PostList posts={page.items} />
       <Pagination current={page.current} total={page.total} basePath="/page/" />
-    </div>
-    <div class="sidebar-column">
-      <ProfileSidebar postCount={posts.length} />
     </div>
   </main>
 </BaseLayout>
@@ -51,24 +46,12 @@ const { page, posts } = Astro.props;
 <style>
   .home-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
-    gap: clamp(1.5rem, 3vw, 2.5rem);
     align-items: start;
     padding-block: clamp(2.5rem, 6vw, 5rem);
   }
 
-  .home-feed,
-  .sidebar-column {
+  .home-feed {
     min-width: 0;
   }
 
-  @media (max-width: 1024px) {
-    .home-main {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .sidebar-column {
-      grid-row: 1;
-    }
-  }
 </style>

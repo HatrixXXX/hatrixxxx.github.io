@@ -1,0 +1,36 @@
+---
+import MusicPlayer from '@/components/MusicPlayer.astro';
+import ProfileSidebar from '@/components/ProfileSidebar.astro';
+import SiteStats from '@/components/SiteStats.astro';
+import type { PostEntry } from '@/lib/content';
+import { buildSiteStats } from '@/lib/site-stats';
+
+interface Props {
+  posts: readonly PostEntry[];
+}
+
+const { posts } = Astro.props;
+---
+
+<aside class="sidebar-stack" data-sidebar-stack aria-label="站点侧栏">
+  <ProfileSidebar />
+  <SiteStats stats={buildSiteStats(posts)} />
+  <MusicPlayer />
+</aside>
+
+<style>
+  .sidebar-stack {
+    display: grid;
+    width: min(100%, 280px);
+    min-width: 0;
+    gap: 1rem;
+    justify-self: center;
+  }
+
+  @media (min-width: 1280px) and (min-height: 760px) {
+    .sidebar-stack {
+      position: sticky;
+      top: 1.5rem;
+    }
+  }
+</style>

@@ -1,39 +1,28 @@
 ---
-import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
-import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import type { PostEntry } from '@/lib/content';
-
-const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
 ---
 
 <BaseLayout title={SITE.title}>
   <HeroBanner title={SITE.title} subtitle={SITE.tagline} image="/images/default-cover.svg" />
-  <main id="articles" class="home-main container with-sidebar">
+  <main id="articles" class="home-main container">
     <section class="home-blog-entry" aria-labelledby="home-blog-heading">
       <h2 id="home-blog-heading">博客文章</h2>
       <p>所有文章都放在博客页面，可以浏览全部内容，也可以按文章类型查看。</p>
       <a href="/blog/" data-blog-entry>浏览全部博客文章 <span aria-hidden="true">→</span></a>
     </section>
-    <div class="sidebar-column">
-      <ProfileSidebar postCount={posts.length} />
-    </div>
   </main>
 </BaseLayout>
 
 <style>
   .home-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 290px);
-    gap: clamp(1.5rem, 3vw, 2.5rem);
     align-items: start;
     padding-block: clamp(2.5rem, 6vw, 5rem);
   }
 
-  .home-blog-entry,
-  .sidebar-column {
+  .home-blog-entry {
     min-width: 0;
   }
 
@@ -78,13 +67,4 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
     background: var(--color-accent-strong);
   }
 
-  @media (max-width: 1024px) {
-    .home-main {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .sidebar-column {
-      grid-row: 1;
-    }
-  }
 </style>

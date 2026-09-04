@@ -1,8 +1,11 @@
 ---
+import { getCollection } from 'astro:content';
 import EmptyState from '@/components/EmptyState.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
+import SidebarStack from '@/components/SidebarStack.astro';
 import { ABOUT_SECTION_LINKS } from '@/config/navigation';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import type { PostEntry } from '@/lib/content';
 
 export function getStaticPaths() {
   return ABOUT_SECTION_LINKS.map((section) => ({
@@ -12,15 +15,25 @@ export function getStaticPaths() {
 }
 
 const { section } = Astro.props;
+const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
 ---
 
 <BaseLayout title={section.label}>
   <HeroBanner title={section.label} subtitle="关于我的一些记录" image="/images/default-cover.svg" compact />
   <main class="about-section container">
-    <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
+    <div class="about-content">
+      <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
+    </div>
+    <SidebarStack posts={posts} />
   </main>
 </BaseLayout>
 
 <style>
-  .about-section { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .about-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3rem); align-items: start; padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .about-content { min-width: 0; }
+  @media (min-width: 1025px) {
+    .about-section { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr); }
+    .about-content { grid-column: 2; grid-row: 1; }
+    .about-section :global([data-sidebar-stack]) { grid-column: 1; grid-row: 1; }
+  }
 </style>

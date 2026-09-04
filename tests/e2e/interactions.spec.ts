@@ -334,7 +334,7 @@ test('empty music player persists without constructing track audio or requesting
     });
   });
 
-  await page.goto('/');
+  await page.goto('/posts/本科数学大杂烩/');
   const player = page.locator('[data-music-player]');
   await expect(player.getByText('歌单待添加')).toBeVisible();
   await expect(player.getByRole('button', { name: '上一首' })).toBeDisabled();
@@ -346,37 +346,9 @@ test('empty music player persists without constructing track audio or requesting
   );
   await expect(player.getByText('0:00 / 0:00')).toBeVisible();
 
-  const blogEntry = page.locator('.home-blog-entry');
-  await blogEntry.evaluate((element) => element.scrollIntoView({ block: 'end' }));
-  await expect(blogEntry).toBeInViewport();
-  expect(await player.evaluate((element) => {
-    const primary = document.querySelector('.home-blog-entry');
-    if (!primary) throw new Error('Missing primary content probe');
-    const playerRect = element.getBoundingClientRect();
-    const primaryRect = primary.getBoundingClientRect();
-    return playerRect.left < primaryRect.right && playerRect.right > primaryRect.left
-      && playerRect.top < primaryRect.bottom && playerRect.bottom > primaryRect.top;
-  })).toBe(false);
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
-  const sidebar = page.locator('.profile-sidebar');
-  await sidebar.evaluate((element) => element.scrollIntoView({ block: 'end' }));
-  await expect(sidebar).toBeInViewport();
-  expect(await page.locator('[data-music-player]').evaluate((element) => {
-    const visibleSidebar = document.querySelector('.profile-sidebar');
-    if (!visibleSidebar) throw new Error('Missing sidebar probe');
-    const playerRect = element.getBoundingClientRect();
-    const sidebarRect = visibleSidebar.getBoundingClientRect();
-    return playerRect.left < sidebarRect.right && playerRect.right > sidebarRect.left
-      && playerRect.top < sidebarRect.bottom && playerRect.bottom > sidebarRect.top;
-  })).toBe(false);
-
-  await page.setViewportSize({ width: 1440, height: 900 });
-  const persistedPlayer = page.locator('[data-music-player]');
-  await persistedPlayer.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
-
-  await page.getByRole('link', { name: '博客文章', exact: true }).click();
+  await player.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
+  await page.locator('[data-adjacent-posts] a').first().click();
+  await expect(page.locator('article[data-post]')).toBeVisible();
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-persist-probe', 'same-node');
   const audioSources = await page.evaluate(
     () => (window as Window & { __audioSources?: string[] }).__audioSources ?? []

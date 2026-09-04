@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
 import PostArchiveList from '@/components/PostArchiveList.astro';
-import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
 
@@ -12,19 +11,17 @@ const archives = buildArchives(posts);
 
 <BaseLayout title="归档">
   <HeroBanner title="归档" subtitle={`共 ${posts.length} 篇文章`} image="/images/default-cover.svg" compact />
-  <main class="index-main container with-sidebar">
+  <main class="index-main container">
     <section class="archive-list" aria-label="文章归档">
       <p class="archive-total">已归档 <strong data-archive-total>{posts.length}</strong> 篇文章</p>
       <PostArchiveList archives={archives} />
     </section>
-    <aside><ProfileSidebar postCount={posts.length} /></aside>
   </main>
 </BaseLayout>
 
 <style>
-  .index-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 290px); gap: clamp(1.5rem, 3vw, 2.5rem); padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .index-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
   .archive-list { min-width: 0; }
   .archive-total { margin: 0 0 1.5rem; color: var(--color-muted); }
   .archive-total strong { color: var(--color-accent); font-size: 1.25em; }
-  @media (max-width: 1024px) { .index-main { grid-template-columns: minmax(0, 1fr); } aside { order: -1; } }
 </style>
