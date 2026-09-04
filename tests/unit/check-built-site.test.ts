@@ -55,9 +55,17 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
 });
 
 it('accepts the reviewed metadata and safe external resources', () => {
-  const html = `<html>${secureHead}<body><img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png"><a href="https://example.com" target="_blank" rel="noreferrer">external</a><script src="https://giscus.app/client.js"></script></body></html>`;
+  const html = `<html>${secureHead}<body><img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png"><a href="https://example.com" target="_blank" rel="noreferrer">external</a><script src="https://giscus.app/client.js"></script><script src="https://events.vercount.one/js"></script></body></html>`;
 
   expect(securityErrorsForHtml(html, '/safe/')).toEqual([]);
+});
+
+it('rejects unreviewed paths on an approved script origin', () => {
+  const html = `<html>${secureHead}<body><script src="https://events.vercount.one/unreviewed.js"></script></body></html>`;
+
+  expect(securityErrorsForHtml(html, '/unsafe-script/')).toEqual([
+    expect.stringContaining('Unapproved external script')
+  ]);
 });
 
 it('reports missing or late metadata and unsafe HTML attributes', () => {

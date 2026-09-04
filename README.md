@@ -90,6 +90,8 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 
 页脚只保留版权和“保留所有权利”说明文字，不显示第三方许可链接。许可文件仍发布在 `/third-party-notices.txt`。
 
+关于页、关于子页和文章页使用共享侧栏，依次显示作者资料、站点统计和音乐播放器；首页、博客列表、归档、作品、留言板和 404 不显示。访客数由生产环境的 `https://events.vercount.one/js` 提供，开发和测试环境不请求该服务；加载失败时只保留 `—`，不影响页面内容。
+
 ## 新增文章
 
 在 `.private-content/posts/` 新建 Markdown 或 MDX 文件。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
@@ -180,7 +182,7 @@ export const playlist: readonly Track[] = [
 ];
 ```
 
-`id`、`title`、`artist` 和 `src` 必填，`cover` 可省略。播放列表为空时，播放器位于页脚后的普通文档流，不会创建 `Audio` 对象或请求音频文件；列表有曲目后才固定在页面右下角。
+`id`、`title`、`artist` 和 `src` 必填，`cover` 可省略。播放器是关于页、关于子页和文章页共享侧栏的第三张卡片，不使用固定定位。播放列表为空时不会创建 `Audio` 对象，也不会请求音频文件。
 
 ## 图片策略
 
@@ -217,8 +219,8 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、67 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 旧文章路由、CNAME、3961 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 143 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
+| `pnpm check:site` | 旧文章路由、CNAME、4102 条站内链接和发布体积 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 152 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
 
@@ -226,7 +228,7 @@ Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows �
 
 ## 安全边界
 
-生产页面通过 HTML CSP 限制脚本、框架、图片和其他资源来源，并使用 `strict-origin-when-cross-origin` Referrer Policy。CSP 只在生产构建输出，开发服务器仍使用 Vite HMR。Argon2 由 `hash-wasm` 执行，因此策略只为 WebAssembly 编译保留 `'wasm-unsafe-eval'`，不允许通用 `'unsafe-eval'`。新增第三方脚本、框架、远程图片或媒体来源时，先更新安全策略和构建产物测试，不能只放宽 `default-src`。
+生产页面通过 HTML CSP 限制脚本、框架、图片和其他资源来源，并使用 `strict-origin-when-cross-origin` Referrer Policy。CSP 只在生产构建输出，开发服务器仍使用 Vite HMR。Argon2 由 `hash-wasm` 执行，因此策略只为 WebAssembly 编译保留 `'wasm-unsafe-eval'`，不允许通用 `'unsafe-eval'`。生产环境额外允许经过审计的 Vercount 脚本 `https://events.vercount.one/js`；构建检查仍按完整 URL 拒绝同源下的其他脚本。新增第三方脚本、框架、远程图片或媒体来源时，先更新安全策略和构建产物测试，不能只放宽 `default-src`。
 
 已发布 Markdown 会在构建期拒绝可执行原始 HTML、事件属性、危险 URL scheme 和未固定的远程图片。检查失败时修改内容或明确更新允许边界，不要用 sanitizer 静默删除正文。
 

@@ -449,8 +449,7 @@ git commit -m "feat: animate live sidebar statistics"
 
 **Files:**
 - Modify if verified link total changes: `scripts/check-built-site.ts`
-- Modify: the three `home-*.png` baselines under `tests/e2e/visual.spec.ts-snapshots/`
-- Modify: the three `-posts-本科数学大杂烩--*.png` baselines under the same directory
+- Modify: all 18 Windows baselines under `tests/e2e/visual.spec.ts-snapshots/`
 - Modify only if reconciliation finds stale text: `AGENTS.md`, `README.md`, `docs/`
 
 **Interfaces:**
@@ -473,14 +472,14 @@ Every command must exit `0`. If `check:site` reports only a changed internal-lin
 - [ ] **Step 2: Generate only affected visual baselines**
 
 ```powershell
-corepack pnpm playwright test tests/e2e/visual.spec.ts --update-snapshots --grep "^(/|/posts/本科数学大杂烩/) has stable responsive structure$"
+corepack pnpm playwright test tests/e2e/visual.spec.ts --update-snapshots
 ```
 
-Expected: six Windows baselines change and no platform suffix is added.
+Expected: all 18 Windows baselines change and no platform suffix is added. Home loses the old profile and player; the article gains the contextual stack; blog, archive, projects and 404 lose the formerly global player.
 
 - [ ] **Step 3: Inspect screenshots**
 
-Inspect the six baselines and fresh `/about/` screenshots at 1440×900 and 390×844. Check card order, icon recognition, clock clipping, article width, mobile content order, light/dark contrast and horizontal overflow. Do not update unrelated baselines.
+Inspect all 18 baselines and fresh `/about/` screenshots at 1440×900 and 390×844. Check card order, icon recognition, clock clipping, article width, mobile content order, light/dark contrast and horizontal overflow. Each baseline change must come from removing or relocating the profile, statistics or player cards.
 
 - [ ] **Step 4: Run the complete verification fresh**
 

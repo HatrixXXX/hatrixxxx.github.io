@@ -40,11 +40,12 @@ corepack pnpm test:e2e
 - 加锁正文图片必须使用 `.private-content/posts/` 内文件的 Markdown 相对路径。禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`；加锁文章的 `cover` 仍是公开资源。
 - 主导航固定为首页、博客文章、作品橱窗、关于我和留言板；博客文章与关于我在桌面端使用横向二级菜单。文章 `type` 只能是 `技术笔记|踩坑记录|生活动态|好物推荐|随笔杂谈`，用于文章类型页，不得作为旧分类或标签 taxonomy 恢复。
 - `series` 与 `seriesOrder` 必须成对出现。
-- 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。空歌单播放器位于普通文档流，只有非空歌单才固定在页面右下角。
+- 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。音乐播放器是关于页、关于子页和文章页共享侧栏的第三张卡片，不使用固定定位；空歌单不会创建 `Audio` 对象。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。草稿不参与 inventory。
-- Playwright 有 143 项检查和 18 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
+- Playwright 有 152 项检查和 18 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
 - 首页保留大尺寸 Hero。所有非首页普通 Hero 与文章题图在同一视口下等高：桌面和平板为 `240px`，宽度不超过 `768px` 时为 `200px`；全站不渲染波浪分隔。
 - 当前页脚只显示版权与“保留所有权利”纯文本，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
+- 作者资料、站点统计和音乐播放器组成的共享侧栏只出现在关于页、关于子页和文章页。Vercount 只在生产环境加载固定脚本 `https://events.vercount.one/js`；开发和测试不得请求该服务，加载失败时访客数保持 `—`。
 - Sakana 的许可和素材来源告知固定在 `public/third-party-notices.txt`，构建后必须复制到 `dist/third-party-notices.txt`。内置千束与泷奈插画只用于非商业网页；站点用途或依赖版本变化时必须重新核对授权。
 - 若视觉差异只出现在含远程图片的文章，先核对 `reports/image-check.json`。临时失败恢复后应重跑 `check:images`、清理 `.astro` 并执行 `astro sync`，不要直接更新视觉基线。
 - `check:images` 负责远程图片，`check:protected` 负责 `dist/` 明文与原资源泄漏。保护审计或密文测试失败时先找泄漏根因，不得放宽检查、替换期望密文或直接更新密文基线。
@@ -53,7 +54,7 @@ corepack pnpm test:e2e
 - 生产 CSP 和 Referrer Policy 的唯一来源是 `src/config/security.ts`。`hash-wasm` 的 Argon2 依赖 `'wasm-unsafe-eval'`，不得换成通用 `'unsafe-eval'`。新增第三方脚本、框架、远程图片或媒体来源时，必须同时更新策略、构建产物测试和生产预览取证，不能只放宽 `default-src`。
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
-- `check:site` 固定校验 3961 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 4102 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 ## 禁止事项
@@ -90,3 +91,5 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-03-security-hardening.md`：仓库安全加固的测试与实施步骤。
 - `docs/superpowers/specs/2026-09-03-protected-content-design.md`：私有内容仓库、SSR 加密、浏览器凭据、部署与安全边界。
 - `docs/superpowers/plans/2026-09-03-protected-content.md`：加锁内容的任务拆分和验证记录。
+- `docs/superpowers/specs/2026-09-04-contextual-sidebar-design.md`：关于页与文章页共享侧栏、站点统计和点阵时钟设计。
+- `docs/superpowers/plans/2026-09-04-contextual-sidebar.md`：共享侧栏的任务拆分、第三方统计边界和验证步骤。

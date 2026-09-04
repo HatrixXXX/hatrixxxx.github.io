@@ -1,6 +1,6 @@
 # Astro 个人博客重构设计
 
-> 历史说明：文章分类与标签设计已由 `2026-09-03-remove-taxonomy-design.md` 废止，原始导航由 `2026-09-03-navigation-content-hubs-design.md` 取代，Banner 和波浪边界以 `2026-09-03-non-home-banner-design.md` 为准，页脚以 `2026-09-03-compact-legal-footer-design.md` 为准。文中其余差异保留为当时的实施记录；最初写入的 ICP 备案假设没有可信编号佐证，当前配置不显示备案信息。
+> 历史说明：文章分类与标签设计已由 `2026-09-03-remove-taxonomy-design.md` 废止，原始导航由 `2026-09-03-navigation-content-hubs-design.md` 取代，Banner 和波浪边界以 `2026-09-03-non-home-banner-design.md` 为准，页脚以 `2026-09-03-compact-legal-footer-design.md` 为准，资料卡和播放器的位置以 `2026-09-04-contextual-sidebar-design.md` 为准。文中其余差异保留为当时的实施记录；最初写入的 ICP 备案假设没有可信编号佐证，当前配置不显示备案信息。
 
 日期：2026-09-01
 

@@ -35,12 +35,12 @@ GitHub Pages 不提供仓库级任意响应头配置。第一阶段可以用 HTM
 default-src 'self';
 base-uri 'none';
 object-src 'none';
-script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://giscus.app;
+script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://giscus.app https://events.vercount.one;
 script-src-attr 'none';
 style-src 'self' 'unsafe-inline' https://giscus.app;
 img-src 'self' data: blob: https://cdn.jsdelivr.net;
 font-src 'self' data:;
-connect-src 'self';
+connect-src 'self' https://events.vercount.one;
 media-src 'self' data: blob:;
 frame-src https://giscus.app;
 worker-src 'self' blob:;
@@ -48,11 +48,11 @@ manifest-src 'self';
 form-action 'self'
 ```
 
-第一阶段保留 `script-src 'unsafe-inline'`，原因是当前构建包含主题初始化和 Giscus 内联模块，直接改成哈希策略会与 Astro ClientRouter、构建压缩和加锁内容脚本相互影响。ClientRouter 在客户端导航时加载 `data:` 模块，`hash-wasm` 需要编译 Argon2 WebAssembly，Sakana 使用内嵌 `data:` 音频，Giscus 客户端会加载同源于 `giscus.app` 的样式。`'wasm-unsafe-eval'` 只放行 WebAssembly 编译，不允许 JavaScript 的 `eval()` 或 `Function()`；不能替换成范围更大的 `'unsafe-eval'`。`script-src-attr 'none'` 单独禁止 HTML 事件属性，内容检查同时拒绝原始 `<script>`。
+第一阶段保留 `script-src 'unsafe-inline'`，原因是当前构建包含主题初始化和 Giscus 内联模块，直接改成哈希策略会与 Astro ClientRouter、构建压缩和加锁内容脚本相互影响。ClientRouter 在客户端导航时加载 `data:` 模块，`hash-wasm` 需要编译 Argon2 WebAssembly，Sakana 使用内嵌 `data:` 音频，Giscus 客户端会加载同源于 `giscus.app` 的样式。生产页面还会加载固定的 Vercount 脚本 `https://events.vercount.one/js`，并向同一源发送统计请求。`'wasm-unsafe-eval'` 只放行 WebAssembly 编译，不允许 JavaScript 的 `eval()` 或 `Function()`；不能替换成范围更大的 `'unsafe-eval'`。`script-src-attr 'none'` 单独禁止 HTML 事件属性，内容检查同时拒绝原始 `<script>`。
 
 样式仍允许内联，并允许 Giscus 客户端加载 `https://giscus.app/default.css`。Astro 页面样式、Hero 背景、Mermaid 和现有交互会生成 `<style>` 或 `style` 属性；为了去掉 `unsafe-inline` 而重写这些功能不在本阶段范围内。
 
-CSP 只在生产构建输出。开发服务器需要 Vite HMR 和 WebSocket，不加载生产策略。所有页面同时输出：
+CSP 只在生产构建输出。开发服务器需要 Vite HMR 和 WebSocket，不加载生产策略，也不请求 Vercount。所有页面同时输出：
 
 ```html
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -77,7 +77,7 @@ CSP 只在生产构建输出。开发服务器需要 Vite HMR 和 WebSocket，�
 
 作品链接只允许 HTTPS。若以后需要站内作品链接，单独允许以 `/` 开头的相对路径，不把任意 URL schema 当作合法链接。
 
-Mermaid 初始化显式设置 `securityLevel: 'strict'`，不依赖上游默认值。搜索继续使用当前 DOM 构造方式。Giscus 的 `client.js` 是已接受的第三方运行时代码边界：保留匿名 CORS 和加载失败降级，不给会随上游更新失效的可变 URL 硬塞 SRI。
+Mermaid 初始化显式设置 `securityLevel: 'strict'`，不依赖上游默认值。搜索继续使用当前 DOM 构造方式。构建产物只接受 Giscus 的 `https://giscus.app/client.js` 和 Vercount 的 `https://events.vercount.one/js` 两个外部脚本地址；同源的其他路径仍按未知外部脚本拒绝。Giscus 保留匿名 CORS 和加载失败降级，不给会随上游更新失效的可变 URL 硬塞 SRI。
 
 ## 构建产物门禁
 
@@ -87,7 +87,7 @@ Mermaid 初始化显式设置 `securityLevel: 'strict'`，不依赖上游默认�
 - CSP 位于所有脚本之前；
 - 页面没有事件属性、`javascript:`、`vbscript:`、危险 `data:` 文档或未知外部可执行资源；
 - `target="_blank"` 链接具备阻断 opener 的 `rel`；
-- 外部脚本只允许 Giscus，远程图片只允许已批准的 jsDelivr 前缀；
+- 外部脚本只允许 `https://giscus.app/client.js` 和 `https://events.vercount.one/js`，远程图片只允许已批准的 jsDelivr 前缀；
 - 现有 40 条旧文章路由、CNAME、第三方声明、站内链接总量和发布体积检查继续执行。
 
 产物检查同样以 `scriptingEnabled: false` 和源码位置信息解析 HTML。遍历时记录 `<noscript>` 祖先，拒绝其中的脚本、样式、元数据、外部资源标签、表单控件和 SVG/MathML；纯文本降级提示可以保留。`srcset` 与 `imagesrcset` 使用严格解析，每个候选地址再交给共享 URL 判定，无法解析时按失败处理。

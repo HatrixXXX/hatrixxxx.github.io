@@ -98,3 +98,19 @@ test('about sidebar exposes the requested profile, social links and static stati
   await expect(stats.locator('[data-stat="posts"]')).toHaveText('40');
   await expect(stats.locator('[data-stat="visitors"]')).toHaveText('—');
 });
+
+test('contextual sidebar cards remain readable in the light theme', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+  await page.goto('/about/');
+
+  await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(22, 26, 32)');
+  await expect(page.locator('[data-site-stats] h2')).toHaveCSS('color', 'rgb(22, 26, 32)');
+  await expect(page.locator('[data-site-stats] dd').first()).toHaveCSS(
+    'color',
+    'rgb(48, 52, 59)'
+  );
+  await expect(page.locator('[data-music-player] strong')).toHaveCSS(
+    'color',
+    'rgb(48, 52, 59)'
+  );
+});

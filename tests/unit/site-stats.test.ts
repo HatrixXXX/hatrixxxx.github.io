@@ -27,7 +27,7 @@ describe('site statistics', () => {
   });
 
   it('rejects an empty published collection', () => {
-    expect(() => buildSiteStats([])).toThrowError('published posts must not be empty');
+    expect(() => buildSiteStats([])).toThrow('published posts must not be empty');
   });
 
   it('uses Shanghai calendar days and counts launch day as day one', () => {

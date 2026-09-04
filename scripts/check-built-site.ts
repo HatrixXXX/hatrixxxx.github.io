@@ -16,7 +16,11 @@ import {
 import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
-const EXPECTED_LOCAL_LINKS = 3961;
+const EXPECTED_LOCAL_LINKS = 4102;
+const APPROVED_EXTERNAL_SCRIPTS = new Set([
+  'https://events.vercount.one/js',
+  'https://giscus.app/client.js'
+]);
 const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 const NOSCRIPT_FORBIDDEN_TAGS = new Set([
@@ -421,7 +425,7 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
     if (inTemplate) continue;
     const src = attributeValue(script, 'src');
     const url = src ? externalUrl(src, route) : undefined;
-    if (url && url.href !== 'https://giscus.app/client.js') {
+    if (url && !APPROVED_EXTERNAL_SCRIPTS.has(url.href)) {
       errors.push(diagnostic(route, 'Unapproved external script', 'src', url.origin));
     }
   }

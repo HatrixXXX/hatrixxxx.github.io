@@ -19,6 +19,6 @@ describe('dot clock geometry', () => {
   });
 
   it('rejects values outside the HH:mm:ss shape', () => {
-    expect(() => pointsForClock('9:08:07')).toThrowError('clock value must use HH:mm:ss');
+    expect(() => pointsForClock('9:08:07')).toThrow('clock value must use HH:mm:ss');
   });
 });
