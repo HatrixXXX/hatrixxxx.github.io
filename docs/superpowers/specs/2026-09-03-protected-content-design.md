@@ -62,7 +62,7 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 2. `PostLayout` 保留公开 Hero，把正文网格交给 `ProtectedContent.astro`。
 3. `ProtectedContent.astro` 通过 `Astro.slots.render('default')` 得到完整 HTML，读取 `HATRIX_ADMIN_KEY`，用固定盐的 Argon2id 派生 256 位 key，再以 AES-256-GCM 加密该 HTML。
 4. 页面只输出解锁表单、内联 JSON 密文信封和空挂载点。页面信封的 AAD 是规范化后的 `page:<route>`。
-5. `src/pages/protected-content/assets/[id].bin.ts` 为已发布的加锁文章生成静态资源端点。资源 ID 是派生 key 对私有仓库相对路径的 HMAC-SHA-256；文件内容再以 `asset:<id>` 为 AAD 单独加密。
+5. `src/pages/protected-content/assets/[id].bin.ts` 为已发布的加锁文章生成静态资源端点。资源 ID 是派生 key 对私有仓库相对路径和文件内容摘要的 HMAC-SHA-256；同一路径下的图片发生变化时，URL 和 `asset:<id>` AAD 都会随之变化，旧缓存不会冒充新资源。
 6. `/protected-content/manifest.json` 公开格式版本、固定 128 位盐、Argon2id 参数、七天时长、加锁路由和认证密文。认证密文使用 `verifier:1` AAD。
 
 Argon2id 当前参数为 19 MiB 内存、2 次迭代、单路并行，输出 32 字节。每份 AES-GCM 信封使用独立的 96 位随机 IV，信封只包含格式版本、IV 和密文。相同 key、盐和参数会派生相同的 AES key，但每次构建的页面和资源密文仍会因随机 IV 改变。
@@ -118,7 +118,7 @@ Argon2id 当前参数为 19 MiB 内存、2 次迭代、单路并行，输出 32 
 
 私有仓库 `master` push 后，`notify-site.yml` 发送 `content-updated`，payload 是触发该 workflow 的完整 `github.sha`。公开 workflow 先校验它是 40 位十六进制 SHA，再把私有仓库的这个精确提交检出到 `.private-content/`，并比较实际 `git rev-parse HEAD` 与 payload。两者不一致就停止。构建和检查通过后才部署；失败不会替换现有 Pages 版本。
 
-公开仓库 `master` push 或手动运行 workflow 时，私有 checkout 不指定 ref，因此读取私有仓库默认分支当时的 HEAD。workflow 随后记录实际检出的完整 SHA，并把它加入 Astro 缓存 key。公开仓库 pull request 不读取三个正式 Secret，也不访问私有仓库；它使用 `tests/fixtures/private-content` 和固定测试 key 运行单元测试、Astro check 与 build，且不部署。
+公开仓库 `master` push 或手动运行 workflow 时，私有 checkout 不指定 ref，因此读取私有仓库默认分支当时的 HEAD，并记录实际检出的完整 SHA。生产 workflow 不缓存 `.astro/`，构建结束后也会在上传 `dist/` 前删除它，因为其中可能含有私有正文、渲染 HTML 和源路径。公开仓库 pull request 不读取三个正式 Secret，也不访问私有仓库；它使用 `tests/fixtures/private-content` 和固定测试 key 运行单元测试、Astro check 与 build，且不部署。
 
 ## 索引和公开面
 

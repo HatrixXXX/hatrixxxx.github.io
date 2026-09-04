@@ -221,7 +221,7 @@ Expected: FAIL，原因是 Markdown 保护模块不存在。
 
 - [x] **Step 3: 实现受保护图片 remark 插件和端点**
 
-复用 `@astrojs/markdown-remark` 的 `createMarkdownProcessor()`、现有 math/KaTeX/Shiki 设置。插件只接受位于当前私有内容根目录内的相对图片，使用内容密钥 HMAC-SHA-256 生成公开 ID，把节点改为透明占位 `src` 加 `data-protected-src` 和 `data-protected-type`。asset endpoint 枚举所有已发布且 `locked` 的文章，读取对应文件后用 AES-GCM 和 `asset:<id>` AAD 输出二进制信封。
+复用 `@astrojs/markdown-remark` 的 `createMarkdownProcessor()`、现有 math/KaTeX/Shiki 设置。插件只接受位于当前私有内容根目录内的相对图片，使用内容密钥对相对路径和文件内容摘要做 HMAC-SHA-256，生成会随图片内容变化的公开 ID；节点改为透明占位 `src` 加 `data-protected-src` 和 `data-protected-type`。asset endpoint 枚举所有已发布且 `locked` 的文章，读取对应文件后用 AES-GCM 和 `asset:<id>` AAD 输出二进制信封。
 
 - [x] **Step 4: 验证 GREEN 并提交**
 
