@@ -88,8 +88,8 @@ test('about sidebar exposes the requested profile, social links and static stati
   const wechat = profile.locator('span[data-social-id="wechat"]');
   await expect(wechat).toHaveAttribute('data-social-pending', 'wechat');
   await expect(wechat).toHaveAttribute('aria-disabled', 'true');
-  await expect(wechat).toHaveAccessibleName(/微信.*待补充/);
-  await expect(wechat.getByText('待补充', { exact: true })).toBeVisible();
+  await expect(wechat).toHaveAccessibleName('微信');
+  await expect(wechat.getByText('待补充', { exact: true })).toHaveCount(0);
   await expect(wechat.locator('a, button, [tabindex]')).toHaveCount(0);
 
   await expect(profile.locator('[data-social-id="zhihu"] text')).toHaveAttribute(
