@@ -2,7 +2,7 @@ export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'none'",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' data: https://giscus.app",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://giscus.app",
   "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline' https://giscus.app",
   "img-src 'self' data: blob: https://cdn.jsdelivr.net",

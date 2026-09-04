@@ -9,7 +9,8 @@ describe('browser security policy', () => {
       "base-uri 'none'",
       "object-src 'none'",
       // Astro ClientRouter emits data: module scripts during client navigation.
-      "script-src 'self' 'unsafe-inline' data: https://giscus.app",
+      // hash-wasm compiles Argon2 in the browser without enabling general eval().
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://giscus.app",
       "script-src-attr 'none'",
       // Giscus injects its default.css into the host page.
       "style-src 'self' 'unsafe-inline' https://giscus.app",
@@ -23,6 +24,7 @@ describe('browser security policy', () => {
       "manifest-src 'self'",
       "form-action 'self'"
     ].join('; '));
+    expect(CONTENT_SECURITY_POLICY).not.toMatch(/(?:^|\s)'unsafe-eval'(?:\s|;|$)/);
     expect(REFERRER_POLICY).toBe('strict-origin-when-cross-origin');
   });
 

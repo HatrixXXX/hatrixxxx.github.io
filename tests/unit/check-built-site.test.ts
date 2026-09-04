@@ -384,3 +384,34 @@ it('aggregates missing post output errors without throwing', async () => {
     ])
   });
 });
+
+it('ignores draft source files when checking published post routes', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
+  await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}</html>`);
+  await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);
+  await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'dist/rss.xml', '<rss/>');
+  await writeSiteFile(root, 'dist/search-index.json', '[]');
+  await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
+  await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
+
+  for (let index = 0; index < 40; index += 1) {
+    const slug = `published-${index}`;
+    await writeSiteFile(
+      root,
+      `.private-content/posts/${slug}.md`,
+      `---\nlegacySlug: ${slug}\ndraft: false\n---\n`
+    );
+    await writeSiteFile(root, `dist/posts/${slug}/index.html`, `<html>${secureHead}</html>`);
+  }
+  await writeSiteFile(
+    root,
+    '.private-content/posts/draft.md',
+    '---\nlegacySlug: private-draft\ndraft: true\n---\n'
+  );
+
+  const result = await inspectProjectBuiltSite(root);
+
+  expect(result.errors).toEqual([]);
+});

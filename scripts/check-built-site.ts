@@ -537,6 +537,7 @@ async function nativeMarkdownImageErrors(root: string, postsDirectory: string): 
   for (const file of await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`)) {
     if (!/\.mdx?$/i.test(file)) continue;
     const { content, data } = matter(await readFile(file, 'utf8'));
+    if (data.draft === true) continue;
     if (typeof data.legacySlug !== 'string') continue;
     let postOutput: string;
     try {
@@ -566,6 +567,7 @@ export async function inspectProjectBuiltSite(
   for (const file of postFiles) {
     if (!/\.mdx?$/i.test(file)) continue;
     const { data } = matter(await readFile(file, 'utf8'));
+    if (data.draft === true) continue;
     if (typeof data.legacySlug === 'string') routes.push(`/posts/${data.legacySlug}/`);
   }
   if (routes.length !== 40 || new Set(routes).size !== 40) {
