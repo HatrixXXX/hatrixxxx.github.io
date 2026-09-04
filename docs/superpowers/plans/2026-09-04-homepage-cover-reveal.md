@@ -29,7 +29,9 @@
 - Modify: `src/layouts/BaseLayout.astro`
 - Modify: `src/components/SiteHeader.astro`
 - Modify: `src/pages/index.astro`
-- Add: `public/images/cover.png`
+- Modify: `package.json`
+- Modify: `pnpm-lock.yaml`
+- Existing asset: `public/images/cover.png`
 
 **Interfaces:**
 - Consumes: `PRIMARY_NAV_ITEMS`、`SearchOverlay`、`ThemeTransition` 和现有移动菜单脚本。
@@ -133,7 +135,13 @@ const isHome = pageKind === 'home';
 
 - [ ] **Step 4: 替换首页结构和样式**
 
-`index.astro` 改为：
+先安装本地字体资源：
+
+```powershell
+corepack pnpm add @fontsource/ibm-plex-mono@5.3.0
+```
+
+`index.astro` 导入 `@fontsource/ibm-plex-mono/400.css` 和 `@fontsource/ibm-plex-mono/700.css`，然后改为：
 
 ```astro
 <BaseLayout title={SITE.title} image="/images/cover.png" pageKind="home">
@@ -177,7 +185,7 @@ Expected: 新首页结构、背景、无滚动和普通页壳层断言通过；�
 - [ ] **Step 6: 提交**
 
 ```powershell
-git add public/images/cover.png src/layouts/BaseLayout.astro src/components/SiteHeader.astro src/pages/index.astro tests/e2e/home.spec.ts tests/e2e/shell.spec.ts tests/e2e/banner.spec.ts
+git add package.json pnpm-lock.yaml src/layouts/BaseLayout.astro src/components/SiteHeader.astro src/pages/index.astro tests/e2e/home.spec.ts tests/e2e/shell.spec.ts tests/e2e/banner.spec.ts
 git commit -m "feat: add fullscreen cover homepage"
 ```
 
