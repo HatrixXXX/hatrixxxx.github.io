@@ -1,5 +1,5 @@
 import MiniSearch from 'minisearch';
-import { excerptForMatch, searchTerms, tokenizeSearchText, type SearchDocument } from '@/lib/search';
+import { excerptForMatch, normalizeSearchText, searchTerms, tokenizeSearchText, type SearchDocument } from '@/lib/search';
 
 const RESULT_LIMIT = 20;
 let indexPromise: Promise<MiniSearch<SearchDocument>> | undefined;
@@ -96,7 +96,7 @@ async function renderResults(input: HTMLInputElement): Promise<void> {
       .filter((match) => {
         if (match.locked) return false;
         const terms = searchTerms(query);
-        const haystack = [match.title, ...(match.paragraphs ?? [])].join(' ').toLocaleLowerCase();
+        const haystack = normalizeSearchText([match.title, ...(match.paragraphs ?? [])].join(' '));
         return terms.every((term) => haystack.includes(term));
       })
       .slice(0, RESULT_LIMIT);

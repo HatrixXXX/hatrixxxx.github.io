@@ -12,12 +12,16 @@ export interface SearchDocument {
 
 const HAN_SEGMENT = /^\p{Script=Han}+$/u;
 
+export function normalizeSearchText(text: string): string {
+  return text.normalize('NFKC').toLocaleLowerCase();
+}
+
 export function searchTerms(query: string): string[] {
-  return query.normalize('NFKC').trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  return normalizeSearchText(query).trim().split(/\s+/).filter(Boolean);
 }
 
 export function tokenizeSearchText(text: string): string[] {
-  const segments = text.normalize('NFKC').toLocaleLowerCase().match(/\p{Script=Han}+|[\p{L}\p{N}_]+/gu) ?? [];
+  const segments = normalizeSearchText(text).match(/\p{Script=Han}+|[\p{L}\p{N}_]+/gu) ?? [];
   const tokens: string[] = [];
 
   for (const segment of segments) {
@@ -53,8 +57,21 @@ export function markdownToPlainText(markdown: string, maxLength = Number.POSITIV
 }
 
 export function markdownToParagraphs(markdown: string): string[] {
-  return markdown
-    .split(/\r?\n\s*\r?\n/)
+  const blocks: string[] = [];
+  let current: string[] = [];
+  let inFence = false;
+  for (const line of markdown.split(/\r?\n/)) {
+    if (/^\s*```/.test(line)) inFence = !inFence;
+    if (!inFence && line.trim() === '') {
+      if (current.length > 0) blocks.push(current.join('\n'));
+      current = [];
+      continue;
+    }
+    current.push(line);
+  }
+  if (current.length > 0) blocks.push(current.join('\n'));
+
+  return blocks
     .map((paragraph) => markdownToPlainText(paragraph))
     .filter(Boolean);
 }
@@ -62,13 +79,14 @@ export function markdownToParagraphs(markdown: string): string[] {
 export function excerptForMatch(paragraphs: string[], query: string, maxLength = 180): string {
   const terms = searchTerms(query);
   const normalizedQuery = terms[0] ?? '';
-  const paragraph = paragraphs.find((item) => terms.every((term) => item.toLocaleLowerCase().includes(term)))
-    ?? paragraphs.find((item) => terms.some((term) => item.toLocaleLowerCase().includes(term)))
+  const paragraph = paragraphs.find((item) => terms.every((term) => normalizeSearchText(item).includes(term)))
+    ?? paragraphs.find((item) => terms.some((term) => normalizeSearchText(item).includes(term)))
     ?? paragraphs[0]
     ?? '';
   if (paragraph.length <= maxLength || !normalizedQuery) return paragraph;
 
-  const matchIndex = paragraph.toLocaleLowerCase().indexOf(normalizedQuery);
+  const matchIndex = normalizeSearchText(paragraph).indexOf(normalizedQuery);
+  if (normalizedQuery.length >= maxLength - 2) return paragraph.slice(0, maxLength);
   const contextLength = Math.max(0, maxLength - normalizedQuery.length - 2);
   const snippetLength = Math.min(paragraph.length, contextLength + normalizedQuery.length);
   let start = Math.max(0, Math.min(matchIndex - Math.floor(contextLength / 2), paragraph.length - snippetLength));

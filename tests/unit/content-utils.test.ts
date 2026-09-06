@@ -14,6 +14,9 @@ const tokenizeSearchText = (search as typeof search & {
 const excerptForMatch = (search as typeof search & {
   excerptForMatch?: (paragraphs: string[], query: string, maxLength?: number) => string;
 }).excerptForMatch;
+const searchTerms = (search as typeof search & {
+  searchTerms?: (query: string) => string[];
+}).searchTerms;
 
 const post = (id: string, date: string) => ({
   id,
@@ -128,6 +131,15 @@ describe('content utilities', () => {
 
     expect(excerptForMatch(['前置内容。', '这一段包含需要查找的关键词以及后续说明。'], '关键词', 16))
       .toBe('…需要查找的关键词以及后续说明…');
+  });
+
+  it('normalizes full-width search terms and bounds long queries', () => {
+    expect(searchTerms).toBeTypeOf('function');
+    if (!searchTerms || !excerptForMatch) return;
+
+    expect(searchTerms('ＦＰＧＡ')).toEqual(['fpga']);
+    expect(excerptForMatch(['这是一个很长的正文关键词测试。'], '这是一个很长的正文关键词测试。', 10).length)
+      .toBeLessThanOrEqual(10);
   });
 
   it('normalizes Markdown into searchable plain text', () => {

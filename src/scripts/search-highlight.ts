@@ -1,4 +1,4 @@
-import { searchTerms } from '../lib/search';
+import { normalizeSearchText, searchTerms } from '../lib/search';
 
 export function findSearchTarget(
   elements: readonly HTMLElement[],
@@ -7,11 +7,14 @@ export function findSearchTarget(
   const terms = searchTerms(query);
   if (terms.length === 0) return undefined;
 
+  const textFor = (element: HTMLElement) => normalizeSearchText(
+    [element.textContent ?? '', element.getAttribute?.('alt') ?? ''].join(' ')
+  );
   return elements.find((element) => {
-    const text = (element.textContent ?? '').toLocaleLowerCase();
+    const text = textFor(element);
     return terms.every((term) => text.includes(term));
   }) ?? elements.find((element) => {
-    const text = (element.textContent ?? '').toLocaleLowerCase();
+    const text = textFor(element);
     return terms.some((term) => text.includes(term));
   });
 }
@@ -34,7 +37,7 @@ function highlightSearchTarget(): void {
   if (!query) return;
 
   const elements = Array.from(
-    document.querySelectorAll<HTMLElement>('.prose :is(p, li, blockquote, h2, h3, h4)')
+    document.querySelectorAll<HTMLElement>('.post-intro h1, .prose :is(p, li, blockquote, h2, h3, h4, h5, h6, pre, td, th, img[alt])')
   );
   const target = findSearchTarget(elements, query);
   if (!target) return;
