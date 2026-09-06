@@ -59,14 +59,21 @@
     };
     const collapse = () => {
       stopAnimations();
+      const centerOrder = new Map(
+        blocks
+          .map((block, index) => {
+            const line = Math.floor(index / 15); const row = index % 15;
+            return { block, distance: Math.hypot(row - 7, line - 7) };
+          })
+          .sort((a, b) => a.distance - b.distance)
+          .map(({ block }, index) => [block, index])
+      );
       blocks.forEach((block, index) => {
         block.style.strokeDashoffset = '0'; block.style.strokeOpacity = '1'; block.style.opacity = '1';
         if (reducedMotion()) { block.style.opacity = '0'; return; }
-        const line = Math.floor(index / 15); const row = index % 15;
-        const distance = Math.hypot(row - 7, line - 7);
         animations.push(block.animate(
           [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0)', opacity: 0 }],
-          { duration: 1000, delay: distance * 4, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }
+          { duration: 1000, delay: (centerOrder.get(block) ?? 0) * 4, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }
         ));
       });
     };
