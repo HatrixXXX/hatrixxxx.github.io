@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createLoadingController } from '../../src/scripts/loading-overlay';
+import { createLoadingController, MINIMUM_VISIBLE_DURATION } from '../../src/scripts/loading-overlay';
 
 describe('loading overlay controller', () => {
   it('does not show when loading finishes within the delay', () => {
@@ -28,7 +28,7 @@ describe('loading overlay controller', () => {
     vi.advanceTimersByTime(120);
     expect(show).toHaveBeenCalledTimes(1);
     controller.finish();
-    vi.advanceTimersByTime(359);
+    vi.advanceTimersByTime(MINIMUM_VISIBLE_DURATION - 1);
     expect(hide).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(hide).toHaveBeenCalledTimes(1);
@@ -44,7 +44,7 @@ describe('loading overlay controller', () => {
     controller.start();
     vi.advanceTimersByTime(120);
     controller.fail();
-    vi.advanceTimersByTime(360);
+    vi.advanceTimersByTime(MINIMUM_VISIBLE_DURATION);
     controller.start();
     controller.fail();
 
@@ -64,7 +64,7 @@ describe('loading overlay controller', () => {
     controller.finish();
 
     expect(finishAnimation).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(360);
+    vi.advanceTimersByTime(MINIMUM_VISIBLE_DURATION);
     expect(hide).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
@@ -84,7 +84,7 @@ describe('loading overlay controller', () => {
 
     expect(show).toHaveBeenCalledTimes(2);
     controller.finish();
-    vi.advanceTimersByTime(359);
+    vi.advanceTimersByTime(MINIMUM_VISIBLE_DURATION - 1);
     expect(hide).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(hide).toHaveBeenCalledTimes(1);
