@@ -7,14 +7,15 @@ import { buildSiteStats } from '@/lib/site-stats';
 interface Props {
   posts: readonly PostEntry[];
   showClock: boolean;
+  showStats?: boolean;
 }
 
-const { posts, showClock } = Astro.props;
+const { posts, showClock, showStats = true } = Astro.props;
 ---
 
 <aside class="sidebar-stack" data-sidebar-stack aria-label="站点侧栏">
   <slot />
-  <SiteStats stats={buildSiteStats(posts)} showClock={showClock} />
+  {showStats && <SiteStats stats={buildSiteStats(posts)} showClock={showClock} />}
   <MusicPlayer />
 </aside>
 

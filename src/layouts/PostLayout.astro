@@ -10,6 +10,7 @@ import SidebarStack from '@/components/SidebarStack.astro';
 import TableOfContents from '@/components/TableOfContents.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { AdjacentPosts, PostEntry } from '@/lib/content';
+import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
 import { postPath } from '@/lib/urls';
 
 interface Heading {
@@ -27,6 +28,8 @@ interface Props {
 const { post, headings, adjacent } = Astro.props;
 const canonicalPath = postPath(post.data.legacySlug);
 const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
+const stats = buildSiteStats(posts);
+
 ---
 
 <BaseLayout
@@ -36,6 +39,11 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
   canonicalPath={canonicalPath}
   bodyClass="post-page"
   noindex={post.data.locked}
+  siteFooterStats={{
+    postCount: stats.postCount,
+    wordCount: stats.wordCount,
+    runningDuration: formatRunningDurationAt(new Date())
+  }}
 >
   <article data-post>
     <header class="post-hero" data-hero>
@@ -77,7 +85,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
 
           <GiscusComments />
         </div>
-        <SidebarStack posts={posts} showClock={false} />
+        <SidebarStack posts={posts} showClock={false} showStats={false} />
       </div>
     </ProtectedContent>
   </article>

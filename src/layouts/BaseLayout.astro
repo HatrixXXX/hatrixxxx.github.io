@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import { ClientRouter } from 'astro:transitions';
 import ProtectedContent from '@/components/ProtectedContent.astro';
 import SiteFooter from '@/components/SiteFooter.astro';
@@ -10,6 +11,8 @@ import CursorTrail from '@/components/CursorTrail.astro';
 import { isConfiguredLockedPage } from '@/config/protected-content';
 import { SITE } from '@/config/site';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '@/config/security';
+import { buildSiteStats, formatRunningDurationAt, type BuiltSiteStats } from '@/lib/site-stats';
+import type { PostEntry } from '@/lib/content';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import '@/styles/tokens.css';
@@ -25,6 +28,11 @@ interface Props {
   canonicalPath?: string;
   noindex?: boolean;
   pageKind?: 'default' | 'home';
+  siteFooterStats?: {
+    postCount: BuiltSiteStats['postCount'];
+    wordCount: BuiltSiteStats['wordCount'];
+    runningDuration: string;
+  };
 }
 
 const {
@@ -34,8 +42,19 @@ const {
   bodyClass,
   canonicalPath,
   noindex = false,
-  pageKind = 'default'
+  pageKind = 'default',
+  siteFooterStats
 } = Astro.props;
+
+const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
+const builtSiteStats = posts.length === 0 ? null : buildSiteStats(posts);
+const defaultFooterStats = {
+  postCount: builtSiteStats?.postCount ?? 0,
+  wordCount: builtSiteStats?.wordCount ?? 0,
+  runningDuration: formatRunningDurationAt(new Date())
+};
+const footerStats = siteFooterStats ?? defaultFooterStats;
+
 const isHome = pageKind === 'home';
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
@@ -93,7 +112,7 @@ const excludeFromIndex = pageLocked || noindex;
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
     </ProtectedContent>
-    {!isHome && <SiteFooter />}
+    {!isHome && <SiteFooter stats={footerStats} />}
     {!isHome && <SakanaCharacters />}
     <ThemeTransition />
     {!isHome && <CursorTrail />}

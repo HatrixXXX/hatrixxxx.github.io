@@ -1,13 +1,27 @@
 ---
 import { SITE } from '@/config/site';
+import type { BuiltSiteStats } from '@/lib/site-stats';
 
 const firstYear = 2025;
 const currentYear = new Date().getFullYear();
 const copyrightYears = currentYear > firstYear ? `${firstYear}–${currentYear}` : `${firstYear}`;
+
+interface FooterStats {
+  postCount: BuiltSiteStats['postCount'];
+  wordCount: BuiltSiteStats['wordCount'];
+  runningDuration: string;
+}
+
+interface Props {
+  stats?: FooterStats;
+}
+
+const { stats } = Astro.props;
 ---
 
 <footer data-site-footer class="site-footer">
-  <p class="footer-line container">
+  <section class="footer-line-group" aria-label="页脚信息">
+    <p class="footer-row footer-line">
     <span>© {copyrightYears} {SITE.author.name}</span>
     <span aria-hidden="true">·</span>
     <span>保留所有权利</span>
@@ -20,6 +34,19 @@ const copyrightYears = currentYear > firstYear ? `${firstYear}–${currentYear}`
       ))
     }
   </p>
+    {
+      stats && (
+        <>
+          <p class="footer-row footer-stats-line footer-stats-metrics" data-footer-stats>
+            <span>站点文章数：{stats.postCount}</span>
+            <span>站点总字数：{stats.wordCount.toLocaleString('zh-CN')}</span>
+            <span>访客数：<span data-visitor-count>—</span></span>
+          </p>
+          <p class="footer-row footer-stats-line">{stats.runningDuration}</p>
+        </>
+      )
+    }
+  </section>
 </footer>
 
 <style>
@@ -28,17 +55,52 @@ const copyrightYears = currentYear > firstYear ? `${firstYear}–${currentYear}`
     color: var(--color-muted);
   }
 
-  .footer-line {
+  .footer-line-group {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .footer-row {
+    width: min(calc(100% - 48px), var(--content-width));
+    max-width: var(--content-width);
+    margin: 0 auto;
+    display: flex;
     justify-content: center;
-    gap: 0.3rem;
-    margin-block: 0;
-    padding-block: 0.65rem 0.75rem;
-    font-size: 0.72rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-block: 0.28rem;
+    color: var(--color-muted);
+    font-size: 0.9rem;
     line-height: 1.5;
     text-align: center;
+  }
+
+  .footer-stats-line,
+  .footer-line {
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .footer-line {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+    margin: 0;
+  }
+
+  .footer-stats-metrics {
+    flex-wrap: wrap;
+    gap: 0 1.1rem;
+    text-align: center;
+  }
+
+  .footer-stats-metrics span {
+    white-space: nowrap;
   }
 
   a {
@@ -47,5 +109,16 @@ const copyrightYears = currentYear > firstYear ? `${firstYear}–${currentYear}`
 
   a:hover {
     color: var(--color-accent);
+  }
+
+  @media (max-width: 768px) {
+    .footer-row {
+      width: min(calc(100% - 32px), var(--content-width));
+      padding-block: 0.28rem;
+    }
+    .footer-stats-metrics {
+      justify-content: center;
+      gap: 0.5rem;
+    }
   }
 </style>
