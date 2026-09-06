@@ -1,5 +1,24 @@
 export const LOADING_DELAY = 120;
 export const MINIMUM_VISIBLE_DURATION = 360;
+export const HOMEPAGE_REVEAL_DURATION = 1000;
+export const HOMEPAGE_COLLAPSE_DURATION = 1000;
+
+export function isHomepageDestination(destination: unknown): boolean {
+  if (destination instanceof URL) return destination.pathname === '/';
+  if (typeof destination === 'string') {
+    if (destination === '/') return true;
+    try {
+      const base = typeof window === 'undefined' ? 'https://localhost/' : window.location.href;
+      return new URL(destination, base).pathname === '/';
+    } catch {
+      return false;
+    }
+  }
+  if (destination && typeof destination === 'object' && 'pathname' in destination) {
+    return String((destination as { pathname?: unknown }).pathname) === '/';
+  }
+  return false;
+}
 
 interface LoadingControllerOptions {
   now?: () => number;
@@ -26,15 +45,19 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
   const hide = options.hide ?? (() => undefined);
 
   let pendingShow: ReturnType<typeof setTimeout> | undefined;
+  let pendingFinish: ReturnType<typeof setTimeout> | undefined;
   let pendingHide: ReturnType<typeof setTimeout> | undefined;
   let visibleAt: number | undefined;
   let active = false;
   let finishing = false;
+  let homepageSequence = false;
 
   const clearTimers = () => {
     if (pendingShow !== undefined) cancel(pendingShow);
+    if (pendingFinish !== undefined) cancel(pendingFinish);
     if (pendingHide !== undefined) cancel(pendingHide);
     pendingShow = undefined;
+    pendingFinish = undefined;
     pendingHide = undefined;
   };
 
@@ -43,6 +66,7 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     visibleAt = undefined;
     active = false;
     finishing = false;
+    homepageSequence = false;
     hide();
   };
 
@@ -56,6 +80,20 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     }
 
     finishing = true;
+
+    if (homepageSequence) {
+      const finishAfterReveal = () => {
+        pendingFinish = undefined;
+        if (!finishing) return;
+        active = false;
+        finishAnimation();
+        pendingHide = schedule(hideNow, HOMEPAGE_COLLAPSE_DURATION);
+      };
+      const revealRemaining = Math.max(0, HOMEPAGE_REVEAL_DURATION - (now() - visibleAt));
+      pendingFinish = schedule(finishAfterReveal, revealRemaining);
+      return;
+    }
+
     finishAnimation();
 
     const remaining = Math.max(0, MINIMUM_VISIBLE_DURATION - (now() - visibleAt));
@@ -66,6 +104,7 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     clearTimers();
     active = true;
     finishing = false;
+    homepageSequence = immediate;
 
     // A second navigation can begin while the previous overlay is collapsing.
     // Re-enter the visible phase immediately and reset its minimum-visible clock.
@@ -119,7 +158,7 @@ function initializeLoadingOverlay() {
   controller.start();
   document.addEventListener('astro:before-preparation', (event) => {
     const destination = (event as Event & { to?: URL }).to;
-    controller.start(destination?.pathname === '/');
+    controller.start(isHomepageDestination(destination));
     const signal = (event as Event & { signal?: AbortSignal }).signal;
     signal?.addEventListener('abort', controller.fail, { once: true });
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createLoadingController } from '../../src/scripts/loading-overlay';
+import { createLoadingController, isHomepageDestination } from '../../src/scripts/loading-overlay';
 
 describe('loading overlay controller', () => {
   it('does not show when loading finishes within the delay', () => {
@@ -102,6 +102,29 @@ describe('loading overlay controller', () => {
     vi.useRealTimers();
   });
 
+  it('holds homepage loading for the full reveal and collapse sequence', () => {
+    vi.useFakeTimers();
+    const show = vi.fn();
+    const finishAnimation = vi.fn();
+    const hide = vi.fn();
+    const controller = createLoadingController({ show, finishAnimation, hide });
+
+    controller.start(true);
+    controller.finish();
+
+    vi.advanceTimersByTime(999);
+    expect(finishAnimation).not.toHaveBeenCalled();
+    expect(hide).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(finishAnimation).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(999);
+    expect(hide).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(hide).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
   it('wires after-swap and initial load completion events', async () => {
     const source = await import('node:fs/promises').then(({ readFile }) =>
       readFile(new URL('../../src/scripts/loading-overlay.ts', import.meta.url), 'utf8')
@@ -110,5 +133,13 @@ describe('loading overlay controller', () => {
     expect(source).toContain("'astro:after-swap'");
     expect(source).toContain("window.addEventListener('load'");
     expect(source).toContain("signal?.addEventListener('abort'");
+  });
+
+  it('recognizes homepage destinations from URL-like event values', () => {
+    expect(isHomepageDestination(new URL('https://hatrix.site/'))).toBe(true);
+    expect(isHomepageDestination({ pathname: '/' })).toBe(true);
+    expect(isHomepageDestination('/')).toBe(true);
+    expect(isHomepageDestination(new URL('https://hatrix.site/blog/'))).toBe(false);
+    expect(isHomepageDestination({ pathname: '/blog/' })).toBe(false);
   });
 });
