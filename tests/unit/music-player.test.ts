@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import { nextMode, initializeMusicPlayer } from '../../src/scripts/music-player';
+import { initializeMusicPlayer } from '../../src/scripts/music-player';
 
 describe('music player', () => {
   it('renders track information, progress, and turntable chrome', async () => {
@@ -8,7 +8,6 @@ describe('music player', () => {
     expect(source).toContain('data-player-prev');
     expect(source).toContain('data-player-play');
     expect(source).toContain('data-player-next');
-    expect(source).toContain('data-player-mode');
     expect(source).toContain('data-player-volume');
     expect(source).toContain('data-player-progress');
     expect(source).toContain('data-player-current-time');
@@ -20,14 +19,16 @@ describe('music player', () => {
     expect(source).toContain('prefers-reduced-motion');
     expect(source).toContain('data-player-title');
     expect(source).toContain('data-player-artist');
-    expect(source).toContain('.mode-button {');
+    expect(source).not.toContain('data-player-mode');
+    expect(source).not.toContain('mode-button');
     expect(source).toContain('border: 1px solid #ffffff22;');
   });
 
-  it('cycles modes list, shuffle, single', () => {
-    expect(nextMode('list')).toBe('shuffle');
-    expect(nextMode('shuffle')).toBe('single');
-    expect(nextMode('single')).toBe('list');
+  it('uses fixed random selection and starts each loaded track from the beginning', async () => {
+    const source = await readFile('src/scripts/music-player.ts', 'utf8');
+    expect(source).toContain('Math.floor(Math.random() * tracks.length)');
+    expect(source).toContain('audio = new Audio()');
+    expect(source).toContain('audio!.currentTime = 0');
   });
 
   it('does not construct Audio for an empty playlist', () => {

@@ -74,6 +74,10 @@ export function initializeMusicPlayer(
   const next = player.querySelector<HTMLButtonElement>('[data-player-next]');
   const title = player.querySelector<HTMLElement>('[data-player-title]');
   const artist = player.querySelector<HTMLElement>('[data-player-artist]');
+  const state = {
+    volume: preferences.volume,
+    expanded: preferences.expanded,
+  };
 
   if (volume) volume.value = String(preferences.volume);
   if (progress) {
@@ -82,20 +86,29 @@ export function initializeMusicPlayer(
   }
   if (currentTimeLabel) currentTimeLabel.textContent = '0:00';
   if (durationLabel) durationLabel.textContent = '0:00';
+  let index = Math.max(0, preferences.index);
+
+  const saveState = (): void => {
+    savePreferences({
+      volume: state.volume,
+      index,
+      expanded: state.expanded,
+    });
+  };
 
   if (currentIsArticle) {
-    const expanded = preferences.expanded;
-    player.dataset.uiState = expanded ? 'expanded' : 'collapsed';
+    player.dataset.uiState = state.expanded ? 'expanded' : 'collapsed';
     if (toggle) {
-      toggle.setAttribute('aria-expanded', String(expanded));
-      toggle.setAttribute('aria-label', expanded ? '收起音乐播放器' : '展开音乐播放器');
+      toggle.setAttribute('aria-expanded', String(state.expanded));
+      toggle.setAttribute('aria-label', state.expanded ? '收起音乐播放器' : '展开音乐播放器');
     }
 
     const setExpanded = (nextState: boolean) => {
       player.dataset.uiState = nextState ? 'expanded' : 'collapsed';
       toggle?.setAttribute('aria-expanded', String(nextState));
       toggle?.setAttribute('aria-label', nextState ? '收起音乐播放器' : '展开音乐播放器');
-      savePreferences({ ...readPreferences(), expanded: nextState });
+      state.expanded = nextState;
+      saveState();
     };
 
     toggle?.addEventListener('click', () => setExpanded(player.dataset.uiState !== 'expanded'));
@@ -116,9 +129,14 @@ export function initializeMusicPlayer(
 
   if (!tracks.length) return undefined;
 
-  let index = Math.min(preferences.index, tracks.length - 1);
+  index = Math.min(index, tracks.length - 1);
   audio ??= new Audio();
-  audio.volume = preferences.volume;
+  audio.volume = state.volume;
+
+  const advanceTrack = (): void => {
+    load(Math.floor(Math.random() * tracks.length));
+    void audio!.play().catch(() => undefined);
+  };
 
   const syncProgress = (): void => {
     const current = Number.isFinite(audio!.currentTime) ? Math.max(0, audio!.currentTime) : 0;
@@ -133,12 +151,6 @@ export function initializeMusicPlayer(
     if (currentTimeLabel) currentTimeLabel.textContent = formatTime(safeCurrent);
     if (durationLabel) durationLabel.textContent = formatTime(duration);
   };
-
-  const render = (): void => {
-    savePreferences({ ...readPreferences(), volume: audio?.volume ?? 0.7, index });
-  };
-
-  let select: () => void;
 
   const bindAudioEvents = (element: HTMLAudioElement): void => {
     element.addEventListener('play', () => {
@@ -160,14 +172,14 @@ export function initializeMusicPlayer(
     element.addEventListener('timeupdate', syncProgress);
     element.addEventListener('seeked', syncProgress);
     element.addEventListener('ended', () => {
-      select();
+      advanceTrack();
     });
   };
 
   const load = (nextIndex: number): void => {
     index = (nextIndex + tracks.length) % tracks.length;
     const track = tracks[index]!;
-    const nextVolume = audio?.volume ?? preferences.volume;
+    const nextVolume = audio?.volume ?? state.volume;
 
     audio?.pause();
     audio = new Audio();
@@ -186,13 +198,7 @@ export function initializeMusicPlayer(
     }
 
     syncProgress();
-    render();
-  };
-
-  select = (): void => {
-    const nextIndex = Math.floor(Math.random() * tracks.length);
-    load(nextIndex);
-    void audio!.play().catch(() => undefined);
+    saveState();
   };
 
   if (progress) {
@@ -206,8 +212,9 @@ export function initializeMusicPlayer(
   }
 
   volume?.addEventListener('input', () => {
-    audio!.volume = Number(volume.value);
-    render();
+    state.volume = Number(volume.value);
+    audio!.volume = state.volume;
+    saveState();
   });
 
   playButton?.addEventListener('click', () => {
@@ -215,8 +222,8 @@ export function initializeMusicPlayer(
     else audio!.pause();
   });
 
-  previous?.addEventListener('click', select);
-  next?.addEventListener('click', select);
+  previous?.addEventListener('click', advanceTrack);
+  next?.addEventListener('click', advanceTrack);
 
   load(index);
   return audio;
