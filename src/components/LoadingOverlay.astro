@@ -59,7 +59,10 @@
       stopAnimations();
       if (reducedMotion()) {
         blocks.forEach((block) => {
-          block.style.strokeDashoffset = '0'; block.style.strokeOpacity = '1'; block.style.opacity = '1';
+          block.style.strokeDashoffset = '0';
+          block.style.strokeOpacity = '1';
+          block.style.opacity = '1';
+          block.style.transform = 'scale(1)';
         });
         return;
       }
