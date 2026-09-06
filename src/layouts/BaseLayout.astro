@@ -28,6 +28,7 @@ interface Props {
   canonicalPath?: string;
   noindex?: boolean;
   pageKind?: 'default' | 'home';
+  showFooter?: boolean;
   siteFooterStats?: {
     postCount: BuiltSiteStats['postCount'];
     wordCount: BuiltSiteStats['wordCount'];
@@ -43,6 +44,7 @@ const {
   canonicalPath,
   noindex = false,
   pageKind = 'default',
+  showFooter = false,
   siteFooterStats
 } = Astro.props;
 
@@ -57,11 +59,13 @@ const footerStats = siteFooterStats ?? defaultFooterStats;
 
 const isHome = pageKind === 'home';
 const isPostPage = Astro.url.pathname.startsWith('/posts/');
+const isAboutPage = Astro.url.pathname === '/about' || Astro.url.pathname.startsWith('/about/');
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
 const socialImage = new URL(image, SITE.url);
 const pageLocked = isConfiguredLockedPage(Astro.url.pathname);
 const excludeFromIndex = pageLocked || noindex;
+const showSakanaCharacters = isAboutPage;
 ---
 
 <!doctype html>
@@ -113,8 +117,8 @@ const excludeFromIndex = pageLocked || noindex;
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
     </ProtectedContent>
-    {!isHome && <SiteFooter stats={footerStats} />}
-    {!isHome && <SakanaCharacters />}
+    {showFooter && <SiteFooter stats={footerStats} />}
+    {!isHome && showSakanaCharacters && <SakanaCharacters />}
     <ThemeTransition />
     {isPostPage && <CursorTrail />}
     <SearchOverlay />
@@ -138,5 +142,10 @@ const excludeFromIndex = pageLocked || noindex;
       import '@/scripts/theme';
       import '@/scripts/site-stats';
     </script>
+    {showSakanaCharacters && (
+      <script>
+        import '@/scripts/sakana';
+      </script>
+    )}
   </body>
 </html>

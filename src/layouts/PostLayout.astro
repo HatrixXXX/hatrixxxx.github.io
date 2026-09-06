@@ -40,6 +40,7 @@ const parentTypeLink = POST_TYPE_LINKS.find(({ label }) => label === post.data.t
   title={post.data.title}
   description={SITE.description}
   image={post.data.cover}
+  showFooter={true}
   canonicalPath={canonicalPath}
   bodyClass="post-page"
   noindex={post.data.locked}

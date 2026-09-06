@@ -1,5 +1,4 @@
 import { prefetch } from 'astro:prefetch';
-import { navigate } from 'astro:transitions/client';
 
 const BLOG_PATH = '/blog/';
 const TAGLINE = '轻松即单纯，速成即精准';
@@ -7,15 +6,12 @@ const TYPE_DELAY = 300;
 const TYPE_SPEED = 150;
 const DELETE_SPEED = 50;
 const COMPLETE_HOLD = 700;
-const REVEAL_DURATION = 620;
 const RESET_DURATION = 320;
 const VELOCITY_FRESHNESS = 120;
 const INTERACTIVE_SELECTOR =
   'a, button, input, textarea, select, summary, [contenteditable="true"], [role="button"], [role="link"]';
 
 let cleanupCurrentPage: (() => void) | undefined;
-let pendingReveal: { attempt: number; distance: number } | undefined;
-let revealAttempt = 0;
 
 function prefetchBlog(): void {
   try {
@@ -25,46 +21,11 @@ function prefetchBlog(): void {
   }
 }
 
-function clearPendingReveal(): void {
-  pendingReveal = undefined;
-  if (document.documentElement.dataset.homeReveal === 'pending') {
-    delete document.documentElement.dataset.homeReveal;
-  }
-}
-
-function isHomeRevealNavigation(event: { to: URL; info?: unknown }): boolean {
-  return (
-    event.to.pathname === BLOG_PATH &&
-    typeof event.info === 'object' &&
-    event.info !== null &&
-    'kind' in event.info &&
-    event.info.kind === 'home-reveal'
-  );
-}
-
-function prepareReveal(distance = 0): number {
-  const attempt = ++revealAttempt;
-  pendingReveal = {
-    attempt,
-    distance
-  };
-  document.documentElement.dataset.homeReveal = 'pending';
-  return attempt;
-}
-
-function goToBlog(sourceElement: Element, distance = 0): void {
-  const attempt = prepareReveal(distance);
-  void navigate(BLOG_PATH, { sourceElement, info: { kind: 'home-reveal' } }).catch(() => {
-    if (pendingReveal?.attempt !== attempt) return;
-    clearPendingReveal();
-    location.assign(BLOG_PATH);
-  });
+function goToBlog(): void {
+  location.assign(BLOG_PATH);
 }
 
 function initializeHome(): void {
-  cleanupCurrentPage?.();
-  cleanupCurrentPage = undefined;
-
   const stage = document.querySelector<HTMLElement>('[data-home-stage]');
   const typing = document.querySelector<HTMLElement>('[data-home-typing]');
   if (!stage || !typing || document.documentElement.dataset.pageKind !== 'home') return;
@@ -184,7 +145,7 @@ function initializeHome(): void {
 
     navigating = true;
     setDragState('committing');
-    goToBlog(stage, distance);
+    goToBlog();
   };
 
   stage.addEventListener(
@@ -261,28 +222,6 @@ function initializeHome(): void {
     { signal: controller.signal }
   );
 
-  for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-home-blog-link]')) {
-    link.addEventListener('pointerenter', prefetchBlog, { signal: controller.signal });
-    link.addEventListener('focus', prefetchBlog, { signal: controller.signal });
-    link.addEventListener(
-      'click',
-      (event) => {
-        const modified =
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey;
-        if (modified) return;
-        event.preventDefault();
-        if (navigating) return;
-        navigating = true;
-        goToBlog(link);
-      },
-      { signal: controller.signal }
-    );
-  }
-
   setDragState('idle');
   startTyping();
   if (requestIdle) {
@@ -303,33 +242,6 @@ function initializeHome(): void {
     delete root.dataset.homeDragState;
   };
 }
-
-document.addEventListener('astro:before-preparation', (event) => {
-  if (!isHomeRevealNavigation(event)) clearPendingReveal();
-});
-
-document.addEventListener('astro:before-swap', (event) => {
-  cleanupCurrentPage?.();
-  cleanupCurrentPage = undefined;
-
-  if (!isHomeRevealNavigation(event)) {
-    clearPendingReveal();
-    return;
-  }
-  if (!pendingReveal) return;
-  const { distance } = pendingReveal;
-  pendingReveal = undefined;
-  const newRoot = event.newDocument.documentElement;
-  newRoot.dataset.homeReveal = 'active';
-  newRoot.style.setProperty('--home-reveal-distance', `${distance}px`);
-  newRoot.style.setProperty('--home-reveal-duration', `${REVEAL_DURATION}ms`);
-  void event.viewTransition.finished.finally(() => {
-    const currentRoot = document.documentElement;
-    delete currentRoot.dataset.homeReveal;
-    currentRoot.style.removeProperty('--home-reveal-distance');
-    currentRoot.style.removeProperty('--home-reveal-duration');
-  });
-});
 
 document.addEventListener('astro:page-load', initializeHome);
 document.addEventListener('visibilitychange', () => {

@@ -74,28 +74,6 @@ const cover = currentTrack?.cover;
         <span>下一曲</span>
       </div>
 
-      <div class="control-item">
-        <button
-          type="button"
-          class="mode-button"
-          aria-label="播放模式：列表循环"
-          data-player-mode
-          data-mode="list"
-          disabled={isEmpty}
-        >
-          <svg data-mode-icon="list" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 7h14M5 12h14M5 17h14" />
-          </svg>
-          <svg data-mode-icon="shuffle" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h2c3 0 4 10 8 10h6M16 5h4v4M20 15v4h-4M4 17h2c1.5 0 2.5-1.4 3.4-3" />
-          </svg>
-          <svg data-mode-icon="single" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 5h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Zm5 4v6m-2-4 2-2 2 2" />
-          </svg>
-        </button>
-        <span>播放模式切换</span>
-      </div>
-
       <div class="control-item volume-item">
         <label class="volume-control">
           <span class="visually-hidden">音量调节</span>
@@ -289,23 +267,6 @@ const cover = currentTrack?.cover;
   .player-controls button:disabled {
     opacity: .4;
     cursor: not-allowed;
-  }
-
-  .mode-button {
-    background: #221c2d !important;
-    border: 1px solid #ffffff22 !important;
-    box-shadow: inset 0 1px #fff2, 0 6px 12px #0006 !important;
-    border-radius: 12px !important;
-  }
-
-  .mode-button svg {
-    display: none;
-  }
-
-  .mode-button[data-mode='list'] [data-mode-icon='list'],
-  .mode-button[data-mode='shuffle'] [data-mode-icon='shuffle'],
-  .mode-button[data-mode='single'] [data-mode-icon='single'] {
-    display: block;
   }
 
   .volume-control {

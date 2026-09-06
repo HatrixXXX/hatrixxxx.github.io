@@ -24,7 +24,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
             <a
               href={item.href}
               aria-current={isCurrent(item.href) ? 'page' : undefined}
-              data-home-blog-link={homeMode && item.href === '/blog/' ? '' : undefined}
             >
               {item.label}
               {'children' in item && <span class="nav-caret" aria-hidden="true"></span>}
@@ -99,7 +98,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
           <a
             href={item.href}
             aria-current={isCurrent(item.href) ? 'page' : undefined}
-            data-home-blog-link={homeMode && item.href === '/blog/' ? '' : undefined}
           >
             {item.label}
           </a>

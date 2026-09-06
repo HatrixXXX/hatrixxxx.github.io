@@ -1,14 +1,10 @@
 ---
-import { getCollection } from 'astro:content';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
 import BackButton from '@/components/BackButton.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import type { PostEntry } from '@/lib/content';
-
-const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
 ---
 
 <BaseLayout title="关于">
@@ -20,7 +16,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
       <p>{SITE.description}</p>
       <p>这里记录技术研发、学习笔记与作品进展。</p>
     </article>
-    <SidebarStack posts={posts} showClock={true}>
+    <SidebarStack posts={[]} showClock={false} showStats={false}>
       <ProfileSidebar />
     </SidebarStack>
   </main>

@@ -1,36 +1,26 @@
 import { playlist } from '../data/playlist';
 import type { Track } from '../types/content';
 
-export type PlaybackMode = 'list' | 'shuffle' | 'single';
-
 type Preferences = {
   volume: number;
-  mode: PlaybackMode;
   index: number;
   expanded: boolean;
 };
 
 const STORAGE_KEY = 'hatrix-player';
-const MODES: PlaybackMode[] = ['list', 'shuffle', 'single'];
 let audio: HTMLAudioElement | undefined;
-
-export function nextMode(mode: PlaybackMode): PlaybackMode {
-  return MODES[(MODES.indexOf(mode) + 1) % MODES.length] ?? 'list';
-}
 
 function readPreferences(): Preferences {
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Preferences>;
-    const mode = MODES.includes(value.mode as PlaybackMode) ? (value.mode as PlaybackMode) : 'list';
 
     return {
       volume: Math.max(0, Math.min(1, typeof value.volume === 'number' ? value.volume : 0.7)),
-      mode,
       index: Number.isInteger(value.index) ? Math.max(0, value.index as number) : 0,
       expanded: value.expanded !== false,
     };
   } catch {
-    return { volume: 0.7, mode: 'list', index: 0, expanded: true };
+    return { volume: 0.7, index: 0, expanded: true };
   }
 }
 
@@ -82,7 +72,6 @@ export function initializeMusicPlayer(
   const previous = player.querySelector<HTMLButtonElement>('[data-player-prev]');
   const playButton = player.querySelector<HTMLButtonElement>('[data-player-play]');
   const next = player.querySelector<HTMLButtonElement>('[data-player-next]');
-  const modeButton = player.querySelector<HTMLButtonElement>('[data-player-mode]');
   const title = player.querySelector<HTMLElement>('[data-player-title]');
   const artist = player.querySelector<HTMLElement>('[data-player-artist]');
 
@@ -128,7 +117,6 @@ export function initializeMusicPlayer(
   if (!tracks.length) return undefined;
 
   let index = Math.min(preferences.index, tracks.length - 1);
-  let mode = preferences.mode;
   audio ??= new Audio();
   audio.volume = preferences.volume;
 
@@ -147,22 +135,46 @@ export function initializeMusicPlayer(
   };
 
   const render = (): void => {
-    if (modeButton) {
-      modeButton.dataset.mode = mode;
-      modeButton.setAttribute(
-        'aria-label',
-        `播放模式：${mode === 'shuffle' ? '随机播放' : mode === 'single' ? '单曲循环' : '列表循环'}`,
-      );
-    }
+    savePreferences({ ...readPreferences(), volume: audio?.volume ?? 0.7, index });
+  };
 
-    savePreferences({ ...readPreferences(), volume: audio?.volume ?? 0.7, mode, index });
+  let select: () => void;
+
+  const bindAudioEvents = (element: HTMLAudioElement): void => {
+    element.addEventListener('play', () => {
+      player.dataset.playbackState = 'playing';
+      playButton?.setAttribute('aria-pressed', 'true');
+      playButton?.setAttribute('aria-label', '暂停');
+      syncProgress();
+    });
+
+    element.addEventListener('pause', () => {
+      player.dataset.playbackState = 'paused';
+      playButton?.setAttribute('aria-pressed', 'false');
+      playButton?.setAttribute('aria-label', '播放');
+      syncProgress();
+    });
+
+    element.addEventListener('loadedmetadata', syncProgress);
+    element.addEventListener('durationchange', syncProgress);
+    element.addEventListener('timeupdate', syncProgress);
+    element.addEventListener('seeked', syncProgress);
+    element.addEventListener('ended', () => {
+      select();
+    });
   };
 
   const load = (nextIndex: number): void => {
     index = (nextIndex + tracks.length) % tracks.length;
     const track = tracks[index]!;
+    const nextVolume = audio?.volume ?? preferences.volume;
 
-    audio!.src = track.src;
+    audio?.pause();
+    audio = new Audio();
+    audio.volume = nextVolume;
+    bindAudioEvents(audio);
+    audio.src = track.src;
+    audio.load();
     audio!.currentTime = 0;
     if (title) {
       title.textContent = track.title;
@@ -177,8 +189,8 @@ export function initializeMusicPlayer(
     render();
   };
 
-  const select = (delta: number): void => {
-    const nextIndex = mode === 'shuffle' ? Math.floor(Math.random() * tracks.length) : index + delta;
+  select = (): void => {
+    const nextIndex = Math.floor(Math.random() * tracks.length);
     load(nextIndex);
     void audio!.play().catch(() => undefined);
   };
@@ -203,39 +215,8 @@ export function initializeMusicPlayer(
     else audio!.pause();
   });
 
-  previous?.addEventListener('click', () => select(-1));
-  next?.addEventListener('click', () => select(1));
-  modeButton?.addEventListener('click', () => {
-    mode = nextMode(mode);
-    render();
-  });
-
-  audio.addEventListener('play', () => {
-    player.dataset.playbackState = 'playing';
-    playButton?.setAttribute('aria-pressed', 'true');
-    playButton?.setAttribute('aria-label', '暂停');
-    syncProgress();
-  });
-
-  audio.addEventListener('pause', () => {
-    player.dataset.playbackState = 'paused';
-    playButton?.setAttribute('aria-pressed', 'false');
-    playButton?.setAttribute('aria-label', '播放');
-    syncProgress();
-  });
-
-  audio.addEventListener('loadedmetadata', syncProgress);
-  audio.addEventListener('durationchange', syncProgress);
-  audio.addEventListener('timeupdate', syncProgress);
-  audio.addEventListener('seeked', syncProgress);
-  audio.addEventListener('ended', () => {
-    if (mode === 'single') {
-      audio!.currentTime = 0;
-      void audio!.play().catch(() => undefined);
-    } else {
-      select(1);
-    }
-  });
+  previous?.addEventListener('click', select);
+  next?.addEventListener('click', select);
 
   load(index);
   return audio;

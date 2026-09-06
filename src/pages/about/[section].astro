@@ -1,5 +1,4 @@
 ---
-import { getCollection } from 'astro:content';
 import EmptyState from '@/components/EmptyState.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
@@ -7,7 +6,6 @@ import SidebarStack from '@/components/SidebarStack.astro';
 import BackButton from '@/components/BackButton.astro';
 import { ABOUT_SECTION_LINKS } from '@/config/navigation';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import type { PostEntry } from '@/lib/content';
 
 export function getStaticPaths() {
   return ABOUT_SECTION_LINKS.map((section) => ({
@@ -17,7 +15,6 @@ export function getStaticPaths() {
 }
 
 const { section } = Astro.props;
-const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
 ---
 
 <BaseLayout title={section.label}>
@@ -27,7 +24,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
     <div class="about-content">
       <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
     </div>
-    <SidebarStack posts={posts} showClock={true}>
+    <SidebarStack posts={[]} showClock={false} showStats={false}>
       <ProfileSidebar />
     </SidebarStack>
   </main>

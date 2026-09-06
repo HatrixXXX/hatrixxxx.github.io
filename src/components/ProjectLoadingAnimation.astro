@@ -1,0 +1,189 @@
+---
+import '@fontsource/orbitron/400.css';
+
+const hexSegments = [
+  { d: 'M 107 185 L 107 415' },
+  { d: 'M 107 415 L 300 526' },
+  { d: 'M 300 526 L 493 415' },
+  { d: 'M 493 415 L 493 185' },
+  { d: 'M 493 185 L 300 74' },
+  { d: 'M 300 74 L 107 185' }
+];
+---
+
+<section class="project-load-shell" aria-label="作品页加载动画" aria-live="polite">
+  <div class="project-load-stage">
+    <svg class="project-load-svg" viewBox="0 0 600 600" aria-hidden="true">
+      <g aria-hidden="true">
+        {
+          hexSegments.map((segment) => (
+            <path
+              class="project-load-hex project-load-hex--progress"
+              d={segment.d}
+              pathLength="1"
+            />
+          ))
+        }
+      </g>
+
+      <g aria-hidden="true">
+        <text
+          class="project-load-text project-load-text--halo"
+          x="309"
+          y="313"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          textLength="172"
+          lengthAdjust="spacing"
+        >
+          LOADING
+        </text>
+        <text
+          class="project-load-text project-load-text--tube"
+          x="309"
+          y="313"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          textLength="172"
+          lengthAdjust="spacing"
+        >
+          LOADING
+        </text>
+        <text
+          class="project-load-text project-load-text--core"
+          x="309"
+          y="313"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          textLength="172"
+          lengthAdjust="spacing"
+        >
+          LOADING
+        </text>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<style>
+  .project-load-shell {
+    position: relative;
+    min-height: calc(100svh - var(--header-height));
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .project-load-stage {
+    width: min(740px, 92vw);
+    aspect-ratio: 1;
+  }
+
+  .project-load-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .project-load-hex {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .project-load-hex--progress {
+    stroke: rgb(38 214 255);
+    stroke-width: 15;
+    stroke-linecap: butt;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: project-load-segment-fill 3.2s linear infinite;
+    filter:
+      drop-shadow(0 0 2px rgb(255 255 255 / 0.22))
+      drop-shadow(0 0 7px rgb(37 211 255 / 0.88))
+      drop-shadow(0 0 20px rgb(37 211 255 / 0.34));
+  }
+
+  .project-load-text {
+    font-family: 'Orbitron', 'IBM Plex Mono', monospace;
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: 0;
+    paint-order: stroke fill;
+    animation: project-load-text-pulse 2.2s ease-in-out infinite;
+  }
+
+  .project-load-text--halo {
+    fill: none;
+    stroke: rgb(65 213 255 / 0.6);
+    stroke-width: 8;
+    opacity: 0.9;
+    filter: blur(8px) drop-shadow(0 0 22px rgb(34 191 255 / 0.75));
+    animation-delay: 0s;
+  }
+
+  .project-load-text--tube {
+    fill: rgb(31 205 255);
+    stroke: rgb(31 205 255);
+    stroke-width: 1.8;
+    filter: blur(0.35px) drop-shadow(0 0 10px rgb(34 191 255 / 0.95));
+    animation-delay: -0.35s;
+  }
+
+  .project-load-text--core {
+    fill: rgb(216 252 255);
+    stroke: none;
+    filter: drop-shadow(0 0 4px rgb(178 244 255 / 0.9));
+    animation-delay: -0.6s;
+  }
+
+  @keyframes project-load-segment-fill {
+    0% {
+      stroke-dashoffset: 1;
+    }
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes project-load-text-pulse {
+    0%,
+    100% {
+      opacity: 0.92;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .project-load-stage {
+      width: min(560px, 92vw);
+    }
+
+    .project-load-hex--progress {
+      stroke-width: 12.5;
+    }
+
+    .project-load-text {
+      font-size: 28px;
+    }
+
+    .project-load-text--halo {
+      stroke-width: 6;
+    }
+
+    .project-load-text--tube {
+      stroke-width: 1.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-load-hex--progress,
+    .project-load-text {
+      animation: none;
+    }
+  }
+</style>
