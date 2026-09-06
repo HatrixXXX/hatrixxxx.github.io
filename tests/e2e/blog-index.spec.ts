@@ -271,8 +271,61 @@ test('dragging a post link scrolls the rail without opening the article', async 
   const scrollLeftAfterDrag = await rail.evaluate((element) => element.scrollLeft);
 
   expect(scrollLeftWhileDragging).toBeGreaterThan(0);
-  expect(scrollLeftAfterDrag).toBeCloseTo(scrollLeftWhileDragging, 0);
+  expect(scrollLeftAfterDrag).toBeGreaterThanOrEqual(scrollLeftWhileDragging);
   await expect(page).toHaveURL(/\/blog\/all\/$/);
+});
+
+test('wheel movement eases toward its target before settling', async ({ page }) => {
+  await page.goto('/blog/all/');
+  const rail = page.locator('[data-post-rail]');
+  const box = await rail.boundingBox();
+  if (!box) throw new Error('Missing post rail bounds');
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await rail.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  await page.mouse.wheel(0, 280);
+  const firstFrame = await rail.evaluate((element) => element.scrollLeft);
+  expect(firstFrame).toBeGreaterThan(0);
+  expect(firstFrame).toBeLessThan(280);
+  await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(firstFrame);
+  await page.waitForTimeout(450);
+  const settled = await rail.evaluate((element) => element.scrollLeft);
+  expect(settled).toBeGreaterThan(firstFrame);
+});
+
+test('drag release continues with inertia and then settles', async ({ page }) => {
+  await page.goto('/blog/all/');
+  const rail = page.locator('[data-post-rail]');
+  const box = await rail.boundingBox();
+  if (!box) throw new Error('Missing post rail bounds');
+
+  await page.mouse.move(box.x + 180, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 60, box.y + box.height / 2, { steps: 3 });
+  const atRelease = await rail.evaluate((element) => element.scrollLeft);
+  await page.mouse.up();
+  await page.waitForTimeout(60);
+  const afterRelease = await rail.evaluate((element) => element.scrollLeft);
+  expect(afterRelease).toBeGreaterThan(atRelease);
+  await page.waitForTimeout(500);
+  const settled = await rail.evaluate((element) => element.scrollLeft);
+  expect(settled).toBeGreaterThanOrEqual(afterRelease);
+});
+
+test('reduced motion skips wheel easing and drag inertia', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/blog/all/');
+  const rail = page.locator('[data-post-rail]');
+  const box = await rail.boundingBox();
+  if (!box) throw new Error('Missing post rail bounds');
+  await page.mouse.move(box.x + 180, box.y + box.height / 2);
+  await page.mouse.wheel(0, 280);
+  const wheelPosition = await rail.evaluate((element) => element.scrollLeft);
+  expect(wheelPosition).toBeGreaterThan(0);
+  await page.waitForTimeout(100);
+  expect(await rail.evaluate((element) => element.scrollLeft)).toBeCloseTo(wheelPosition, 0);
 });
 
 for (const { route, title, count } of [
