@@ -1,5 +1,5 @@
 import MiniSearch from 'minisearch';
-import { excerptForMatch, tokenizeSearchText, type SearchDocument } from '@/lib/search';
+import { excerptForMatch, searchTerms, tokenizeSearchText, type SearchDocument } from '@/lib/search';
 
 const RESULT_LIMIT = 20;
 let indexPromise: Promise<MiniSearch<SearchDocument>> | undefined;
@@ -56,14 +56,16 @@ function closeSearch(): void {
 }
 
 function appendHighlightedText(parent: HTMLElement, text: string, query: string): void {
-  const normalizedQuery = query.trim();
-  if (!normalizedQuery) {
+  const terms = searchTerms(query);
+  if (terms.length === 0) {
     parent.textContent = text;
     return;
   }
 
-  const escapedQuery = normalizedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const matcher = new RegExp(escapedQuery, 'giu');
+  const escapedTerms = terms
+    .sort((left, right) => right.length - left.length)
+    .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const matcher = new RegExp(escapedTerms.join('|'), 'giu');
   let cursor = 0;
   for (const match of text.matchAll(matcher)) {
     const index = match.index ?? 0;
@@ -90,8 +92,13 @@ async function renderResults(input: HTMLInputElement): Promise<void> {
 
   try {
     const matches = (await searchIndex())
-      .search(query, { prefix: true, fuzzy: 0.2 })
-      .filter((match) => !match.locked)
+      .search(query, { prefix: true, fuzzy: 0.2, combineWith: 'AND' })
+      .filter((match) => {
+        if (match.locked) return false;
+        const terms = searchTerms(query);
+        const haystack = [match.title, ...(match.paragraphs ?? [])].join(' ').toLocaleLowerCase();
+        return terms.every((term) => haystack.includes(term));
+      })
       .slice(0, RESULT_LIMIT);
     status.textContent = matches.length > 0 ? `找到 ${matches.length} 条结果` : '没有找到相关文章';
     for (const match of matches) {

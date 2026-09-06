@@ -1,19 +1,31 @@
+import { searchTerms } from '../lib/search';
+
 export function findSearchTarget(
   elements: readonly HTMLElement[],
   query: string
 ): HTMLElement | undefined {
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  if (!normalizedQuery) return undefined;
+  const terms = searchTerms(query);
+  if (terms.length === 0) return undefined;
 
-  return elements.find((element) =>
-    (element.textContent ?? '').toLocaleLowerCase().includes(normalizedQuery)
-  );
+  return elements.find((element) => {
+    const text = (element.textContent ?? '').toLocaleLowerCase();
+    return terms.every((term) => text.includes(term));
+  }) ?? elements.find((element) => {
+    const text = (element.textContent ?? '').toLocaleLowerCase();
+    return terms.some((term) => text.includes(term));
+  });
 }
+
+let highlightTimer: number | undefined;
 
 function clearSearchHighlight(): void {
   document.querySelectorAll<HTMLElement>('[data-search-hit]').forEach((element) => {
     delete element.dataset.searchHit;
   });
+  if (highlightTimer !== undefined) {
+    window.clearTimeout(highlightTimer);
+    highlightTimer = undefined;
+  }
 }
 
 function highlightSearchTarget(): void {
@@ -32,7 +44,10 @@ function highlightSearchTarget(): void {
     block: 'center',
     behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
   });
-  window.setTimeout(() => delete target.dataset.searchHit, 3_000);
+  highlightTimer = window.setTimeout(() => {
+    delete target.dataset.searchHit;
+    highlightTimer = undefined;
+  }, 3_000);
 }
 
 if (typeof document !== 'undefined') {

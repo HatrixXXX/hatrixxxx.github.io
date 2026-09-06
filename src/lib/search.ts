@@ -12,8 +12,12 @@ export interface SearchDocument {
 
 const HAN_SEGMENT = /^\p{Script=Han}+$/u;
 
+export function searchTerms(query: string): string[] {
+  return query.normalize('NFKC').trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+}
+
 export function tokenizeSearchText(text: string): string[] {
-  const segments = text.toLocaleLowerCase().match(/\p{Script=Han}+|[\p{L}\p{N}_]+/gu) ?? [];
+  const segments = text.normalize('NFKC').toLocaleLowerCase().match(/\p{Script=Han}+|[\p{L}\p{N}_]+/gu) ?? [];
   const tokens: string[] = [];
 
   for (const segment of segments) {
@@ -56,8 +60,12 @@ export function markdownToParagraphs(markdown: string): string[] {
 }
 
 export function excerptForMatch(paragraphs: string[], query: string, maxLength = 180): string {
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const paragraph = paragraphs.find((item) => item.toLocaleLowerCase().includes(normalizedQuery)) ?? paragraphs[0] ?? '';
+  const terms = searchTerms(query);
+  const normalizedQuery = terms[0] ?? '';
+  const paragraph = paragraphs.find((item) => terms.every((term) => item.toLocaleLowerCase().includes(term)))
+    ?? paragraphs.find((item) => terms.some((term) => item.toLocaleLowerCase().includes(term)))
+    ?? paragraphs[0]
+    ?? '';
   if (paragraph.length <= maxLength || !normalizedQuery) return paragraph;
 
   const matchIndex = paragraph.toLocaleLowerCase().indexOf(normalizedQuery);
