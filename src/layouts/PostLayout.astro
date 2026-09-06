@@ -2,6 +2,7 @@
 import 'katex/dist/katex.min.css';
 import { getCollection } from 'astro:content';
 import GiscusComments from '@/components/GiscusComments.astro';
+import BackButton from '@/components/BackButton.astro';
 import PostLink from '@/components/PostLink.astro';
 import PostMeta from '@/components/PostMeta.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
@@ -13,6 +14,7 @@ import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
 import { postPath } from '@/lib/urls';
 import { latestPostLimit } from '@/lib/post-layout';
 import { SITE } from '@/config/site';
+import { POST_TYPE_LINKS } from '@/config/navigation';
 
 interface Heading {
   depth: number;
@@ -30,6 +32,7 @@ const { post, headings, adjacent } = Astro.props;
 const canonicalPath = postPath(post.data.legacySlug);
 const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
 const stats = buildSiteStats(posts);
+const parentTypeLink = POST_TYPE_LINKS.find(({ label }) => label === post.data.type)?.href ?? '/blog/';
 
 ---
 
@@ -46,6 +49,7 @@ const stats = buildSiteStats(posts);
     runningDuration: formatRunningDurationAt(new Date())
   }}
 >
+  <BackButton href={parentTypeLink} label={`返回${post.data.type}`} />
   <article data-post>
     <div class="post-intro container">
       <h1>{post.data.title}</h1>

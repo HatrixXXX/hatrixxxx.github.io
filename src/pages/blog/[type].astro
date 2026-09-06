@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import EmptyState from '@/components/EmptyState.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import PostList from '@/components/PostList.astro';
+import BackButton from '@/components/BackButton.astro';
 import { POST_TYPE_LINKS } from '@/config/navigation';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { sortPosts, type PostEntry } from '@/lib/content';
@@ -23,6 +24,7 @@ const { title, posts } = Astro.props;
 ---
 
 <BaseLayout title={title}>
+  <BackButton href="/blog/" label="返回博客文章分类" />
   <HeroBanner title={title} image="/images/default-cover.svg" compact />
   <main class="blog-main">
     {posts.length === 0 ? (

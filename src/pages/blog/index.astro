@@ -1,11 +1,13 @@
 ---
 import { POST_TYPE_LINKS } from '@/config/navigation';
+import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_TYPE_LINKS];
 ---
 
 <BaseLayout title="博客文章">
+  <BackButton href="/" label="返回主页" />
   <section class="blog-category-section" aria-labelledby="blog-category-title">
     <div class="blog-category-heading">
       <h1 id="blog-category-title">博客文章</h1>
@@ -52,7 +54,7 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
 
   .blog-category-heading {
     margin-bottom: clamp(1.75rem, 3vw, 2.5rem);
-    padding-inline-start: clamp(1rem, 2vw, 2rem);
+    padding-inline-start: clamp(3.75rem, 5vw, 4.5rem);
   }
 
   .blog-category-heading h1 {

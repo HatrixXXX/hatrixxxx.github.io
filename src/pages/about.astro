@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
+import BackButton from '@/components/BackButton.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { PostEntry } from '@/lib/content';
@@ -11,6 +12,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
 ---
 
 <BaseLayout title="关于">
+  <BackButton href="/" label="返回主页" />
   <HeroBanner title="关于" subtitle={`你好，我是 ${SITE.author.name}`} image="/images/default-cover.svg" compact />
   <main class="about-main container">
     <article>

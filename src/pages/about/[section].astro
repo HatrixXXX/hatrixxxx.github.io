@@ -4,6 +4,7 @@ import EmptyState from '@/components/EmptyState.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
+import BackButton from '@/components/BackButton.astro';
 import { ABOUT_SECTION_LINKS } from '@/config/navigation';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { PostEntry } from '@/lib/content';
@@ -20,6 +21,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
 ---
 
 <BaseLayout title={section.label}>
+  <BackButton href="/about/" label="返回关于我" />
   <HeroBanner title={section.label} subtitle="关于我的一些记录" image="/images/default-cover.svg" compact />
   <main class="about-section container">
     <div class="about-content">

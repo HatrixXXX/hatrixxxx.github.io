@@ -3,11 +3,13 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import EmptyState from '@/components/EmptyState.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import BackButton from '@/components/BackButton.astro';
 
 const projects: CollectionEntry<'projects'>[] = await getCollection('projects');
 ---
 
 <BaseLayout title="作品">
+  <BackButton href="/" label="返回主页" />
   <HeroBanner title="作品" subtitle="项目与实验记录" image="/images/default-cover.svg" compact />
   <main class="projects-main container">
     {projects.length === 0 ? (

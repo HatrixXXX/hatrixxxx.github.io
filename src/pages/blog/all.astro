@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
 import PostArchiveList from '@/components/PostArchiveList.astro';
 import PostList from '@/components/PostList.astro';
+import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
 
@@ -11,6 +12,7 @@ const archives = buildArchives(posts);
 ---
 
 <BaseLayout title="全部文章">
+  <BackButton href="/blog/" label="返回博客文章分类" />
   <HeroBanner title="全部文章" image="/images/default-cover.svg" compact />
   <main class="blog-main">
     <div class="blog-view" data-blog-view-root>
