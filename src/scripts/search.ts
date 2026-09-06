@@ -1,5 +1,5 @@
 import MiniSearch from 'minisearch';
-import type { SearchDocument } from '@/lib/search';
+import { excerptForMatch, tokenizeSearchText, type SearchDocument } from '@/lib/search';
 
 const RESULT_LIMIT = 20;
 let indexPromise: Promise<MiniSearch<SearchDocument>> | undefined;
@@ -18,7 +18,8 @@ async function searchIndex(): Promise<MiniSearch<SearchDocument>> {
       .then((documents) => {
         const index = new MiniSearch<SearchDocument>({
           fields: ['title', 'description', 'text'],
-          storeFields: ['url', 'title', 'description', 'locked']
+          storeFields: ['url', 'title', 'locked', 'paragraphs'],
+          tokenize: tokenizeSearchText
         });
         index.addAll(documents);
         return index;
@@ -54,6 +55,27 @@ function closeSearch(): void {
   if (dialog?.open) dialog.close();
 }
 
+function appendHighlightedText(parent: HTMLElement, text: string, query: string): void {
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) {
+    parent.textContent = text;
+    return;
+  }
+
+  const escapedQuery = normalizedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const matcher = new RegExp(escapedQuery, 'giu');
+  let cursor = 0;
+  for (const match of text.matchAll(matcher)) {
+    const index = match.index ?? 0;
+    parent.append(document.createTextNode(text.slice(cursor, index)));
+    const mark = document.createElement('mark');
+    mark.textContent = match[0];
+    parent.append(mark);
+    cursor = index + match[0].length;
+  }
+  parent.append(document.createTextNode(text.slice(cursor)));
+}
+
 async function renderResults(input: HTMLInputElement): Promise<void> {
   const dialog = input.closest<HTMLDialogElement>('[data-search-overlay]');
   const results = dialog?.querySelector<HTMLOListElement>('[data-search-results]');
@@ -67,27 +89,24 @@ async function renderResults(input: HTMLInputElement): Promise<void> {
   }
 
   try {
-    const matches = (await searchIndex()).search(query, { prefix: true, fuzzy: 0.2 }).slice(0, RESULT_LIMIT);
+    const matches = (await searchIndex())
+      .search(query, { prefix: true, fuzzy: 0.2 })
+      .filter((match) => !match.locked)
+      .slice(0, RESULT_LIMIT);
     status.textContent = matches.length > 0 ? `找到 ${matches.length} 条结果` : '没有找到相关文章';
     for (const match of matches) {
       const item = document.createElement('li');
       const link = document.createElement('a');
       const title = document.createElement('strong');
-      const meta = document.createElement('span');
-      link.href = String(match.url);
+      const excerpt = document.createElement('span');
+      excerpt.dataset.searchExcerpt = '';
+      const target = new URL(String(match.url), window.location.origin);
+      target.searchParams.set('q', query);
+      link.href = `${target.pathname}${target.search}`;
       link.dataset.searchResult = '';
       title.textContent = String(match.title);
-      meta.textContent = String(match.description);
-      if (match.locked) {
-        link.dataset.lockedLink = '';
-        const lock = document.createElement('span');
-        lock.className = 'search-lock-indicator';
-        lock.setAttribute('role', 'img');
-        lock.setAttribute('aria-label', '加锁内容');
-        lock.textContent = '🔒';
-        title.append(' ', lock);
-      }
-      link.append(title, meta);
+      appendHighlightedText(excerpt, excerptForMatch(match.paragraphs ?? [], query), query);
+      link.append(title, excerpt);
       item.append(link);
       results.append(item);
     }

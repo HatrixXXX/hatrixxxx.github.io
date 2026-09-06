@@ -144,6 +144,38 @@ test('search retries after the first index request fails', async ({ page }) => {
   expect(attempts).toBe(2);
 });
 
+test('search results show a highlighted body excerpt and carry the query to the post', async ({ page }) => {
+  await page.route('**/search-index.json', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 'body-search-fixture',
+        url: '/posts/body-search-fixture/',
+        title: '正文搜索测试',
+        locked: false,
+        text: '正文搜索测试 矩阵乘法需要分块处理',
+        paragraphs: ['第一段没有命中。', '矩阵乘法需要分块处理。']
+      }])
+    });
+  });
+
+  await page.goto('/');
+  await page.keyboard.press('Control+K');
+  await page.getByRole('searchbox', { name: '搜索文章' }).fill('矩阵');
+
+  const result = page.locator('[data-search-result]').first();
+  await expect(result.locator('[data-search-excerpt] mark')).toHaveText('矩阵');
+  await expect(result).toHaveAttribute('href', '/posts/body-search-fixture/?q=%E7%9F%A9%E9%98%B5');
+});
+
+test('post pages locate and temporarily highlight the searched paragraph', async ({ page }) => {
+  await page.goto('/posts/fixture-public/?q=Public');
+
+  const hit = page.locator('.prose [data-search-hit]');
+  await expect(hit).toHaveText('Public fixture body.');
+  await expect(hit).toHaveCSS('box-shadow', /inset/);
+});
+
 test('stored theme is applied and one click toggles it after client navigation', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.goto('/');

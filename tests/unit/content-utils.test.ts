@@ -5,6 +5,15 @@ import * as search from '../../src/lib/search';
 const markdownToPlainText = (search as typeof search & {
   markdownToPlainText?: (markdown: string, maxLength?: number) => string;
 }).markdownToPlainText;
+const markdownToParagraphs = (search as typeof search & {
+  markdownToParagraphs?: (markdown: string) => string[];
+}).markdownToParagraphs;
+const tokenizeSearchText = (search as typeof search & {
+  tokenizeSearchText?: (text: string) => string[];
+}).tokenizeSearchText;
+const excerptForMatch = (search as typeof search & {
+  excerptForMatch?: (paragraphs: string[], query: string, maxLength?: number) => string;
+}).excerptForMatch;
 
 const post = (id: string, date: string) => ({
   id,
@@ -69,12 +78,14 @@ describe('content utilities', () => {
       id: 'FPGA',
       url: '/posts/FPGA/',
       title: 'FPGA',
-      locked: false
+      locked: false,
+      paragraphs: expect.any(Array)
     });
     expect(document).not.toHaveProperty('category');
     expect(document).not.toHaveProperty('tags');
     expect(document.text).toContain('FPGA');
-    expect(document.text.endsWith('a'.repeat(2000))).toBe(true);
+    expect(document.paragraphs).toEqual(['a'.repeat(2501)]);
+    expect(document.text.endsWith('a'.repeat(2501))).toBe(true);
   });
 
   it('keeps locked post body text out of the search document', () => {
@@ -93,8 +104,30 @@ describe('content utilities', () => {
       url: '/posts/locked-post/',
       title: 'Public locked title',
       locked: true,
-      text: 'Public locked title'
+      text: 'Public locked title',
+      paragraphs: []
     });
+  });
+
+  it('extracts searchable paragraphs and overlapping Chinese tokens', () => {
+    expect(markdownToParagraphs).toBeTypeOf('function');
+    expect(tokenizeSearchText).toBeTypeOf('function');
+    if (!markdownToParagraphs || !tokenizeSearchText) return;
+
+    expect(markdownToParagraphs('## 矩阵乘法\n\n第一段内容。\n\n第二段内容。')).toEqual([
+      '矩阵乘法',
+      '第一段内容。',
+      '第二段内容。'
+    ]);
+    expect(tokenizeSearchText('矩阵乘法 GPU')).toEqual(expect.arrayContaining(['矩', '阵', '乘', '法', '矩阵', '阵乘', '乘法', 'gpu']));
+  });
+
+  it('extracts a bounded excerpt around the matching paragraph', () => {
+    expect(excerptForMatch).toBeTypeOf('function');
+    if (!excerptForMatch) return;
+
+    expect(excerptForMatch(['前置内容。', '这一段包含需要查找的关键词以及后续说明。'], '关键词', 16))
+      .toBe('…需要查找的关键词以及后续说明…');
   });
 
   it('normalizes Markdown into searchable plain text', () => {

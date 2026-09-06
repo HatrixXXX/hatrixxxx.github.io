@@ -95,7 +95,7 @@ test('locked public surfaces expose only public metadata and an accessible lock 
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
 });
 
-test('locked search results contain a public summary and lock marker', async ({ page }) => {
+test('locked posts are excluded from public search results', async ({ page }) => {
   await page.route('**/search-index.json', async (route) => {
     await route.fulfill({
       contentType: 'application/json',
@@ -113,11 +113,8 @@ test('locked search results contain a public summary and lock marker', async ({ 
   await page.getByRole('button', { name: '搜索' }).click();
   await page.getByRole('searchbox', { name: '搜索文章' }).fill('Public locked title');
 
-  const result = page.locator('[data-search-result]');
-  await expect(result).toHaveAttribute('data-locked-link', '');
-  await expect(result).toContainText('Public locked summary');
-  await expect(result).not.toContainText('distinctive-private-body-marker');
-  await expect(result.getByRole('img', { name: '加锁内容' })).toBeVisible();
+  await expect(page.locator('[data-search-result]')).toHaveCount(0);
+  await expect(page.locator('[data-search-status]')).toHaveText('没有找到相关文章');
 });
 
 test('404 retains site navigation', async ({ page }) => {

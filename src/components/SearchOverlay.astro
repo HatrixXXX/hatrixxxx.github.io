@@ -149,6 +149,20 @@
     font-size: 0.78rem;
   }
 
+  .search-results :global([data-search-excerpt]) {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .search-results :global(mark) {
+    border-radius: 3px;
+    padding: 0 0.1em;
+    background: color-mix(in srgb, var(--color-accent) 32%, transparent);
+    color: inherit;
+  }
+
   .search-results :global(.search-lock-indicator) {
     display: inline;
     margin: 0 0 0 0.25em;

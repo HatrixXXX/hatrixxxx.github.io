@@ -5,7 +5,7 @@ import { toSearchDocument, type SearchDocument } from '@/lib/search';
 
 export const GET: APIRoute = async () => {
   const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
-  const documents: SearchDocument[] = posts.map(toSearchDocument);
+  const documents: SearchDocument[] = posts.filter(({ data }: PostEntry) => !data.locked).map(toSearchDocument);
 
   return new Response(JSON.stringify(documents), {
     headers: { 'Content-Type': 'application/json; charset=utf-8' }
