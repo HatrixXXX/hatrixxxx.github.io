@@ -122,7 +122,7 @@ test('post layout places the sidebar, article and TOC in responsive reading orde
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/posts/本科数学大杂烩/');
 
-  const desktopStack = await page.locator('[data-sidebar-stack]').boundingBox();
+  const desktopStack = await page.locator('.post-sidebar').boundingBox();
   const desktopPost = await page.locator('.post-column').boundingBox();
   const desktopToc = await page.locator('[data-toc-desktop]').boundingBox();
   expect((desktopStack?.x ?? Infinity) + (desktopStack?.width ?? 0)).toBeLessThanOrEqual(
@@ -136,7 +136,7 @@ test('post layout places the sidebar, article and TOC in responsive reading orde
   await page.reload();
   const mobileToc = await page.locator('[data-table-of-contents]').boundingBox();
   const mobilePost = await page.locator('.post-column').boundingBox();
-  const mobileStack = await page.locator('[data-sidebar-stack]').boundingBox();
+  const mobileStack = await page.locator('.post-sidebar').boundingBox();
   expect((mobileToc?.y ?? Infinity) + (mobileToc?.height ?? 0)).toBeLessThanOrEqual(
     mobilePost?.y ?? -Infinity
   );
@@ -154,12 +154,8 @@ test('sidebar stickiness is limited to desktop viewports tall enough for the ful
   await page.setViewportSize({ width: 1440, height: 760 });
   await page.goto('/posts/本科数学大杂烩/');
 
-  const stack = page.locator('[data-sidebar-stack]');
-  await expect(stack).toHaveCSS('position', 'relative');
-  const finalControl = stack.getByRole('button', { name: '下一首' });
-  await finalControl.scrollIntoViewIfNeeded();
-  const shortViewportControl = await finalControl.boundingBox();
-  expect((shortViewportControl?.y ?? Infinity) + (shortViewportControl?.height ?? 0)).toBeLessThanOrEqual(760);
+  const stack = page.locator('.post-sidebar');
+  await expect(stack).toHaveCSS('position', 'sticky');
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.reload();

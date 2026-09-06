@@ -567,9 +567,9 @@ test('post cover gutters stay inactive before the article region activates', asy
   await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const horizontal = await page.locator('[data-content-boundary]').boundingBox();
-  const hero = await page.locator('.post-hero').boundingBox();
+  const hero = await page.locator('.post-intro').boundingBox();
   const viewport = page.viewportSize();
-  if (!horizontal || !hero || !viewport) throw new Error('Missing post cover geometry');
+  if (!horizontal || !hero || !viewport) throw new Error('Missing post intro geometry');
   const visibleTop = Math.max(8, hero.y);
   const visibleBottom = Math.min(viewport.height - 8, hero.y + hero.height);
   if (visibleBottom - visibleTop < 80) throw new Error('Post cover is outside the viewport');

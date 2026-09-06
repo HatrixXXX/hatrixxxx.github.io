@@ -44,8 +44,13 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
 test('about and article routes render the ordered contextual sidebar stack', async ({ page }) => {
   for (const path of ['/about/', '/about/hobbies/', '/posts/本科数学大杂烩/']) {
     await page.goto(path);
-    const stack = page.locator('[data-sidebar-stack]');
+    const stack = path.startsWith('/posts/') ? page.locator('.post-sidebar') : page.locator('[data-sidebar-stack]');
     await expect(stack).toHaveCount(1);
+    if (path.startsWith('/posts/')) {
+      await expect(stack.locator('[data-table-of-contents]')).toHaveCount(1);
+      await expect(stack.locator('[data-latest-posts]')).toBeVisible();
+      continue;
+    }
     await expect(stack.locator(':scope > [data-profile-card]')).toHaveCount(1);
     await expect(stack.locator(':scope > [data-site-stats]')).toHaveCount(1);
     await expect(stack.locator(':scope > [data-music-player]')).toHaveCount(1);
