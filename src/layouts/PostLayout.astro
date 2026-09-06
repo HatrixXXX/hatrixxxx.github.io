@@ -8,6 +8,7 @@ import PostMeta from '@/components/PostMeta.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
 import TableOfContents from '@/components/TableOfContents.astro';
 import LatestPostRail from '@/components/LatestPostRail.astro';
+import MusicPlayer from '@/components/MusicPlayer.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { AdjacentPosts, PostEntry } from '@/lib/content';
 import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
@@ -78,7 +79,7 @@ const stats = buildSiteStats(posts);
 
           <GiscusComments />
         </div>
-        <aside class="post-sidebar"><TableOfContents headings={headings} /><LatestPostRail posts={posts} limit={latestPostLimit(headings.length)} /></aside>
+        <aside class="post-sidebar"><TableOfContents headings={headings} /><LatestPostRail posts={posts} limit={latestPostLimit(headings.length)} /><MusicPlayer /></aside>
       </div>
     </ProtectedContent>
   </article>
