@@ -1,36 +1,655 @@
 ---
 import { playlist } from '@/data/playlist';
+
 const isEmpty = playlist.length === 0;
-const current = playlist[0];
+const isArticle = Astro.url.pathname.startsWith('/posts/');
+const currentTrack = playlist[0];
+const cover = currentTrack?.cover;
 ---
-<aside class="music-player" aria-label="音乐播放器" data-music-player data-empty={String(isEmpty)} transition:persist="music-player">
+
+<aside
+  class="music-player"
+  aria-label="音乐播放器"
+  data-music-player
+  data-empty={String(isEmpty)}
+  data-content-page={isArticle ? 'true' : undefined}
+  data-ui-state={isArticle ? 'collapsed' : 'expanded'}
+  transition:persist="music-player"
+>
+  {isArticle && (
+    <button
+      class="player-toggle"
+      type="button"
+      data-player-toggle
+      aria-label="展开音乐播放器"
+      aria-expanded="false"
+    >
+      <span aria-hidden="true">♫</span>
+    </button>
+  )}
+
   <div class="player-main">
-    <div class="track-copy"><strong data-player-title>{isEmpty ? '歌单待添加' : current?.title}</strong><span data-player-artist>{isEmpty ? '' : current?.artist}</span></div>
-    <div class="player-controls" aria-label="播放控制">
-      <button type="button" aria-label="上一首" data-player-prev disabled={isEmpty}>⏮</button>
-      <button type="button" aria-label="播放" data-player-play disabled={isEmpty}>▶</button>
-      <button type="button" aria-label="下一首" data-player-next disabled={isEmpty}>⏭</button>
-      <button type="button" class="mode-button" aria-label="播放模式：列表循环" data-player-mode data-mode="list" disabled={isEmpty}>
-        <svg data-mode-icon="shuffle" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h2c3 0 4 10 8 10h6M16 5h4v4M20 15v4h-4M4 17h2c1.5 0 2.5-1.4 3.4-3" /></svg>
-        <svg data-mode-icon="list" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h9a4 4 0 0 1 4 4v1m-3-3 3 3 3-3M17 19H8a4 4 0 0 1-4-4v-1m3 3-3-3-3 3" /></svg>
-        <svg data-mode-icon="single" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h11a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Zm7 3v8m-2-6 2-2 2 2" /></svg>
-      </button>
+    <div class="track-copy" aria-live="polite" aria-atomic="true">
+      <strong data-player-title title={currentTrack?.title}>
+        {currentTrack?.title ?? '歌单待添加'}
+      </strong>
+      <span data-player-artist title={currentTrack?.artist}>{currentTrack?.artist ?? ''}</span>
     </div>
-    <label class="volume-control"><span class="volume-label">音量</span><input type="range" min="0" max="1" step="0.02" value="0.7" aria-label="音量" data-player-volume /></label>
+
+    <div class="player-controls" aria-label="播放控制">
+      <div class="control-item">
+        <button type="button" aria-label="上一曲" data-player-prev disabled={isEmpty}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 5v14M18 6 9 12l9 6V6Z" />
+          </svg>
+        </button>
+        <span>上一曲</span>
+      </div>
+
+      <div class="control-item">
+        <button
+          type="button"
+          class="play-button"
+          aria-label="播放"
+          aria-pressed="false"
+          data-player-play
+          disabled={isEmpty}
+        >
+          <svg data-play-icon viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m8 5 11 7-11 7V5Z" />
+          </svg>
+          <svg data-pause-icon viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5v14M16 5v14" />
+          </svg>
+        </button>
+        <span>播放/暂停</span>
+      </div>
+
+      <div class="control-item">
+        <button type="button" aria-label="下一曲" data-player-next disabled={isEmpty}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 5v14M6 6l9 6-9 6V6Z" />
+          </svg>
+        </button>
+        <span>下一曲</span>
+      </div>
+
+      <div class="control-item">
+        <button
+          type="button"
+          class="mode-button"
+          aria-label="播放模式：列表循环"
+          data-player-mode
+          data-mode="list"
+          disabled={isEmpty}
+        >
+          <svg data-mode-icon="list" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 7h14M5 12h14M5 17h14" />
+          </svg>
+          <svg data-mode-icon="shuffle" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h2c3 0 4 10 8 10h6M16 5h4v4M20 15v4h-4M4 17h2c1.5 0 2.5-1.4 3.4-3" />
+          </svg>
+          <svg data-mode-icon="single" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 5h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Zm5 4v6m-2-4 2-2 2 2" />
+          </svg>
+        </button>
+        <span>播放模式切换</span>
+      </div>
+
+      <div class="control-item volume-item">
+        <label class="volume-control">
+          <span class="visually-hidden">音量调节</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.02"
+            value="0.7"
+            aria-label="音量调节"
+            data-player-volume
+            disabled={isEmpty}
+          />
+        </label>
+        <span>音量调节</span>
+      </div>
+    </div>
+
+    <div class="progress-row">
+      <span class="progress-time" data-player-current-time>0:00</span>
+      <input
+        class="progress-slider"
+        type="range"
+        min="0"
+        max="0"
+        step="0.1"
+        value="0"
+        aria-label="播放进度"
+        data-player-progress
+        disabled={isEmpty}
+      />
+      <span class="progress-time" data-player-duration>0:00</span>
+    </div>
   </div>
-  <div class="turntable" aria-hidden="true"><div class="turntable-platter"><div class="turntable-record" data-turntable-record></div></div><div class="turntable-tonearm"><div class="turntable-cartridge"></div></div><i class="turntable-light" data-player-light></i></div>
+
+  <figure class="turntable" aria-hidden="true">
+    <div class="turntable-platter">
+      <div
+        class="turntable-record"
+        data-turntable-record
+        style={cover ? `--record-cover: url(${cover})` : undefined}
+      ></div>
+    </div>
+
+    <div class="turntable-tonearm" data-turntable-tonearm>
+      <span class="tonearm-cap"></span>
+      <span class="tonearm-pivot" data-turntable-pivot></span>
+      <span class="tonearm-post" data-turntable-post></span>
+      <span class="tonearm-arm"></span>
+      <span class="tonearm-head"></span>
+    </div>
+
+    <figcaption class="turntable-caption">唱片机</figcaption>
+  </figure>
 </aside>
+
 <style>
-.music-player{--record-size:250px;--arm-angle:19deg;position:relative;z-index:3;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:1rem;align-items:center;width:min(780px,calc(100vw - 48px));min-height:230px;box-sizing:border-box;overflow:visible;border:1px solid var(--color-line);border-radius:var(--radius-card);padding:1.4rem 1.8rem;background:linear-gradient(135deg,var(--color-surface),color-mix(in srgb,var(--color-surface) 80%,#000));color:var(--color-text);box-shadow:var(--shadow-panel),0 22px 30px rgb(0 0 0 / 18%)}
-.player-main{min-width:0;display:grid;gap:1.2rem;align-content:center}.track-copy{min-width:0;display:flex;flex-direction:column}.track-copy strong,.track-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.track-copy strong{font-size:.85rem}.track-copy span,.volume-control span{color:var(--color-muted);font-size:.7rem}.player-controls{display:flex;gap:.9rem;align-items:center;min-height:120px}.player-controls button{width:56px;height:56px;padding:0;border:0;border-radius:50%;background:#26132b;color:#fff;box-shadow:inset 0 1px rgb(255 255 255 / 12%),0 5px 10px #0005;font-size:1.35rem}.player-controls button[data-player-play]{width:78px;height:62px;border-radius:22px;background:#9ebbd2;color:#34203a;font-size:1.7rem}.player-controls button:disabled{opacity:.45}.mode-button{display:grid!important;place-items:center;margin-left:.1rem;background:transparent!important;box-shadow:none!important;border:1px solid var(--color-line)!important}.mode-button svg{display:none;width:19px;height:19px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}.mode-button[data-mode='shuffle'] [data-mode-icon='shuffle'],.mode-button[data-mode='list'] [data-mode-icon='list'],.mode-button[data-mode='single'] [data-mode-icon='single']{display:block}.volume-control{position:relative;display:grid;place-items:center;width:52px;height:116px;margin-left:.15rem;border-left:1px solid var(--color-line);padding-left:.45rem}.volume-label{position:absolute;top:3px;color:var(--color-muted);font-size:.52rem;writing-mode:vertical-rl}.volume-control input{appearance:none;-webkit-appearance:none;width:18px;height:156px;margin:0;accent-color:var(--color-accent);writing-mode:vertical-lr;direction:rtl;transform:rotate(180deg);cursor:ns-resize;background:transparent}.volume-control input::-webkit-slider-runnable-track{width:4px;height:156px;margin-inline:auto;background:linear-gradient(180deg,var(--color-line),var(--color-accent));border:1px solid rgb(255 255 255 / 22%);border-radius:0}.volume-control input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:42px;height:34px;margin-left:-12px;margin-top:0;border:1px solid rgb(255 255 255 / 35%);border-radius:2px;background:#f4f4f4;box-shadow:0 3px 8px rgb(0 0 0 / 35%);cursor:ns-resize}.volume-control input::-moz-range-track{width:4px;height:156px;background:linear-gradient(180deg,var(--color-line),var(--color-accent));border:1px solid rgb(255 255 255 / 22%);border-radius:0}.volume-control input::-moz-range-thumb{width:42px;height:34px;border:1px solid rgb(255 255 255 / 35%);border-radius:2px;background:#f4f4f4;box-shadow:0 3px 8px rgb(0 0 0 / 35%);cursor:ns-resize}.volume-control input::-webkit-slider-thumb{cursor:ns-resize}.turntable{position:absolute;right:-112px;top:50%;width:290px;height:290px;transform:translate3d(40px,-50%,0);filter:drop-shadow(10px 16px 12px rgb(0 0 0 / 28%));pointer-events:none}.turntable-platter{position:absolute;inset:5px;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle,#555 0 58%,#292929 59% 72%,#111 73%);box-shadow:inset 0 0 0 6px #333,0 5px 14px #0008}.turntable-record{width:var(--record-size);height:var(--record-size);border-radius:50%;background:repeating-radial-gradient(circle,#171717 0 2px,#2b2b2b 2px 3px);box-shadow:inset 0 0 0 18px #111,inset 0 0 20px #000}.turntable-record::after{content:"";display:block;width:28%;height:28%;margin:36%;border-radius:50%;background:var(--color-accent);box-shadow:0 0 0 5px #111,0 0 14px #ff8fa666}.turntable-tonearm{position:absolute;width:150px;height:10px;top:30px;right:0;border-radius:99px;background:linear-gradient(#d9d9d9,#626262);transform-origin:right center;transform:rotate(var(--arm-angle));transition:transform .3s ease;box-shadow:0 2px 3px #0008}.turntable-tonearm::before{content:"";position:absolute;right:-8px;top:-12px;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#343434 0 18%,#111 20% 72%,#000 74%);box-shadow:0 3px 6px #0009}.turntable-tonearm::after{content:"";position:absolute;right:2px;top:-42px;width:10px;height:76px;border-radius:5px;background:linear-gradient(90deg,#444,#c7c7c7 45%,#555);box-shadow:2px 0 3px #0008}.turntable-cartridge{position:absolute;left:-6px;top:-4px;width:14px;height:14px;border-radius:3px;background:#444;box-shadow:0 2px 3px #000}.turntable-light{position:absolute;right:10px;bottom:14px;width:12px;height:12px;border-radius:50%;background:#888}.music-player[data-playback-state='playing'] .turntable-record{animation:record-spin 2.2s linear infinite}.music-player[data-playback-state='playing'] .turntable-tonearm{--arm-angle:32deg}.music-player[data-playback-state='playing'] .turntable-light{background:#70d98a;box-shadow:0 0 9px #70d98a}@keyframes record-spin{to{transform:rotate(360deg)}}
-@media(max-width:600px){.music-player{grid-template-columns:1fr;position:relative;width:100%;padding-right:1rem}.turntable{position:absolute;right:-1rem;top:-70px;transform:scale(.75);transform-origin:right bottom}.player-main{padding-right:3.5rem}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  .music-player {
+    --record-size: 220px;
+    --turntable-size: 250px;
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: stretch;
+    gap: .75rem;
+    width: 100%;
+    min-height: 228px;
+    box-sizing: border-box;
+    overflow: visible;
+    padding: 1.25rem 1.5rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-line) 70%, transparent);
+    border-radius: 18px;
+    background: linear-gradient(130deg, #121019 0%, #0d0c13 72%, #07070a 100%);
+    box-shadow: 0 16px 30px #0006, inset 0 1px #fff1;
+    color: #fff;
+    isolation: isolate;
+  }
+
+  .player-main {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    min-width: 0;
+    padding-right: 9.5rem;
+  }
+
+  .track-copy {
+    display: grid;
+    gap: .15rem;
+    min-width: 0;
+    margin-bottom: .9rem;
+  }
+
+  .track-copy strong,
+  .track-copy span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track-copy strong {
+    color: #f5f2f8;
+    font-size: .96rem;
+    line-height: 1.35;
+  }
+
+  .track-copy span {
+    color: #b6afc1;
+    font-size: .72rem;
+    line-height: 1.35;
+  }
+
+  .player-controls {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    min-width: 0;
+  }
+
+  .control-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .45rem;
+    min-width: 0;
+    color: #f5f2f8;
+    font-size: .66rem;
+    white-space: nowrap;
+  }
+
+  .player-controls button {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid #ffffff22;
+    border-radius: 12px;
+    background: #221c2d;
+    color: #f5f2f8;
+    box-shadow: inset 0 1px #fff2, 0 6px 12px #0006;
+    cursor: pointer;
+  }
+
+  .player-controls button:hover:not(:disabled) {
+    background: #30243b;
+    border-color: #ffffff33;
+  }
+
+  .player-controls button:focus-visible,
+  .player-toggle:focus-visible,
+  .volume-control input:focus-visible,
+  .progress-slider:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .player-controls button svg {
+    width: 23px;
+    height: 23px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .play-button {
+    width: 62px !important;
+    height: 62px !important;
+    border-radius: 50% !important;
+    background: #9dbbd1 !important;
+    color: #18121f !important;
+  }
+
+  .play-button svg {
+    width: 28px !important;
+    height: 28px !important;
+    stroke-width: 2.1 !important;
+  }
+
+  .play-button [data-pause-icon],
+  .music-player[data-playback-state='playing'] .play-button [data-play-icon] {
+    display: none;
+  }
+
+  .music-player[data-playback-state='playing'] .play-button [data-pause-icon] {
+    display: block;
+  }
+
+  .player-controls button:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+  }
+
+  .mode-button {
+    background: #221c2d !important;
+    border: 1px solid #ffffff22 !important;
+    box-shadow: inset 0 1px #fff2, 0 6px 12px #0006 !important;
+    border-radius: 12px !important;
+  }
+
+  .mode-button svg {
+    display: none;
+  }
+
+  .mode-button[data-mode='list'] [data-mode-icon='list'],
+  .mode-button[data-mode='shuffle'] [data-mode-icon='shuffle'],
+  .mode-button[data-mode='single'] [data-mode-icon='single'] {
+    display: block;
+  }
+
+  .volume-control {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 70px;
+    margin-left: .1rem;
+  }
+
+  .volume-control input {
+    appearance: none;
+    width: 72px;
+    height: 6px;
+    transform: rotate(-90deg);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .volume-control input::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3d3548, #9dbbd1);
+  }
+
+  .volume-control input::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -4px;
+    border: 2px solid #111;
+    border-radius: 50%;
+    background: #f7f5f8;
+    box-shadow: 0 1px 2px #0007;
+  }
+
+  .volume-control input::-moz-range-track {
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #3d3548, #9dbbd1);
+  }
+
+  .volume-control input::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #111;
+    border-radius: 50%;
+    background: #f7f5f8;
+    box-shadow: 0 1px 2px #0007;
+  }
+
+  .progress-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .65rem;
+    min-width: 0;
+    margin-top: .95rem;
+    color: #b6afc1;
+    font-size: .72rem;
+  }
+
+  .progress-time {
+    white-space: nowrap;
+  }
+
+  .progress-slider {
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #9dbbd1 var(--played, 0%), #3d3548 var(--played, 0%));
+    box-shadow: inset 0 0 0 1px #ffffff14;
+    cursor: pointer;
+  }
+
+  .progress-slider:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .progress-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .progress-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -4px;
+    border: 2px solid #111;
+    border-radius: 50%;
+    background: #f7f5f8;
+    box-shadow: 0 1px 2px #0007;
+  }
+
+  .progress-slider::-moz-range-track {
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .progress-slider::-moz-range-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: #9dbbd1;
+  }
+
+  .progress-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #111;
+    border-radius: 50%;
+    background: #f7f5f8;
+    box-shadow: 0 1px 2px #0007;
+  }
+
+  .turntable {
+    position: absolute;
+    z-index: 1;
+    right: -76px;
+    top: 50%;
+    width: var(--turntable-size);
+    height: var(--turntable-size);
+    transform: translateY(-50%);
+    filter: drop-shadow(12px 15px 10px #0009);
+    pointer-events: none;
+  }
+
+  .turntable-platter {
+    position: absolute;
+    inset: 7px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: radial-gradient(circle, #3c3d43 0 58%, #18191d 59% 75%, #08090b 76%);
+    box-shadow: inset 0 0 0 6px #45464c, 0 5px 14px #0009;
+  }
+
+  .turntable-record {
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, #121212 0 2px, #272727 2px 3px);
+    box-shadow: inset 0 0 0 16px #0b0b0c, inset 0 0 25px #000;
+  }
+
+  .turntable-record::after {
+    content: '';
+    position: absolute;
+    inset: 34%;
+    border-radius: 50%;
+    background: var(--record-cover, radial-gradient(circle at 30% 30%, #d9a86c, #65415a 55%, #1d202e));
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 0 5px #0b0b0c, 0 0 12px #dca56b77;
+  }
+
+  .turntable-tonearm {
+    position: absolute;
+    inset: 0;
+  }
+
+  .tonearm-cap {
+    position: absolute;
+    left: 17px;
+    top: 0;
+    width: 34px;
+    height: 14px;
+    border-radius: 3px;
+    background: linear-gradient(#48484d, #151518 72%);
+    box-shadow: 0 1px 2px #0008;
+  }
+
+  .tonearm-pivot {
+    position: absolute;
+    left: 6px;
+    top: 16px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #4b4b50 0 14%, #111115 16% 70%, #000 72%);
+    box-shadow: 0 3px 6px #0009;
+  }
+
+  .tonearm-post {
+    position: absolute;
+    left: 20px;
+    top: 32px;
+    width: 6px;
+    height: calc(100% - 80px);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #d7d7da 0%, #888892 24%, #3d3d42 100%);
+    box-shadow: 0 0 0 1px #0004;
+  }
+
+  .tonearm-post::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -14px;
+    width: 6px;
+    height: 14px;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(#e7e7ea, #9f9fa8);
+  }
+
+  .tonearm-arm {
+    position: absolute;
+    left: 18px;
+    top: calc(100% - 78px);
+    width: 112px;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(#d9d9dc, #67676f);
+    transform: rotate(72deg);
+    transform-origin: left center;
+    box-shadow: 0 2px 3px #0008;
+    transition: transform .35s ease;
+  }
+
+  .tonearm-head {
+    position: absolute;
+    left: 21px;
+    top: calc(100% - 63px);
+    width: 20px;
+    height: 12px;
+    border-radius: 2px;
+    background: #25252b;
+    box-shadow: 0 2px 4px #0008;
+    transform: rotate(-8deg);
+  }
+
+  .turntable-caption {
+    position: absolute;
+    left: 50%;
+    bottom: -64px;
+    transform: translateX(-50%);
+    color: #2a2430;
+    font-size: 1rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .music-player[data-playback-state='playing'] .turntable-record {
+    animation: record-spin 2.2s linear infinite;
+  }
+
+  .music-player[data-playback-state='playing'] .tonearm-arm {
+    transform: rotate(78deg) translateY(3px);
+  }
+
+  .player-toggle {
+    position: absolute;
+    left: -34px;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 86px;
+    transform: translateY(-50%);
+    border: 1px solid #ffffff22;
+    border-right: 0;
+    border-radius: 12px 0 0 12px;
+    background: #121019;
+    color: #9dbbd1;
+    cursor: pointer;
+  }
+
+  .music-player[data-content-page='true'][data-ui-state='collapsed'] {
+    width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .music-player[data-content-page='true'][data-ui-state='collapsed'] .player-main,
+  .music-player[data-content-page='true'][data-ui-state='collapsed'] .turntable {
+    opacity: 0;
+    transform: translateX(-24px);
+    pointer-events: none;
+  }
+
+  .music-player[data-content-page='true'][data-ui-state='expanded'] .player-toggle span {
+    transform: rotate(180deg);
+  }
+
+  .music-player[data-content-page='false'] .player-toggle {
+    display: none;
+  }
+
+  @media (max-width: 700px) {
+    .music-player {
+      --record-size: 163px;
+      min-height: 175px;
+      padding: 1rem;
+    }
+
+    .player-main {
+      padding-right: 5.5rem;
+    }
+
+    .player-controls {
+      gap: .35rem;
+      flex-wrap: wrap;
+    }
+
+    .player-controls button {
+      width: 40px;
+      height: 40px;
+    }
+
+    .play-button {
+      width: 52px !important;
+      height: 52px !important;
+    }
+
+    .turntable {
+      right: -64px;
+      width: 185px;
+      height: 185px;
+    }
+
+    .turntable-caption {
+      bottom: -54px;
+      font-size: .86rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .music-player *,
+    .music-player *::before,
+    .music-player *::after {
+      animation-duration: .001ms !important;
+      transition-duration: .001ms !important;
+    }
+  }
 </style>
-
-
-
-
-
-
-
-

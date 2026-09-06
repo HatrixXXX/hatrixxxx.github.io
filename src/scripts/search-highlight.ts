@@ -37,7 +37,7 @@ function highlightSearchTarget(): void {
   if (!query) return;
 
   const elements = Array.from(
-    document.querySelectorAll<HTMLElement>('.post-intro h1, .prose :is(p, li, blockquote, h2, h3, h4, h5, h6, pre, td, th, img[alt])')
+    document.querySelectorAll<HTMLElement>('.prose :is(p, li, blockquote, h2, h3, h4, h5, h6, pre, td, th, img[alt])')
   );
   const target = findSearchTarget(elements, query);
   if (!target) return;

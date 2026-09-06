@@ -32,7 +32,7 @@ test('site statistics synchronize the persistent visitor source after client nav
   });
   await page.getByRole('link', { name: '关于我', exact: true }).click();
 
-  const visitors = page.locator('[data-visitor-count]');
+  const visitors = page.locator('[data-site-stats] [data-visitor-count]');
   await expect(visitors).toHaveText('1,234');
   await page.locator('[data-visitor-count-source]').evaluate((source) => {
     source.textContent = '2,345';
@@ -169,10 +169,10 @@ test('search results show a highlighted body excerpt and carry the query to the 
 });
 
 test('post pages locate and temporarily highlight the searched paragraph', async ({ page }) => {
-  await page.goto('/posts/fixture-public/?q=Public');
+  await page.goto('/posts/计算机组成结构/?q=矩阵');
 
   const hit = page.locator('.prose [data-search-hit]');
-  await expect(hit).toHaveText('Public fixture body.');
+  await expect(hit).toContainText('矩阵存储结构');
   await expect(hit).toHaveCSS('box-shadow', /inset/);
 });
 
@@ -444,11 +444,7 @@ test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
   await expect(page.locator('.pswp')).toBeVisible();
 });
 
-test('empty music player persists without constructing track audio or requesting media', async ({ page }) => {
-  const mediaRequests: string[] = [];
-  page.on('request', (request) => {
-    if (request.resourceType() === 'media') mediaRequests.push(request.url());
-  });
+test('music player persists across about navigation without recreating its audio instance', async ({ page }) => {
   await page.addInitScript(() => {
     const NativeAudio = window.Audio;
     const trackedWindow = window as Window & { __audioSources?: string[] };
@@ -461,26 +457,22 @@ test('empty music player persists without constructing track audio or requesting
     });
   });
 
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/about/');
   const player = page.locator('[data-music-player]');
-  await expect(player.getByText('歌单待添加')).toBeVisible();
-  await expect(player.getByRole('button', { name: '上一首' })).toBeDisabled();
-  await expect(player.getByRole('button', { name: '播放' })).toBeDisabled();
-  await expect(player.getByRole('button', { name: '下一首' })).toBeDisabled();
-  await expect(player.getByRole('progressbar', { name: '播放进度' })).toHaveAttribute(
-    'aria-valuenow',
-    '0'
-  );
-  await expect(player.getByText('0:00 / 0:00')).toBeVisible();
+  await expect(player.locator('[data-player-title]')).toHaveText('其实');
+  await expect(player.locator('[data-player-artist]')).toHaveText('薛之谦');
+  await expect(player.getByRole('button', { name: '上一曲' })).toBeEnabled();
+  await expect(player.getByRole('button', { name: '播放', exact: true })).toBeEnabled();
+  await expect(player.getByRole('button', { name: '下一曲' })).toBeEnabled();
+  await expect(player.getByRole('slider', { name: '播放进度' })).toHaveValue('0');
 
   await player.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
-  await page.locator('[data-adjacent-posts] a').first().click();
-  await expect(page.locator('article[data-post]')).toBeVisible();
+  await page.locator('[data-nav-item="关于我"]').hover();
+  await page.getByRole('link', { name: '我的装备' }).click();
+  await expect(page).toHaveURL(/\/about\/gear\/$/);
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-persist-probe', 'same-node');
   const audioSources = await page.evaluate(
     () => (window as Window & { __audioSources?: string[] }).__audioSources ?? []
   );
-  expect(audioSources).toHaveLength(2);
-  expect(audioSources.every((source) => source.startsWith('data:audio/x-m4a;base64,'))).toBe(true);
-  expect(mediaRequests).toEqual([]);
+  expect(audioSources.filter((source) => source === '')).toHaveLength(1);
 });

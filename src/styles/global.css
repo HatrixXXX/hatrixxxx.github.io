@@ -146,8 +146,7 @@ select:disabled,
   cursor: image-set(url('/cursors/unavailable.cur') 2x) 24 40, not-allowed !important;
 }
 
-[aria-busy='true'],
-[data-loading='true'] {
+[aria-busy='true'] {
   cursor: url('/cursors/busy.ani') 48 80, wait !important;
   cursor: image-set(url('/cursors/busy.ani') 2x) 24 40, wait !important;
 }
