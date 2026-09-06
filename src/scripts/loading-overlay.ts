@@ -66,6 +66,15 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     clearTimers();
     active = true;
     finishing = false;
+
+    // A second navigation can begin while the previous overlay is collapsing.
+    // Re-enter the visible phase immediately and reset its minimum-visible clock.
+    if (visibleAt !== undefined) {
+      visibleAt = now();
+      show();
+      return;
+    }
+
     pendingShow = schedule(() => {
       pendingShow = undefined;
       if (!active) return;
