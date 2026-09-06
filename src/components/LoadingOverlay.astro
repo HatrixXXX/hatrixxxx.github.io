@@ -63,6 +63,12 @@
     pointer-events: none;
   }
 
+  .loading-overlay[data-loading-state='hidden'] .loading-overlay__cells use,
+  .loading-overlay[data-loading-state='hidden'] .loading-overlay__pulse,
+  .loading-overlay[data-loading-state='hidden'] .loading-overlay__line::after {
+    animation-play-state: paused;
+  }
+
   .loading-overlay__backdrop {
     position: absolute;
     inset: 0;
