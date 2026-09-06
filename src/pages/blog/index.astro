@@ -1,52 +1,158 @@
 ---
-import { getCollection } from 'astro:content';
-import HeroBanner from '@/components/HeroBanner.astro';
-import PostArchiveList from '@/components/PostArchiveList.astro';
-import PostList from '@/components/PostList.astro';
+import { POST_TYPE_LINKS } from '@/config/navigation';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
 
-const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
-const archives = buildArchives(posts);
+const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_TYPE_LINKS];
 ---
 
 <BaseLayout title="博客文章">
-  <HeroBanner title="博客文章" image="/images/default-cover.svg" compact />
-  <main class="blog-main">
-    <div class="blog-view" data-blog-view-root>
-      <div class="blog-toolbar container">
-        <p class="blog-total">共 <strong data-blog-total>{posts.length}</strong> 篇文章</p>
-        <button
-          type="button"
-          aria-controls="blog-card-view blog-archive-view"
-          aria-pressed="false"
-          data-blog-view-toggle
-          hidden
-        >切换到时间归档</button>
-      </div>
-      <div id="blog-card-view" class="blog-rail-shell container" data-blog-card-view>
-        <PostList posts={posts} />
-      </div>
-      <section id="blog-archive-view" class="container" aria-label="按时间归档" data-blog-archive-view hidden>
-        <PostArchiveList archives={archives} />
-      </section>
+  <section class="blog-category-section" aria-labelledby="blog-category-title">
+    <div class="blog-category-heading">
+      <h1 id="blog-category-title">博客文章</h1>
     </div>
-  </main>
+    <nav class="blog-category-nav" aria-label="博客文章分类" data-blog-category-nav>
+      <ul class="blog-category-list">
+        {blogCategories.map((category) => (
+          <li>
+            <a
+              href={category.href}
+              data-blog-category-card
+            >
+              <span class="blog-category-label">{category.label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </section>
 </BaseLayout>
 
-<script>
-  import '@/scripts/blog-view';
-</script>
-
 <style>
-  .blog-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
-  .blog-view { min-width: 0; }
-  .blog-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.25rem; margin-bottom: 1.5rem; }
-  .blog-total { margin: 0; color: var(--color-muted); }
-  .blog-total strong { color: var(--color-accent); font-size: 1.25em; }
-  button { display: inline-flex; min-height: 44px; align-items: center; border: 1px solid var(--color-line); border-radius: 999px; padding: 0.55rem 1rem; background: var(--color-surface); color: var(--color-text); cursor: pointer; }
-  button[hidden] { display: none; }
-  button:hover { border-color: var(--color-accent); color: var(--color-accent); }
-  [data-blog-archive-view] { min-width: 0; }
-  @media (min-width: 1025px) { .blog-rail-shell { width: calc(100% - 4rem); } }
+  :global(html:has(.blog-category-section)),
+  :global(body:has(.blog-category-section)) {
+    overflow: hidden;
+  }
+
+  .blog-category-section {
+    height: 100svh;
+    min-height: 100svh;
+    overflow: hidden;
+    padding-block: clamp(2rem, 4vw, 4rem) clamp(2rem, 5vw, 4rem);
+    background:
+      radial-gradient(circle at 12% 8%, rgb(255 143 166 / 10%), transparent 32rem),
+      var(--color-bg);
+  }
+
+  .blog-category-heading,
+  .blog-category-nav {
+    width: calc(100% - 4rem);
+    max-width: none;
+    margin-inline: auto;
+  }
+
+  .blog-category-heading {
+    margin-bottom: clamp(1.75rem, 3vw, 2.5rem);
+    padding-inline-start: clamp(1rem, 2vw, 2rem);
+  }
+
+  .blog-category-heading h1 {
+    max-width: 12ch;
+    margin: 0;
+    color: var(--color-heading, #fff);
+    font-size: clamp(1.8rem, 3.5vw, 3.25rem);
+    letter-spacing: 0.18em;
+    line-height: 1;
+  }
+
+  .blog-category-list {
+    display: flex;
+    gap: clamp(0.65rem, 1.25vw, 1.25rem);
+    min-width: 0;
+    margin: 0;
+    padding: 0.2rem 0.125rem;
+    overflow-x: auto;
+    list-style: none;
+    scrollbar-width: none;
+  }
+
+  .blog-category-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .blog-category-list li {
+    display: flex;
+    min-width: 0;
+    flex: 1 0 0;
+  }
+
+  .blog-category-list a {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: clamp(28rem, calc(100svh - 10rem), 60rem);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 1.25rem 1.1rem 1.4rem;
+    background: linear-gradient(145deg, var(--color-surface-raised), var(--color-surface));
+    color: var(--color-text);
+    box-shadow: var(--shadow-panel);
+    transition: transform 180ms ease, border-color 180ms ease, color 180ms ease;
+  }
+
+  .blog-category-list a::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--color-accent);
+    content: '';
+    transform: scaleY(0.16);
+    transform-origin: bottom;
+    transition: transform 180ms ease;
+  }
+
+  .blog-category-list a:hover,
+  .blog-category-list a:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-heading, #fff);
+    transform: translateY(-0.35rem);
+  }
+
+  .blog-category-list a:hover::before,
+  .blog-category-list a:focus-visible::before {
+    transform: scaleY(1);
+  }
+
+  .blog-category-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(1.25rem, 2.3vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.25;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+  }
+
+  @media (max-width: 768px) {
+    .blog-category-section {
+      padding-block: 3.5rem 1.5rem;
+    }
+
+    .blog-category-heading,
+    .blog-category-nav {
+      width: calc(100% - 2rem);
+    }
+
+    .blog-category-list li {
+      flex: 0 0 min(42vw, 12rem);
+    }
+
+    .blog-category-list a {
+      min-height: clamp(30rem, calc(100svh - 9rem), 48rem);
+    }
+  }
 </style>

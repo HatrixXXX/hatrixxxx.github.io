@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const generatedRoutes = [
   '/blog/',
+  '/blog/all/',
   '/blog/tech-notes/',
   '/blog/troubleshooting/',
   '/blog/life/',
@@ -57,6 +58,7 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
 test('blog and archive indexes omit contextual sidebar cards', async ({ page }) => {
   for (const path of [
     '/blog/',
+    '/blog/all/',
     '/blog/tech-notes/',
     '/archives/',
     '/projects/',

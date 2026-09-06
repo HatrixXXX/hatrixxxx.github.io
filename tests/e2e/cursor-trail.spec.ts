@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { POST_TYPE_LINKS } from '../../src/config/navigation';
 
-const excludedRoutes = ['/blog/', '/projects/', ...POST_TYPE_LINKS.map(({ href }) => href)];
+const excludedRoutes = ['/blog/', '/blog/all/', '/projects/', ...POST_TYPE_LINKS.map(({ href }) => href)];
 
 const alphaPixels = (
   canvas: HTMLCanvasElement,
@@ -467,7 +467,7 @@ test('returning to an article route restores the cursor trail', async ({ page })
     page.waitForURL(/\/blog\/$/),
     page.getByRole('link', { name: '博客文章', exact: true }).click()
   ]);
-  await expect(page.locator('[data-blog-total]')).toHaveText('41');
+  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
   await expect(page.locator('[data-cursor-trail]')).toHaveCount(0);
 
   await page.goto('/posts/本科数学大杂烩/');

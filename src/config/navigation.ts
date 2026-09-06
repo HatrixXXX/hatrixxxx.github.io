@@ -16,6 +16,14 @@ export const POST_TYPE_LINKS = [
   { label: '随笔杂谈', slug: 'essays', href: '/blog/essays/' }
 ] as const satisfies ReadonlyArray<{ label: PostType; slug: string; href: string }>;
 
+export const ALL_POSTS_LINK = {
+  label: '全部文章',
+  slug: 'all',
+  href: '/blog/all/'
+} as const;
+
+export const BLOG_SUBNAV_LINKS = [ALL_POSTS_LINK, ...POST_TYPE_LINKS] as const;
+
 export const ABOUT_SECTION_LINKS = [
   { label: '我的爱好', slug: 'hobbies', href: '/about/hobbies/' },
   { label: '我的研究', slug: 'research', href: '/about/research/' },
@@ -30,7 +38,7 @@ export const ABOUT_SECTION_LINKS = [
 
 export const PRIMARY_NAV_ITEMS = [
   { label: '首页', href: '/' },
-  { label: '博客文章', href: '/blog/', children: POST_TYPE_LINKS },
+  { label: '博客文章', href: '/blog/', children: BLOG_SUBNAV_LINKS },
   { label: '作品橱窗', href: '/projects/' },
   { label: '关于我', href: '/about/', children: ABOUT_SECTION_LINKS },
   { label: '留言板', href: '/guestbook/' }

@@ -6,7 +6,8 @@
 
 这次同时补齐所有导航目标，避免菜单链接指向 404：
 
-- `/blog/` 展示全部文章。
+- `/blog/` 展示博客文章的六个分类入口。
+- `/blog/all/` 展示全部文章，并与五个文章类型页并列作为博客二级菜单项。
 - `/blog/tech-notes/`、`/blog/troubleshooting/`、`/blog/life/`、`/blog/recommendations/`、`/blog/essays/` 分别展示技术笔记、踩坑记录、生活动态、好物推荐、随笔杂谈。
 - `/projects/` 继续承载作品橱窗。
 - `/about/` 保留个人简介；九个子项使用 `/about/<section>/` 独立路径。

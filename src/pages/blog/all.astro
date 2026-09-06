@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content';
+import HeroBanner from '@/components/HeroBanner.astro';
+import PostArchiveList from '@/components/PostArchiveList.astro';
+import PostList from '@/components/PostList.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
+
+const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+const archives = buildArchives(posts);
+---
+
+<BaseLayout title="全部文章">
+  <HeroBanner title="全部文章" image="/images/default-cover.svg" compact />
+  <main class="blog-main">
+    <div class="blog-view" data-blog-view-root>
+      <div class="blog-toolbar container">
+        <p class="blog-total">共 <strong data-blog-total>{posts.length}</strong> 篇文章</p>
+        <button
+          type="button"
+          aria-controls="blog-card-view blog-archive-view"
+          aria-pressed="false"
+          data-blog-view-toggle
+          hidden
+        >切换到时间归档</button>
+      </div>
+      <div id="blog-card-view" class="blog-rail-shell container" data-blog-card-view>
+        <PostList posts={posts} />
+      </div>
+      <section id="blog-archive-view" class="container" aria-label="按时间归档" data-blog-archive-view hidden>
+        <PostArchiveList archives={archives} />
+      </section>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  import '@/scripts/blog-view';
+</script>
+
+<style>
+  .blog-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .blog-view { min-width: 0; }
+  .blog-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.25rem; margin-bottom: 1.5rem; }
+  .blog-total { margin: 0; color: var(--color-muted); }
+  .blog-total strong { color: var(--color-accent); font-size: 1.25em; }
+  button { display: inline-flex; min-height: 44px; align-items: center; border: 1px solid var(--color-line); border-radius: 999px; padding: 0.55rem 1rem; background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+  button[hidden] { display: none; }
+  button:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  [data-blog-archive-view] { min-width: 0; }
+  @media (min-width: 1025px) { .blog-rail-shell { width: calc(100% - 4rem); } }
+</style>

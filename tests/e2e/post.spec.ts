@@ -56,7 +56,7 @@ test('blog navigation and the home entry target the blog index', async ({ page }
   await expect(blogNavigation).toHaveAttribute('href', '/blog/');
   await blogNavigation.click();
   await page.waitForURL('**/blog/');
-  await expect(page.locator('[data-blog-total]')).toHaveText('41');
+  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
 });
 
 test('all legacy slugs resolve, including the spaced slug clicked from pagination', async ({

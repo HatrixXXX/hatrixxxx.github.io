@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-test('blog index lists every published post', async ({ page, request }) => {
-  expect((await request.get('/blog/')).status()).toBe(200);
+test('all posts submenu page lists every published post', async ({ page, request }) => {
+  expect((await request.get('/blog/all/')).status()).toBe(200);
 
-  await page.goto('/blog/');
+  await page.goto('/blog/all/');
   await expect(page.locator('[data-blog-total]')).toHaveText('41');
   await expect(page.locator('article[data-post-card]')).toHaveCount(41);
 
@@ -38,8 +38,43 @@ test('blog index lists every published post', async ({ page, request }) => {
   expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
 });
 
-test('post rail hides its scrollbar and does not snap', async ({ page }) => {
+test('blog index presents six horizontal category cards', async ({ page }) => {
   await page.goto('/blog/');
+
+  await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
+  const categoryNav = page.locator('[data-blog-category-nav]');
+  const cards = categoryNav.locator('[data-blog-category-card]');
+  await expect(categoryNav).toBeVisible();
+  await expect(cards).toHaveCount(6);
+  await expect(page.locator('article[data-post-card]')).toHaveCount(0);
+  await expect(page.locator('[data-blog-total]')).toHaveCount(0);
+
+  const categoryLinks = await cards.evaluateAll((elements) =>
+    elements.map((element) => ({
+      href: element.getAttribute('href'),
+      top: Math.round(element.getBoundingClientRect().top),
+      width: Math.round(element.getBoundingClientRect().width),
+      height: Math.round(element.getBoundingClientRect().height)
+    }))
+  );
+
+  expect(categoryLinks.map(({ href }) => href)).toEqual([
+    '/blog/all/',
+    '/blog/tech-notes/',
+    '/blog/troubleshooting/',
+    '/blog/life/',
+    '/blog/recommendations/',
+    '/blog/essays/'
+  ]);
+  expect(new Set(categoryLinks.map(({ top }) => top)).size).toBe(1);
+  expect(categoryLinks.every(({ width }) => width >= 180)).toBe(true);
+  expect(categoryLinks.every(({ height }) => height >= 560)).toBe(true);
+  expect(await categoryNav.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});
+
+test('post rail hides its scrollbar and does not snap', async ({ page }) => {
+  await page.goto('/blog/all/');
   const styles = await page.locator('[data-post-rail]').evaluate((element) => {
     const firstCard = element.querySelector<HTMLElement>('article[data-post-card]');
     const railStyle = getComputedStyle(element);
@@ -56,7 +91,7 @@ test('post rail hides its scrollbar and does not snap', async ({ page }) => {
 });
 
 test('wide rail stays centered when layout width differs from viewport units', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blog/all/');
   await page.addStyleTag({ content: 'body { width: 1425px !important; }' });
 
   const layout = await page.locator('[data-post-rail]').evaluate((element) => {
@@ -78,7 +113,7 @@ test('wide rail stays centered when layout width differs from viewport units', a
 });
 
 test('blog switches between the default card view and time archive', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blog/all/');
   const toggle = page.locator('[data-blog-view-toggle]');
   const cardView = page.locator('[data-blog-card-view]');
   const archiveView = page.locator('[data-blog-archive-view]');
@@ -106,7 +141,7 @@ test('blog switches between the default card view and time archive', async ({ pa
 
 test('card and archive headings remain readable in the light theme', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
-  await page.goto('/blog/');
+  await page.goto('/blog/all/');
 
   await expect(page.locator('article[data-post-card] h2').first()).toHaveCSS(
     'color',
@@ -120,7 +155,7 @@ test('card and archive headings remain readable in the light theme', async ({ pa
 });
 
 test('focused post rail supports native arrow-key scrolling', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blog/all/');
   const rail = page.locator('[data-post-rail]');
   await rail.focus();
   await expect(rail).toBeFocused();
@@ -128,7 +163,7 @@ test('focused post rail supports native arrow-key scrolling', async ({ page }) =
   await expect.poll(() => rail.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
 });
 
-test('client navigation restores the default blog card view', async ({ page }) => {
+test('blog navigation opens categories and the all-posts submenu page', async ({ page }) => {
   await page.goto('/');
   const blogNavigation = page
     .getByRole('navigation', { name: '主导航' })
@@ -136,20 +171,25 @@ test('client navigation restores the default blog card view', async ({ page }) =
   await expect(blogNavigation).toHaveAttribute('href', '/blog/');
   await blogNavigation.click();
   await page.waitForURL('**/blog/');
+  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
+  await expect(page.locator('[data-blog-view-toggle]')).toHaveCount(0);
+
+  await page.locator('.desktop-nav .submenu').getByRole('link', { name: '全部文章', exact: true }).click();
+  await page.waitForURL('**/blog/all/');
   const toggle = page.locator('[data-blog-view-toggle]');
+  await expect(toggle).toBeVisible();
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByRole('link', { name: '首页', exact: true }).first().click();
   await blogNavigation.click();
   await page.waitForURL('**/blog/');
-  await expect(toggle).toBeVisible();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('[data-blog-card-view]')).toBeVisible();
+  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
+  await expect(page.locator('[data-blog-view-toggle]')).toHaveCount(0);
 });
 
 test('mouse wheel scrolls the rail and returns vertical scrolling at its end', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blog/all/');
   const rail = page.locator('[data-post-rail]');
   await rail.scrollIntoViewIfNeeded();
   await rail.evaluate((element) => {
@@ -168,12 +208,19 @@ test('mouse wheel scrolls the rail and returns vertical scrolling at its end', a
     element.scrollLeft = element.scrollWidth;
   });
   const pageAtRailEnd = await page.evaluate(() => window.scrollY);
+  const documentMaxScroll = await page.evaluate(
+    () => document.documentElement.scrollHeight - document.documentElement.clientHeight
+  );
   await page.mouse.wheel(0, 420);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(pageAtRailEnd);
+  if (pageAtRailEnd < documentMaxScroll) {
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(pageAtRailEnd);
+  } else {
+    expect(await page.evaluate(() => window.scrollY)).toBe(pageAtRailEnd);
+  }
 });
 
 test('dragging a post link scrolls the rail without opening the article', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blog/all/');
   const rail = page.locator('[data-post-rail]');
   const link = page.locator('article[data-post-card] h2 a').first();
   await link.scrollIntoViewIfNeeded();
@@ -190,11 +237,11 @@ test('dragging a post link scrolls the rail without opening the article', async 
 
   expect(scrollLeftWhileDragging).toBeGreaterThan(0);
   expect(scrollLeftAfterDrag).toBeCloseTo(scrollLeftWhileDragging, 0);
-  await expect(page).toHaveURL(/\/blog\/$/);
+  await expect(page).toHaveURL(/\/blog\/all\/$/);
 });
 
 for (const { route, title, count } of [
-  { route: '/blog/tech-notes/', title: '技术笔记', count: 37 },
+  { route: '/blog/tech-notes/', title: '技术笔记', count: 38 },
   { route: '/blog/troubleshooting/', title: '踩坑记录', count: 1 },
   { route: '/blog/life/', title: '生活动态', count: 0 },
   { route: '/blog/recommendations/', title: '好物推荐', count: 2 },

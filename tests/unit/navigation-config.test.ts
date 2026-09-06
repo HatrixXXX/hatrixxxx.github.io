@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { ABOUT_SECTION_LINKS, POST_TYPE_LINKS, POST_TYPES, PRIMARY_NAV_ITEMS } from '../../src/config/navigation';
+import {
+  ABOUT_SECTION_LINKS,
+  ALL_POSTS_LINK,
+  BLOG_SUBNAV_LINKS,
+  POST_TYPE_LINKS,
+  POST_TYPES,
+  PRIMARY_NAV_ITEMS
+} from '../../src/config/navigation';
 
 describe('navigation configuration', () => {
   it('defines the requested primary and secondary navigation labels', () => {
     expect(PRIMARY_NAV_ITEMS.map((item) => item.label)).toEqual(['首页', '博客文章', '作品橱窗', '关于我', '留言板']);
     expect(POST_TYPE_LINKS.map((item) => item.label)).toEqual(POST_TYPES);
+    expect(BLOG_SUBNAV_LINKS.map((item) => item.label)).toEqual(['全部文章', ...POST_TYPES]);
+    expect(ALL_POSTS_LINK.href).toBe('/blog/all/');
     expect(ABOUT_SECTION_LINKS.map((item) => item.label)).toEqual([
       '我的爱好',
       '我的研究',
@@ -21,7 +30,7 @@ describe('navigation configuration', () => {
   it('uses unique absolute trailing-slash paths throughout navigation', () => {
     const hrefs = [
       ...PRIMARY_NAV_ITEMS.map((item) => item.href),
-      ...POST_TYPE_LINKS.map((item) => item.href),
+      ...BLOG_SUBNAV_LINKS.map((item) => item.href),
       ...ABOUT_SECTION_LINKS.map((item) => item.href)
     ];
 
