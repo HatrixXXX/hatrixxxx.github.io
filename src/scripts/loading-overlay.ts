@@ -6,6 +6,7 @@ interface LoadingControllerOptions {
   setTimeout?: typeof globalThis.setTimeout;
   clearTimeout?: typeof globalThis.clearTimeout;
   show?: () => void;
+  finishAnimation?: () => void;
   hide?: () => void;
 }
 
@@ -21,12 +22,14 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
   const schedule = options.setTimeout ?? globalThis.setTimeout;
   const cancel = options.clearTimeout ?? globalThis.clearTimeout;
   const show = options.show ?? (() => undefined);
+  const finishAnimation = options.finishAnimation ?? (() => undefined);
   const hide = options.hide ?? (() => undefined);
 
   let pendingShow: ReturnType<typeof setTimeout> | undefined;
   let pendingHide: ReturnType<typeof setTimeout> | undefined;
   let visibleAt: number | undefined;
   let active = false;
+  let finishing = false;
 
   const clearTimers = () => {
     if (pendingShow !== undefined) cancel(pendingShow);
@@ -39,20 +42,21 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     clearTimers();
     visibleAt = undefined;
     active = false;
+    finishing = false;
     hide();
   };
 
   const finish = () => {
-    if (!active) {
-      hide();
-      return;
-    }
+    if (!active || finishing) return;
 
     active = false;
     if (visibleAt === undefined) {
       hideNow();
       return;
     }
+
+    finishing = true;
+    finishAnimation();
 
     const remaining = Math.max(0, MINIMUM_VISIBLE_DURATION - (now() - visibleAt));
     pendingHide = schedule(hideNow, remaining);
@@ -61,6 +65,7 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
   const start = () => {
     clearTimers();
     active = true;
+    finishing = false;
     pendingShow = schedule(() => {
       pendingShow = undefined;
       if (!active) return;
@@ -76,6 +81,7 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     destroy: () => {
       clearTimers();
       active = false;
+      finishing = false;
       visibleAt = undefined;
     }
   };
@@ -85,11 +91,11 @@ function getOverlay(): HTMLElement | null {
   return document.querySelector<HTMLElement>('[data-loading-overlay]');
 }
 
-function setOverlayState(state: 'loading' | 'hidden') {
+function setOverlayState(state: 'loading' | 'finishing' | 'hidden') {
   const overlay = getOverlay();
   if (!overlay) return;
   overlay.dataset.loadingState = state;
-  overlay.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false');
+  overlay.setAttribute('aria-busy', state !== 'hidden' ? 'true' : 'false');
 }
 
 function initializeLoadingOverlay() {
@@ -97,13 +103,19 @@ function initializeLoadingOverlay() {
 
   const controller = createLoadingController({
     show: () => setOverlayState('loading'),
+    finishAnimation: () => setOverlayState('finishing'),
     hide: () => setOverlayState('hidden')
   });
 
   controller.start();
-  document.addEventListener('astro:before-preparation', controller.start);
+  document.addEventListener('astro:before-preparation', (event) => {
+    controller.start();
+    const signal = (event as Event & { signal?: AbortSignal }).signal;
+    signal?.addEventListener('abort', controller.fail, { once: true });
+  });
+  document.addEventListener('astro:after-swap', controller.finish);
   document.addEventListener('astro:page-load', controller.finish);
-  document.addEventListener('astro:navigation-error', controller.fail);
+  window.addEventListener('load', controller.finish, { once: true });
   window.addEventListener('pagehide', controller.destroy, { once: true });
 }
 

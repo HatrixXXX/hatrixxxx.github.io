@@ -1,7 +1,8 @@
 <div
   class="loading-overlay"
   data-loading-overlay
-  data-loading-state="loading"
+  data-loading-state="hidden"
+  transition:persist="loading-overlay"
   role="status"
   aria-live="polite"
   aria-label="页面加载中"
@@ -10,13 +11,14 @@
   <svg
     class="loading-overlay__grid"
     data-loading-grid
-    viewBox="0 0 1200 900"
+    viewBox="0 0 1298 1118"
+    preserveAspectRatio="none"
     aria-hidden="true"
   >
     <defs>
       <polygon
         id="loading-hexagon"
-        points="0,-32 27.7,-16 27.7,16 0,32 -27.7,16 -27.7,-16"
+        points="0,-50 43.3,-25 43.3,25 0,50 -43.3,25 -43.3,-25"
       />
       <linearGradient id="loading-sheen" x1="0" x2="1" y1="0" y2="1">
         <stop offset="0" stop-color="var(--color-accent-strong)" />
@@ -29,15 +31,17 @@
       {Array.from({ length: 225 }, (_, index) => {
         const row = Math.floor(index / 15);
         const column = index % 15;
-        const x = 96 + column * 72 + (row % 2 ? 36 : 0);
-        const y = 126 + row * 56;
-        return <use href="#loading-hexagon" x={x} y={y} style={`--cell-index: ${index}`} />;
+        const x = column * 86.5 + (row % 2 ? 0 : 43.3);
+        const y = row * 74.5;
+        const distance = Math.abs(column - 7) + Math.abs(row - 7);
+        const stagger = (index * 73) % 225;
+        return <use href="#loading-hexagon" x={x} y={y} transform="translate(0 50)" style={`--cell-delay: ${stagger}; --cell-distance: ${distance}`} />;
       })}
     </g>
   </svg>
   <div class="loading-overlay__center" aria-hidden="true">
     <span class="loading-overlay__pulse"></span>
-    <span class="loading-overlay__label" data-loading-status>INITIALIZING</span>
+    <span class="loading-overlay__label" data-loading-status>LOADING</span>
     <span class="loading-overlay__line"></span>
   </div>
 </div>
@@ -63,10 +67,23 @@
     pointer-events: none;
   }
 
+  .loading-overlay[data-loading-state='finishing'] {
+    pointer-events: none;
+  }
+
   .loading-overlay[data-loading-state='hidden'] .loading-overlay__cells use,
   .loading-overlay[data-loading-state='hidden'] .loading-overlay__pulse,
   .loading-overlay[data-loading-state='hidden'] .loading-overlay__line::after {
     animation-play-state: paused;
+  }
+
+  .loading-overlay[data-loading-state='finishing'] .loading-overlay__cells use {
+    animation: loading-cell-out 260ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-delay: calc(var(--cell-distance) * 4ms);
+  }
+
+  .loading-overlay[data-loading-state='finishing'] .loading-overlay__center {
+    animation: loading-center-out 260ms ease-out forwards;
   }
 
   .loading-overlay__backdrop {
@@ -79,8 +96,9 @@
 
   .loading-overlay__grid {
     position: absolute;
-    width: min(1100px, 130vw);
-    height: min(820px, 110vh);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     opacity: 0.9;
   }
 
@@ -91,8 +109,10 @@
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
     opacity: 0;
-    animation: loading-cell-in 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    animation-delay: calc(var(--cell-index) * 3ms);
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: loading-cell-in 500ms cubic-bezier(0.76, 0, 0.24, 1) forwards;
+    animation-delay: calc(var(--cell-delay) * 2ms);
   }
 
   .loading-overlay__center {
@@ -140,6 +160,14 @@
     to { stroke-dashoffset: 0; opacity: 0.82; }
   }
 
+  @keyframes loading-cell-out {
+    to { opacity: 0; transform: translate(0 50) scale(0); }
+  }
+
+  @keyframes loading-center-out {
+    to { opacity: 0; transform: scale(0.84); }
+  }
+
   @keyframes loading-pulse {
     50% { transform: rotate(210deg) scale(1.35); opacity: 0.45; }
   }
@@ -161,6 +189,12 @@
     .loading-overlay__cells use {
       stroke-dashoffset: 0;
       opacity: 0.82;
+    }
+
+    .loading-overlay[data-loading-state='finishing'] .loading-overlay__cells use,
+    .loading-overlay[data-loading-state='finishing'] .loading-overlay__center {
+      animation: none;
+      opacity: 0;
     }
   }
 </style>

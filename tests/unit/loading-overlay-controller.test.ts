@@ -51,4 +51,31 @@ describe('loading overlay controller', () => {
     expect(hide).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
   });
+
+  it('finishes idempotently and emits the collapse phase once', () => {
+    vi.useFakeTimers();
+    const finishAnimation = vi.fn();
+    const hide = vi.fn();
+    const controller = createLoadingController({ finishAnimation, hide });
+
+    controller.start();
+    vi.advanceTimersByTime(120);
+    controller.finish();
+    controller.finish();
+
+    expect(finishAnimation).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(360);
+    expect(hide).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it('wires after-swap and initial load completion events', async () => {
+    const source = await import('node:fs/promises').then(({ readFile }) =>
+      readFile(new URL('../../src/scripts/loading-overlay.ts', import.meta.url), 'utf8')
+    );
+
+    expect(source).toContain("'astro:after-swap'");
+    expect(source).toContain("window.addEventListener('load'");
+    expect(source).toContain("signal?.addEventListener('abort'");
+  });
 });
