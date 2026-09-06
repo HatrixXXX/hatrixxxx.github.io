@@ -1,6 +1,8 @@
 export const LOADING_DELAY = 120;
 export const MINIMUM_VISIBLE_DURATION = 360;
-export const HOMEPAGE_REVEAL_DURATION = 1000;
+export const HOMEPAGE_REVEAL_START_DELAY = 1000;
+export const HOMEPAGE_REVEAL_DURATION = 500;
+export const HOMEPAGE_REVEAL_PHASE_DURATION = 2000;
 export const HOMEPAGE_COLLAPSE_DURATION = 1000;
 
 export function isHomepageDestination(destination: unknown): boolean {
@@ -24,7 +26,7 @@ interface LoadingControllerOptions {
   now?: () => number;
   setTimeout?: typeof globalThis.setTimeout;
   clearTimeout?: typeof globalThis.clearTimeout;
-  show?: () => void;
+  show?: (homepageSequence?: boolean) => void;
   finishAnimation?: () => void;
   hide?: () => void;
 }
@@ -89,7 +91,7 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
         finishAnimation();
         pendingHide = schedule(hideNow, HOMEPAGE_COLLAPSE_DURATION);
       };
-      const revealRemaining = Math.max(0, HOMEPAGE_REVEAL_DURATION - (now() - visibleAt));
+      const revealRemaining = Math.max(0, HOMEPAGE_REVEAL_PHASE_DURATION - (now() - visibleAt));
       pendingFinish = schedule(finishAfterReveal, revealRemaining);
       return;
     }
@@ -110,7 +112,7 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     // Re-enter the visible phase immediately and reset its minimum-visible clock.
     if (immediate || visibleAt !== undefined) {
       visibleAt = now();
-      show();
+      show(homepageSequence);
       return;
     }
 
@@ -118,7 +120,7 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
       pendingShow = undefined;
       if (!active) return;
       visibleAt = now();
-      show();
+      show(false);
     }, LOADING_DELAY);
   };
 
@@ -150,7 +152,11 @@ function initializeLoadingOverlay() {
   if (typeof document === 'undefined') return;
 
   const controller = createLoadingController({
-    show: () => setOverlayState('loading'),
+    show: (homepageSequence) => {
+      const overlay = getOverlay();
+      if (overlay) overlay.dataset.loadingHomepage = homepageSequence ? 'true' : 'false';
+      setOverlayState('loading');
+    },
     finishAnimation: () => setOverlayState('finishing'),
     hide: () => setOverlayState('hidden')
   });

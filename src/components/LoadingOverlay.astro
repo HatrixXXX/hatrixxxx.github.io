@@ -33,7 +33,10 @@
   if (overlay) {
     const blocks = Array.from(overlay.querySelectorAll<SVGUseElement>('.loading-overlay__block'));
     let animations: Animation[] = [];
+    let revealTimer: number | undefined;
     const stopAnimations = () => {
+      if (revealTimer !== undefined) window.clearTimeout(revealTimer);
+      revealTimer = undefined;
       animations.forEach((animation) => animation.cancel());
       animations = [];
     };
@@ -77,8 +80,18 @@
         ));
       });
     };
+    const startReveal = () => {
+      if (overlay.dataset.loadingHomepage !== 'true') {
+        reveal();
+        return;
+      }
+      revealTimer = window.setTimeout(() => {
+        revealTimer = undefined;
+        if (overlay.dataset.loadingState === 'loading') reveal();
+      }, 1000);
+    };
     const observer = new MutationObserver(() => {
-      if (overlay.dataset.loadingState === 'loading') reveal();
+      if (overlay.dataset.loadingState === 'loading') startReveal();
       if (overlay.dataset.loadingState === 'finishing') collapse();
       if (overlay.dataset.loadingState === 'hidden') stopAnimations();
     });

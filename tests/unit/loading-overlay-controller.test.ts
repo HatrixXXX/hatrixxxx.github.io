@@ -112,7 +112,7 @@ describe('loading overlay controller', () => {
     controller.start(true);
     controller.finish();
 
-    vi.advanceTimersByTime(999);
+    vi.advanceTimersByTime(1999);
     expect(finishAnimation).not.toHaveBeenCalled();
     expect(hide).not.toHaveBeenCalled();
 
