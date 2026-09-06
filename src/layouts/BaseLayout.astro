@@ -8,6 +8,7 @@ import SearchOverlay from '@/components/SearchOverlay.astro';
 import ThemeTransition from '@/components/ThemeTransition.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
 import CursorTrail from '@/components/CursorTrail.astro';
+import LoadingOverlay from '@/components/LoadingOverlay.astro';
 import { isConfiguredLockedPage } from '@/config/protected-content';
 import { SITE } from '@/config/site';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '@/config/security';
@@ -108,6 +109,7 @@ const excludeFromIndex = pageLocked || noindex;
     <ClientRouter />
   </head>
   <body class={bodyClass}>
+    <LoadingOverlay />
     <SiteHeader homeMode={isHome} />
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
