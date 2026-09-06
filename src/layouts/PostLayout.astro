@@ -129,6 +129,10 @@ const stats = buildSiteStats(posts);
     min-width: 0;
   }
 
+  .prose :global(img) {
+    margin-inline: auto;
+  }
+
   .prose :global(.katex-display),
   .prose :global(.mermaid) {
     max-width: 100%;
@@ -188,16 +192,15 @@ const stats = buildSiteStats(posts);
       grid-row: 1;
       position: sticky;
       top: 1.25rem;
-      max-height: calc(100vh - 2.5rem);
-      overflow: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      max-height: min(38rem, calc(100vh - 2.5rem));
+      overflow: hidden;
     }
 
-    .post-sidebar::-webkit-scrollbar {
-      display: none;
-      width: 0;
-      height: 0;
+    .post-sidebar :global(.toc),
+    .post-sidebar :global(.latest-posts) {
+      min-height: 0;
     }
   }
 
