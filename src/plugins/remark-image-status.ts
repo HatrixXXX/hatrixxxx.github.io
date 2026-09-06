@@ -32,8 +32,9 @@ function replaceFailedHtmlImages(value: string, failedUrls: ReadonlySet<string>)
 }
 
 function nativeImageTag(tag: string): string {
+  tag = tag.replace(/\sloading=(['"])lazy\1/i, ' loading="eager"');
   const additions = [
-    /\sloading(?:\s|=|>|\/)/i.test(tag) ? '' : 'loading="lazy"',
+    /\sloading(?:\s|=|>|\/)/i.test(tag) ? '' : 'loading="eager"',
     /\sdecoding(?:\s|=|>|\/)/i.test(tag) ? '' : 'decoding="async"'
   ].filter(Boolean);
   return appendImageAttributes(tag, additions);
@@ -49,7 +50,7 @@ function escapeAttribute(value: string): string {
 }
 
 function nativeImageHtml(url: string, alt: string | null | undefined): string {
-  return `<img src="${escapeAttribute(url)}" loading="lazy" decoding="async" alt="${escapeAttribute(alt ?? '')}">`;
+  return `<img src="${escapeAttribute(url)}" loading="eager" decoding="async" alt="${escapeAttribute(alt ?? '')}">`;
 }
 
 function failedUrlsFromReport(): Set<string> {

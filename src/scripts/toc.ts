@@ -4,15 +4,17 @@ function waitForImages(): Promise<void> {
   const pending = Array.from(document.images).filter((image) => !image.complete);
   if (pending.length === 0) return Promise.resolve();
 
-  return Promise.all(
+  const images = Promise.all(
     pending.map(
       (image) =>
         new Promise<void>((resolve) => {
           image.addEventListener('load', () => resolve(), { once: true });
           image.addEventListener('error', () => resolve(), { once: true });
-        })
+      })
     )
   ).then(() => undefined);
+  const timeout = new Promise<void>((resolve) => window.setTimeout(resolve, 300));
+  return Promise.race([images, timeout]);
 }
 
 async function scrollToHeading(slug: string): Promise<void> {
@@ -25,6 +27,12 @@ async function scrollToHeading(slug: string): Promise<void> {
   );
   history.pushState(null, '', `#${slug}`);
   heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.setTimeout(() => {
+    const offset = heading.getBoundingClientRect().top;
+    if (window.location.hash === `#${slug}` && (offset < -32 || offset > window.innerHeight * 0.35)) {
+      heading.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, 900);
 }
 
 function initializeTableOfContents(): void {
@@ -41,6 +49,7 @@ function initializeTableOfContents(): void {
       const slug = link.dataset.tocLink;
       if (!slug) return;
       event.preventDefault();
+      setCurrent(slug);
       void scrollToHeading(slug);
     });
   });
@@ -60,11 +69,13 @@ function initializeTableOfContents(): void {
 
   setCurrent(headings[0].id);
   observer = new IntersectionObserver(
-    (entries) => {
-      const current = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-      if (current?.target.id) setCurrent(current.target.id);
+    () => {
+      const threshold = window.innerHeight * 0.2;
+      const current = headings
+        .map((heading) => ({ heading, top: heading.getBoundingClientRect().top }))
+        .filter(({ top }) => top <= threshold)
+        .at(-1);
+      if (current) setCurrent(current.heading.id);
     },
     { rootMargin: '-15% 0px -70% 0px' }
   );

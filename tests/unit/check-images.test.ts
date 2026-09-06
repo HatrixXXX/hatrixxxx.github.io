@@ -186,7 +186,7 @@ describe('remark image status', () => {
 
     expect(tree.children[0]).toMatchObject({
       type: 'html',
-      value: '<img src="https://cdn.jsdelivr.net/diagram.png" loading="lazy" decoding="async" alt="diagram &lt;overview&gt;">'
+      value: '<img src="https://cdn.jsdelivr.net/diagram.png" loading="eager" decoding="async" alt="diagram &lt;overview&gt;">'
     });
   });
 
@@ -264,7 +264,7 @@ describe('remark image status', () => {
     transformer(tree);
 
     expect(tree.children[0]).toMatchObject({
-      value: `<img src="${imageUrl}" alt="CMOS sensor" class="diagram" style="zoom:50%;" data-source="CMOS" loading="lazy" decoding="async" />`
+      value: `<img src="${imageUrl}" alt="CMOS sensor" class="diagram" style="zoom:50%;" data-source="CMOS" loading="eager" decoding="async" />`
     });
   });
 
@@ -280,7 +280,7 @@ describe('remark image status', () => {
     remarkImageStatus(new Set())(tree);
 
     expect(tree.children[0]).toMatchObject({
-      value: '<img src="https://cdn.jsdelivr.net/diagram.gif" alt="animation" loading="lazy" decoding="async"><img src="https://cdn.jsdelivr.net/diagram.svg" alt="vector" decoding="sync" loading="lazy">'
+      value: '<img src="https://cdn.jsdelivr.net/diagram.gif" alt="animation" loading="eager" decoding="async"><img src="https://cdn.jsdelivr.net/diagram.svg" alt="vector" decoding="sync" loading="eager">'
     });
   });
 
@@ -293,7 +293,7 @@ describe('remark image status', () => {
 
       expect(tree.children[0]).toMatchObject({
         type: 'html',
-        value: `<img src="${failedUrl}" loading="lazy" decoding="async" alt="animated">`
+        value: `<img src="${failedUrl}" loading="eager" decoding="async" alt="animated">`
       });
     }
   );

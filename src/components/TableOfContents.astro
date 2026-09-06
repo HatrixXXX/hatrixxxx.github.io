@@ -127,8 +127,16 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
       top: 1.25rem;
       grid-column: 3;
       grid-row: 1;
-      max-height: calc(100vh - 2.5rem);
-      overflow: auto;
+    max-height: calc(100vh - 2.5rem);
+    overflow: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .toc::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
     }
 
     .toc-desktop {
