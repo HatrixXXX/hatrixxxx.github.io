@@ -56,7 +56,7 @@ test('blog navigation and the home entry target the blog index', async ({ page }
   await expect(blogNavigation).toHaveAttribute('href', '/blog/');
   await blogNavigation.click();
   await page.waitForURL('**/blog/');
-  await expect(page.locator('[data-blog-total]')).toHaveText('40');
+  await expect(page.locator('[data-blog-total]')).toHaveText('41');
 });
 
 test('all legacy slugs resolve, including the spaced slug clicked from pagination', async ({
@@ -65,7 +65,7 @@ test('all legacy slugs resolve, including the spaced slug clicked from paginatio
 }) => {
   test.setTimeout(120_000);
   const slugs = await legacySlugs();
-  expect(slugs).toHaveLength(40);
+  expect(slugs).toHaveLength(41);
 
   const responses: Array<{ slug: string; response: APIResponse }> = [];
   for (let offset = 0; offset < slugs.length; offset += 4) {

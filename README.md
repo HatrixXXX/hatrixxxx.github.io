@@ -40,7 +40,7 @@ pnpm test:e2e
 - `src/data/playlist.ts`：音乐列表
 - `public/`：CNAME、favicon、头像和本地静态资源
 
-私有内容仓库有 40 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。公开仓库另有 2 篇草稿；一次完整构建会生成 67 个 HTML 页面。
+私有内容仓库有 41 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。公开仓库另有 2 篇草稿；一次完整构建会生成 68 个 HTML 页面。
 
 私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
 
@@ -221,7 +221,7 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:images` | 254 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、67 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 旧文章路由、CNAME、4133 条站内链接和发布体积 |
+| `pnpm check:site` | 旧文章路由、CNAME、4195 条站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 185 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。

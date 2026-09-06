@@ -12,7 +12,7 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   expect(hrefs.every((href) => href?.startsWith('/') && href !== '#')).toBe(true);
 
   await page.getByRole('link', { name: '博客文章', exact: true }).click();
-  await expect(page.locator('[data-blog-total]')).toHaveText('40');
+  await expect(page.locator('[data-blog-total]')).toHaveText('41');
   const rail = page.locator('[data-post-rail]');
   await expect(rail).toBeVisible();
   expect(await rail.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);

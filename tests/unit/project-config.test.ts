@@ -136,10 +136,10 @@ describe('Astro project tooling', () => {
     expect(readme).not.toContain('`src/content/posts/`：已发布文章');
     expect(readme).not.toContain('在 `src/content/posts/` 新建');
 
-    expect(agents).toContain('`.private-content/posts/`：40 篇已发布文章');
+    expect(agents).toContain('`.private-content/posts/`：41 篇已发布文章');
     expect(agents).toContain('`.private-content/` 是独立的私有 Git 仓库');
     expect(agents).toContain('公开仓库不跟踪文章 Markdown');
-    expect(agents).not.toContain('`src/content/posts/`：40 篇已发布文章');
+    expect(agents).not.toContain('`src/content/posts/`：41 篇已发布文章');
   });
 
   it('documents Astro build state as secret-bearing and never safe to persist', () => {

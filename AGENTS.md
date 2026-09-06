@@ -27,7 +27,7 @@ corepack pnpm test:e2e
 
 ## 目录边界
 
-- `.private-content/posts/`：40 篇已发布文章，公开路径由 `legacySlug` 生成。`.private-content/` 是独立的私有 Git 仓库；公开仓库不跟踪文章 Markdown。
+- `.private-content/posts/`：41 篇已发布文章，公开路径由 `legacySlug` 生成。`.private-content/` 是独立的私有 Git 仓库；公开仓库不跟踪文章 Markdown。
 - `.env.local`：本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；文件已忽略，禁止提交、分享或复制到任何内容仓库。
 - `src/drafts/`：两篇草稿，不加入 Content Collection，不生成页面。
 - `src/content/projects/`：允许为空的作品集合。
@@ -63,7 +63,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 4133 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 4195 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 ## 禁止事项

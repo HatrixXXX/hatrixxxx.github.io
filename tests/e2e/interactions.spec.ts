@@ -116,7 +116,7 @@ test('search loads its index once, limits results and closes with Escape', async
   await expect(searchbox).toBeHidden();
 
   await page.getByRole('link', { name: '博客文章', exact: true }).click();
-  await expect(page.locator('[data-blog-total]')).toHaveText('40');
+  await expect(page.locator('[data-blog-total]')).toHaveText('41');
   await page.keyboard.press('Control+K');
   await expect(page.getByRole('searchbox', { name: '搜索文章' })).toBeFocused();
   expect(indexRequests).toBe(1);

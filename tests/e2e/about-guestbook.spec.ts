@@ -121,7 +121,7 @@ test('about sidebar exposes the requested profile, social links and static stati
   }
 
   const stats = page.locator('[data-site-stats]');
-  await expect(stats.locator('[data-stat="posts"]')).toHaveText('40');
+  await expect(stats.locator('[data-stat="posts"]')).toHaveText('41');
   await expect(stats.locator('[data-stat="visitors"]')).toHaveText('—');
 });
 

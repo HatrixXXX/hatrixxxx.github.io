@@ -4,8 +4,8 @@ test('blog index lists every published post', async ({ page, request }) => {
   expect((await request.get('/blog/')).status()).toBe(200);
 
   await page.goto('/blog/');
-  await expect(page.locator('[data-blog-total]')).toHaveText('40');
-  await expect(page.locator('article[data-post-card]')).toHaveCount(40);
+  await expect(page.locator('[data-blog-total]')).toHaveText('41');
+  await expect(page.locator('article[data-post-card]')).toHaveCount(41);
 
   const rail = page.locator('[data-post-rail]');
   await expect(rail).toHaveAttribute('tabindex', '0');
@@ -34,7 +34,7 @@ test('blog index lists every published post', async ({ page, request }) => {
   const dates = await page.locator('article[data-post-card] time').evaluateAll((times) =>
     times.map((time) => Date.parse(time.getAttribute('datetime') ?? ''))
   );
-  expect(dates).toHaveLength(40);
+  expect(dates).toHaveLength(41);
   expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
 });
 
@@ -94,7 +94,7 @@ test('blog switches between the default card view and time archive', async ({ pa
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(cardView).toBeHidden();
   await expect(archiveView).toBeVisible();
-  await expect(archiveView.locator('a[href^="/posts/"]')).toHaveCount(40);
+  await expect(archiveView.locator('a[href^="/posts/"]')).toHaveCount(41);
 
   await toggle.click();
   await expect(cardView).toBeVisible();

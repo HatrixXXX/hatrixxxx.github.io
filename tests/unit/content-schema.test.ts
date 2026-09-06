@@ -24,7 +24,7 @@ describe('content contracts', () => {
     const usesPublicFixtures = root === resolve('tests/fixtures/private-content/posts');
     let lockedPosts = 0;
 
-    expect(files).toHaveLength(usesPublicFixtures ? 2 : 40);
+    expect(files).toHaveLength(usesPublicFixtures ? 2 : 41);
     for (const file of files) {
       const { data } = matter(await readFile(join(root, file), 'utf8'));
       expect(POST_TYPES, file).toContain(data.type);
@@ -38,13 +38,18 @@ describe('content contracts', () => {
     expect(counts).toEqual(
       usesPublicFixtures
         ? { 技术笔记: 2, 踩坑记录: 0, 生活动态: 0, 好物推荐: 0, 随笔杂谈: 0 }
-        : { 技术笔记: 37, 踩坑记录: 1, 生活动态: 0, 好物推荐: 2, 随笔杂谈: 0 }
+        : { 技术笔记: 38, 踩坑记录: 1, 生活动态: 0, 好物推荐: 2, 随笔杂谈: 0 }
     );
-    expect(lockedPosts).toBe(usesPublicFixtures ? 1 : 0);
+    expect(lockedPosts).toBe(usesPublicFixtures ? 1 : 1);
   });
 
-  it('starts with empty projects and playlist data', () => {
-    expect(playlist).toEqual([]);
+  it('keeps the configured playlist entries valid', () => {
+    expect(playlist).toHaveLength(3);
+    expect(playlist.map(({ id }) => id)).toEqual([
+      'xue-zhiqian-qishi',
+      'xue-zhiqian-tianwailaiwu',
+      'xue-zhiqian-yanyuan'
+    ]);
     expect(SITE.giscus.mapping).toBe('pathname');
   });
 
