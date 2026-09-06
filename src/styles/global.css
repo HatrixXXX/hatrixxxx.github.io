@@ -103,6 +103,55 @@ select {
   margin-inline: auto;
 }
 
+/* Use the published Endfield cursor set throughout the site. */
+html,
+body {
+  cursor: url('/cursors/pointer.cur') 4 5, auto;
+  cursor: image-set(url('/cursors/pointer.cur') 2x) 2 3, auto;
+}
+
+a[href],
+button,
+[role='button'],
+summary {
+  cursor: url('/cursors/link.cur') 47 80, pointer !important;
+  cursor: image-set(url('/cursors/link.cur') 2x) 24 40, pointer !important;
+}
+
+input:not([type]),
+input[type='text'],
+input[type='email'],
+input[type='number'],
+input[type='password'],
+input[type='search'],
+input[type='url'],
+textarea,
+[contenteditable='true'] {
+  cursor: url('/cursors/text.cur') 47 78, text !important;
+  cursor: image-set(url('/cursors/text.cur') 2x) 24 39, text !important;
+}
+
+[draggable='true'],
+[data-post-rail] {
+  cursor: url('/cursors/move.cur') 48 80, move !important;
+  cursor: image-set(url('/cursors/move.cur') 2x) 24 40, move !important;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled,
+[aria-disabled='true'] {
+  cursor: url('/cursors/unavailable.cur') 47 80, not-allowed !important;
+  cursor: image-set(url('/cursors/unavailable.cur') 2x) 24 40, not-allowed !important;
+}
+
+[aria-busy='true'],
+[data-loading='true'] {
+  cursor: url('/cursors/busy.ani') 48 80, wait !important;
+  cursor: image-set(url('/cursors/busy.ani') 2x) 24 40, wait !important;
+}
+
 @media (max-width: 1024px) {
   .with-sidebar {
     grid-template-columns: minmax(0, 1fr);
