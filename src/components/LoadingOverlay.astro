@@ -12,20 +12,20 @@
       <polygon id="loading_hexagon" points="0,-50 43.3,-25 43.3,25 0,50 -43.3,25 -43.3,-25" fill="#171717" />
     </defs>
     {Array.from({ length: 15 }, (_, line) => (
-      <g>
+      <g data-loading-row={line}>
         {Array.from({ length: 15 }, (_, row) => (
           <use
             class="loading-overlay__block"
             href="#loading_hexagon"
             x={line % 2 ? 86.5 * row : 86.5 * row + 43.3}
             y={74.5 * line}
-            transform-origin="50 50"
+            data-loading-row-index={line}
+            data-loading-column={row}
           />
         ))}
       </g>
     ))}
   </svg>
-  <span class="loading-overlay__label" data-loading-status>LOADING</span>
 </div>
 
 <script>
@@ -41,6 +41,20 @@
       animations = [];
     };
     const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ROW_GROUP_DELAY = 180;
+    const BUILD_DURATION = 420;
+    const SHRINK_DURATION = 420;
+    const STAGGER_DURATION = 24;
+    const ROW_ORDER = [
+      [7],
+      [6, 8],
+      [5, 9],
+      [4, 10],
+      [3, 11],
+      [2, 12],
+      [1, 13],
+      [0, 14]
+    ];
     const reveal = () => {
       stopAnimations();
       if (reducedMotion()) {
@@ -49,36 +63,39 @@
         });
         return;
       }
-      const shuffled = [...blocks].sort(() => Math.random() - 0.5);
-      const order = new Map(shuffled.map((block, index) => [block, index]));
-      blocks.forEach((block) => {
+      const rowOrder = new Map<number, number>();
+      ROW_ORDER.forEach((rows, index) => rows.forEach((row) => rowOrder.set(row, index)));
+      blocks.forEach((block, index) => {
+        const row = Number(block.dataset.loadingRowIndex ?? Math.floor(index / 15));
+        const column = Number(block.dataset.loadingColumn ?? index % 15);
         const offset = Math.random() > 0.5 ? -100 : 100;
-        block.style.strokeDashoffset = String(offset); block.style.strokeOpacity = '0'; block.style.opacity = '1';
+        const groupIndex = rowOrder.get(row) ?? ROW_ORDER.length;
+        const withinGroupIndex = column + (row % 2 ? 0.5 : 0);
+        const delay = groupIndex * ROW_GROUP_DELAY + withinGroupIndex * STAGGER_DURATION;
+        block.style.strokeDashoffset = String(offset);
+        block.style.strokeOpacity = '0';
+        block.style.opacity = '0';
+        block.style.transform = 'scale(1)';
         animations.push(block.animate(
-          [{ strokeDashoffset: offset, strokeOpacity: 0 }, { strokeDashoffset: 0, strokeOpacity: 1 }],
-          { duration: 500, delay: (order.get(block) ?? 0) * 2, easing: 'cubic-bezier(0.76, 0, 0.24, 1)', fill: 'forwards' }
+          [
+            { strokeDashoffset: offset, strokeOpacity: 0, opacity: 0, transform: 'scale(1)' },
+            { strokeDashoffset: 0, strokeOpacity: 1, opacity: 1, transform: 'scale(1)', offset: BUILD_DURATION / (BUILD_DURATION + SHRINK_DURATION) },
+            { strokeDashoffset: 0, strokeOpacity: 1, opacity: 0, transform: 'scale(0)' }
+          ],
+          {
+            duration: BUILD_DURATION + SHRINK_DURATION,
+            delay,
+            easing: 'cubic-bezier(0.76, 0, 0.24, 1)',
+            fill: 'forwards'
+          }
         ));
       });
     };
     const collapse = () => {
-      stopAnimations();
-      const centerOrder = new Map(
-        blocks
-          .map((block, index) => {
-            const line = Math.floor(index / 15); const row = index % 15;
-            return { block, distance: Math.hypot(row - 7, line - 7) };
-          })
-          .sort((a, b) => a.distance - b.distance)
-          .map(({ block }, index) => [block, index])
-      );
-      blocks.forEach((block) => {
-        block.style.strokeDashoffset = '0'; block.style.strokeOpacity = '1'; block.style.opacity = '1';
-        if (reducedMotion()) { block.style.opacity = '0'; return; }
-        animations.push(block.animate(
-          [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0)', opacity: 0 }],
-          { duration: 1000, delay: (centerOrder.get(block) ?? 0) * 4, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }
-        ));
-      });
+      if (reducedMotion()) {
+        stopAnimations();
+        blocks.forEach((block) => { block.style.opacity = '0'; });
+      }
     };
     const startReveal = () => {
       if (overlay.dataset.loadingHomepage !== 'true') {
@@ -144,19 +161,6 @@
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
     transform-box: fill-box;
-  }
-
-  .loading-overlay__label {
-    position: relative;
-    z-index: 1;
-    color: #17f700;
-    font: 700 16px/1 monospace;
-    letter-spacing: 0.2em;
-    text-shadow: 0 0 10px rgb(23 247 0 / 70%);
-  }
-
-  @keyframes loading-cell-out {
-    to { opacity: 0; transform: scale(0); }
   }
 
   @media (prefers-reduced-motion: reduce) {

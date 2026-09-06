@@ -14,7 +14,7 @@ test.describe('hexagon loading overlay', () => {
 
     const overlay = page.locator('[data-loading-overlay]');
     await expect(overlay).toHaveAttribute('data-loading-state', 'hidden');
-    await expect(overlay.locator('[data-loading-status]')).toHaveText('LOADING');
+    await expect(overlay.locator('[data-loading-status]')).toHaveCount(0);
 
     const geometry = await overlay.evaluate((element) => {
       const rect = element.getBoundingClientRect();
