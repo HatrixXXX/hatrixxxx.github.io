@@ -1,7 +1,6 @@
 ---
 import 'katex/dist/katex.min.css';
 import { getCollection } from 'astro:content';
-import Breadcrumbs from '@/components/Breadcrumbs.astro';
 import GiscusComments from '@/components/GiscusComments.astro';
 import PostLink from '@/components/PostLink.astro';
 import PostMeta from '@/components/PostMeta.astro';
@@ -49,7 +48,6 @@ const stats = buildSiteStats(posts);
 >
   <article data-post>
     <div class="post-intro container">
-      <Breadcrumbs title={post.data.title} />
       <h1>{post.data.title}</h1>
       <PostMeta post={post} />
     </div>
@@ -92,7 +90,7 @@ const stats = buildSiteStats(posts);
 <style>
   .post-intro h1 {
     max-width: 900px;
-    margin: 0 auto;
+    margin: 0;
     color: var(--color-heading, #fff);
     font-size: clamp(1.8rem, 5vw, 3.2rem);
     line-height: 1.15;
@@ -101,12 +99,11 @@ const stats = buildSiteStats(posts);
   }
 
   .post-intro {
-    padding-top: 1.5rem;
-    text-align: center;
+    width: min(calc(100% - 48px), calc(var(--reading-width) + 280px));
+    padding-top: 4rem;
+    text-align: left;
   }
 
-  .post-intro :global(.breadcrumbs ol),
-  .post-intro :global(.breadcrumbs li:not(:last-child)::after),
   .post-intro :global(.post-meta) {
     color: var(--color-muted);
   }
@@ -126,7 +123,7 @@ const stats = buildSiteStats(posts);
     min-width: 0;
   }
 
-  .post-sidebar { grid-column: 1; grid-row: 2; min-width: 0; }
+  .post-sidebar { grid-column: 1; grid-row: 2; min-width: 0; display: grid; gap: 1rem; align-content: start; }
 
   .prose {
     min-width: 0;
@@ -177,6 +174,7 @@ const stats = buildSiteStats(posts);
 
   @media (min-width: 1280px) {
     .post-grid {
+      width: min(calc(100% - 48px), calc(var(--reading-width) + 280px));
       grid-template-columns: minmax(0, var(--reading-width)) minmax(240px, 280px);
     }
 
@@ -204,6 +202,10 @@ const stats = buildSiteStats(posts);
   }
 
   @media (max-width: 768px) {
+    .post-intro {
+      width: min(calc(100% - 32px), var(--content-width));
+      padding-top: 3rem;
+    }
     .post-grid {
       width: min(calc(100% - 32px), 1440px);
     }

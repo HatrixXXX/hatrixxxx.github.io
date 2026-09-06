@@ -26,8 +26,8 @@ const words = Math.round(readingTime(post.body ?? '').words);
       </time>
     )
   }
-  <span>预计阅读 {minutes} 分钟</span>
   <span>字数 {words}</span>
+  <span>预计阅读 {minutes} 分钟</span>
 </div>
 
 <style>
@@ -37,6 +37,6 @@ const words = Math.round(readingTime(post.body ?? '').words);
     justify-content: center;
     gap: 0.35rem 1rem;
     color: rgb(255 255 255 / 78%);
-    font-size: 0.84rem;
+    font-size: 0.96rem;
   }
 </style>
