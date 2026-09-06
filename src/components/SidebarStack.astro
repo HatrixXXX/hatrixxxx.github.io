@@ -25,8 +25,7 @@ const { posts, showClock, showStats = true } = Astro.props;
     z-index: 16;
     display: grid;
     width: min(100%, 280px);
-    min-width: 0;
-    gap: 1rem;
+    min-width: 0;\n    overflow: visible;\n    gap: 1rem;
     justify-self: center;
   }
 
@@ -37,3 +36,4 @@ const { posts, showClock, showStats = true } = Astro.props;
     }
   }
 </style>
+
