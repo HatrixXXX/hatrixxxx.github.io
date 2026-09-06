@@ -13,7 +13,7 @@ interface Props {
 const { posts, showClock, showStats = true } = Astro.props;
 ---
 
-<aside class="sidebar-stack" data-sidebar-stack aria-label="站点侧栏">
+<aside class="sidebar-stack" data-sidebar-stack data-content-page={Astro.url.pathname.startsWith('/posts/') ? 'true' : undefined} aria-label="站点侧栏">
   <slot />
   {showStats && <SiteStats stats={buildSiteStats(posts)} showClock={showClock} />}
   <MusicPlayer />
