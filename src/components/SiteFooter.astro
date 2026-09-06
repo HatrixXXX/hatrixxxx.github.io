@@ -42,7 +42,9 @@ const { stats } = Astro.props;
             <span>站点总字数：{stats.wordCount.toLocaleString('zh-CN')}</span>
             <span>访客数：<span data-visitor-count>—</span></span>
           </p>
-          <p class="footer-row footer-stats-line">{stats.runningDuration}</p>
+          <p class="footer-row footer-stats-line" data-footer-running-duration>
+            {stats.runningDuration}
+          </p>
         </>
       )
     }

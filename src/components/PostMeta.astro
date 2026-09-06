@@ -14,6 +14,7 @@ const formatDate = (date: Date) =>
     day: '2-digit'
   }).format(date);
 const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
+const words = Math.round(readingTime(post.body ?? '').words);
 ---
 
 <div class="post-meta" aria-label="文章信息">
@@ -26,6 +27,7 @@ const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
     )
   }
   <span>预计阅读 {minutes} 分钟</span>
+  <span>字数 {words}</span>
 </div>
 
 <style>

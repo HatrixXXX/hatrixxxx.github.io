@@ -9,12 +9,39 @@ const PARTICLE_COLORS = ['#67e8f9', '#a78bfa', '#f472b6', '#facc15'] as const;
 const MAX_PARTICLES = 360;
 const DAY_MS = 86_400_000;
 const START_DAY_UTC = Date.UTC(2025, 1, 17);
+const HOUR_MS = 3_600_000;
+const MINUTE_MS = 60_000;
+const SECOND_MS = 1_000;
 const shanghaiDate = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Shanghai',
   year: 'numeric',
   month: '2-digit',
   day: '2-digit'
 });
+
+let footerTimer = 0;
+
+function formatRunningDurationAt(now: Date): string {
+  const elapsedMs = Math.max(0, now.getTime() - START_DAY_UTC);
+  const days = Math.floor(elapsedMs / DAY_MS);
+  const hours = Math.floor((elapsedMs % DAY_MS) / HOUR_MS);
+  const minutes = Math.floor((elapsedMs % HOUR_MS) / MINUTE_MS);
+  const seconds = Math.floor((elapsedMs % MINUTE_MS) / SECOND_MS);
+  return `已运行${days}天${hours}小时${minutes}分钟${seconds}秒`;
+}
+
+function synchronizeFooterRunningDuration(): void {
+  const text = formatRunningDurationAt(new Date());
+  document.querySelectorAll<HTMLElement>('[data-footer-running-duration]').forEach((node) => {
+    node.textContent = text;
+  });
+}
+
+function bindFooterRunningDuration(): void {
+  synchronizeFooterRunningDuration();
+  if (footerTimer) return;
+  footerTimer = window.setInterval(synchronizeFooterRunningDuration, SECOND_MS);
+}
 
 interface Particle {
   x: number;
@@ -235,6 +262,7 @@ function bindSiteStats(root: HTMLElement): void {
 }
 
 export function initializeSiteStats(): void {
+  bindFooterRunningDuration();
   bindVisitorSource();
   document.querySelectorAll<HTMLElement>('[data-site-stats]').forEach(bindSiteStats);
   synchronizeVisitorCount();

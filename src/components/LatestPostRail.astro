@@ -1,0 +1,29 @@
+---
+import { Image } from 'astro:assets';
+import type { PostEntry } from '@/lib/content';
+import { postPath } from '@/lib/urls';
+
+interface Props { posts: readonly PostEntry[]; limit: number; }
+const { posts, limit } = Astro.props;
+const latest = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()).slice(0, limit);
+
+---
+{latest.length > 0 && <section class="latest-posts" data-latest-posts aria-label="最新文章">
+  <h2>最新文章</h2>
+  <div class="latest-list">
+    {latest.map((post) => <a class="latest-item" href={postPath(post.data.legacySlug)}>
+      <Image src={post.data.cover || '/images/default-cover.svg'} alt="" width={320} height={180} loading="lazy" decoding="async" />
+      <span>{post.data.title}</span>
+    </a>)}
+  </div>
+</section>}
+
+<style>
+  .latest-posts { border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1rem; background: var(--color-surface); box-shadow: var(--shadow-panel); }
+  h2 { margin: 0 0 .75rem; color: var(--color-heading, #fff); font-size: .94rem; }
+  .latest-list { display: grid; gap: .75rem; }
+  .latest-item { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: .65rem; align-items: center; color: var(--color-heading, #fff); font-size: .82rem; line-height: 1.35; }
+  .latest-item :global(img) { width: 88px; height: 56px; border-radius: .45rem; object-fit: cover; }
+  .latest-item span { overflow-wrap: anywhere; }
+  .latest-item:hover span { color: var(--color-accent); }
+</style>

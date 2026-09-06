@@ -6,12 +6,14 @@ import GiscusComments from '@/components/GiscusComments.astro';
 import PostLink from '@/components/PostLink.astro';
 import PostMeta from '@/components/PostMeta.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
-import SidebarStack from '@/components/SidebarStack.astro';
 import TableOfContents from '@/components/TableOfContents.astro';
+import LatestPostRail from '@/components/LatestPostRail.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { AdjacentPosts, PostEntry } from '@/lib/content';
 import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
 import { postPath } from '@/lib/urls';
+import { latestPostLimit } from '@/lib/post-layout';
+import { SITE } from '@/config/site';
 
 interface Heading {
   depth: number;
@@ -34,7 +36,7 @@ const stats = buildSiteStats(posts);
 
 <BaseLayout
   title={post.data.title}
-  description={post.data.description}
+  description={SITE.description}
   image={post.data.cover}
   canonicalPath={canonicalPath}
   bodyClass="post-page"
@@ -46,23 +48,14 @@ const stats = buildSiteStats(posts);
   }}
 >
   <article data-post>
-    <header class="post-hero" data-hero>
-      <img src={post.data.cover} alt="" width="1600" height="900" decoding="async" />
-      <div class="post-hero-overlay"></div>
-      <div class="post-hero-content container">
-        <h1>{post.data.title}</h1>
-      </div>
-    </header>
-
     <div class="post-intro container">
       <Breadcrumbs title={post.data.title} />
-      <p>{post.data.description}</p>
+      <h1>{post.data.title}</h1>
       <PostMeta post={post} />
     </div>
 
     <ProtectedContent locked={post.data.locked} route={canonicalPath} title={post.data.title}>
       <div class="post-grid container" data-cursor-trail-region>
-        <TableOfContents headings={headings} />
         <div class="post-column">
           <div class="prose">
             <slot />
@@ -85,7 +78,7 @@ const stats = buildSiteStats(posts);
 
           <GiscusComments />
         </div>
-        <SidebarStack posts={posts} showClock={false} showStats={false} />
+        <aside class="post-sidebar"><TableOfContents headings={headings} /><LatestPostRail posts={posts} limit={latestPostLimit(headings.length)} /></aside>
       </div>
     </ProtectedContent>
   </article>
@@ -97,63 +90,19 @@ const stats = buildSiteStats(posts);
 </script>
 
 <style>
-  .post-hero {
-    position: relative;
-    display: grid;
-    height: var(--inner-page-banner-height);
-    place-items: center;
-    overflow: hidden;
-    background: var(--color-surface-raised);
-  }
-
-  .post-hero > img,
-  .post-hero-overlay {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    inset: 0;
-  }
-
-  .post-hero > img {
-    object-fit: cover;
-  }
-
-  .post-hero-overlay {
-    background: linear-gradient(to bottom, rgb(10 12 16 / 45%), rgb(22 26 32 / 94%));
-    pointer-events: none;
-  }
-
-  .post-hero-content {
-    position: relative;
-    z-index: 1;
-    padding-block: calc(var(--header-height) + 1rem) 1rem;
-    text-align: center;
-    pointer-events: none;
-  }
-
-  article :global(img[data-lightbox-image]) {
-    cursor: zoom-in;
-  }
-
-  h1 {
+  .post-intro h1 {
     max-width: 900px;
     margin: 0 auto;
-    color: #fff;
+    color: var(--color-heading, #fff);
     font-size: clamp(1.8rem, 5vw, 3.2rem);
     line-height: 1.15;
     overflow-wrap: anywhere;
-    text-shadow: 0 4px 22px rgb(0 0 0 / 55%);
+    margin-top: 1rem;
   }
 
   .post-intro {
     padding-top: 1.5rem;
     text-align: center;
-  }
-
-  .post-intro > p {
-    max-width: 720px;
-    margin: 0.75rem auto;
-    color: var(--color-muted);
   }
 
   .post-intro :global(.breadcrumbs ol),
@@ -177,10 +126,7 @@ const stats = buildSiteStats(posts);
     min-width: 0;
   }
 
-  .post-grid :global([data-sidebar-stack]) {
-    grid-column: 1;
-    grid-row: 3;
-  }
+  .post-sidebar { grid-column: 1; grid-row: 3; min-width: 0; }
 
   .prose {
     min-width: 0;
@@ -231,17 +177,21 @@ const stats = buildSiteStats(posts);
 
   @media (min-width: 1280px) {
     .post-grid {
-      grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(220px, 280px);
+      grid-template-columns: minmax(0, var(--reading-width)) minmax(240px, 280px);
     }
 
     .post-column {
-      grid-column: 2;
+      grid-column: 1;
       grid-row: 1;
     }
 
-    .post-grid :global([data-sidebar-stack]) {
-      grid-column: 1;
+    .post-sidebar {
+      grid-column: 2;
       grid-row: 1;
+      position: sticky;
+      top: 1.25rem;
+      max-height: calc(100vh - 2.5rem);
+      overflow: auto;
     }
   }
 
@@ -249,6 +199,10 @@ const stats = buildSiteStats(posts);
     .post-grid {
       width: min(calc(100% - 32px), 1440px);
     }
+  }
+
+  @media (max-width: 1279px) {
+    .post-sidebar { position: static; max-height: none; overflow: visible; }
   }
 
   @media (max-width: 600px) {

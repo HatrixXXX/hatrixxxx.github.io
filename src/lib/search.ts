@@ -5,7 +5,6 @@ export interface SearchDocument {
   id: string;
   url: string;
   title: string;
-  description: string;
   locked: boolean;
   text: string;
 }
@@ -29,7 +28,7 @@ export function markdownToPlainText(markdown: string, maxLength = Number.POSITIV
 }
 
 export function toSearchDocument(post: PostEntry): SearchDocument {
-  const metadata = markdownToPlainText(`${post.data.title} ${post.data.description}`);
+  const metadata = markdownToPlainText(post.data.title);
   const summary = post.data.locked
     ? ''
     : markdownToPlainText((post as PostEntry & { body?: string }).body ?? '', 2000);
@@ -38,7 +37,6 @@ export function toSearchDocument(post: PostEntry): SearchDocument {
     id: post.id,
     url: postPath(post.data.legacySlug),
     title: post.data.title,
-    description: post.data.description,
     locked: post.data.locked,
     text: [metadata, summary].filter(Boolean).join(' ')
   };

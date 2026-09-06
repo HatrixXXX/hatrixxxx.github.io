@@ -70,12 +70,11 @@ describe('content utilities', () => {
       id: 'FPGA',
       url: '/posts/FPGA/',
       title: 'FPGA',
-      description: 'description for FPGA',
       locked: false
     });
     expect(document).not.toHaveProperty('category');
     expect(document).not.toHaveProperty('tags');
-    expect(document.text).toContain('FPGA description for FPGA');
+    expect(document.text).toContain('FPGA');
     expect(document.text.endsWith('a'.repeat(2000))).toBe(true);
   });
 
@@ -86,7 +85,6 @@ describe('content utilities', () => {
       data: {
         ...post('locked-post', '2026-02-03').data,
         title: 'Public locked title',
-        description: 'Public locked description',
         locked: true
       }
     } as PostEntry & { body: string };
@@ -95,9 +93,8 @@ describe('content utilities', () => {
       id: 'locked-post',
       url: '/posts/locked-post/',
       title: 'Public locked title',
-      description: 'Public locked description',
       locked: true,
-      text: 'Public locked title Public locked description'
+      text: 'Public locked title'
     });
   });
 
