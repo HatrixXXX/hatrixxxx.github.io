@@ -1,5 +1,5 @@
 export const LOADING_DELAY = 120;
-export const MINIMUM_VISIBLE_DURATION = 1_200;
+export const MINIMUM_VISIBLE_DURATION = 360;
 
 interface LoadingControllerOptions {
   now?: () => number;
