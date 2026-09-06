@@ -40,6 +40,11 @@ test('all posts submenu page lists every published post', async ({ page, request
 
 test('blog index presents six horizontal category cards', async ({ page }) => {
   await page.goto('/blog/');
+  await page.locator('[data-blog-category-card]').first().evaluate(async () => {
+    const animations = [...document.querySelectorAll<HTMLElement>('[data-blog-category-card]')]
+      .flatMap((card) => card.parentElement?.getAnimations() ?? []);
+    await Promise.all(animations.map((animation) => animation.finished));
+  });
 
   await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
   const categoryNav = page.locator('[data-blog-category-nav]');
@@ -71,6 +76,36 @@ test('blog index presents six horizontal category cards', async ({ page }) => {
   expect(categoryLinks.every(({ height }) => height >= 560)).toBe(true);
   expect(await categoryNav.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});
+
+test('blog category cards enter with staggered damping and respect reduced motion', async ({ page }) => {
+  await page.goto('/blog/');
+  const animationStyles = await page.locator('[data-blog-category-card]').evaluateAll((cards) =>
+    cards.map((card) => {
+      const style = getComputedStyle(card.parentElement!);
+      return { name: style.animationName, delay: style.animationDelay };
+    })
+  );
+
+  expect(animationStyles.map(({ name }) => name)).toEqual(Array(6).fill('blog-card-enter'));
+  expect(animationStyles.map(({ delay }) => delay)).toEqual([
+    '0s',
+    '0.072s',
+    '0.144s',
+    '0.216s',
+    '0.288s',
+    '0.36s'
+  ]);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.reload();
+  await expect
+    .poll(() =>
+      page.locator('[data-blog-category-card]').evaluateAll((cards) =>
+        cards.map((card) => getComputedStyle(card.parentElement!).animationName)
+      )
+    )
+    .toEqual(Array(6).fill('none'));
 });
 
 test('post rail hides its scrollbar and does not snap', async ({ page }) => {

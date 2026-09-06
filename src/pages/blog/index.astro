@@ -12,8 +12,8 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
     </div>
     <nav class="blog-category-nav" aria-label="博客文章分类" data-blog-category-nav>
       <ul class="blog-category-list">
-        {blogCategories.map((category) => (
-          <li>
+        {blogCategories.map((category, index) => (
+          <li style={`--blog-card-index: ${index};`}>
             <a
               href={category.href}
               data-blog-category-card
@@ -83,6 +83,21 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
     display: flex;
     min-width: 0;
     flex: 1 0 0;
+    will-change: transform, opacity;
+    animation: blog-card-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--blog-card-index) * 72ms);
+  }
+
+  @keyframes blog-card-enter {
+    0% {
+      opacity: 0;
+      transform: translate3d(calc(100vw + 4rem), 0, 0) rotate(8deg);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotate(0);
+    }
   }
 
   .blog-category-list a {
@@ -153,6 +168,14 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
 
     .blog-category-list a {
       min-height: clamp(30rem, calc(100svh - 9rem), 48rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blog-category-list li {
+      animation: none;
+      opacity: 1;
+      transform: none;
     }
   }
 </style>
