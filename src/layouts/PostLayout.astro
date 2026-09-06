@@ -77,7 +77,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
 
           <GiscusComments />
         </div>
-        <SidebarStack posts={posts} />
+        <SidebarStack posts={posts} showProfile={false} />
       </div>
     </ProtectedContent>
   </article>
