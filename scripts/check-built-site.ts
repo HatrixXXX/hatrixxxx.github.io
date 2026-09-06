@@ -533,7 +533,7 @@ function hasNativeImageTag(html: string, url: string): boolean {
   const escapedUrl = escapeRegex(escapeAttribute(url));
   const imageTags = html.match(new RegExp(`<img\\b[^>]*\\bsrc=(["'])${escapedUrl}\\1[^>]*>`, 'gi')) ?? [];
   return imageTags.some(
-    (tag) => /\sloading=(["'])lazy\1/i.test(tag) && /\sdecoding=(["'])async\1/i.test(tag)
+    (tag) => /\sloading=(["'])(?:lazy|eager)\1/i.test(tag) && /\sdecoding=(["'])async\1/i.test(tag)
   );
 }
 
