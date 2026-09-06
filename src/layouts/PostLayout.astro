@@ -123,7 +123,7 @@ const stats = buildSiteStats(posts);
     min-width: 0;
   }
 
-  .post-sidebar { grid-column: 1; grid-row: 2; min-width: 0; display: grid; gap: 1rem; align-content: start; }
+  .post-sidebar { grid-column: 1; grid-row: 2; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-content: start; }
 
   .prose {
     min-width: 0;

@@ -50,8 +50,6 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
 <style>
   .toc {
     position: static;
-    grid-column: 1;
-    grid-row: 1;
     min-width: 0;
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
@@ -125,8 +123,6 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
     .toc {
       position: sticky;
       top: 1.25rem;
-      grid-column: 3;
-      grid-row: 1;
     max-height: calc(100vh - 2.5rem);
     overflow: auto;
       scrollbar-width: none;
