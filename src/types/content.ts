@@ -1,6 +1,5 @@
 export interface PostData {
   title: string;
-  description: string;
   pubDate: Date;
   updatedDate?: Date;
   cover: string;

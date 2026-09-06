@@ -10,7 +10,6 @@ const post = (id: string, date: string) => ({
   id,
   data: {
     title: id,
-    description: `description for ${id}`,
     pubDate: new Date(date),
     cover: '/x.svg',
     type: '技术笔记',

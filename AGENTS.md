@@ -2,6 +2,13 @@
 
 这是 `https://hatrix.site` 的 Astro 纯静态站点。Node 版本固定为 24，包管理器使用 Corepack 管理的 pnpm。
 
+## 协作与决策
+
+- 修改内容时默认按推荐方案直接执行，不要求用户逐项复核方案。
+- 只有涉及影响重大的修改，或需要确定统计、计数口径与计算路线时，才向用户确认；确认前先完成不依赖该决定的准备工作。
+- 用户可能同时开启多个 Codex 会话。开始修改前先检查当前工作区和相关文件的最新状态；只改动本会话负责的范围，不覆盖、回退或整理其他会话尚未完成的修改。
+- 发现并行修改、未提交内容或文件状态与预期不一致时，保留现有改动，调整自己的修改以兼容，并在必要时说明具体冲突。
+
 ## 常用命令
 
 ```powershell
@@ -55,7 +62,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 3907 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 4173 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 ## 禁止事项

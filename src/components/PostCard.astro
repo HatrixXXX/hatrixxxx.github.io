@@ -45,7 +45,6 @@ const published = new Intl.DateTimeFormat('zh-CN', {
         {post.data.title}{post.data.locked && <LockIndicator />}
       </a>
     </h2>
-    <p>{post.data.description}</p>
     <div class="post-meta">
       <time datetime={post.data.pubDate.toISOString()}>{published}</time>
       <span aria-label={`预计阅读 ${minutes} 分钟`}>{minutes} 分钟</span>
@@ -105,15 +104,6 @@ const published = new Intl.DateTimeFormat('zh-CN', {
 
   h2 a:hover {
     color: var(--color-accent);
-  }
-
-  p {
-    display: -webkit-box;
-    margin: 0.85rem 0 0;
-    overflow: hidden;
-    color: var(--color-muted);
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
   }
 
   .post-meta {

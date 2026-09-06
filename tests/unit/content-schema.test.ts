@@ -10,7 +10,6 @@ import { postSchema } from '../../src/lib/post-schema';
 
 const postFixture = {
   title: 'Schema fixture',
-  description: 'Exercises the post metadata schema.',
   pubDate: '2026-09-03',
   cover: 'https://example.com/cover.png',
   type: POST_TYPES[0],
