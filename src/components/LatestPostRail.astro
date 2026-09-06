@@ -19,7 +19,7 @@ const latest = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDa
 </section>}
 
 <style>
-  .latest-posts { border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1rem; background: var(--color-surface); box-shadow: var(--shadow-panel); }
+  .latest-posts { margin-top: 0.35rem; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1rem; background: var(--color-surface); box-shadow: var(--shadow-panel); }
   h2 { margin: 0 0 .75rem; color: var(--color-heading, #fff); font-size: .94rem; }
   .latest-list { display: grid; gap: .75rem; }
   .latest-item { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: .65rem; align-items: center; color: var(--color-heading, #fff); font-size: .82rem; line-height: 1.35; }
