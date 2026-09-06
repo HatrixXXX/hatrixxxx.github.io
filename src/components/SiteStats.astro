@@ -4,9 +4,10 @@ import { formatSiteDate, runningDaysAt, type BuiltSiteStats } from '@/lib/site-s
 
 interface Props {
   stats: BuiltSiteStats;
+  showClock: boolean;
 }
 
-const { stats } = Astro.props;
+const { stats, showClock } = Astro.props;
 const now = new Date();
 const clockText = formatClockTime(now);
 ---
@@ -25,10 +26,14 @@ const clockText = formatClockTime(now);
       {formatSiteDate(stats.lastUpdated)}
     </time>
   </p>
-  <div class="clock" aria-label="当前时间">
-    <time class="visually-hidden" datetime={now.toISOString()} data-clock-text>{clockText}</time>
-    <canvas width="240" height="56" data-dot-clock aria-hidden="true"></canvas>
-  </div>
+  {showClock && (
+    <div class="clock" aria-label="当前时间">
+      <time class="visually-hidden" datetime={now.toISOString()} data-clock-text>
+        {clockText}
+      </time>
+      <canvas width="240" height="56" data-dot-clock aria-hidden="true"></canvas>
+    </div>
+  )}
 </section>
 
 <style>

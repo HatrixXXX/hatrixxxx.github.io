@@ -25,7 +25,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
     <div class="about-content">
       <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
     </div>
-    <SidebarStack posts={posts}>
+    <SidebarStack posts={posts} showClock={true}>
       <ProfileSidebar />
     </SidebarStack>
   </main>

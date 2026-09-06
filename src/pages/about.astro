@@ -18,7 +18,7 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
       <p>{SITE.description}</p>
       <p>这里记录技术研发、学习笔记与作品进展。</p>
     </article>
-    <SidebarStack posts={posts}>
+    <SidebarStack posts={posts} showClock={true}>
       <ProfileSidebar />
     </SidebarStack>
   </main>
