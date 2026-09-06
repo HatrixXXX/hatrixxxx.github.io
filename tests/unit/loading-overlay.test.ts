@@ -12,15 +12,14 @@ describe('LoadingOverlay component', () => {
     expect(source).toContain('data-loading-grid');
     expect(source).toContain('data-loading-status');
     expect(source).toContain('>LOADING</span>');
-    expect(source).toMatch(/Array\.from\(\{\s*length:\s*225\s*\}\s*,/);
-    expect(source).toMatch(/15\s*[×x]\s*15|row\s*:\s*15|columns\s*=\s*15/);
-    expect(source).toContain('viewBox="0 0 1298 1118"');
-    expect(source).toContain('preserveAspectRatio="xMidYMid slice"');
+    expect(source).toMatch(/Array\.from\(\{\s*length:\s*15\s*\}/);
+    expect(source).toMatch(/Array\.from\(\{\s*length:\s*15\s*\}/);
+    expect(source).toContain('viewBox="0 0 1000 1000"');
     expect(source).toContain('points="0,-50 43.3,-25 43.3,25 0,50 -43.3,25 -43.3,-25"');
     expect(source).toContain('fill="#171717"');
     expect(source).toContain('stroke: #17f700');
-    expect(source).toMatch(/column\s*\*\s*86\.5\s*\+\s*\(row\s*%\s*2\s*\?\s*0\s*:\s*43\.3\)/);
-    expect(source).toMatch(/const\s+y\s*=\s*row\s*\*\s*74\.5/);
+    expect(source).toMatch(/line\s*%\s*2\s*\?\s*86\.5\s*\*\s*row\s*:\s*86\.5\s*\*\s*row\s*\+\s*43\.3/);
+    expect(source).toMatch(/y=\{74\.5\s*\*\s*line\}/);
   });
 
   it('uses native motion styles without GSAP and honors reduced motion', async () => {

@@ -77,12 +77,15 @@ test.describe('hexagon loading overlay', () => {
 
     const overlay = page.locator('[data-loading-overlay]');
     await expect(overlay).toHaveAttribute('data-loading-state', 'loading', { timeout: 1000 });
-    const animations = await overlay.evaluate((element) => ({
-      cell: getComputedStyle(element.querySelector('[data-loading-grid] use')!).animationName,
-      pulse: getComputedStyle(element.querySelector('.loading-overlay__pulse')!).animationName,
-      scan: getComputedStyle(element.querySelector('.loading-overlay__line')!, '::after').animationName
-    }));
-    expect(animations).toEqual({ cell: 'none', pulse: 'none', scan: 'none' });
+    const reducedState = await overlay.evaluate((element) => {
+      const block = element.querySelector<SVGUseElement>('.loading-overlay__block');
+      return {
+        strokeOpacity: block ? getComputedStyle(block).strokeOpacity : '',
+        hasPulse: Boolean(element.querySelector('.loading-overlay__pulse')),
+        hasScanLine: Boolean(element.querySelector('.loading-overlay__line'))
+      };
+    });
+    expect(reducedState).toEqual({ strokeOpacity: '1', hasPulse: false, hasScanLine: false });
 
     gate.release();
     await page.waitForURL('**/projects/');
