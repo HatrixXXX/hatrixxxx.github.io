@@ -1,20 +1,18 @@
 ---
 import MusicPlayer from '@/components/MusicPlayer.astro';
-import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import SiteStats from '@/components/SiteStats.astro';
 import type { PostEntry } from '@/lib/content';
 import { buildSiteStats } from '@/lib/site-stats';
 
 interface Props {
   posts: readonly PostEntry[];
-  showProfile?: boolean;
 }
 
-const { posts, showProfile = true } = Astro.props;
+const { posts } = Astro.props;
 ---
 
 <aside class="sidebar-stack" data-sidebar-stack aria-label="站点侧栏">
-  {showProfile && <ProfileSidebar />}
+  <slot />
   <SiteStats stats={buildSiteStats(posts)} />
   <MusicPlayer />
 </aside>

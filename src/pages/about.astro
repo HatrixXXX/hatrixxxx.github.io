@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
 import { SITE } from '@/config/site';
@@ -17,7 +18,9 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
       <p>{SITE.description}</p>
       <p>这里记录技术研发、学习笔记与作品进展。</p>
     </article>
-    <SidebarStack posts={posts} />
+    <SidebarStack posts={posts}>
+      <ProfileSidebar />
+    </SidebarStack>
   </main>
 </BaseLayout>
 

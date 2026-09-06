@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import EmptyState from '@/components/EmptyState.astro';
+import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
 import { ABOUT_SECTION_LINKS } from '@/config/navigation';
@@ -24,7 +25,9 @@ const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft)
     <div class="about-content">
       <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
     </div>
-    <SidebarStack posts={posts} />
+    <SidebarStack posts={posts}>
+      <ProfileSidebar />
+    </SidebarStack>
   </main>
 </BaseLayout>
 
