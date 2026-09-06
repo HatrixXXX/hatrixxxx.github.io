@@ -128,5 +128,5 @@ export function classifyTrailRegion(
 }
 
 export function isCursorTrailExcludedPathname(pathname: string): boolean {
-  return pathname === '/blog' || pathname.startsWith('/blog/');
+  return !pathname.startsWith('/posts/');
 }

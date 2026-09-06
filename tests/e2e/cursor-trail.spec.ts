@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { POST_TYPE_LINKS } from '../../src/config/navigation';
 
-const disabledBlogRoutes = ['/blog/', ...POST_TYPE_LINKS.map(({ href }) => href)];
+const excludedRoutes = ['/blog/', '/projects/', ...POST_TYPE_LINKS.map(({ href }) => href)];
 
 const alphaPixels = (
   canvas: HTMLCanvasElement,
@@ -107,12 +107,12 @@ test('home omits decorative runtimes', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-cursor-trail], [data-sakana-layer]')).toHaveCount(0);
   await page.goto('/projects/');
-  await expect(page.locator('[data-cursor-trail]')).toHaveCount(1);
+  await expect(page.locator('[data-cursor-trail]')).toHaveCount(0);
   await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-sakana-state', 'ready');
 });
 
 test('cursor trail is a non-interactive fixed viewport layer', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   await expect(canvas).toHaveCount(1);
   await expect(canvas).toHaveAttribute('aria-hidden', 'true');
@@ -134,7 +134,7 @@ test('cursor trail scales its backing store for a high-DPR viewport', async ({ b
   });
   try {
     const page = await context.newPage();
-    await page.goto('/page/2/');
+    await page.goto('/posts/本科数学大杂烩/');
     const canvas = page.locator('[data-cursor-trail]');
     expect(await canvas.evaluate((element) => {
       const canvasElement = element as HTMLCanvasElement;
@@ -152,7 +152,7 @@ test('cursor trail scales its backing store for a high-DPR viewport', async ({ b
 });
 
 test('moving only inside the content band leaves the canvas transparent', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(geometry.centerX, geometry.y - 60);
@@ -168,7 +168,7 @@ test('moving only inside the content band leaves the canvas transparent', async 
 
 for (const side of ['left', 'right'] as const) {
   test(`${side} gutter creates a visible trail`, async ({ page }) => {
-    await page.goto('/page/2/');
+    await page.goto('/posts/本科数学大杂烩/');
     const canvas = page.locator('[data-cursor-trail]');
     const geometry = await activationGeometry(page);
     const x = side === 'left' ? geometry.leftX : geometry.rightX;
@@ -178,7 +178,7 @@ for (const side of ['left', 'right'] as const) {
 }
 
 test('an idle gutter trail fades completely', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const x = geometry.leftX;
@@ -188,7 +188,7 @@ test('an idle gutter trail fades completely', async ({ page }) => {
 });
 
 test('a slowly moving gutter trail remains visible', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const x = geometry.leftX;
@@ -199,14 +199,14 @@ test('a slowly moving gutter trail remains visible', async ({ page }) => {
   }
 });
 
-test('hero gutters do not create trails', async ({ page }) => {
-  await page.goto('/page/2/');
+test('article header gutters do not create trails', async ({ page }) => {
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const horizontal = await page.locator('[data-content-boundary]').boundingBox();
-  const hero = await page.locator('[data-hero]').boundingBox();
-  if (!horizontal || !hero) throw new Error('Missing page regions');
+  const intro = await page.locator('.post-intro').boundingBox();
+  if (!horizontal || !intro) throw new Error('Missing page regions');
   const x = Math.max(8, horizontal.x - 24);
-  const y = hero.y + hero.height / 2;
+  const y = intro.y + intro.height / 2;
   await page.mouse.move(x, y - 40);
   await page.mouse.move(x, y + 40);
   await waitForAnimationFrames(page);
@@ -222,30 +222,11 @@ test('hero gutters do not create trails', async ({ page }) => {
 test('the visible area below a short main does not create trails', async ({ page }) => {
   await page.goto('/projects/');
   const canvas = page.locator('[data-cursor-trail]');
-  const horizontal = await page.locator('[data-content-boundary]').boundingBox();
-  const main = await page.locator('main').boundingBox();
-  const viewport = page.viewportSize();
-  if (!horizontal || !main || !viewport) throw new Error('Missing projects page geometry');
-  const mainBottom = main.y + main.height;
-  const firstY = mainBottom + 16;
-  const secondY = mainBottom + 56;
-  expect(firstY).toBeGreaterThan(mainBottom);
-  expect(secondY).toBeLessThan(viewport.height);
-  const x = Math.max(8, horizontal.x - 24);
-  await page.mouse.move(x, firstY);
-  await page.mouse.move(x, secondY);
-  await waitForAnimationFrames(page);
-  expect(await canvas.evaluate(alphaPixels)).toBe(0);
-
-  const geometry = await activationGeometry(page);
-  await page.mouse.move(geometry.leftX, geometry.y - 40);
-  await page.mouse.move(geometry.leftX, geometry.y + 40);
-  await expect.poll(() => canvas.evaluate(alphaPixels, { left: 0, right: geometry.content.left }))
-    .toBeGreaterThan(0);
+  await expect(canvas).toHaveCount(0);
 });
 
 test('switching gutters starts a new trail without a content bridge', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const oldArea = {
@@ -270,7 +251,7 @@ test('switching gutters starts a new trail without a content bridge', async ({ p
 });
 
 test('leaving and re-entering one gutter starts a disconnected trail', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const oldArea = {
@@ -305,7 +286,7 @@ test('leaving and re-entering one gutter starts a disconnected trail', async ({ 
 });
 
 test('three same-side sessions retain separate fading remnants', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const x = geometry.leftX;
@@ -350,7 +331,7 @@ test('three same-side sessions retain separate fading remnants', async ({ page }
 });
 
 test('a settled new session never clears an older retiring trail', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const oldArea = {
@@ -372,7 +353,7 @@ test('a settled new session never clears an older retiring trail', async ({ page
 });
 
 test('a top-level pointer exit starts a disconnected gutter session on re-entry', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(geometry.leftX, geometry.y - 180);
@@ -407,7 +388,7 @@ test('a top-level pointer exit starts a disconnected gutter session on re-entry'
 
 test('reduced motion disables drawing', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(geometry.leftX, geometry.y - 40);
@@ -417,7 +398,7 @@ test('reduced motion disables drawing', async ({ page }) => {
 });
 
 test('changing reduced motion clears and gates the trail until the next gutter input', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   const range = { left: 0, right: geometry.content.left };
@@ -445,7 +426,7 @@ test('a non-fine pointer disables drawing', async ({ browser }) => {
     viewport: { width: 1440, height: 900 }
   });
   const page = await context.newPage();
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   expect(await page.evaluate(() => (
     matchMedia('(hover: hover) and (pointer: fine)').matches
   ))).toBe(false);
@@ -459,7 +440,7 @@ test('a non-fine pointer disables drawing', async ({ browser }) => {
 });
 
 test('an unmasked left-gutter curve may enter the content band', async ({ page }) => {
-  await page.goto('/page/2/');
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await activationGeometry(page);
   await page.mouse.move(8, geometry.y);
@@ -467,100 +448,55 @@ test('an unmasked left-gutter curve may enter the content band', async ({ page }
   await expect.poll(() => canvas.evaluate(contentAlphaPixels, geometry.content)).toBeGreaterThan(0);
 });
 
-test('blog menu routes hide and disable the cursor trail', async ({ page }) => {
-  for (const path of disabledBlogRoutes) {
+test('non-article routes hide and disable the cursor trail', async ({ page }) => {
+  for (const path of excludedRoutes) {
     await page.goto(path);
-    const canvas = page.locator('[data-cursor-trail]');
-    await expect(canvas).toBeHidden();
-    const horizontal = await page.locator('[data-content-boundary]').boundingBox();
-    const main = await page.locator('main').boundingBox();
-    const viewport = page.viewportSize();
-    if (!horizontal || !main || !viewport) throw new Error(`Missing geometry for ${path}`);
-    const visibleTop = Math.max(8, main.y);
-    const visibleBottom = Math.min(viewport.height - 8, main.y + main.height);
-    const y = (visibleTop + visibleBottom) / 2;
-    const x = Math.max(8, horizontal.x - 24);
-    await page.mouse.move(x, y - 40);
-    await page.mouse.move(x, y + 40);
-    await waitForAnimationFrames(page);
-    expect(await canvas.evaluate(alphaPixels)).toBe(0);
+    await expect(page.locator('[data-cursor-trail]')).toHaveCount(0);
   }
-
-  await page.goto('/projects/');
-  const canvas = page.locator('[data-cursor-trail]');
-  await expect(canvas).toBeVisible();
-  const geometry = await activationGeometry(page);
-  await page.mouse.move(geometry.leftX, geometry.y - 40);
-  await page.mouse.move(geometry.leftX, geometry.y + 40);
-  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
 });
 
-test('entering a blog menu clears existing trails until an allowed route resumes', async ({ page }) => {
-  await page.goto('/page/2/');
-  const canvas = page.locator('[data-cursor-trail]');
+test('returning to an article route restores the cursor trail', async ({ page }) => {
+  await page.goto('/posts/本科数学大杂烩/');
+  const articleCanvas = page.locator('[data-cursor-trail]');
   const oldGeometry = await activationGeometry(page);
   await page.mouse.move(oldGeometry.leftX, oldGeometry.y - 80);
   await page.mouse.move(oldGeometry.leftX, oldGeometry.y + 80);
-  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+  await expect.poll(() => articleCanvas.evaluate(alphaPixels)).toBeGreaterThan(0);
 
   await Promise.all([
     page.waitForURL(/\/blog\/$/),
     page.getByRole('link', { name: '博客文章', exact: true }).click()
   ]);
-  await expect(page.locator('[data-blog-total]')).toHaveText('40');
-  await expect(canvas).toBeHidden();
-  expect(await canvas.evaluate(alphaPixels)).toBe(0);
+  await expect(page.locator('[data-blog-total]')).toHaveText('41');
+  await expect(page.locator('[data-cursor-trail]')).toHaveCount(0);
 
-  await Promise.all([
-    page.waitForURL(/\/projects\/$/),
-    page.getByRole('link', { name: '作品橱窗', exact: true }).click()
-  ]);
-  await expect(canvas).toBeVisible();
-  expect(await canvas.evaluate(alphaPixels)).toBe(0);
+  await page.goto('/posts/本科数学大杂烩/');
+  const resumedCanvas = page.locator('[data-cursor-trail]');
+  await expect(resumedCanvas).toHaveCount(1);
   const resumedGeometry = await activationGeometry(page);
   await page.mouse.move(resumedGeometry.rightX, resumedGeometry.y - 40);
   await page.mouse.move(resumedGeometry.rightX, resumedGeometry.y + 40);
-  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+  await expect.poll(() => resumedCanvas.evaluate(alphaPixels)).toBeGreaterThan(0);
 });
 
-test('the canvas persists once across client navigation', async ({ page }) => {
-  await page.goto('/page/2/');
+test('the trail is mounted only on article routes', async ({ page }) => {
+  await page.goto('/posts/本科数学大杂烩/');
   const canvas = page.locator('[data-cursor-trail]');
-  await canvas.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
+  await expect(canvas).toHaveCount(1);
   const oldGeometry = await activationGeometry(page);
-  const oldArea = {
-    left: 0,
-    right: oldGeometry.content.left,
-    top: oldGeometry.y - 130,
-    bottom: oldGeometry.y + 130
-  };
-  for (let step = 0; step < 6; step += 1) {
-    await page.mouse.move(oldGeometry.leftX, oldGeometry.y - 105 + step * 42);
-  }
-  await expect.poll(() => canvas.evaluate(alphaSumInRect, oldArea)).toBeGreaterThan(0);
-  const baseline = await canvas.evaluate(alphaSumInRect, oldArea);
-  expect(baseline).toBeGreaterThan(0);
+  await page.mouse.move(oldGeometry.leftX, oldGeometry.y - 105);
+  await page.mouse.move(oldGeometry.leftX, oldGeometry.y + 105);
+  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
 
   await Promise.all([
     page.waitForURL(/\/projects\/$/),
     page.getByRole('link', { name: '作品橱窗', exact: true }).click()
   ]);
   await expect(page.locator('main.projects-main')).toBeVisible();
-  await expect(page.locator('[data-cursor-trail]')).toHaveCount(1);
-  await expect(page.locator('[data-cursor-trail]')).toHaveAttribute('data-persist-probe', 'same-node');
-  const afterNavigation = await canvas.evaluate(alphaSumInRect, oldArea);
-  expect(
-    afterNavigation,
-    `persisted alpha: ${JSON.stringify({ baseline, afterNavigation })}`
-  ).toBeGreaterThanOrEqual(baseline * 0.5);
-  await expect.poll(() => canvas.evaluate(alphaSumInRect, oldArea), { timeout: 10_000 }).toBe(0);
+  await expect(page.locator('[data-cursor-trail]')).toHaveCount(0);
 
-  const geometry = await activationGeometry(page);
-  const range = { left: geometry.content.right, right: 1440 };
-  for (let step = 0; step < 6; step += 1) {
-    await page.mouse.move(geometry.rightX, geometry.y - 105 + step * 42);
-  }
-  await expect.poll(() => canvas.evaluate(alphaPixels, range)).toBeGreaterThan(0);
+  await page.goto('/posts/本科数学大杂烩/');
+  await expect(page.locator('[data-cursor-trail]')).toHaveCount(1);
 });
 
 test('post cover gutters stay inactive before the article region activates', async ({ page }) => {
