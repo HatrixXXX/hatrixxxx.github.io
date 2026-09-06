@@ -91,6 +91,17 @@ describe('loading overlay controller', () => {
     vi.useRealTimers();
   });
 
+  it('can force immediate loading for homepage navigation tests', () => {
+    vi.useFakeTimers();
+    const show = vi.fn();
+    const controller = createLoadingController({ show });
+
+    controller.start(true);
+
+    expect(show).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
   it('wires after-swap and initial load completion events', async () => {
     const source = await import('node:fs/promises').then(({ readFile }) =>
       readFile(new URL('../../src/scripts/loading-overlay.ts', import.meta.url), 'utf8')

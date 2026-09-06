@@ -11,7 +11,7 @@ interface LoadingControllerOptions {
 }
 
 export interface LoadingController {
-  start: () => void;
+  start: (immediate?: boolean) => void;
   finish: () => void;
   fail: () => void;
   destroy: () => void;
@@ -62,14 +62,14 @@ export function createLoadingController(options: LoadingControllerOptions = {}):
     pendingHide = schedule(hideNow, remaining);
   };
 
-  const start = () => {
+  const start = (immediate = false) => {
     clearTimers();
     active = true;
     finishing = false;
 
     // A second navigation can begin while the previous overlay is collapsing.
     // Re-enter the visible phase immediately and reset its minimum-visible clock.
-    if (visibleAt !== undefined) {
+    if (immediate || visibleAt !== undefined) {
       visibleAt = now();
       show();
       return;
@@ -118,7 +118,8 @@ function initializeLoadingOverlay() {
 
   controller.start();
   document.addEventListener('astro:before-preparation', (event) => {
-    controller.start();
+    const destination = (event as Event & { to?: URL }).to;
+    controller.start(destination?.pathname === '/');
     const signal = (event as Event & { signal?: AbortSignal }).signal;
     signal?.addEventListener('abort', controller.fail, { once: true });
   });
