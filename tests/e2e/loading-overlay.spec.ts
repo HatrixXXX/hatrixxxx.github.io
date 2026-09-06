@@ -121,10 +121,17 @@ test.describe('hexagon loading overlay', () => {
             : []
         };
       };
-      return { center: readRow(7), inner: readRow(6), outer: readRow(0) };
+      const center = readRow(7);
+      const inner = readRow(6);
+      const innerPair = readRow(8);
+      const outer = readRow(0);
+      const outerPair = readRow(14);
+      return { center, inner, innerPair, outer, outerPair };
     });
 
     expect(animationState.center.delay).toBe(0);
+    expect(animationState.innerPair.delay).toBe(animationState.inner.delay);
+    expect(animationState.outerPair.delay).toBe(animationState.outer.delay);
     expect(animationState.inner.delay).toBeGreaterThan(animationState.center.delay ?? -1);
     expect(animationState.outer.delay).toBeGreaterThan(animationState.inner.delay ?? -1);
     expect(animationState.center.keyframes.at(-1)?.transform).toBe('scale(0)');

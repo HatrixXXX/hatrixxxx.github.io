@@ -44,7 +44,6 @@
     const ROW_GROUP_DELAY = 180;
     const BUILD_DURATION = 420;
     const SHRINK_DURATION = 420;
-    const STAGGER_DURATION = 24;
     const ROW_ORDER = [
       [7],
       [6, 8],
@@ -70,11 +69,11 @@
       ROW_ORDER.forEach((rows, index) => rows.forEach((row) => rowOrder.set(row, index)));
       blocks.forEach((block, index) => {
         const row = Number(block.dataset.loadingRowIndex ?? Math.floor(index / 15));
-        const column = Number(block.dataset.loadingColumn ?? index % 15);
         const offset = Math.random() > 0.5 ? -100 : 100;
         const groupIndex = rowOrder.get(row) ?? ROW_ORDER.length;
-        const withinGroupIndex = column;
-        const delay = groupIndex * ROW_GROUP_DELAY + withinGroupIndex * STAGGER_DURATION;
+        // Every hexagon in a horizontal SVG row starts together. The paired
+        // rows above and below the center also share the same start time.
+        const delay = groupIndex * ROW_GROUP_DELAY;
         block.style.strokeDashoffset = String(offset);
         block.style.strokeOpacity = '0';
         block.style.opacity = '0';

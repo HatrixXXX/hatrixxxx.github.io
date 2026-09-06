@@ -48,5 +48,7 @@ describe('LoadingOverlay component', () => {
     expect(source).toMatch(/duration: BUILD_DURATION \+ SHRINK_DURATION/);
     expect(source).toMatch(/strokeDashoffset: 0, strokeOpacity: 1, opacity: 1, transform: 'scale\(1\)'[\s\S]*transform: 'scale\(0\)'/);
     expect(source).toMatch(/delay,\s*easing:/);
+    expect(source).not.toContain('STAGGER_DURATION');
+    expect(source).toMatch(/const delay = groupIndex \* ROW_GROUP_DELAY/);
   });
 });
