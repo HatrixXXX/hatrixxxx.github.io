@@ -70,7 +70,7 @@
         const column = Number(block.dataset.loadingColumn ?? index % 15);
         const offset = Math.random() > 0.5 ? -100 : 100;
         const groupIndex = rowOrder.get(row) ?? ROW_ORDER.length;
-        const withinGroupIndex = column + (row % 2 ? 0.5 : 0);
+        const withinGroupIndex = column;
         const delay = groupIndex * ROW_GROUP_DELAY + withinGroupIndex * STAGGER_DURATION;
         block.style.strokeDashoffset = String(offset);
         block.style.strokeOpacity = '0';
