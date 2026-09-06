@@ -91,4 +91,48 @@ test.describe('hexagon loading overlay', () => {
     await page.waitForURL('**/projects/');
     await expect(overlay).toHaveAttribute('data-loading-state', 'hidden', { timeout: 2000 });
   });
+
+  test('constructs row groups from the center outward and shrinks each cell after drawing', async ({ page }) => {
+    await page.goto('/blog/');
+    const gate = createGate();
+    await page.route('**/projects/', async (route) => {
+      await gate.promise;
+      await route.continue();
+    });
+
+    await page.locator('a[href="/projects/"]').first().click();
+    const overlay = page.locator('[data-loading-overlay]');
+    await expect(overlay).toHaveAttribute('data-loading-state', 'loading', { timeout: 1000 });
+
+    const animationState = await overlay.evaluate((element) => {
+      const readRow = (row: number) => {
+        const block = element.querySelector<SVGUseElement>(`[data-loading-row-index="${row}"]`);
+        const animation = block?.getAnimations()[0];
+        const timing = animation?.effect?.getTiming();
+        return {
+          delay: typeof timing?.delay === 'number' ? timing.delay : null,
+          keyframes: animation?.effect && 'getKeyframes' in animation.effect
+            ? (animation.effect as KeyframeEffect).getKeyframes().map((frame) => ({
+                offset: frame.offset,
+                opacity: frame.opacity == null ? null : String(frame.opacity),
+                transform: frame.transform == null ? null : String(frame.transform),
+                strokeDashoffset: frame.strokeDashoffset == null ? null : String(frame.strokeDashoffset)
+              }))
+            : []
+        };
+      };
+      return { center: readRow(7), inner: readRow(6), outer: readRow(0) };
+    });
+
+    expect(animationState.center.delay).toBe(0);
+    expect(animationState.inner.delay).toBeGreaterThan(animationState.center.delay ?? -1);
+    expect(animationState.outer.delay).toBeGreaterThan(animationState.inner.delay ?? -1);
+    expect(animationState.center.keyframes.at(-1)?.transform).toBe('scale(0)');
+    expect(animationState.center.keyframes.at(-1)?.opacity).toBe('0');
+    expect(animationState.center.keyframes[1]?.transform).toBe('scale(1)');
+
+    gate.release();
+    await page.waitForURL('**/projects/');
+    await expect(overlay).toHaveAttribute('data-loading-state', 'hidden', { timeout: 2000 });
+  });
 });
