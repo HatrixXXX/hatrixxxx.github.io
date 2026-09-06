@@ -68,7 +68,7 @@
           .sort((a, b) => a.distance - b.distance)
           .map(({ block }, index) => [block, index])
       );
-      blocks.forEach((block, index) => {
+      blocks.forEach((block) => {
         block.style.strokeDashoffset = '0'; block.style.strokeOpacity = '1'; block.style.opacity = '1';
         if (reducedMotion()) { block.style.opacity = '0'; return; }
         animations.push(block.animate(
