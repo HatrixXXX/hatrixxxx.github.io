@@ -109,15 +109,14 @@ function complete(s: State): void {
   s.finished = true;
   cancelAnimationFrame(s.raf);
   applyPct(s, 100);
-  window.setTimeout(() => {
-    s.el.classList.add('pl-done');
-    const cleanup = () => {
-      s.el.classList.remove('pl-visible', 'pl-done');
-      s.el.innerHTML = '';
-    };
-    s.el.addEventListener('transitionend', cleanup, { once: true });
-    window.setTimeout(cleanup, 700);
-  }, 160);
+  // 直接开始淡出，不停顿
+  s.el.classList.add('pl-done');
+  const cleanup = () => {
+    s.el.classList.remove('pl-visible', 'pl-done');
+    s.el.innerHTML = '';
+  };
+  s.el.addEventListener('transitionend', cleanup, { once: true });
+  window.setTimeout(cleanup, 700);
 }
 
 // ── 首页：等立绘 ──────────────────────────────────────────────────────────────
