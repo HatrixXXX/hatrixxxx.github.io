@@ -9,7 +9,7 @@ export const FRIENDS: FriendLink[] = [
   {
     name: 'Sasasatori',
     url: 'https://www.cnblogs.com/sasasatori',
-    avatar: 'https://img2023.cnblogs.com/blog/3534064/202309/3534064-20230916155609703-1174440374.jpg',
+    avatar: 'https://assets.cnblogs.com/apple-touch-icon.png?v=2',
     description: '记录技术与生活的博客园博主'
   },
   {
@@ -27,7 +27,7 @@ export const FRIENDS: FriendLink[] = [
   {
     name: 'WWenj',
     url: 'https://www.wwenj.com/',
-    avatar: 'https://www.wwenj.com/favicon.ico',
+    avatar: 'https://file.ljcdn.com/nebula/3602ecd4e65c416bab86b16abcbea478_1769153862927.png',
     description: '个人博客与技术分享'
   },
   {
@@ -39,14 +39,14 @@ export const FRIENDS: FriendLink[] = [
   {
     name: 'D-D Design',
     url: 'https://d-d.design/',
-    avatar: 'https://d-d.design/favicon.ico',
+    avatar: 'https://d-d.design/wp/gdLogo.png',
     description: '设计与创意的探索空间'
   },
   {
-    name: 'Hexo AnHeYu',
-    url: 'https://hexo.anheyu.com/',
-    avatar: 'https://hexo.anheyu.com/favicon.ico',
-    description: 'Anheyu 的 Hexo 博客主题'
+    name: 'AnHeYu',
+    url: 'https://index.anheyu.com/',
+    avatar: 'https://index.anheyu.com/img/apple-touch-icon.png',
+    description: 'AnHeYu 的个人主页'
   },
   {
     name: '张洪Heo',
@@ -57,31 +57,31 @@ export const FRIENDS: FriendLink[] = [
   {
     name: '星辉sama',
     url: 'https://www.xinghuisama.top/',
-    avatar: 'https://www.xinghuisama.top/favicon.ico',
+    avatar: 'https://bu.dusays.com/2026/03/24/69c1e38ac1846.jpg',
     description: '个人技术与生活记录'
   },
   {
     name: 'Linn',
     url: 'https://linn-ylz.com/',
-    avatar: 'https://linn-ylz.com/favicon.ico',
+    avatar: 'https://linn-ylz.com/assets/my_small_avatar.jpg',
     description: '记录技术与思考的个人博客'
   },
   {
     name: 'Aaron Wu',
     url: 'https://no5-aaron-wu.github.io/',
-    avatar: 'https://no5-aaron-wu.github.io/favicon.ico',
+    avatar: 'https://no5-aaron-wu.github.io/images/avatar.jpg',
     description: '技术学习与分享'
   },
   {
     name: 'DIYgod',
     url: 'https://diygod.cc/',
-    avatar: 'https://diygod.cc/avatar.jpg',
+    avatar: 'https://diygod.cc/favicon.ico',
     description: 'Write to live，人在旅途，追梦赤子心'
   },
   {
     name: '史超欣',
     url: 'https://shichaoxin.com/',
-    avatar: 'https://shichaoxin.com/favicon.ico',
+    avatar: 'https://shichaoxin.com/img/shanghaiwaitan.jpeg',
     description: '计算机视觉与机器学习技术分享'
   },
   {
@@ -93,13 +93,14 @@ export const FRIENDS: FriendLink[] = [
   {
     name: 'Simon Boehm',
     url: 'https://siboehm.com/',
-    avatar: 'https://siboehm.com/favicon.ico',
+    avatar: 'https://siboehm.com/assets/img/favicon.ico',
     description: 'ML systems and compilers'
   },
   {
     name: 'WYQ',
     url: 'https://wyqz.top/',
-    avatar: 'https://wyqz.top/favicon.ico',
+    avatar: 'https://wyqz.top/medias/logo.png',
     description: '个人技术博客'
   }
 ];
+

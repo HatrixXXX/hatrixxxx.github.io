@@ -94,11 +94,17 @@ function bindSiteStats(root: HTMLElement): void {
   const visitors = root.querySelector<HTMLElement>(
     '[data-visitor-count], [data-stat="visitors"]'
   );
-  const time = root.querySelector<HTMLTimeElement>('[data-clock-text]');
-  const canvas = root.querySelector<HTMLCanvasElement>('[data-dot-clock]');
-  if (!runningDays || !visitors || !time || !canvas) return;
+  if (!runningDays || !visitors) return;
   runningDays.setAttribute('data-running-days', '');
   visitors.setAttribute('data-visitor-count', '');
+
+  const time = root.querySelector<HTMLTimeElement>('[data-clock-text]');
+  const canvas = root.querySelector<HTMLCanvasElement>('[data-dot-clock]');
+  if (!time || !canvas) {
+    root.dataset.siteStatsBound = 'true';
+    synchronizeVisitorCount();
+    return;
+  }
 
   const context = canvas.getContext('2d');
   if (!context) return;
@@ -270,3 +276,4 @@ export function initializeSiteStats(): void {
 
 document.addEventListener('astro:page-load', initializeSiteStats);
 initializeSiteStats();
+
