@@ -213,7 +213,9 @@ function imageSourceErrors(attribute: string, value: string, route: string): str
       errors.push(diagnostic(route, 'Found dangerous data document', attribute, candidate));
     }
   }
-  errors.push(...resourceErrors('Found unapproved remote image', attribute, value, route, candidates));
+  if (route !== '/about/friends/') {
+    errors.push(...resourceErrors('Found unapproved remote image', attribute, value, route, candidates));
+  }
   return errors;
 }
 

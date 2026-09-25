@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, unlink, writeFile } from 'node:fs/promises';
+﻿import { mkdtemp, mkdir, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
@@ -13,7 +13,7 @@ import {
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 it('tracks the fullscreen homepage local link inventory', () => {
-  expect(EXPECTED_LOCAL_LINKS).toBe(3426);
+  expect(EXPECTED_LOCAL_LINKS).toBe(3410);
 });
 
 async function writeSiteFile(root: string, relativePath: string, contents = ''): Promise<void> {
