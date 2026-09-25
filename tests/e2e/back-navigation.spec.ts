@@ -3,11 +3,12 @@ import { ABOUT_SECTION_LINKS, BLOG_SUBNAV_LINKS } from '../../src/config/navigat
 
 for (const { route, href, label } of [
   ...[
-    '/blog/', '/about/', '/projects/', '/guestbook/', '/plans/', '/lab/', '/archives/', '/404.html',
+    '/about/', '/projects/', '/guestbook/', '/plans/', '/lab/', '/archives/', '/404.html',
     ...ABOUT_SECTION_LINKS.map(({ href }) => href),
     ...Array.from({ length: 6 }, (_, index) => `/page/${index + 2}/`)
   ].map((route) => ({ route, href: '/', label: '返回主页' })),
-  ...BLOG_SUBNAV_LINKS.map(({ href: route }) => ({ route, href: '/blog/', label: '返回博客文章分类' })),
+  { route: '/blog/all/', href: '/', label: '返回主页' },
+  ...BLOG_SUBNAV_LINKS.filter(({ slug }) => slug !== 'all').map(({ href: route }) => ({ route, href: '/blog/all/', label: '返回博客文章' })),
   { route: '/posts/本科数学大杂烩/', href: '/blog/tech-notes/', label: '返回技术笔记' }
 ]) {
   test(`${route} exposes a consistent back destination`, async ({ page }) => {
@@ -28,7 +29,7 @@ test('back button stays at the same top-left position on desktop and mobile', as
     { width: 390, height: 844 }
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto('/blog/');
+    await page.goto('/blog/all/');
     const box = await page.locator('[data-back-button]').boundingBox();
     if (!box) throw new Error('Missing back button bounds');
     positions.push({ x: Math.round(box.x), y: Math.round(box.y) });

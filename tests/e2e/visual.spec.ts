@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const routes = [
   '/',
-  '/blog/',
+  '/blog/all/',
   '/posts/本科数学大杂烩/',
   '/archives/',
   '/projects/',

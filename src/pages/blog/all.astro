@@ -11,9 +11,9 @@ const posts = sortPosts(await getCollection('posts'));
 const archives = buildArchives(posts);
 ---
 
-<BaseLayout title="全部文章">
-  <BackButton href="/blog/" label="返回博客文章分类" />
-  <HeroBanner title="全部文章" image="/images/default-cover.svg" compact />
+<BaseLayout title="博客文章">
+  <BackButton href="/" label="返回主页" />
+  <HeroBanner title="博客文章" image="/images/default-cover.svg" compact />
   <main class="blog-main">
     <div class="blog-view" data-blog-view-root>
       <div class="blog-toolbar container">

@@ -53,12 +53,11 @@ test('blog navigation and the home entry target the blog index', async ({ page }
   const blogNavigation = page
     .getByRole('navigation', { name: '主导航' })
     .getByRole('link', { name: '博客文章', exact: true });
-  await expect(blogNavigation).toHaveAttribute('href', '/blog/');
+  await expect(blogNavigation).toHaveAttribute('href', '/blog/all/');
   await blogNavigation.click();
-  await page.waitForURL('**/blog/');
-  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
+  await page.waitForURL('**/blog/all/');
+  await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
 });
-
 test('all legacy slugs resolve, including the spaced slug clicked from pagination', async ({
   page,
   request

@@ -11,13 +11,6 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   expect(hrefs.length).toBe(10);
   expect(hrefs.every((href) => href?.startsWith('/') && href !== '#')).toBe(true);
   await page.locator('a[data-home-blog]').click();
-  await expect(page).toHaveURL('/blog/');
-  const allPosts = page.locator('[data-blog-category-nav]').getByRole('link', { name: '全部文章', exact: true });
-  await expect(allPosts).toBeInViewport({ ratio: 1 });
-  await expect.poll(() => allPosts.evaluate((link) =>
-    link.parentElement!.getAnimations().every((animation) => animation.playState === 'finished')
-  )).toBe(true);
-  await allPosts.click();
   await page.waitForURL('**/blog/all/');
   await expect(page.locator('[data-blog-total]')).toHaveText('41');
   const rail = page.locator('[data-post-rail]');

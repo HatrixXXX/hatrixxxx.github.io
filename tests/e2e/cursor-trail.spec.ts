@@ -464,10 +464,10 @@ test('returning to an article route restores the cursor trail', async ({ page })
   await expect.poll(() => articleCanvas.evaluate(alphaPixels)).toBeGreaterThan(0);
 
   await Promise.all([
-    page.waitForURL(/\/blog\/$/),
+    page.waitForURL(/\/blog\/all\/$/),
     page.getByRole('link', { name: '博客文章', exact: true }).click()
   ]);
-  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
   await expect(page.locator('[data-cursor-trail]')).toHaveCount(0);
 
   await page.goto('/posts/本科数学大杂烩/');

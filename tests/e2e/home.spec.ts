@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { BLOG_SUBNAV_LINKS } from '../../src/config/navigation';
 
 const firstQuote = '轻松即单纯，速成即精准';
 const secondQuote = '兽人永不为奴，除非包吃包住';
@@ -148,20 +147,13 @@ test('home keeps panel proportions and positions across effective viewport sizes
 test('home blog panel navigates directly to the blog hub by keyboard', async ({ page }) => {
   await page.goto('/');
   const blog = page.locator('a[data-home-blog]');
-  await expect(blog).toHaveAttribute('href', '/blog/');
+  await expect(blog).toHaveAttribute('href', '/blog/all/');
   await expect(page.locator('[data-home-panel="blog"] details, [data-home-panel="blog"] nav')).toHaveCount(0);
   await blog.focus();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/blog/');
-  for (const item of BLOG_SUBNAV_LINKS) {
-    const link = page.locator('[data-blog-category-nav]').getByRole('link', { name: item.label, exact: true });
-    await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute('href', item.href);
-  }
-  await page.locator('[data-blog-category-nav]').getByRole('link', { name: '技术笔记', exact: true }).click();
-  await expect(page).toHaveURL('/blog/tech-notes/');
+  await expect(page).toHaveURL('/blog/all/');
+  await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
 });
-
 test('home search opens the shared search interface and restores focus', async ({ page }) => {
   await page.goto('/');
   const search = page.locator('[data-open-search]');

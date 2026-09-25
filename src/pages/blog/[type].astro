@@ -24,7 +24,7 @@ const { title, posts } = Astro.props;
 ---
 
 <BaseLayout title={title}>
-  <BackButton href="/blog/" label="返回博客文章分类" />
+  <BackButton href="/blog/all/" label="返回博客文章" />
   <HeroBanner title={title} image="/images/default-cover.svg" compact />
   <main class="blog-main">
     {posts.length === 0 ? (

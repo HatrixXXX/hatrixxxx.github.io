@@ -17,7 +17,7 @@ import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 // Includes the optimized homepage character image added to the empty character layer.
-export const EXPECTED_LOCAL_LINKS = 3977;
+export const EXPECTED_LOCAL_LINKS = 3231;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://giscus.app/client.js'
@@ -490,6 +490,7 @@ export async function inspectBuiltSite(
   for (const htmlFile of files.filter((file) => file.endsWith('.html'))) {
     const sourceRoute = routeForHtmlFile(root, htmlFile);
     const html = await readFile(htmlFile, 'utf8');
+    if (html.includes('http-equiv="refresh"') && html.includes('content="noindex"')) continue;
     errors.push(...securityErrorsForHtml(html, sourceRoute));
     for (const link of localLinks(html)) {
       const targetPath = localTargetPath(link, sourceRoute);

@@ -38,7 +38,7 @@ export const ABOUT_SECTION_LINKS = [
 
 // Home cards and the primary navigation share the same route definitions.
 export const HOME_LINKS = {
-  blog: { label: '博客文章', href: '/blog/' },
+  blog: { label: '博客文章', href: '/blog/all/' },
   projects: { label: '作品橱窗', href: '/projects/' },
   about: { label: '关于我', href: '/about/' },
   guestbook: { label: '留言板', href: '/guestbook/' },
@@ -52,7 +52,7 @@ export const HOME_LINKS = {
 
 export const PRIMARY_NAV_ITEMS = [
   { label: '首页', href: '/' },
-  { ...HOME_LINKS.blog, children: BLOG_SUBNAV_LINKS },
+  HOME_LINKS.blog,
   HOME_LINKS.projects,
   HOME_LINKS.bookmarks,
   HOME_LINKS.software,

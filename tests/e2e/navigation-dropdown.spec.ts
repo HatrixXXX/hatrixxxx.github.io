@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
 const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'];
-const EXPECTED_BLOG_LINKS = ['全部文章', '技术笔记', '踩坑记录', '生活动态', '好物推荐', '随笔杂谈'];
 const DESKTOP_WIDTHS = [1200, 1440, 1920, 2560];
 
 const contrastRatio = (foreground: string, background: string) => {
@@ -63,60 +62,7 @@ test('desktop navigation stays at the viewport center with and without the admin
   }
 });
 
-test('desktop Blog submenu stays horizontal and centered in the viewport', async ({ page }) => {
-  for (const width of DESKTOP_WIDTHS) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto('/projects/');
-    const blogItem = page.locator('[data-nav-item="博客文章"]');
-    const submenu = blogItem.locator(':scope > .submenu');
-    await expect(page.locator('.desktop-nav .submenu')).toHaveCount(1);
-    await expect(submenu).toBeHidden();
-    await blogItem.hover();
-    await expect(submenu).toBeVisible();
-    await expect(submenu.locator('a')).toHaveText(EXPECTED_BLOG_LINKS);
-    const layout = await submenu.evaluate((menu) => {
-      const menuBox = menu.getBoundingClientRect();
-      const boxes = [...menu.children].map((item) => item.getBoundingClientRect());
-      return {
-        left: menuBox.left,
-        right: menuBox.right,
-        center: menuBox.left + menuBox.width / 2,
-        itemLefts: boxes.map((box) => box.left),
-        itemRights: boxes.map((box) => box.right),
-        itemCenters: boxes.map((box) => box.top + box.height / 2)
-      };
-    });
-    expect(Math.abs(layout.center - width / 2)).toBeLessThan(1);
-    expect(layout.left).toBeGreaterThanOrEqual(0);
-    expect(layout.right).toBeLessThanOrEqual(width);
-    expect(Math.min(...layout.itemLefts)).toBeGreaterThanOrEqual(0);
-    expect(Math.max(...layout.itemRights)).toBeLessThanOrEqual(width);
-    expect(Math.max(...layout.itemCenters) - Math.min(...layout.itemCenters)).toBeLessThan(1);
-    expect(layout.itemLefts.every((left, index) => index === 0 || left > layout.itemLefts[index - 1])).toBe(true);
-    await submenu.getByRole('link', { name: '技术笔记', exact: true }).hover();
-    await expect(submenu).toBeVisible();
-    await page.locator('[data-nav-item="作品橱窗"]').hover();
-    await expect(submenu).toBeHidden();
-  }
-});
 
-test('desktop Blog submenu supports keyboard entry and leaves when focus moves away', async ({ page }) => {
-  await page.goto('/projects/');
-  const blogItem = page.locator('[data-nav-item="博客文章"]');
-  const submenu = blogItem.locator(':scope > .submenu');
-  await blogItem.locator(':scope > a').focus();
-  await expect(submenu).toBeVisible();
-  await page.keyboard.press('Tab');
-  await expect(submenu.getByRole('link', { name: '全部文章', exact: true })).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(submenu.getByRole('link', { name: '技术笔记', exact: true })).toBeFocused();
-  await page.locator('[data-nav-item="作品橱窗"] > a').focus();
-  await expect(submenu).toBeHidden();
-  await blogItem.locator(':scope > a').focus();
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/blog/all/');
-});
 
 test('narrow viewports center controls and retain all ten destinations in the mobile menu', async ({ page }) => {
   for (const width of [390, 768, 1024, 1199]) {
@@ -132,7 +78,6 @@ test('narrow viewports center controls and retain all ten destinations in the mo
     const mobileMenu = page.locator('[data-mobile-menu]');
     await expect(mobileMenu).toBeVisible();
     await expect(mobileMenu.locator(':scope > ul > li > a')).toHaveText(EXPECTED_PRIMARY_LINKS);
-    await expect(mobileMenu.locator('.submenu a')).toHaveText(EXPECTED_BLOG_LINKS);
     await expect(mobileMenu.getByRole('link', { name: '关于我', exact: true })).toHaveCount(0);
     await expect(mobileMenu.getByRole('link', { name: '装备', exact: true })).toHaveAttribute('href', '/about/gear/');
     const homeLink = mobileMenu.getByRole('link', { name: '首页', exact: true });
@@ -191,17 +136,11 @@ test('light-theme mobile navigation links meet WCAG AA contrast', async ({ page 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(mobileMenu).toBeVisible();
   const background = await mobileMenu.evaluate((element) => getComputedStyle(element).backgroundColor);
-  const linkColors = await Promise.all([
-    mobileMenu.locator(':scope > ul > li > a').evaluateAll((links) =>
-      links.map((link) => getComputedStyle(link).color)
-    ),
-    mobileMenu.locator('.submenu a').evaluateAll((links) =>
-      links.map((link) => getComputedStyle(link).color)
-    )
-  ]);
-  expect(linkColors[0]).toHaveLength(10);
-  expect(linkColors[1]).toHaveLength(6);
-  for (const color of linkColors.flat()) {
+  const linkColors = await mobileMenu.locator(':scope > ul > li > a').evaluateAll((links) =>
+    links.map((link) => getComputedStyle(link).color)
+  );
+  expect(linkColors).toHaveLength(10);
+  for (const color of linkColors) {
     expect.soft(contrastRatio(color, background), `${color} on ${background}`).toBeGreaterThanOrEqual(4.5);
   }
 });
