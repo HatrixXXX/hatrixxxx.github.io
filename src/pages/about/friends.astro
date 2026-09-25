@@ -54,7 +54,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
   </main>
 
 <script>
-  document.querySelectorAll('img[data-avatar]').forEach((img) => {
+  document.querySelectorAll<HTMLImageElement>('img[data-avatar]').forEach((img) => {
     const src = img.dataset.avatar;
     if (!src) return;
     const probe = new Image();
