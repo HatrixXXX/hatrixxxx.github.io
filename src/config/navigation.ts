@@ -54,6 +54,7 @@ export const PRIMARY_NAV_ITEMS = [
   { label: '首页', href: '/' },
   HOME_LINKS.blog,
   HOME_LINKS.projects,
+  HOME_LINKS.about,
   HOME_LINKS.bookmarks,
   HOME_LINKS.software,
   HOME_LINKS.gear,

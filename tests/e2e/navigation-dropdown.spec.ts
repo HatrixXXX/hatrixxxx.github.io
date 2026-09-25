@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'];
+const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '关于我', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'];
 const DESKTOP_WIDTHS = [1200, 1440, 1920, 2560];
 
 const contrastRatio = (foreground: string, background: string) => {
@@ -78,7 +78,6 @@ test('narrow viewports center controls and retain all ten destinations in the mo
     const mobileMenu = page.locator('[data-mobile-menu]');
     await expect(mobileMenu).toBeVisible();
     await expect(mobileMenu.locator(':scope > ul > li > a')).toHaveText(EXPECTED_PRIMARY_LINKS);
-    await expect(mobileMenu.getByRole('link', { name: '关于我', exact: true })).toHaveCount(0);
     await expect(mobileMenu.getByRole('link', { name: '装备', exact: true })).toHaveAttribute('href', '/about/gear/');
     const homeLink = mobileMenu.getByRole('link', { name: '首页', exact: true });
     expect(await homeLink.evaluate((link) => {
@@ -139,7 +138,7 @@ test('light-theme mobile navigation links meet WCAG AA contrast', async ({ page 
   const linkColors = await mobileMenu.locator(':scope > ul > li > a').evaluateAll((links) =>
     links.map((link) => getComputedStyle(link).color)
   );
-  expect(linkColors).toHaveLength(10);
+  expect(linkColors).toHaveLength(11);
   for (const color of linkColors) {
     expect.soft(contrastRatio(color, background), `${color} on ${background}`).toBeGreaterThanOrEqual(4.5);
   }

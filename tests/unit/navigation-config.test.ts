@@ -12,10 +12,10 @@ import {
 describe('navigation configuration', () => {
   it('defines the requested primary and secondary navigation labels', () => {
     expect(PRIMARY_NAV_ITEMS.map((item) => item.label)).toEqual([
-      '首页', '博客文章', '作品橱窗', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'
+      '首页', '博客文章', '作品橱窗', '关于我', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'
     ]);
     expect(PRIMARY_NAV_ITEMS.map((item) => item.href)).toEqual([
-      '/', '/blog/all/', '/projects/', '/about/bookmarks/', '/about/tools/', '/about/gear/',
+      '/', '/blog/all/', '/projects/', '/about/', '/about/bookmarks/', '/about/tools/', '/about/gear/',
       '/plans/', '/lab/', '/about/friends/', '/guestbook/'
     ]);
     expect(PRIMARY_NAV_ITEMS.filter((item) => 'children' in item).map((item) => item.label))
