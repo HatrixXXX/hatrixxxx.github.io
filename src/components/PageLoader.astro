@@ -1,51 +1,13 @@
 ---
 ---
+<div id="page-loader" aria-hidden="true" transition:persist="page-loader"></div>
 
-<div id="page-loader" hidden aria-hidden="true">
-  <!-- 圆弧进度条 + 百分比数字叠在中央 -->
-  <div class="pl-ring-wrap">
-    <svg class="pl-svg" viewBox="0 0 200 200" aria-hidden="true">
-      <circle class="pl-track" cx="100" cy="100" r="80" />
-      <circle class="pl-arc pl-arc--halo" cx="100" cy="100" r="80"
-              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" />
-      <circle class="pl-arc pl-arc--tube" cx="100" cy="100" r="80"
-              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" />
-      <circle class="pl-arc pl-arc--body" cx="100" cy="100" r="80"
-              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" />
-    </svg>
-    <!-- 圆心百分比：绝对定位叠在 SVG 上 -->
-    <div class="pl-pct" aria-hidden="true">
-      <span id="pl-pct-num">0%</span>
-    </div>
-  </div>
-  <!-- LOADING 文字 -->
-  <div class="pl-label" aria-label="加载中">
-    <span class="pl-text pl-text--halo" aria-hidden="true">LOADING</span>
-    <span class="pl-text pl-text--tube"  aria-hidden="true">LOADING</span>
-    <span class="pl-text pl-text--core"  aria-hidden="true">LOADING</span>
-  </div>
-</div>
+<style is:global>
+  /* 隐藏态：display:none，不占位不拦截事件 */
+  #page-loader { display: none; }
 
-<!--
-  内联脚本：HTML 解析阶段立即决定是否显示遮罩，不等 JS bundle。
-  首次访问此 URL（sessionStorage 无记录）则移除 hidden 显示遮罩。
--->
-<script is:inline>
-  (function () {
-    var KEY  = 'hatrix-visited-pages';
-    var path = location.pathname;
-    var visited;
-    try { visited = JSON.parse(sessionStorage.getItem(KEY) || '[]'); } catch (_) { visited = []; }
-    if (visited.indexOf(path) === -1) {
-      var el = document.getElementById('page-loader');
-      if (el) el.removeAttribute('hidden');
-    }
-  })();
-</script>
-
-<style>
-  /* ── 遮罩 ─────────────────────────────────── */
-  #page-loader {
+  /* 显示态 */
+  #page-loader.pl-visible {
     position: fixed;
     inset: 0;
     z-index: 9999;
@@ -58,103 +20,100 @@
     opacity: 1;
     transition: opacity 0.5s cubic-bezier(.4, 0, .2, 1);
   }
-  :root[data-theme='light'] #page-loader { background: #f0ece4; }
+  :root[data-theme='light'] #page-loader.pl-visible { background: #f0ece4; }
 
-  #page-loader.is-done {
+  /* 淡出态 */
+  #page-loader.pl-visible.pl-done {
     opacity: 0;
     pointer-events: none;
   }
 
-  /* ── 圆弧包裹（relative，让 pl-pct 叠在中央） ── */
-  .pl-ring-wrap {
+  /* 圆弧容器 */
+  #page-loader .pl-ring-wrap {
     position: relative;
-    width:  min(220px, 52vw);
+    width: min(220px, 52vw);
     height: min(220px, 52vw);
+    flex-shrink: 0;
   }
 
-  /* ── SVG ────────────────────────────────────── */
-  .pl-svg {
+  #page-loader .pl-svg {
     width: 100%;
     height: 100%;
     display: block;
     overflow: visible;
-    transform: rotate(-90deg);   /* 从 12 点开始 */
+    transform: rotate(-90deg);
   }
 
-  .pl-track {
+  #page-loader .pl-track {
     fill: none;
     stroke: #f3bb6218;
     stroke-width: 8;
   }
-  :root[data-theme='light'] .pl-track { stroke: #75522618; }
+  :root[data-theme='light'] #page-loader .pl-track { stroke: #75522618; }
 
-  .pl-arc {
+  #page-loader .pl-arc {
     fill: none;
     stroke-linecap: round;
-    /* stroke-dashoffset 由 JS 写入，无 CSS transition 避免抖动 */
   }
-
-  .pl-arc--halo {
+  #page-loader .pl-arc--halo {
     stroke: #f3bb6266;
     stroke-width: 20;
     filter: blur(8px);
     opacity: 0.7;
   }
-  :root[data-theme='light'] .pl-arc--halo { stroke: #75522666; }
+  :root[data-theme='light'] #page-loader .pl-arc--halo { stroke: #75522666; }
 
-  .pl-arc--tube {
+  #page-loader .pl-arc--tube {
     stroke: #f3bb62;
     stroke-width: 10;
     filter: blur(2px) drop-shadow(0 0 6px #f3bb62bb) drop-shadow(0 0 14px #f3bb6244);
     opacity: 0.88;
   }
-  :root[data-theme='light'] .pl-arc--tube {
+  :root[data-theme='light'] #page-loader .pl-arc--tube {
     stroke: #755226;
     filter: blur(2px) drop-shadow(0 0 6px #755226bb) drop-shadow(0 0 14px #75522644);
   }
 
-  .pl-arc--body {
+  #page-loader .pl-arc--body {
     stroke: #f3bb62;
     stroke-width: 7;
     filter: drop-shadow(0 0 3px #f3bb62cc) drop-shadow(0 0 8px #f3bb6244);
   }
-  :root[data-theme='light'] .pl-arc--body {
+  :root[data-theme='light'] #page-loader .pl-arc--body {
     stroke: #755226;
     filter: drop-shadow(0 0 3px #755226cc) drop-shadow(0 0 8px #75522644);
   }
 
-  /* ── 百分比（绝对居中叠在 SVG 圆心） ─────────── */
-  .pl-pct {
+  /* 百分比，绝对居中 */
+  #page-loader .pl-pct {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1px;
     font-family: 'IBM Plex Mono', monospace;
     font-variant-numeric: tabular-nums;
     color: #f5f0e8;
     filter: drop-shadow(0 0 6px #f3bb6266);
     pointer-events: none;
   }
-  :root[data-theme='light'] .pl-pct { color: #322d38; filter: drop-shadow(0 0 6px #75522666); }
+  :root[data-theme='light'] #page-loader .pl-pct { color: #322d38; filter: drop-shadow(0 0 6px #75522666); }
 
-  #pl-pct-num {
+  #page-loader .pl-pct-num {
     font-size: clamp(22px, 5vw, 30px);
     font-weight: 400;
     line-height: 1;
     letter-spacing: -0.02em;
   }
 
-
-  /* ── LOADING 文字 ────────────────────────────── */
-  .pl-label {
+  /* LOADING 文字 */
+  #page-loader .pl-label {
     position: relative;
     display: grid;
     place-items: center;
   }
 
-  .pl-text {
+  #page-loader .pl-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: clamp(18px, 3.8vw, 26px);
     font-weight: 400;
@@ -162,38 +121,44 @@
     grid-area: 1 / 1;
     animation: pl-pulse 2.4s ease-in-out infinite;
   }
-
-  .pl-text--halo {
+  #page-loader .pl-text--halo {
     color: transparent;
     -webkit-text-stroke: 5px #f3bb6255;
-    filter: blur(7px) drop-shadow(0 0 18px #f3bb6444);
+    filter: blur(7px) drop-shadow(0 0 18px #f3bb6244);
     opacity: 0.85;
     animation-delay: 0s;
   }
-  .pl-text--tube {
+  #page-loader .pl-text--tube {
     color: #f3bb62;
     -webkit-text-stroke: 1px #f3bb6299;
     filter: blur(0.3px) drop-shadow(0 0 8px #f3bb6294);
     animation-delay: -0.35s;
   }
-  .pl-text--core {
+  #page-loader .pl-text--core {
     color: #f5f0e8;
     filter: drop-shadow(0 0 3px #f5f0e86a);
     animation-delay: -0.6s;
   }
 
-  :root[data-theme='light'] .pl-text--halo { color: transparent; -webkit-text-stroke-color: #75522655; filter: blur(7px) drop-shadow(0 0 18px #75522444); }
-  :root[data-theme='light'] .pl-text--tube { color: #755226; -webkit-text-stroke-color: #75522699; filter: blur(0.3px) drop-shadow(0 0 8px #75522694); }
-  :root[data-theme='light'] .pl-text--core { color: #322d38; }
+  :root[data-theme='light'] #page-loader .pl-text--halo {
+    color: transparent;
+    -webkit-text-stroke-color: #75522655;
+    filter: blur(7px) drop-shadow(0 0 18px #75522444);
+  }
+  :root[data-theme='light'] #page-loader .pl-text--tube {
+    color: #755226;
+    -webkit-text-stroke-color: #75522699;
+    filter: blur(0.3px) drop-shadow(0 0 8px #75522694);
+  }
+  :root[data-theme='light'] #page-loader .pl-text--core { color: #322d38; }
 
   @keyframes pl-pulse {
     0%, 100% { opacity: 0.88; }
     50%       { opacity: 1; }
   }
 
-  /* ── 减少动态效果 ────────────────────────────── */
   @media (prefers-reduced-motion: reduce) {
-    .pl-text { animation: none; }
-    #page-loader { transition-duration: 0.1s; }
+    #page-loader .pl-text { animation: none; }
+    #page-loader.pl-visible { transition-duration: 0.1s; }
   }
 </style>

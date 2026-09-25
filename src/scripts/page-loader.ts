@@ -1,27 +1,18 @@
 /**
- * 全站页面加载遮罩控制器。
+ * 全站页面加载遮罩。
  *
- * 架构原则：每个页面都包含 PageLoader.astro，其 inline script 在 HTML 解析阶段
- * 决定是否显示遮罩（首次访问该 URL 则显示）。
- * 本脚本只负责：在 astro:page-load 时启动进度、完成进度、移除遮罩。
- * 不在 astro:before-preparation 注入任何元素，避免 View Transitions DOM swap
- * 把注入的元素替换掉导致状态失联。
+ * DOM 结构：PageLoader.astro 只输出一个空 <div id="page-loader">，
+ * 默认 display:none。需要显示时本脚本填入内容并加 pl-visible class。
+ * transition:persist 让 Astro 在 VT swap 时保留此元素。
  *
- * 流程：
- *   astro:page-load
- *     ├─ 找到 #page-loader
- *     ├─ hidden=true  → 已访问过，直接 remove()
- *     └─ hidden=false → 首次访问，markVisited，启动进度
- *          ├─ 首页：runFakeProgress(85%) + waitHomeImage → complete
- *          └─ 其余：runFakeProgress(100%, 600ms) → complete
- *
- * 访问记录：sessionStorage['hatrix-visited-pages']，关标签重置。
+ * 时序：
+ *   VT 导航到未访问页：before-preparation → showLoader → page-load → complete
+ *   VT 导航到已访问页：before-preparation 跳过，page-load 跳过
+ *   硬导航首次访问：  page-load → showLoader → complete（非首页快速完成）
+ *   硬导航首页：      page-load → showLoader → waitHomeImage → complete
  */
 
 const VISITED_KEY = 'hatrix-visited-pages';
-const LOADER_ID   = 'page-loader';
-
-// ── 访问记录 ─────────────────────────────────────────────────────────────────
 
 function getVisited(): string[] {
   try { return JSON.parse(sessionStorage.getItem(VISITED_KEY) ?? '[]') as string[]; }
@@ -31,13 +22,41 @@ function markVisited(path: string): void {
   try {
     const v = getVisited();
     if (!v.includes(path)) { v.push(path); sessionStorage.setItem(VISITED_KEY, JSON.stringify(v)); }
-  } catch { /* ignore */ }
+  } catch { /* noop */ }
+}
+function hasVisited(path: string): boolean { return getVisited().includes(path); }
+
+// ── DOM ──────────────────────────────────────────────────────────────────────
+
+const INNER_HTML = `
+  <div class="pl-ring-wrap">
+    <svg class="pl-svg" viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="pl-track" cx="100" cy="100" r="80"/>
+      <circle class="pl-arc pl-arc--halo" cx="100" cy="100" r="80"
+              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+      <circle class="pl-arc pl-arc--tube" cx="100" cy="100" r="80"
+              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+      <circle class="pl-arc pl-arc--body" cx="100" cy="100" r="80"
+              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+    </svg>
+    <div class="pl-pct" aria-hidden="true">
+      <span class="pl-pct-num">0%</span>
+    </div>
+  </div>
+  <div class="pl-label" aria-label="加载中">
+    <span class="pl-text pl-text--halo" aria-hidden="true">LOADING</span>
+    <span class="pl-text pl-text--tube"  aria-hidden="true">LOADING</span>
+    <span class="pl-text pl-text--core"  aria-hidden="true">LOADING</span>
+  </div>`;
+
+function getEl(): HTMLElement | null {
+  return document.getElementById('page-loader');
 }
 
-// ── 进度动画 ─────────────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────────────────
 
 interface State {
-  loader:   HTMLElement;
+  el:       HTMLElement;
   arcs:     SVGCircleElement[];
   numEl:    HTMLElement | null;
   progress: number;
@@ -45,88 +64,116 @@ interface State {
   finished: boolean;
 }
 
-function makeState(loader: HTMLElement): State {
+function buildState(el: HTMLElement): State {
   return {
-    loader,
-    arcs:     Array.from(loader.querySelectorAll<SVGCircleElement>('.pl-arc')),
-    numEl:    loader.querySelector<HTMLElement>('#pl-pct-num'),
+    el,
+    arcs:     Array.from(el.querySelectorAll<SVGCircleElement>('.pl-arc')),
+    numEl:    el.querySelector<HTMLElement>('.pl-pct-num'),
     progress: 0, raf: 0, finished: false,
   };
 }
 
-function applyProgress(state: State, pct: number): void {
+function applyPct(s: State, pct: number): void {
   const p = Math.max(0, Math.min(100, pct));
-  state.progress = p;
-  state.arcs.forEach(a => a.setAttribute('stroke-dashoffset', String(100 - p)));
-  if (state.numEl) state.numEl.textContent = `${Math.round(p)}%`;
+  s.progress = p;
+  s.arcs.forEach(a => a.setAttribute('stroke-dashoffset', String(100 - p)));
+  if (s.numEl) s.numEl.textContent = `${Math.round(p)}%`;
 }
 
-/** ease-out cubic 假进度推到 targetPct */
-function runFakeProgress(state: State, targetPct: number, durationMs = 2400): void {
-  const from = state.progress;
+function fakeProgress(s: State, target: number, ms = 2400): void {
+  const from = s.progress;
   const t0   = performance.now();
-  const tick = (now: number) => {
-    if (state.finished) return;
-    const t = Math.min((now - t0) / durationMs, 1);
-    applyProgress(state, from + (targetPct - from) * (1 - (1 - t) ** 3));
-    if (t < 1) state.raf = requestAnimationFrame(tick);
+  const tick = (now: number): void => {
+    if (s.finished) return;
+    const t = Math.min((now - t0) / ms, 1);
+    applyPct(s, from + (target - from) * (1 - (1 - t) ** 3));
+    if (t < 1) s.raf = requestAnimationFrame(tick);
   };
-  state.raf = requestAnimationFrame(tick);
+  s.raf = requestAnimationFrame(tick);
 }
 
-/** 跳到 100%，停顿 160ms，淡出，移除 */
-function complete(state: State): void {
-  if (state.finished) return;
-  state.finished = true;
-  cancelAnimationFrame(state.raf);
-  applyProgress(state, 100);
+// ── Show / Complete ───────────────────────────────────────────────────────────
+
+function showLoader(): State | null {
+  const el = getEl();
+  if (!el) return null;
+  el.innerHTML = INNER_HTML;
+  el.classList.add('pl-visible');
+  const s = buildState(el);
+  applyPct(s, 0);
+  return s;
+}
+
+function complete(s: State): void {
+  if (s.finished) return;
+  s.finished = true;
+  cancelAnimationFrame(s.raf);
+  applyPct(s, 100);
   window.setTimeout(() => {
-    state.loader.classList.add('is-done');
-    const remove = () => state.loader.remove();
-    state.loader.addEventListener('transitionend', remove, { once: true });
-    window.setTimeout(remove, 700);
+    s.el.classList.add('pl-done');
+    const cleanup = () => {
+      s.el.classList.remove('pl-visible', 'pl-done');
+      s.el.innerHTML = '';
+    };
+    s.el.addEventListener('transitionend', cleanup, { once: true });
+    window.setTimeout(cleanup, 700);
   }, 160);
 }
 
-// ── 首页：等立绘 ─────────────────────────────────────────────────────────────
+// ── 首页：等立绘 ──────────────────────────────────────────────────────────────
 
-function waitHomeImage(state: State): void {
+function waitHomeImage(s: State): void {
   const img = document.querySelector<HTMLImageElement>('[data-home-character] img');
-  const guard = window.setTimeout(() => complete(state), 8_000);
-  const done  = () => { window.clearTimeout(guard); complete(state); };
-
+  const guard = window.setTimeout(() => complete(s), 8_000);
+  const done  = (): void => { window.clearTimeout(guard); complete(s); };
   if (!img)                                 { window.setTimeout(done, 400); return; }
   if (img.complete && img.naturalWidth > 0) { window.setTimeout(done, 100); return; }
   img.addEventListener('load',  done, { once: true });
   img.addEventListener('error', done, { once: true });
 }
 
-// ── 主入口：每次页面激活 ──────────────────────────────────────────────────────
+// ── 跨事件状态 ────────────────────────────────────────────────────────────────
+
+let pending: State | null = null;   // before-preparation 创建，page-load 完成
+
+// ── before-preparation ────────────────────────────────────────────────────────
+
+document.addEventListener('astro:before-preparation', (raw) => {
+  const targetPath = (raw as unknown as { to?: URL }).to?.pathname ?? '';
+  if (!targetPath || hasVisited(targetPath)) return;
+  const s = showLoader();
+  if (!s) return;
+  fakeProgress(s, 80);
+  pending = s;
+});
+
+// ── page-load ─────────────────────────────────────────────────────────────────
 
 document.addEventListener('astro:page-load', () => {
   const path   = location.pathname;
-  const loader = document.getElementById(LOADER_ID);
+  const isHome = document.documentElement.dataset.pageKind === 'home';
 
-  if (!loader) return;
-
-  if (loader.hidden) {
-    // 已访问过（inline script 留了 hidden），直接移除
-    loader.remove();
+  // VT 导航完成
+  if (pending) {
+    const s = pending;
+    pending = null;
+    markVisited(path);
+    if (isHome) { waitHomeImage(s); } else { complete(s); }
     return;
   }
 
-  // 首次访问：标记并启动进度
-  markVisited(path);
-  const state = makeState(loader);
-  applyProgress(state, 0);
+  // 硬导航
+  if (hasVisited(path)) return;   // 已访问，不显示
 
-  const isHome = document.documentElement.dataset.pageKind === 'home';
+  const s = showLoader();
+  if (!s) return;
+  markVisited(path);
+
   if (isHome) {
-    runFakeProgress(state, 85);
-    waitHomeImage(state);
+    fakeProgress(s, 85);
+    waitHomeImage(s);
   } else {
-    // 非首页：page-load 触发时内容已就绪，快速跑满
-    runFakeProgress(state, 100, 550);
-    window.setTimeout(() => complete(state), 600);
+    fakeProgress(s, 100, 500);
+    window.setTimeout(() => complete(s), 550);
   }
 });
