@@ -115,8 +115,8 @@ test('search loads its index once, limits results and closes with Escape', async
   await page.keyboard.press('Escape');
   await expect(searchbox).toBeHidden();
 
-  await page.getByRole('link', { name: '博客文章', exact: true }).click();
-  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
+  await page.getByRole('link', { name: '作品橱窗', exact: true }).click();
+  await expect(page).toHaveURL('/projects/');
   await page.keyboard.press('Control+K');
   await expect(page.getByRole('searchbox', { name: '搜索文章' })).toBeFocused();
   expect(indexRequests).toBe(1);
@@ -178,7 +178,7 @@ test('post pages locate and temporarily highlight the searched paragraph', async
 
 test('stored theme is applied and one click toggles it after client navigation', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
-  await page.goto('/');
+  await page.goto('/projects/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
   await page.getByRole('link', { name: '博客文章', exact: true }).click();
@@ -190,7 +190,7 @@ test('stored theme is applied and one click toggles it after client navigation',
 
 test('theme transition runs once and persists the destination theme', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
-  await page.goto('/');
+  await page.goto('/projects/');
 
   const overlay = page.locator('[data-theme-transition]');
   const toggle = page.getByRole('button', { name: '切换主题' });
@@ -314,7 +314,7 @@ test('theme transition runs once and persists the destination theme', async ({ p
 test('theme transition matches the reference lifecycle timing', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.clock.install();
-  await page.goto('/');
+  await page.goto('/projects/');
   await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1_000);
 
   const overlay = page.locator('[data-theme-transition]');
@@ -367,7 +367,7 @@ test('theme transition matches the reference lifecycle timing', async ({ page })
 
 test('pending destination survives immediate client navigation', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
-  await page.goto('/');
+  await page.goto('/projects/');
 
   await page.getByRole('button', { name: '切换主题' }).click();
   expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
@@ -382,7 +382,7 @@ test('pending destination survives immediate client navigation', async ({ page }
 test('reduced motion switches theme without showing the transition overlay', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
-  await page.goto('/');
+  await page.goto('/projects/');
 
   const overlay = page.locator('[data-theme-transition]');
   await expect(overlay).toHaveCount(1);
@@ -395,7 +395,7 @@ test('reduced motion switches theme without showing the transition overlay', asy
 
 test('mobile menu toggles once and closes on Escape and navigation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/projects/');
   const menuButton = page.getByRole('button', { name: '切换导航栏' });
 
   await menuButton.click();
@@ -459,6 +459,9 @@ test('music player persists across about navigation without recreating its audio
 
   await page.goto('/about/');
   const player = page.locator('[data-music-player]');
+  await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
+  await player.locator('[data-player-toggle]').click();
+  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
   await expect(player.locator('[data-player-title]')).toHaveText('其实');
   await expect(player.locator('[data-player-artist]')).toHaveText('薛之谦');
   await expect(player.getByRole('button', { name: '上一曲' })).toBeEnabled();
@@ -467,8 +470,7 @@ test('music player persists across about navigation without recreating its audio
   await expect(player.getByRole('slider', { name: '播放进度' })).toHaveValue('0');
 
   await player.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
-  await page.locator('[data-nav-item="关于我"]').hover();
-  await page.getByRole('link', { name: '我的装备' }).click();
+  await page.locator('.desktop-nav').getByRole('link', { name: '装备', exact: true }).click();
   await expect(page).toHaveURL(/\/about\/gear\/$/);
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-persist-probe', 'same-node');
   const audioSources = await page.evaluate(

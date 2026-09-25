@@ -1,0 +1,21 @@
+---
+import BackButton from '@/components/BackButton.astro';
+import EmptyState from '@/components/EmptyState.astro';
+import HeroBanner from '@/components/HeroBanner.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="实验场">
+  <BackButton href="/" label="返回主页" />
+  <HeroBanner title="实验场" image="/images/default-cover.svg" compact />
+  <main class="lab-main container">
+    <EmptyState title="暂时没有公开的实验" />
+  </main>
+</BaseLayout>
+
+<style>
+  .lab-main {
+    max-width: 920px;
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+  }
+</style>

@@ -1,0 +1,18 @@
+---
+interface Props { name: 'search' | 'blog' | 'projects' | 'about' | 'bookmark' | 'software' | 'gear' | 'plans' | 'lab' | 'friends' | 'guestbook' }
+const { name } = Astro.props;
+const paths = {
+  search: 'M27 27 41 41 M31 19a12 12 0 1 1-24 0 12 12 0 0 1 24 0',
+  blog: 'M9 6h23l8 8v28H9Z M31 6v10h9 M16 24h17 M16 31h17',
+  projects: 'M24 5 43 16v22L24 48 5 38V16Z M5 16l19 11 19-11 M24 27v21 M15 10l19 11',
+  about: 'M33 14a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M7 44v-5a17 17 0 0 1 34 0v5',
+  bookmark: 'M12 5h24v39L24 34 12 44Z',
+  software: 'M7 7h34v28H7Z M16 44h16 M24 35v9 M17 16l-5 5 5 5 M31 16l5 5-5 5',
+  gear: 'M6 15 24 5l18 10v21L24 46 6 36Z M16 20h16v13H16Z M24 5v7 M42 15l-7 4 M42 36l-7-4 M24 46v-7 M6 36l7-4 M6 15l7 4',
+  plans: 'M12 7h29v37H12 M5 16l4 4 8-9 M5 32l4 4 8-9 M24 17h10 M24 33h10',
+  lab: 'M17 5h14 M20 5v15L7 39a4 4 0 0 0 3 6h28a4 4 0 0 0 3-6L28 20V5 M14 30h20 M19 36h1 M28 39h1',
+  friends: 'M19 30 30 19 M16 25l-5 5a8 8 0 0 0 11 11l8-8a8 8 0 0 0 0-11 M32 24l5-5A8 8 0 0 0 26 8l-8 8a8 8 0 0 0 0 11',
+  guestbook: 'M6 7h36v27H23L12 44V34H6Z M14 17h20 M14 24h13'
+};
+---
+<svg viewBox="0 0 48 50" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><path d={paths[name]} /></svg>

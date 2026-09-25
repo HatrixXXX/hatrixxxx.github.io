@@ -1,16 +1,16 @@
 import { expect, test } from '@playwright/test';
 
-test('all pages share the brandless right-aligned header', async ({ page }) => {
-  for (const path of ['/', '/blog/', '/projects/', '/about/', '/posts/本科数学大杂烩/']) {
+test('inner pages share the brandless centered navigation', async ({ page }) => {
+  for (const path of ['/blog/', '/projects/', '/about/', '/posts/本科数学大杂烩/']) {
     await page.goto(path);
     await expect(page.locator('header[data-site-header] .brand')).toHaveCount(0);
     const controls = page.locator('[data-header-controls]');
     await expect(controls).toBeVisible();
-    const box = await controls.boundingBox();
+    const box = await controls.locator('.desktop-nav').boundingBox();
     const viewport = page.viewportSize();
     expect(box).not.toBeNull();
     expect(viewport).not.toBeNull();
-    expect((viewport?.width ?? 0) - ((box?.x ?? 0) + (box?.width ?? 0))).toBeLessThanOrEqual(37);
+    expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - (viewport?.width ?? 0) / 2)).toBeLessThan(1);
     await expect(controls.locator('[data-open-search], [data-theme-toggle]')).toHaveCount(2);
   }
 });

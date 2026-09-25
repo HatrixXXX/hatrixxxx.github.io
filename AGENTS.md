@@ -31,7 +31,7 @@ corepack pnpm test:e2e
 - `.env.local`：本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；文件已忽略，禁止提交、分享或复制到任何内容仓库。
 - `src/content/projects/`：允许为空的作品集合。
 - `src/data/playlist.ts`：允许为空的音乐列表。
-- `src/config/navigation.ts`：主导航、文章类型链接和关于子页链接的唯一来源。
+- `src/config/navigation.ts`：主导航、文章类型、关于子页和首页快捷链接的唯一来源。
 - `src/config/site.ts`：域名、作者、社交链接、Giscus 和站点验证信息。
 - `src/pages/`、`src/layouts/`、`src/components/`：路由和页面结构。
 - `scripts/`：图片预检与构建产物检查，不放一次性迁移脚本。
@@ -45,14 +45,18 @@ corepack pnpm test:e2e
 - 已发布文章只在 `.private-content/posts/` 中编辑、提交和 push。禁止把文章、加锁正文图片或其他私密资源复制回公开仓库。文章正文属于用户内容，除非任务明确要求，不改写正文；schema 调整也要保持旧 URL。
 - 所有通过校验的文章都生成页面。`locked` 省略时为 `false`；`locked: true` 只公开 metadata、Hero 和封面，正文与正文图片必须输出密文。
 - 加锁正文图片必须使用 `.private-content/posts/` 内文件的 Markdown 相对路径。禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`；加锁文章的 `cover` 仍是公开资源。
-- 主导航固定为首页、博客文章、作品橱窗、关于我和留言板；博客文章与关于我在桌面端使用横向二级菜单。文章 `type` 只能是 `技术笔记|踩坑记录|生活动态|好物推荐|随笔杂谈`，用于文章类型页，不得作为旧分类或标签 taxonomy 恢复。
+- 非首页主导航在顶部按视口居中，顺序固定为首页、博客文章、作品橱窗、书签、软件、装备、计划、实验场、友链、留言板。桌面端仅博客文章保留横向二级菜单；宽度小于 `1200px` 时使用同顺序的折叠菜单。关于我保留首页卡片入口。首页博客卡片直接进入 `/blog/`，该页提供“全部文章”和五种文章类型入口，不在首页弹出分类。文章 `type` 只能是 `技术笔记|踩坑记录|生活动态|好物推荐|随笔杂谈`，用于文章类型页，不得作为旧分类或标签 taxonomy 恢复。
+- 页面返回按钮使用固定目标：`/blog/` 下六个列表页返回 `/blog/`，文章详情返回所属类型页；其余页面统一返回 `/`，包括关于子页、归档、旧分页和 404。
 - `series` 与 `seriesOrder` 必须成对出现。
-- 作品状态只能是 `idea|active|done|archived`。作品与歌单为空是合法状态，不填演示数据。音乐播放器是关于页、关于子页和文章页共享侧栏的第三张卡片，不使用固定定位；空歌单不会创建 `Audio` 对象。
+- 作品状态只能是 `idea|active|done|archived`。作品、歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
+- 音乐播放器在首页左下透视卡片中常驻，所有非首页页面默认固定折叠到左侧，只露半张唱片；点击展开，点击卡片空白或收起按钮折叠，播放控件不得误触收起。全站只挂载一个播放器，以 `transition:persist` 保留 DOM 和 Audio；跨客户端导航后按当前路径更新首页/侧边模式，不依赖保留下来的旧 props。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。
-- Playwright 有 185 项检查和 18 张 Windows 视觉基线，命名不含平台后缀。Pages workflow 不运行视觉套件。
-- 首页是固定视口、无滚动的全屏封面，不渲染页脚、Sakana 或 CursorTrail。所有非首页普通 Hero 与文章题图在同一视口下等高：桌面和平板为 `240px`，宽度不超过 `768px` 时为 `200px`；全站不渲染波浪分隔。
-- 当前页脚只显示版权与“保留所有权利”纯文本，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
-- 作者资料、站点统计和音乐播放器组成的共享侧栏只出现在关于页、关于子页和文章页。Vercount 只在生产环境加载固定脚本 `https://events.vercount.one/js`；开发和测试不得请求该服务，加载失败时访客数保持 `—`。
+- Playwright 当前收集 211 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀；其中首页 3 张已覆盖本次改版，其余基线未更新。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
+- 首页使用 `1920×1080` 固定画布，以四角坐标经 `projectPanel` 生成 `matrix3d` 卡片投影，按有效 CSS 视口等比完整居中显示；不同分辨率和浏览器缩放下保持相对位置，竖屏留上下空白。角色区域暂空，不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
+- 首页金句语料在 `src/data/home-quotes.ts`，每 15 秒切换，支持双击、Enter/空格和暂停；减少动态效果时默认暂停自动切换。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。收藏推荐仅作标题，快捷链接复用既有关于子页；计划和实验场分别为 `/plans/`、`/lab/`。
+- 所有非首页普通 Hero 与文章题图在同一视口下等高：桌面和平板为 `240px`，宽度不超过 `768px` 时为 `200px`；全站不渲染波浪分隔。
+- 当前仅文章页启用页脚及站点统计，普通布局默认不显示页脚；页脚版权区显示版权与“保留所有权利”，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
+- `SidebarStack` 承载作者资料，统计按页面配置显示；当前关于页及子页只显示作者资料，文章侧栏显示目录和最近文章。播放器独立于侧栏。Vercount 只在生产环境加载固定脚本 `https://events.vercount.one/js`；开发和测试不得请求该服务，加载失败时访客数保持 `—`。
 - Sakana 的许可和素材来源告知固定在 `public/third-party-notices.txt`，构建后必须复制到 `dist/third-party-notices.txt`。内置千束与泷奈插画只用于非商业网页；站点用途或依赖版本变化时必须重新核对授权。
 - 若视觉差异只出现在含远程图片的文章，先核对 `reports/image-check.json`。临时失败恢复后应重跑 `check:images`、清理 `.astro` 并执行 `astro sync`，不要直接更新视觉基线。
 - `check:images` 负责远程图片，`check:protected` 负责 `dist/` 明文与原资源泄漏。保护审计或密文测试失败时先找泄漏根因，不得放宽检查、替换期望密文或直接更新密文基线。
@@ -62,7 +66,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 4468 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 3976 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 ## 禁止事项
@@ -103,5 +107,6 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-03-protected-content.md`：加锁内容的任务拆分和验证记录。
 - `docs/superpowers/specs/2026-09-04-contextual-sidebar-design.md`：关于页与文章页共享侧栏、站点统计和点阵时钟设计。
 - `docs/superpowers/plans/2026-09-04-contextual-sidebar.md`：共享侧栏的任务拆分、第三方统计边界和验证步骤。
-- `docs/superpowers/specs/2026-09-04-homepage-cover-reveal-design.md`：首页全屏封面、打字文案、固定视口、博客预取、拖动手势和揭开切换设计。
-- `docs/superpowers/plans/2026-09-04-homepage-cover-reveal.md`：首页全屏封面和博客揭开切换的测试与实施步骤。
+- `docs/superpowers/specs/2026-09-04-homepage-cover-reveal-design.md`：旧首页全屏封面、打字文案和拖动揭开设计，仅作历史记录。
+- `docs/superpowers/plans/2026-09-04-homepage-cover-reveal.md`：旧首页封面与揭开切换的测试和实施记录。
+- `docs/superpowers/specs/2026-09-25-home-dashboard-design.md`：现行首页透视画布、入口、金句、时钟及全站播放器模式。

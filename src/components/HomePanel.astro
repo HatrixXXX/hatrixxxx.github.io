@@ -1,0 +1,18 @@
+---
+import { projectPanel, type Point } from '@/lib/home-projection';
+interface Props {
+  name: string;
+  width: number;
+  height: number;
+  corners: readonly Point[];
+}
+const { name, width, height, corners } = Astro.props;
+const transform = `matrix3d(${projectPanel(width, height, corners).join(',')})`;
+---
+<div class="home-panel" data-home-panel={name} style={`width:${width}px;height:${height}px;transform:${transform}`}>
+  <slot />
+</div>
+<style>
+  .home-panel { position: absolute; inset: 0 auto auto 0; transform-origin: 0 0; }
+  .home-panel:focus-within { z-index: 5; }
+</style>

@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import HeroBanner from '@/components/HeroBanner.astro';
+import BackButton from '@/components/BackButton.astro';
 import PostArchiveList from '@/components/PostArchiveList.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { buildArchives, sortPosts } from '@/lib/content';
@@ -10,6 +11,7 @@ const archives = buildArchives(posts);
 ---
 
 <BaseLayout title="归档">
+  <BackButton href="/" label="返回主页" />
   <HeroBanner title="归档" subtitle={`共 ${posts.length} 篇文章`} image="/images/default-cover.svg" compact />
   <main class="index-main container">
     <section class="archive-list" aria-label="文章归档">

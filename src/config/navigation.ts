@@ -36,10 +36,29 @@ export const ABOUT_SECTION_LINKS = [
   { label: '我的友链', slug: 'friends', href: '/about/friends/' }
 ] as const;
 
+// Home cards and the primary navigation share the same route definitions.
+export const HOME_LINKS = {
+  blog: { label: '博客文章', href: '/blog/' },
+  projects: { label: '作品橱窗', href: '/projects/' },
+  about: { label: '关于我', href: '/about/' },
+  guestbook: { label: '留言板', href: '/guestbook/' },
+  friends: { label: '友链', href: ABOUT_SECTION_LINKS[8].href },
+  bookmarks: { label: '书签', href: ABOUT_SECTION_LINKS[7].href },
+  software: { label: '软件', href: ABOUT_SECTION_LINKS[6].href },
+  gear: { label: '装备', href: ABOUT_SECTION_LINKS[5].href },
+  plans: { label: '计划', href: '/plans/' },
+  lab: { label: '实验场', href: '/lab/' }
+} as const;
+
 export const PRIMARY_NAV_ITEMS = [
   { label: '首页', href: '/' },
-  { label: '博客文章', href: '/blog/', children: BLOG_SUBNAV_LINKS },
-  { label: '作品橱窗', href: '/projects/' },
-  { label: '关于我', href: '/about/', children: ABOUT_SECTION_LINKS },
-  { label: '留言板', href: '/guestbook/' }
+  { ...HOME_LINKS.blog, children: BLOG_SUBNAV_LINKS },
+  HOME_LINKS.projects,
+  HOME_LINKS.bookmarks,
+  HOME_LINKS.software,
+  HOME_LINKS.gear,
+  HOME_LINKS.plans,
+  HOME_LINKS.lab,
+  HOME_LINKS.friends,
+  HOME_LINKS.guestbook
 ] as const;

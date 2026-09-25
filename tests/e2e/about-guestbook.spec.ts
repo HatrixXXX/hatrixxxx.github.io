@@ -41,19 +41,20 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
   await expect(comments).toHaveAttribute('data-giscus-mapping', 'pathname');
 });
 
-test('about and article routes render the ordered contextual sidebar stack', async ({ page }) => {
+test('about and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {
   for (const path of ['/about/', '/about/hobbies/', '/posts/本科数学大杂烩/']) {
     await page.goto(path);
     const stack = path.startsWith('/posts/') ? page.locator('.post-sidebar') : page.locator('[data-sidebar-stack]');
     await expect(stack).toHaveCount(1);
+    await expect(stack.locator('[data-music-player]')).toHaveCount(0);
+    await expect(page.locator('[data-music-player]')).toHaveCount(1);
+    await expect(page.locator('[data-music-player]')).toHaveAttribute('data-display-mode', 'dock');
     if (path.startsWith('/posts/')) {
       await expect(stack.locator('[data-table-of-contents]')).toHaveCount(1);
-      await expect(stack.locator('[data-latest-posts]')).toBeVisible();
       continue;
     }
     await expect(stack.locator(':scope > [data-profile-card]')).toHaveCount(1);
-    await expect(stack.locator(':scope > [data-site-stats]')).toHaveCount(1);
-    await expect(stack.locator(':scope > [data-music-player]')).toHaveCount(1);
+    await expect(stack.locator(':scope > [data-site-stats]')).toHaveCount(0);
     expect(
       await stack.locator(':scope > *').evaluateAll((children) =>
         children.map((child) =>
@@ -61,12 +62,10 @@ test('about and article routes render the ordered contextual sidebar stack', asy
             ? 'profile'
             : child.hasAttribute('data-site-stats')
               ? 'stats'
-              : child.hasAttribute('data-music-player')
-                ? 'player'
-                : 'unknown'
+              : 'unknown'
         )
       )
-    ).toEqual(['profile', 'stats', 'player']);
+    ).toEqual(['profile']);
   }
 });
 
@@ -136,10 +135,36 @@ test('contextual sidebar cards remain readable in the light theme', async ({ pag
     'color',
     'rgb(48, 52, 59)'
   );
-  await expect(page.locator('[data-music-player] strong')).toHaveCSS(
-    'color',
-    'rgb(48, 52, 59)'
-  );
+});
+
+test('the player dock reveals half a record and keeps playback controls independent from collapse', async ({ page }) => {
+  await page.goto('/about/');
+  const player = page.locator('[data-music-player]');
+  const toggle = player.locator('[data-player-toggle]');
+  await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
+  const record = await player.locator('.turntable').boundingBox();
+  expect(record).not.toBeNull();
+  expect(record!.x).toBeLessThan(0);
+  expect(record!.x + record!.width).toBeGreaterThan(45);
+  expect(record!.x + record!.width).toBeLessThan(70);
+  await toggle.click({ position: { x: 92, y: 58 } });
+  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+  await player.getByRole('button', { name: '播放', exact: true }).click();
+  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+  await player.getByRole('slider', { name: '音量调节' }).fill('0.4');
+  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+  await player.locator('[data-player-title]').click();
+  await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+  await player.locator('[data-player-collapse]').click();
+  await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
+  await toggle.press('Enter');
+  await player.locator('[data-player-play]').focus();
+  await page.keyboard.press('Escape');
+  await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
+  await expect(toggle).toBeFocused();
 });
 
 test('Sakana does not capture pointer input from mobile sidebar links', async ({ page }) => {

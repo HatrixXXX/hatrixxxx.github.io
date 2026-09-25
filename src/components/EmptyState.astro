@@ -24,7 +24,7 @@ const { title, description } = Astro.props;
 
   h2 {
     margin: 0;
-    color: #fff;
+    color: var(--color-heading, var(--color-text));
     font-size: clamp(1.35rem, 3vw, 1.8rem);
   }
 

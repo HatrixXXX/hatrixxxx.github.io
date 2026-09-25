@@ -4,16 +4,20 @@ test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
 
 test('articles and ordinary navigation remain usable without JavaScript', async ({ page }) => {
   await page.goto('/');
-  const headerLinks = page.locator('.desktop-nav > ul > li > a');
-  await expect(headerLinks).toHaveCount(5);
-  const hrefs = await headerLinks.evaluateAll((links) =>
+  const homeLinks = page.locator('[data-home-stage] a');
+  const hrefs = await homeLinks.evaluateAll((links) =>
     links.map((link) => link.getAttribute('href'))
   );
+  expect(hrefs.length).toBe(10);
   expect(hrefs.every((href) => href?.startsWith('/') && href !== '#')).toBe(true);
-
-  await page.getByRole('link', { name: '博客文章', exact: true }).click();
-  await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
-  await page.locator('[data-blog-category-nav]').getByRole('link', { name: '全部文章', exact: true }).click();
+  await page.locator('a[data-home-blog]').click();
+  await expect(page).toHaveURL('/blog/');
+  const allPosts = page.locator('[data-blog-category-nav]').getByRole('link', { name: '全部文章', exact: true });
+  await expect(allPosts).toBeInViewport({ ratio: 1 });
+  await expect.poll(() => allPosts.evaluate((link) =>
+    link.parentElement!.getAnimations().every((animation) => animation.playState === 'finished')
+  )).toBe(true);
+  await allPosts.click();
   await page.waitForURL('**/blog/all/');
   await expect(page.locator('[data-blog-total]')).toHaveText('41');
   const rail = page.locator('[data-post-rail]');

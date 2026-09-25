@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import HeroBanner from '@/components/HeroBanner.astro';
+import BackButton from '@/components/BackButton.astro';
 import Pagination from '@/components/Pagination.astro';
 import PostList from '@/components/PostList.astro';
 import { SITE } from '@/config/site';
@@ -29,6 +30,7 @@ const { page } = Astro.props;
 ---
 
 <BaseLayout title={`文章列表 · 第 ${page.current} 页`}>
+  <BackButton href="/" label="返回主页" />
   <HeroBanner
     title={`文章列表 · 第 ${page.current} 页`}
     subtitle={SITE.tagline}

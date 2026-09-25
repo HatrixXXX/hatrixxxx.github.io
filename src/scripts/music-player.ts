@@ -4,7 +4,6 @@ import type { Track } from '../types/content';
 type Preferences = {
   volume: number;
   index: number;
-  expanded: boolean;
 };
 
 const STORAGE_KEY = 'hatrix-player';
@@ -17,10 +16,9 @@ function readPreferences(): Preferences {
     return {
       volume: Math.max(0, Math.min(1, typeof value.volume === 'number' ? value.volume : 0.7)),
       index: Number.isInteger(value.index) ? Math.max(0, value.index as number) : 0,
-      expanded: value.expanded !== false,
     };
   } catch {
-    return { volume: 0.7, index: 0, expanded: true };
+    return { volume: 0.7, index: 0 };
   }
 }
 
@@ -43,6 +41,17 @@ function formatTime(seconds: number): string {
   return `${minutes}:${String(remainder).padStart(2, '0')}`;
 }
 
+function setExpanded(player: HTMLElement, expanded: boolean): void {
+  const isHome = player.dataset.displayMode === 'home';
+  const nextState = isHome || expanded;
+  player.dataset.uiState = nextState ? 'expanded' : 'collapsed';
+  const main = player.querySelector<HTMLElement>('[data-player-main]');
+  if (main) main.inert = !nextState;
+  const toggle = player.querySelector<HTMLButtonElement>('[data-player-toggle]');
+  toggle?.setAttribute('aria-expanded', String(nextState));
+  toggle?.setAttribute('aria-label', nextState ? '收起音乐播放器' : '展开音乐播放器');
+}
+
 export function initializeMusicPlayer(
   tracks: readonly Track[] = playlist,
   root: Document = document,
@@ -52,12 +61,16 @@ export function initializeMusicPlayer(
   const player = root.querySelector<HTMLElement>('[data-music-player]');
   if (!player) return audio;
 
-  const currentIsArticle =
-    root.defaultView?.location.pathname.startsWith('/posts/') ?? player.dataset.contentPage === 'true';
-  player.dataset.contentPage = currentIsArticle ? 'true' : 'false';
+  const pathname = root.defaultView?.location.pathname;
+  const mode = pathname ? (pathname === '/' ? 'home' : 'dock') : player.dataset.displayMode ?? 'dock';
+  const changedPage = player.dataset.playerPath !== pathname;
+  player.dataset.displayMode = mode;
+  if (changedPage || player.dataset.bound !== 'true' || mode === 'home') {
+    setExpanded(player, mode === 'home');
+  }
+  if (pathname) player.dataset.playerPath = pathname;
 
   if (player.dataset.bound === 'true') {
-    if (!currentIsArticle) player.dataset.uiState = 'expanded';
     return audio;
   }
 
@@ -69,6 +82,7 @@ export function initializeMusicPlayer(
   const currentTimeLabel = player.querySelector<HTMLElement>('[data-player-current-time]');
   const durationLabel = player.querySelector<HTMLElement>('[data-player-duration]');
   const toggle = player.querySelector<HTMLButtonElement>('[data-player-toggle]');
+  const collapse = player.querySelector<HTMLButtonElement>('[data-player-collapse]');
   const previous = player.querySelector<HTMLButtonElement>('[data-player-prev]');
   const playButton = player.querySelector<HTMLButtonElement>('[data-player-play]');
   const next = player.querySelector<HTMLButtonElement>('[data-player-next]');
@@ -76,7 +90,6 @@ export function initializeMusicPlayer(
   const artist = player.querySelector<HTMLElement>('[data-player-artist]');
   const state = {
     volume: preferences.volume,
-    expanded: preferences.expanded,
   };
 
   if (volume) volume.value = String(preferences.volume);
@@ -92,46 +105,32 @@ export function initializeMusicPlayer(
     savePreferences({
       volume: state.volume,
       index,
-      expanded: state.expanded,
     });
   };
 
-  if (currentIsArticle) {
-    player.dataset.uiState = state.expanded ? 'expanded' : 'collapsed';
-    if (toggle) {
-      toggle.setAttribute('aria-expanded', String(state.expanded));
-      toggle.setAttribute('aria-label', state.expanded ? '收起音乐播放器' : '展开音乐播放器');
+  toggle?.addEventListener('click', () => setExpanded(player, player.dataset.uiState !== 'expanded'));
+  collapse?.addEventListener('click', () => {
+    setExpanded(player, false);
+    toggle?.focus();
+  });
+  player.addEventListener('click', (event) => {
+    const target = event.target as Element | null;
+    if (target?.closest('button, input, label, a')) return;
+    if (player.dataset.displayMode === 'dock' && player.dataset.uiState === 'expanded') {
+      setExpanded(player, false);
     }
-
-    const setExpanded = (nextState: boolean) => {
-      player.dataset.uiState = nextState ? 'expanded' : 'collapsed';
-      toggle?.setAttribute('aria-expanded', String(nextState));
-      toggle?.setAttribute('aria-label', nextState ? '收起音乐播放器' : '展开音乐播放器');
-      state.expanded = nextState;
-      saveState();
-    };
-
-    toggle?.addEventListener('click', () => setExpanded(player.dataset.uiState !== 'expanded'));
-    toggle?.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        setExpanded(player.dataset.uiState !== 'expanded');
-      }
-    });
-    root.defaultView?.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && player.dataset.uiState === 'expanded') {
-        setExpanded(false);
-      }
-    });
-  } else {
-    player.dataset.uiState = 'expanded';
-  }
+  });
+  root.defaultView?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && player.dataset.displayMode === 'dock') {
+      const focusWasInside = player.contains(root.activeElement);
+      setExpanded(player, false);
+      if (focusWasInside) toggle?.focus();
+    }
+  });
 
   if (!tracks.length) return undefined;
 
   index = Math.min(index, tracks.length - 1);
-  audio ??= new Audio();
-  audio.volume = state.volume;
 
   const advanceTrack = (): void => {
     load(Math.floor(Math.random() * tracks.length));

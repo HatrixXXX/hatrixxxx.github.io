@@ -1,634 +1,210 @@
 import { expect, test } from '@playwright/test';
+import { BLOG_SUBNAV_LINKS } from '../../src/config/navigation';
 
-test('home and shared Header use the exact responsive typography', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  await page.evaluate(() => document.fonts.ready);
+const firstQuote = '轻松即单纯，速成即精准';
+const secondQuote = '兽人永不为奴，除非包吃包住';
 
-  const desktop = await page.evaluate(() => ({
-    title: getComputedStyle(document.querySelector<HTMLElement>('[data-home-title]')!).fontSize,
-    subtitle: getComputedStyle(document.querySelector<HTMLElement>('.home-subtitle')!).fontSize,
-    navigation: getComputedStyle(
-      document.querySelector<HTMLElement>('.desktop-nav > ul > li > a')!
-    ).fontSize,
-    headerFont: getComputedStyle(
-      document.querySelector<HTMLElement>('[data-site-header]')!
-    ).fontFamily
-  }));
-  expect(desktop).toEqual({
-    title: '42.75px',
-    subtitle: '25.8px',
-    navigation: '15.21px',
-    headerFont: expect.stringMatching(/^['"]?IBM Plex Mono['"]?/)
-  });
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  const mobile = await page.evaluate(() => ({
-    title: getComputedStyle(document.querySelector<HTMLElement>('[data-home-title]')!).fontSize,
-    subtitle: getComputedStyle(document.querySelector<HTMLElement>('.home-subtitle')!).fontSize
-  }));
-  expect(mobile).toEqual({ title: '27.75px', subtitle: '17.25px' });
-
-  await page.goto('/projects/');
-  await page.evaluate(() => document.fonts.ready);
-  const ordinaryHeaderFont = await page
-    .locator('[data-site-header]')
-    .evaluate((header) => getComputedStyle(header).fontFamily);
-  expect(ordinaryHeaderFont).toMatch(/^['"]?IBM Plex Mono['"]?/);
-});
-
-test('home renders only the fullscreen cover experience', async ({ page }) => {
+test('home presents the spatial panels and a permanent music player', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-home-stage]')).toBeVisible();
-  await expect(page.locator('[data-home-title]')).toHaveText('Hatrixの窝');
-  await expect(page.locator('.home-subtitle')).toHaveAttribute(
-    'aria-label',
-    '轻松即单纯，速成即精准'
-  );
-  await expect(page.locator('[data-home-typing]')).toHaveAttribute('aria-hidden', 'true');
-  await expect(page.locator('[data-home-typing-cursor]')).toHaveText('|');
-  await expect(page.locator('header[data-site-header] [data-home-blog-link]')).toHaveCount(2);
-  const blogArrow = page.locator(
-    '[data-home-stage] [data-home-blog-arrow][data-home-blog-link]'
-  );
-  await expect(blogArrow).toHaveCount(1);
-  await expect(blogArrow).toHaveAttribute('href', '/blog/');
-  await expect(page.locator('.brand, .home-blog-entry, footer[data-site-footer]')).toHaveCount(0);
-  await expect(page.locator('[data-sakana-layer], [data-cursor-trail]')).toHaveCount(0);
+  await expect(page.locator('[data-home-title]')).toHaveText('Hatrix');
+  await expect(page.locator('[data-open-search]')).toHaveCount(1);
+  await expect(page.locator('[data-music-player]')).toBeVisible();
+  await expect(page.locator('[data-home-panel="recommendations"]')).toContainText('收藏推荐');
+  await expect(page.locator('[data-home-panel="recommendations"] a')).toHaveCount(3);
+  await expect(page.locator('header[data-site-header], footer[data-site-footer]')).toHaveCount(0);
+  await expect(page.locator('[data-sakana-layer], [data-cursor-trail], [data-sidebar-stack]')).toHaveCount(0);
   await expect(page.locator('article[data-post-card], .pagination')).toHaveCount(0);
-  await expect(page.locator('a[href^="/categories/"], a[href^="/tags/"]')).toHaveCount(0);
-  const background = await page.locator('[data-home-stage]').evaluate(
-    (node) => getComputedStyle(node).backgroundImage
-  );
-  expect(background).toContain('/images/cover.png');
-  const fontFamily = await page.locator('[data-home-stage]').evaluate(
-    (node) => getComputedStyle(node).fontFamily
-  );
-  expect(fontFamily).toMatch(/^['"]?IBM Plex Mono['"]?/);
-  expect((await page.request.get('/images/cover.png')).status()).toBe(200);
 });
 
-test('home types the tagline with a bar cursor', async ({ page }) => {
+test('home keeps panel proportions and positions across effective viewport sizes', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
-  const typing = page.locator('[data-home-typing]');
-  await expect(typing).toHaveAttribute('data-home-typing-state', 'typing');
-  await expect.poll(() => typing.textContent()).toContain('轻');
-  await expect(typing).toHaveAttribute('data-home-typing-state', 'complete');
-});
-
-test('home arrow prefetches and reveals the blog', async ({ page }) => {
-  const blogRequests: string[] = [];
-  const clientRouterMarker = crypto.randomUUID();
-  page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/blog/') blogRequests.push(request.url());
-  });
-  await page.goto('/');
-  await page.evaluate((marker) => {
-    (window as typeof window & { __homeClientRouterMarker?: string }).__homeClientRouterMarker =
-      marker;
-  }, clientRouterMarker);
-  await expect.poll(() => blogRequests.length).toBeGreaterThan(0);
-  await page.locator('[data-home-blog-arrow]').click({ noWaitAfter: true });
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const animations = document.getAnimations();
-        return {
-          uncover: animations
-            .filter(
-              (animation) =>
-                animation instanceof CSSAnimation &&
-                animation.animationName === 'home-uncover-left'
-            )
-            .map((animation) => ({
-              animationName: (animation as CSSAnimation).animationName,
-              pseudoElement: (animation.effect as KeyframeEffect | null)?.pseudoElement ?? null
-            })),
-          newRoot: animations.filter(
-            (animation) =>
-              (animation.effect as KeyframeEffect | null)?.pseudoElement ===
-              '::view-transition-new(root)'
-          ).length
-        };
-      })
-    )
-    .toEqual({
-      uncover: [
-        {
-          animationName: 'home-uncover-left',
-          pseudoElement: '::view-transition-old(root)'
-        }
-      ],
-      newRoot: 0
-    });
-  await page.waitForURL('**/blog/');
-  await expect(page).toHaveURL('/blog/');
-  expect(
-    await page.evaluate(
-      () =>
-        (window as typeof window & { __homeClientRouterMarker?: string })
-          .__homeClientRouterMarker
-    )
-  ).toBe(clientRouterMarker);
-  await expect
-    .poll(() =>
-      page.evaluate(() => ({
-        reveal: document.documentElement.hasAttribute('data-home-reveal'),
-        distance: document.documentElement.style.getPropertyValue('--home-reveal-distance'),
-        duration: document.documentElement.style.getPropertyValue('--home-reveal-duration')
-      }))
-    )
-    .toEqual({ reveal: false, distance: '', duration: '' });
-
-  await page.goBack();
-  await page.waitForURL((url) => url.pathname === '/');
-  const typing = page.locator('[data-home-typing]');
-  await expect(typing).toHaveAttribute('data-home-typing-state', /^(typing|complete)$/);
-  await expect.poll(() => typing.textContent()).toContain('轻');
-  await expect(page.locator('[data-home-stage]')).toHaveAttribute('data-home-drag-state', 'idle');
-
-  const mutationTimes = await typing.evaluate(
-    (node) =>
-      new Promise<number[]>((resolve) => {
-        const startedAt = performance.now();
-        const times: number[] = [];
-        const observer = new MutationObserver(() => times.push(performance.now() - startedAt));
-        observer.observe(node, { childList: true });
-        window.setTimeout(() => {
-          observer.disconnect();
-          resolve(times);
-        }, 520);
-      })
-  );
-  expect(mutationTimes.length).toBeGreaterThanOrEqual(2);
-  expect(mutationTimes.every((time, index) => index === 0 || time - mutationTimes[index - 1] > 100))
-    .toBe(true);
-});
-
-test('home owns blog prefetch timing at idle and interactive entry points', async ({ browser }) => {
-  for (const trigger of ['idle', 'pointerenter', 'focus', 'drag'] as const) {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-    const page = await context.newPage();
-    await page.addInitScript(() => {
-      const state = window as typeof window & { __homeIdleCallbacks?: IdleRequestCallback[] };
-      state.__homeIdleCallbacks = [];
-      window.requestIdleCallback = (callback: IdleRequestCallback) => {
-        state.__homeIdleCallbacks?.push(callback);
-        return state.__homeIdleCallbacks?.length ?? 1;
-      };
-      window.cancelIdleCallback = () => undefined;
-    });
-    await page.goto('/');
-    await expect(page.locator('[data-home-blog-link][data-astro-prefetch]')).toHaveCount(0);
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () =>
-            (window as typeof window & { __homeIdleCallbacks?: IdleRequestCallback[] })
-              .__homeIdleCallbacks?.length ?? 0
-        )
-      )
-      .toBeGreaterThan(0);
-    await expect(page.locator('link[rel="prefetch"][href="/blog/"]')).toHaveCount(0);
-
-    if (trigger === 'idle') {
-      await page.evaluate(() => {
-        const state = window as typeof window & { __homeIdleCallbacks?: IdleRequestCallback[] };
-        for (const callback of state.__homeIdleCallbacks ?? []) {
-          callback({ didTimeout: false, timeRemaining: () => 50 });
-        }
-      });
-    } else if (trigger === 'pointerenter') {
-      await page.locator('[data-home-blog-arrow]').dispatchEvent('pointerenter');
-    } else if (trigger === 'focus') {
-      await page.locator('[data-home-blog-arrow]').focus();
-    } else {
-      const stage = page.locator('[data-home-stage]');
-      const box = await stage.boundingBox();
-      if (!box) throw new Error('Missing home stage bounds');
-      await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.65);
-      await page.mouse.down();
-    }
-
-    await expect(page.locator('link[rel="prefetch"][href="/blog/"]')).toHaveCount(1);
-    if (trigger === 'drag') await page.mouse.up();
-    await context.close();
-  }
-});
-
-test('home desktop Blog link uses the shared reveal navigation', async ({ page }) => {
-  const clientRouterMarker = crypto.randomUUID();
-  await page.goto('/');
-  await page.evaluate((marker) => {
-    (window as typeof window & { __homeHeaderMarker?: string }).__homeHeaderMarker = marker;
-  }, clientRouterMarker);
-
-  const blogLink = page
-    .getByRole('navigation', { name: '主导航' })
-    .getByRole('link', { name: '博客文章', exact: true });
-  await expect(blogLink).toBeVisible();
-  await blogLink.click({ noWaitAfter: true });
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        document
-          .getAnimations()
-          .some(
-            (animation) =>
-              animation instanceof CSSAnimation && animation.animationName === 'home-uncover-left'
-          )
-      )
-    )
-    .toBe(true);
-  await page.waitForURL('**/blog/');
-  await expect(page).toHaveURL('/blog/');
-  expect(
-    await page.evaluate(
-      () => (window as typeof window & { __homeHeaderMarker?: string }).__homeHeaderMarker
-    )
-  ).toBe(clientRouterMarker);
-});
-
-test('repeated ordinary clicks keep one marked reveal navigation', async ({ page }) => {
-  await page.route('**/blog/', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await route.continue();
-  });
-  const marker = crypto.randomUUID();
-  await page.goto('/');
-  await page.evaluate((value) => {
-    const state = window as typeof window & { __repeatClickMarker?: string };
-    state.__repeatClickMarker = value;
-    sessionStorage.setItem('__blogPreparations', '[]');
-    sessionStorage.removeItem('__homeUncoverSeen');
-    document.addEventListener('astro:before-preparation', (event) => {
-      if (event.to.pathname === '/blog/') {
-        const preparations = JSON.parse(
-          sessionStorage.getItem('__blogPreparations') ?? '[]'
-        ) as Array<{ kind: unknown }>;
-        preparations.push({ kind: event.info?.kind ?? null });
-        sessionStorage.setItem('__blogPreparations', JSON.stringify(preparations));
-      }
-    });
-    document.addEventListener('astro:after-swap', () => {
-      requestAnimationFrame(() => {
-        const seen = document
-          .getAnimations()
-          .some(
-            (animation) =>
-              animation instanceof CSSAnimation && animation.animationName === 'home-uncover-left'
-          );
-        sessionStorage.setItem('__homeUncoverSeen', String(seen));
-      });
-    });
-  }, marker);
-
-  await page.locator('[data-home-blog-arrow]').evaluate((link) => {
-    const click = () =>
-      link.dispatchEvent(
-        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, view: window })
-      );
-    click();
-    click();
-  });
-
-  await page.waitForURL('**/blog/');
-  expect(
-    await page.evaluate(
-      () => JSON.parse(sessionStorage.getItem('__blogPreparations') ?? '[]') as unknown[]
-    )
-  ).toEqual([{ kind: 'home-reveal' }]);
-  expect(
-    await page.evaluate(
-      () => (window as typeof window & { __repeatClickMarker?: string }).__repeatClickMarker
-    )
-  ).toBe(marker);
-  await expect
-    .poll(() => page.evaluate(() => sessionStorage.getItem('__homeUncoverSeen')))
-    .toBe('true');
-  await expect
-    .poll(() =>
-      page.evaluate(() => ({
-        reveal: document.documentElement.hasAttribute('data-home-reveal'),
-        distance: document.documentElement.style.getPropertyValue('--home-reveal-distance'),
-        duration: document.documentElement.style.getPropertyValue('--home-reveal-duration')
-      }))
-    )
-    .toEqual({ reveal: false, distance: '', duration: '' });
-});
-
-test('a competing route cannot inherit or revive the pending blog reveal', async ({ page }) => {
-  await page.route('**/blog/', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await route.continue();
-  });
-  await page.goto('/');
-  await page.evaluate(() => {
-    document.addEventListener(
-      'astro:before-swap',
-      (event) => {
-        if (event.to.pathname !== '/projects/') return;
-        const root = event.newDocument.documentElement;
-        (
-          window as typeof window & {
-            __competingSwap?: { reveal: string | null; distance: string; duration: string };
-          }
-        ).__competingSwap = {
-          reveal: root.getAttribute('data-home-reveal'),
-          distance: root.style.getPropertyValue('--home-reveal-distance'),
-          duration: root.style.getPropertyValue('--home-reveal-duration')
-        };
-      },
-      { once: true }
-    );
-  });
-
-  await page.evaluate(() => {
-    const click = (selector: string) => {
-      const link = document.querySelector<HTMLElement>(selector);
-      if (!link) throw new Error(`Missing ${selector}`);
-      link.dispatchEvent(
-        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, view: window })
-      );
-    };
-    click('[data-home-blog-arrow]');
-    click('.desktop-nav a[href="/projects/"]');
-  });
-
-  await page.waitForURL('**/projects/');
-  await expect(page).toHaveURL('/projects/');
-  expect(
-    await page.evaluate(
-      () =>
-        (
-          window as typeof window & {
-            __competingSwap?: { reveal: string | null; distance: string; duration: string };
-          }
-        ).__competingSwap
-    )
-  ).toEqual({ reveal: null, distance: '', duration: '' });
-  await expect
-    .poll(() =>
-      page.evaluate(() => ({
-        reveal: document.documentElement.hasAttribute('data-home-reveal'),
-        distance: document.documentElement.style.getPropertyValue('--home-reveal-distance'),
-        duration: document.documentElement.style.getPropertyValue('--home-reveal-duration'),
-        uncover: document
-          .getAnimations()
-          .some(
-            (animation) =>
-              animation instanceof CSSAnimation && animation.animationName === 'home-uncover-left'
-          )
-      }))
-    )
-    .toEqual({ reveal: false, distance: '', duration: '', uncover: false });
-});
-
-test('home drag snaps back below threshold and navigates above it', async ({ page }) => {
-  await page.goto('/');
-  const stage = page.locator('[data-home-stage]');
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Missing home stage bounds');
-  await page.mouse.move(box.width * 0.75, box.height * 0.55);
-  await page.mouse.down();
-  for (let step = 1; step <= 4; step += 1) {
-    const progress = step / 4;
-    await page.mouse.move(box.width * (0.75 - 0.07 * progress), box.height * 0.55);
-    await page.waitForTimeout(45);
-  }
-  await page.mouse.up();
-  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
-  await expect(page).toHaveURL('/');
-  await page.mouse.move(box.width * 0.75, box.height * 0.55);
-  await page.mouse.down();
-  await page.mouse.move(box.width * 0.5, box.height * 0.55, { steps: 8 });
-  await page.mouse.up();
-  await page.waitForURL('**/blog/');
-});
-
-test('home fast flick navigates below the distance threshold', async ({ page }) => {
-  await page.goto('/');
-  const stage = page.locator('[data-home-stage]');
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Missing home stage bounds');
-  const startX = box.x + box.width * 0.75;
-  const y = box.y + box.height * 0.65;
-  const distance = 80;
-  expect(distance).toBeGreaterThanOrEqual(48);
-  expect(distance).toBeLessThan(box.width * 0.16);
-
-  await page.mouse.move(startX, y);
-  await page.mouse.down();
-  await page.waitForTimeout(12);
-  await page.mouse.move(startX - distance, y);
-  await page.mouse.up();
-  await page.waitForURL('**/blog/');
-});
-
-test('home ignores a mismatched pointer release until the active pointer ends', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => {
-    document.addEventListener(
-      'pointerdown',
-      (event) => {
-        (window as typeof window & { __homePointerId?: number }).__homePointerId = event.pointerId;
-      },
-      { capture: true, once: true }
-    );
-  });
-  const stage = page.locator('[data-home-stage]');
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Missing home stage bounds');
-  const startX = box.x + box.width * 0.75;
-  const y = box.y + box.height * 0.65;
-  await page.mouse.move(startX, y);
-  await page.mouse.down();
-  await page.mouse.move(startX - 24, y);
-
-  await page.evaluate(() => {
-    document.documentElement.dispatchEvent(
-      new PointerEvent('pointerup', { bubbles: true, isPrimary: true, pointerId: 999 })
-    );
-  });
-
-  await expect(stage).toHaveAttribute('data-home-drag-state', 'dragging');
-  expect(
-    await page.evaluate(() => {
-      const root = document.documentElement;
-      const activePointer = (window as typeof window & { __homePointerId?: number }).__homePointerId;
-      return activePointer === undefined ? false : root.hasPointerCapture(activePointer);
+  await page.evaluate(() => document.fonts.ready);
+  const baseline = await page.locator('[data-home-panel]').evaluateAll((panels) =>
+    panels.map((panel) => {
+      const rect = panel.getBoundingClientRect();
+      return { name: panel.getAttribute('data-home-panel'), x: rect.x, y: rect.y, width: rect.width, height: rect.height };
     })
-  ).toBe(true);
-  await page.waitForTimeout(200);
-  await page.mouse.up();
-  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
-  await expect(page).toHaveURL('/');
-});
+  );
+  expect(baseline.length).toBeGreaterThanOrEqual(13);
 
-test('home rejects a stale flick velocity after a 900ms pause', async ({ page }) => {
-  await page.goto('/');
-  const stage = page.locator('[data-home-stage]');
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Missing home stage bounds');
-  const startX = box.x + box.width * 0.75;
-  const y = box.y + box.height * 0.65;
-  const distance = 80;
-  expect(distance).toBeGreaterThanOrEqual(48);
-  expect(distance).toBeLessThan(box.width * 0.16);
-
-  await page.mouse.move(startX, y);
-  await page.mouse.down();
-  await page.waitForTimeout(12);
-  await page.mouse.move(startX - distance, y);
-  await page.waitForTimeout(900);
-  await page.mouse.up();
-
-  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
-  await expect(page).toHaveURL('/');
-});
-
-test('a committed 20 percent drag always reveals for 620ms', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => {
-    document.addEventListener(
-      'astro:before-swap',
-      (event) => {
-        (window as typeof window & { __homeRevealDuration?: string }).__homeRevealDuration =
-          event.newDocument.documentElement.style.getPropertyValue('--home-reveal-duration');
-      },
-      { once: true }
+  // Browser zoom changes the effective CSS viewport; these include 125%, 150% and 200% equivalents.
+  for (const viewport of [
+    { width: 1536, height: 864 },
+    { width: 1280, height: 720 },
+    { width: 960, height: 540 },
+    { width: 1440, height: 900 },
+    { width: 3440, height: 1440 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+    { width: 360, height: 640 }
+  ]) {
+    await page.setViewportSize(viewport);
+    const scale = Math.min(viewport.width / 1920, viewport.height / 1080);
+    const offsetX = (viewport.width - 1920 * scale) / 2;
+    const offsetY = (viewport.height - 1080 * scale) / 2;
+    await expect.poll(async () => {
+      const rect = await page.locator('[data-home-canvas]').boundingBox();
+      return Math.abs((rect?.width ?? 0) - 1920 * scale);
+    }).toBeLessThan(1);
+    const panels = await page.locator('[data-home-panel]').evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return { name: node.getAttribute('data-home-panel'), x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      })
     );
-  });
-  const stage = page.locator('[data-home-stage]');
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Missing home stage bounds');
-  const startX = box.x + box.width * 0.75;
-  const y = box.y + box.height * 0.65;
-
-  await page.mouse.move(startX, y);
-  await page.mouse.down();
-  await page.mouse.move(startX - box.width * 0.2, y, { steps: 4 });
-  await page.mouse.up();
-
-  await page.waitForURL('**/blog/');
-  expect(
-    await page.evaluate(
-      () => (window as typeof window & { __homeRevealDuration?: string }).__homeRevealDuration
-    )
-  ).toBe('620ms');
-});
-
-test('home cancels a vertical-dominant drag without leaving residue', async ({ page }) => {
-  await page.goto('/');
-  const stage = page.locator('[data-home-stage]');
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Missing home stage bounds');
-  const startX = box.x + box.width * 0.75;
-  const startY = box.y + box.height * 0.65;
-
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-  await page.mouse.move(startX - 24, startY + 120, { steps: 4 });
-  await page.mouse.up();
-  await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
-  await expect(page).toHaveURL('/');
-  expect(
-    await page.evaluate(() =>
-      document.documentElement.style.getPropertyValue('--home-drag-x')
-    )
-  ).toBe('');
-});
-
-test('home releases active drags on pointer cancel and window blur', async ({ page }) => {
-  for (const cancellation of ['pointercancel', 'blur'] as const) {
-    await page.goto('/');
-    await page.evaluate(() => {
-      document.addEventListener(
-        'pointerdown',
-        (event) => {
-          (window as typeof window & { __homePointerId?: number }).__homePointerId =
-            event.pointerId;
-        },
-        { capture: true, once: true }
-      );
-    });
-    const stage = page.locator('[data-home-stage]');
-    const box = await stage.boundingBox();
-    if (!box) throw new Error('Missing home stage bounds');
-    const startX = box.x + box.width * 0.75;
-    const y = box.y + box.height * 0.65;
-    await page.mouse.move(startX, y);
-    await page.mouse.down();
-    await page.mouse.move(startX - 80, y, { steps: 3 });
-
-    if (cancellation === 'pointercancel') {
-      await page.evaluate(() => {
-        const pointerId = (window as typeof window & { __homePointerId?: number }).__homePointerId;
-        document.documentElement.dispatchEvent(
-          new PointerEvent('pointercancel', {
-            bubbles: true,
-            isPrimary: true,
-            pointerId
-          })
-        );
-      });
-    } else {
-      await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    expect(panels.map(({ name }) => name)).toEqual(baseline.map(({ name }) => name));
+    for (let index = 0; index < panels.length; index += 1) {
+      const panel = panels[index];
+      const original = baseline[index];
+      const label = `${panel.name} at ${viewport.width}x${viewport.height}`;
+      expect(Math.abs((panel.x - offsetX) / scale - original.x), `${label} x`).toBeLessThan(1);
+      expect(Math.abs((panel.y - offsetY) / scale - original.y), `${label} y`).toBeLessThan(1);
+      expect(Math.abs(panel.width / scale - original.width), `${label} width`).toBeLessThan(1);
+      expect(Math.abs(panel.height / scale - original.height), `${label} height`).toBeLessThan(1);
+      expect(panel.x, label).toBeGreaterThanOrEqual(-1);
+      expect(panel.y, label).toBeGreaterThanOrEqual(-1);
+      expect(panel.x + panel.width, label).toBeLessThanOrEqual(viewport.width + 1);
+      expect(panel.y + panel.height, label).toBeLessThanOrEqual(viewport.height + 1);
     }
-    await page.mouse.up();
-
-    await expect(stage).toHaveAttribute('data-home-drag-state', 'idle');
-    const residue = await page.evaluate(() => {
-      const root = document.documentElement;
-      const pointerId = (window as typeof window & { __homePointerId?: number }).__homePointerId;
-      return {
-        capture: pointerId === undefined ? null : root.hasPointerCapture(pointerId),
-        dragX: root.style.getPropertyValue('--home-drag-x')
-      };
-    });
-    expect(residue).toEqual({ capture: false, dragX: '' });
-    await expect(page).toHaveURL('/');
+    const metrics = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+      clientWidth: document.documentElement.clientWidth,
+      clientHeight: document.documentElement.clientHeight
+    }));
+    expect(metrics.width).toBe(metrics.clientWidth);
+    expect(metrics.height).toBeLessThanOrEqual(metrics.clientHeight);
+    await page.mouse.wheel(0, 800);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
   }
 });
 
-test('home controls do not start the drag gesture', async ({ page }) => {
+test('home blog panel navigates directly to the blog hub by keyboard', async ({ page }) => {
   await page.goto('/');
-  const theme = page.locator('[data-theme-toggle]');
-  const box = await theme.boundingBox();
-  if (!box) throw new Error('Missing theme control bounds');
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x - 180, box.y + box.height / 2, { steps: 6 });
-  await page.mouse.up();
-  await expect(page).toHaveURL('/');
-  await expect(page.locator('[data-home-stage]')).toHaveAttribute('data-home-drag-state', 'idle');
+  const blog = page.locator('a[data-home-blog]');
+  await expect(blog).toHaveAttribute('href', '/blog/');
+  await expect(page.locator('[data-home-panel="blog"] details, [data-home-panel="blog"] nav')).toHaveCount(0);
+  await blog.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL('/blog/');
+  for (const item of BLOG_SUBNAV_LINKS) {
+    const link = page.locator('[data-blog-category-nav]').getByRole('link', { name: item.label, exact: true });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', item.href);
+  }
+  await page.locator('[data-blog-category-nav]').getByRole('link', { name: '技术笔记', exact: true }).click();
+  await expect(page).toHaveURL('/blog/tech-notes/');
 });
 
-test('home respects reduced motion', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
+test('home search opens the shared search interface and restores focus', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('[data-home-typing]')).toHaveText('轻松即单纯，速成即精准');
-  const animations = await page.locator('[data-home-blog-arrow]').evaluate((node) => ({
-    arrow: getComputedStyle(node.querySelector('svg')!).animationName,
-    cursor: getComputedStyle(document.querySelector('[data-home-typing-cursor]')!).animationName
-  }));
-  expect(animations).toEqual({ arrow: 'none', cursor: 'none' });
+  const search = page.locator('[data-open-search]');
+  await search.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(search).toBeFocused();
+});
+
+test('home quote scrolls on double click and supports keyboard switching', async ({ page }) => {
+  await page.goto('/');
+  const quote = page.locator('[data-home-quote]');
+  const text = page.locator('[data-quote-text]');
+  await expect(text).toHaveText(firstQuote);
+  await quote.dblclick();
+  await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === 'running'))).toBe(true);
+  await expect(text).toHaveText(secondQuote);
+  await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
+  await quote.focus();
+  await page.keyboard.press('Enter');
+  await expect(text).toHaveText(firstQuote);
+});
+
+test('home quote advances automatically after fifteen seconds', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/');
+  const text = page.locator('[data-quote-text]');
+  await expect(text).toHaveText(firstQuote);
+  await page.clock.runFor(15_100);
+  await expect(text).toHaveText(secondQuote);
+});
+
+test('home reduced motion changes quotes without animated scrolling', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.install();
+  await page.goto('/');
+  const quote = page.locator('[data-home-quote]');
+  await page.clock.runFor(15_100);
+  await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
+  await quote.dblclick();
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+  expect(await quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
+});
+
+test('home clock exposes the complete local date and updates every second', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-05T13:44:15Z') });
+  await page.goto('/');
+  const clock = page.locator('time[data-home-clock]');
+  await expect(clock).toHaveAttribute('aria-label', /^2026\/09\/05 \d{2}:44:15$/);
+  await page.clock.runFor(1_000);
+  await expect(clock).toHaveAttribute('aria-label', /^2026\/09\/05 \d{2}:44:16$/);
+  await expect(clock).toHaveAttribute('datetime', /2026-09-05T/);
+});
+
+test('home links open their independent pages', async ({ page }) => {
+  const entries = [
+    ['作品橱窗', '/projects/'],
+    ['关于我', '/about/'],
+    ['书签', '/about/bookmarks/'],
+    ['软件', '/about/tools/'],
+    ['装备', '/about/gear/'],
+    ['友链', '/about/friends/'],
+    ['留言板', '/guestbook/'],
+    ['计划', '/plans/'],
+    ['实验场', '/lab/']
+  ];
+  for (const [label, path] of entries) {
+    await page.goto('/');
+    const link = page.locator('[data-home-stage]').getByRole('link', { name: label, exact: true });
+    await expect(link).toHaveAttribute('href', path);
+    await link.click();
+    await expect(page).toHaveURL(path);
+    await expect(page.locator('main')).toBeVisible();
+    await expect(page.locator('main')).not.toBeEmpty();
+  }
+});
+
+test('returning home reinitializes quotes and the clock once', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.install();
+  await page.goto('/');
+  for (let visit = 0; visit < 2; visit += 1) {
+    await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
+    await expect(page).toHaveURL('/plans/');
+    await page.locator('[data-back-button]').click();
+    await expect(page).toHaveURL('/');
+    await expect(page.locator('[data-home-canvas]')).toHaveCount(1);
+    await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
+    await page.locator('[data-home-quote]').dblclick();
+    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+    const previousTime = await page.locator('[data-home-clock]').getAttribute('aria-label');
+    await page.clock.runFor(1_100);
+    await expect(page.locator('[data-home-clock]')).not.toHaveAttribute('aria-label', previousTime!);
+  }
 });
 
 test('pagination and legacy post paths stay available', async ({ page }) => {
-  const missingFirstPage = await page.request.get('/page/1/');
-  expect(missingFirstPage.status()).toBe(404);
+  expect((await page.request.get('/page/1/')).status()).toBe(404);
   expect((await page.request.get('/page/2/')).status()).toBe(200);
-
   await page.goto('/page/7/');
   await expect(page.locator('article[data-post-card]')).toHaveCount(4);
-
   await page.goto('/page/3/');
   const spacedSlugLink = page.locator('a[href="/posts/FPGA开发(1)Vivado+Vitis 使用/"]').first();
   await expect(spacedSlugLink).toBeVisible();
-  const resolvedPath = await spacedSlugLink.evaluate(
-    (link) => new URL((link as HTMLAnchorElement).href).pathname
-  );
+  const resolvedPath = await spacedSlugLink.evaluate((link) => new URL((link as HTMLAnchorElement).href).pathname);
   expect(resolvedPath).toBe(encodeURI('/posts/FPGA开发(1)Vivado+Vitis 使用/'));
 });
 
@@ -637,38 +213,5 @@ test('site footer stays compact on paginated pages', async ({ page }) => {
   const footer = page.locator('footer[data-site-footer]');
   await expect(footer).toBeVisible();
   await expect(footer.locator('section, img, li')).toHaveCount(0);
-  const bounds = await footer.boundingBox();
-  expect(bounds?.height).toBeLessThan(64);
-});
-
-for (const viewport of [
-  { width: 1440, height: 900 },
-  { width: 1152, height: 720 },
-  { width: 960, height: 600 },
-  { width: 720, height: 450 },
-  { width: 768, height: 1024 },
-  { width: 390, height: 844 },
-  { width: 360, height: 640 }
-]) {
-  test(`home cannot scroll at ${viewport.width}x${viewport.height}`, async ({ page }) => {
-    await page.setViewportSize(viewport);
-    await page.goto('/');
-    const metrics = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth,
-      scrollHeight: document.documentElement.scrollHeight,
-      clientHeight: document.documentElement.clientHeight
-    }));
-    expect(metrics.scrollWidth).toBe(metrics.clientWidth);
-    expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight);
-    await page.evaluate(() => window.scrollTo(0, 9999));
-    expect(await page.evaluate(() => window.scrollY)).toBe(0);
-  });
-}
-
-test('home and paginated routes omit contextual sidebar cards', async ({ page }) => {
-  for (const path of ['/', '/page/2/']) {
-    await page.goto(path);
-    await expect(page.locator('[data-sidebar-stack], [data-music-player]')).toHaveCount(0);
-  }
+  expect((await footer.boundingBox())?.height).toBeLessThan(64);
 });

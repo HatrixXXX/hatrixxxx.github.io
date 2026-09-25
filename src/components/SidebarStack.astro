@@ -1,5 +1,4 @@
 ---
-import MusicPlayer from '@/components/MusicPlayer.astro';
 import SiteStats from '@/components/SiteStats.astro';
 import type { PostEntry } from '@/lib/content';
 import { buildSiteStats } from '@/lib/site-stats';
@@ -16,7 +15,6 @@ const { posts, showClock, showStats = true } = Astro.props;
 <aside class="sidebar-stack" data-sidebar-stack data-content-page={Astro.url.pathname.startsWith('/posts/') ? 'true' : undefined} aria-label="站点侧栏">
   <slot />
   {showStats && <SiteStats stats={buildSiteStats(posts)} showClock={showClock} />}
-  <MusicPlayer />
 </aside>
 
 <style>
@@ -25,7 +23,9 @@ const { posts, showClock, showStats = true } = Astro.props;
     z-index: 16;
     display: grid;
     width: min(100%, 280px);
-    min-width: 0;\n    overflow: visible;\n    gap: 1rem;
+    min-width: 0;
+    overflow: visible;
+    gap: 1rem;
     justify-self: center;
   }
 

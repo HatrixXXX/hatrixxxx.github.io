@@ -39,7 +39,9 @@ for (const path of routes) {
       );
       await page.mouse.move(contentBounds.x + contentBounds.width / 2, contentY);
     }
-    if (viewport && viewport.width > 768) {
+    if (path === '/') {
+      await expect(page.locator('header[data-site-header]')).toHaveCount(0);
+    } else if (viewport && viewport.width > 768) {
       for (const submenu of await page.locator('.desktop-nav .submenu').all()) {
         await expect(submenu).toBeHidden();
       }
@@ -104,7 +106,8 @@ for (const path of routes) {
         page.locator(
           'article[data-post] img[src*="v2-9dd69ab2c20ca721bc0979d7ebaa0253_720w.webp"]'
         ),
-        page.locator('[data-dot-clock]')
+        page.locator('[data-dot-clock]'),
+        page.locator('[data-home-clock]')
       ],
       maskColor: '#252a33'
     });

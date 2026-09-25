@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('header keyboard navigation exposes a visible focus outline', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/blog/');
   await page.waitForLoadState('networkidle');
 
   for (let index = 0; index < 4; index += 1) {
@@ -18,34 +18,23 @@ test('header keyboard navigation exposes a visible focus outline', async ({ page
   }
 });
 
-test('home keyboard navigation follows visible header controls', async ({ page }) => {
+test('home keyboard navigation reaches the spatial controls at every viewport', async ({ page }) => {
   await page.goto('/');
-  const viewport = page.viewportSize();
-  const desktopNavigation = page.locator('.desktop-nav');
   const search = page.locator('[data-open-search]');
-  const theme = page.locator('[data-theme-toggle]');
-  const menu = page.locator('[data-menu-toggle]');
-
-  if ((viewport?.width ?? 0) > 768) {
-    await expect(desktopNavigation).toBeVisible();
-    await expect(menu).toBeHidden();
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: '首页', exact: true })).toBeFocused();
-    for (let index = 0; index < 5; index += 1) await page.keyboard.press('Tab');
-    await expect(search).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(theme).toBeFocused();
-    return;
-  }
-
-  await expect(desktopNavigation).toBeHidden();
-  await expect(menu).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(search).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(theme).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(menu).toBeFocused();
+  const outline = await search.evaluate((element) => getComputedStyle(element).outlineStyle);
+  expect(outline).not.toBe('none');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(search).toBeFocused();
+
+  const blog = page.locator('a[data-home-blog]');
+  await blog.focus();
+  await expect(blog).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL('/blog/');
 });
 
 test('decorative motion stops when reduced motion is requested', async ({ page }) => {

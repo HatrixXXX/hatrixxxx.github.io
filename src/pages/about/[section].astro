@@ -18,7 +18,7 @@ const { section } = Astro.props;
 ---
 
 <BaseLayout title={section.label}>
-  <BackButton href="/about/" label="返回关于我" />
+  <BackButton href="/" label="返回主页" />
   <HeroBanner title={section.label} subtitle="关于我的一些记录" image="/images/default-cover.svg" compact />
   <main class="about-section container">
     <div class="about-content">

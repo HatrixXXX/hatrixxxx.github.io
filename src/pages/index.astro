@@ -1,155 +1,163 @@
 ---
 import { SITE } from '@/config/site';
+import { HOME_LINKS } from '@/config/navigation';
+import { HOME_QUOTES } from '@/data/home-quotes';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import HomePanel from '@/components/HomePanel.astro';
+import HomeIcon from '@/components/HomeIcon.astro';
+import MusicPlayer from '@/components/MusicPlayer.astro';
+
+const clockTemplate = '0000/00/00 00:00:00';
 ---
 
-<BaseLayout title={SITE.title} image="/images/cover.png" pageKind="home">
+<BaseLayout title={SITE.title} pageKind="home">
   <main data-home-stage aria-labelledby="home-title" class="home-stage">
-    <section class="home-copy">
-      <h1 id="home-title" data-home-title>Hatrixの窝</h1>
-      <p class="home-subtitle" aria-label="轻松即单纯，速成即精准">
-        <span data-home-typing aria-hidden="true"></span>
-        <span data-home-typing-cursor aria-hidden="true">|</span>
-      </p>
-    </section>
-    <a
-      class="home-blog-link"
-      href="/blog/"
-      aria-label="进入博客文章总览"
-    >
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="30" height="30">
-        <path d="m9 5 7 7-7 7"></path>
-      </svg>
-    </a>
+    <div class="home-canvas" data-home-canvas>
+      <HomePanel name="search" width={118} height={110} corners={[[32, 6], [150, 6], [150, 116], [32, 116]]}>
+        <button class="search-button" type="button" data-open-search aria-label="搜索文章">
+          <HomeIcon name="search" /><span>搜索</span>
+        </button>
+      </HomePanel>
+      <HomePanel name="identity" width={367} height={137} corners={[[10, 370], [377, 369], [377, 506], [10, 506]]}>
+        <div class="identity"><h1 id="home-title" data-home-title>Hatrix</h1></div>
+      </HomePanel>
+      <div class="character-space" data-home-character aria-hidden="true"></div>
+      <HomePanel name="quote" width={615} height={155} corners={[[31, 693], [641, 649], [646, 801], [33, 829]]}>
+        <div class="quote-card">
+          <button type="button" class="quote-switch" data-home-quote aria-label={`金句：${HOME_QUOTES[0]}。双击切换；键盘按 Enter 或空格切换`} title="双击切换金句">
+            <span class="quote-window"><span data-quote-text>{HOME_QUOTES[0]}</span></span>
+          </button>
+          <button class="quote-pause" type="button" data-quote-pause aria-label="暂停金句自动切换" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path class="pause-mark" d="M8 5v14M16 5v14" /><path class="resume-mark" d="m8 5 11 7-11 7Z" /></svg>
+          </button>
+        </div>
+      </HomePanel>
+      <HomePanel name="music" width={385} height={198} corners={[[38, 847], [420, 825], [426, 1012], [42, 1048]]}>
+        <MusicPlayer mode="home" />
+      </HomePanel>
+      <HomePanel name="friends" width={210} height={91} corners={[[438, 826], [646, 812], [647, 901], [440, 918]]}>
+        <a class="tile small-tile" href={HOME_LINKS.friends.href}><HomeIcon name="friends" /><span>友链</span></a>
+      </HomePanel>
+      <HomePanel name="guestbook" width={210} height={79} corners={[[440, 931], [647, 914], [648, 985], [442, 1009]]}>
+        <a class="tile small-tile" href={HOME_LINKS.guestbook.href}><HomeIcon name="guestbook" /><span>留言板</span></a>
+      </HomePanel>
+      <HomePanel name="clock" width={952} height={118} corners={[[958, 37], [1909, 8], [1909, 98], [958, 162]]}>
+        <div class="clock-card">
+          <time data-home-clock aria-label="正在读取本地时间">
+            {Array.from(clockTemplate).map((character) => /\d/.test(character)
+              ? <span class="nixie-tube" data-clock-digit aria-hidden="true">—</span>
+              : <span class:list={['clock-separator', { 'clock-space': character === ' ' }]} aria-hidden="true">{character}</span>)}
+          </time>
+          <noscript><span class="clock-fallback">启用 JavaScript 后显示时间</span></noscript>
+        </div>
+      </HomePanel>
+      <HomePanel name="blog" width={840} height={266} corners={[[1072, 171], [1910, 98], [1910, 400], [1070, 417]]}>
+        <a class="tile blog-tile" data-home-blog href={HOME_LINKS.blog.href}>
+          <HomeIcon name="blog" /><span>博客文章</span>
+          <svg class="blog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        </a>
+      </HomePanel>
+      <HomePanel name="projects" width={340} height={165} corners={[[1028, 441], [1367, 435], [1370, 603], [1026, 600]]}>
+        <a class="tile" href={HOME_LINKS.projects.href}><HomeIcon name="projects" /><span>作品橱窗</span></a>
+      </HomePanel>
+      <HomePanel name="about" width={407} height={186} corners={[[1395, 437], [1799, 429], [1806, 632], [1395, 613]]}>
+        <a class="tile" href={HOME_LINKS.about.href}><HomeIcon name="about" /><span>关于我</span></a>
+      </HomePanel>
+      <HomePanel name="recommendations" width={782} height={193} corners={[[1120, 628], [1902, 657], [1901, 859], [1121, 805]]}>
+        <section class="recommendations" aria-labelledby="recommendations-title">
+          <h2 id="recommendations-title">收藏推荐</h2>
+          <div class="recommendation-links">
+            <a class="tile" href={HOME_LINKS.bookmarks.href}><HomeIcon name="bookmark" /><span>书签</span></a>
+            <a class="tile" href={HOME_LINKS.software.href}><HomeIcon name="software" /><span>软件</span></a>
+            <a class="tile" href={HOME_LINKS.gear.href}><HomeIcon name="gear" /><span>装备</span></a>
+          </div>
+        </section>
+      </HomePanel>
+      <HomePanel name="plans" width={305} height={163} corners={[[1056, 817], [1362, 842], [1360, 1004], [1056, 972]]}>
+        <a class="tile" href={HOME_LINKS.plans.href}><HomeIcon name="plans" /><span>计划</span></a>
+      </HomePanel>
+      <HomePanel name="lab" width={480} height={182} corners={[[1380, 846], [1857, 875], [1858, 1070], [1380, 1007]]}>
+        <a class="tile" href={HOME_LINKS.lab.href}><HomeIcon name="lab" /><span>实验场</span></a>
+      </HomePanel>
+    </div>
   </main>
 </BaseLayout>
 
 <style>
-  :global(html[data-page-kind='home']),
-  :global(html[data-page-kind='home'] body) {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
+  :global(html[data-page-kind='home']), :global(html[data-page-kind='home'] body) {
+    width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none;
   }
-
   .home-stage {
-    position: fixed;
-    inset: 0;
-    min-height: 100dvh;
-    overflow: hidden;
-    background: url('/images/cover.png') center / cover no-repeat;
-    color: #fff;
-    font-family: 'IBM Plex Mono', -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+    --home-paper: #aeb8bd;
+    --home-surface: #303d45;
+    --home-surface-hover: #3c515b;
+    --home-ink: #eff4f5;
+    --home-accent: #7ad8df;
+    position: fixed; inset: 0; overflow: hidden;
+    background: var(--home-paper); color: var(--home-ink);
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
     isolation: isolate;
-    touch-action: none;
-    transform: translate3d(var(--home-drag-x, 0px), 0, 0);
-    will-change: transform;
   }
-
-  :global(html[data-page-kind='home'] .site-header) {
-    transform: translate3d(var(--home-drag-x, 0px), 0, 0);
-    will-change: transform;
+  .home-canvas {
+    position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+    /* atan2 yields a unitless uniform scale, including with JavaScript disabled. */
+    --home-scale: tan(atan2(min(100vw, 177.7777778dvh), 1920px));
+    transform: translate(-50%, -50%) scale(var(--home-scale));
+    transform-origin: center;
   }
-
-  :global(html[data-home-drag-state='resetting'] .site-header),
-  :global(html[data-home-drag-state='resetting']) .home-stage {
-    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  .character-space { position: absolute; left: 660px; top: 120px; width: 350px; height: 900px; pointer-events: none; }
+  .home-stage :is(button, a, summary) { -webkit-tap-highlight-color: transparent; }
+  .home-stage :is(button, a, summary):focus-visible { outline: 4px solid #f6d28e; outline-offset: -7px; }
+  .home-stage ::selection { background: var(--home-accent); color: #172329; }
+  .tile, .search-button {
+    position: relative; display: flex; width: 100%; height: 100%; align-items: center;
+    border: 1px solid #b5cbd142; padding: 24px 32px;
+    background: var(--home-surface); color: var(--home-ink);
+    text-decoration: none; cursor: pointer; overflow: hidden;
+    transition: background-color 160ms ease;
   }
-
-  .home-stage::before {
-    position: absolute;
-    z-index: -1;
-    inset: 0;
-    background: rgb(0 0 0 / 30%);
-    content: '';
-  }
-
-  .home-copy {
-    position: absolute;
-    top: 43%;
-    left: 50%;
-    width: min(calc(100% - 2rem), 54rem);
-    transform: translateX(-50%);
-    text-align: center;
-  }
-
-  .home-copy h1 {
-    margin: 0;
-    color: #fff;
-    font-size: 42.75px;
-    font-weight: 700;
-    line-height: 1.5;
-    text-shadow: 2px 2px 4px rgb(0 0 0 / 15%);
-  }
-
-  .home-subtitle {
-    min-height: 1.5em;
-    margin: 0;
-    color: #eee;
-    font-size: 25.8px;
-    font-weight: 400;
-    line-height: 1.5;
-    text-shadow: 2px 2px 4px rgb(0 0 0 / 15%);
-  }
-
-  .home-blog-link {
-    position: absolute;
-    bottom: clamp(1.25rem, 4vh, 2.5rem);
-    left: 50%;
-    display: inline-flex;
-    width: 44px;
-    height: 44px;
-    align-items: center;
-    justify-content: center;
-    color: #eee;
-    filter: drop-shadow(1px 1px 2px rgb(0 0 0 / 30%));
-    transform: translateX(-50%);
-  }
-
-  .home-blog-link svg {
-    animation: home-arrow-float 1.5s ease-in-out infinite;
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.8;
-  }
-
-  [data-home-typing-cursor] {
-    animation: home-cursor-blink 700ms steps(1, end) infinite;
-  }
-
-  @keyframes home-arrow-float {
-    50% {
-      transform: translateX(8px);
-    }
-  }
-
-  @keyframes home-cursor-blink {
-    50% {
-      opacity: 0;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .home-copy h1 {
-      font-size: 27.75px;
-    }
-
-    .home-subtitle {
-      font-size: 17.25px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .home-blog-link svg,
-    [data-home-typing-cursor] {
-      animation: none !important;
-    }
-  }
+  .tile:hover, .search-button:hover { background: var(--home-surface-hover); }
+  .tile::before { content: ''; position: absolute; left: 12px; top: 18px; bottom: 18px; width: 3px; background: var(--home-accent); }
+  .tile span { position: relative; z-index: 1; font-size: 43px; font-weight: 500; white-space: nowrap; }
+  .tile :global(svg) { position: absolute; right: 22px; width: 125px; height: 130px; color: #6dbbc5; opacity: .36; }
+  .search-button { flex-direction: column; justify-content: center; gap: 5px; padding: 12px; background: #303d45dc; }
+  .search-button :global(svg) { width: 43px; height: 43px; }
+  .search-button span { font-size: 23px; }
+  .identity { display: flex; align-items: center; width: 100%; height: 100%; padding-left: 38px; background: #303d456b; }
+  .identity h1 { margin: 0; color: #fff; font: 500 76px/1 'IBM Plex Mono', monospace; letter-spacing: -.035em; }
+  .quote-card { position: relative; width: 100%; height: 100%; background: #202b32; }
+  .quote-switch { width: 100%; height: 100%; border: 0; padding: 30px 45px 34px 29px; text-align: left; color: #eff4f5; background: transparent; cursor: pointer; }
+  .quote-window { display: flex; overflow: hidden; height: 88px; align-items: center; }
+  [data-quote-text] { display: block; font-size: 30px; line-height: 1.65; text-wrap: balance; }
+  .quote-pause { position: absolute; right: 7px; bottom: 6px; width: 44px; height: 44px; border: 0; color: #c4d4dc; background: transparent; cursor: pointer; }
+  .quote-pause svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .resume-mark, .quote-pause[aria-pressed='true'] .pause-mark { display: none; }
+  .quote-pause[aria-pressed='true'] .resume-mark { display: block; }
+  .small-tile { padding: 16px 20px 16px 65px; }
+  .small-tile span { font-size: 34px; }
+  .small-tile :global(svg) { width: 42px; height: 45px; left: 15px; right: auto; opacity: .75; }
+  .small-tile::before { display: none; }
+  .clock-card { display: grid; width: 100%; height: 100%; place-items: center; background: #29343be8; padding: 12px 22px; }
+  [data-home-clock] { display: flex; align-items: center; justify-content: center; width: 100%; gap: 5px; white-space: nowrap; }
+  .nixie-tube { position: relative; display: grid; place-items: center; width: 45px; height: 76px; border: 1px solid #c8b4a575; border-radius: 20px 20px 11px 11px; background: #201a17; box-shadow: inset 3px 0 5px #ffffff14, inset -3px 0 5px #0008; font: 400 51px/1 'IBM Plex Mono', monospace; color: #ffbc79; text-shadow: 0 0 3px #ff7c38, 0 0 12px #ff7929b3; }
+  .nixie-tube::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -5px; height: 5px; border-bottom: 2px solid #b6906f; background: #32251b; }
+  .clock-separator { color: #f5b47b; font: 36px/1 'IBM Plex Mono', monospace; }
+  .clock-space { width: 14px; }
+  .clock-fallback { font-size: 17px; }
+  .blog-tile { padding-left: 44px; }
+  .blog-tile span { font-size: 78px; }
+  .blog-tile :global(svg) { width: 198px; height: 208px; right: 65px; opacity: .33; }
+  .blog-tile .blog-chevron { width: 34px; height: 34px; right: 22px; bottom: 20px; opacity: 1; fill: none; stroke: currentColor; stroke-width: 2; }
+  .recommendations { height: 100%; display: flex; flex-direction: column; }
+  .recommendations h2 { display: flex; align-items: center; flex: 0 0 42px; margin: 0; padding: 0 20px; color: #e5eef0; background: #243139; font-size: 26px; font-weight: 400; }
+  .recommendation-links { display: grid; flex: 1; min-height: 0; grid-template-columns: 26fr 40fr 34fr; gap: 5px; }
+  .recommendation-links .tile { background: #376773; padding: 23px; }
+  .recommendation-links .tile:hover { background: #417b88; }
+  .recommendation-links .tile::before { display: none; }
+  .recommendation-links .tile :global(svg) { width: 96px; height: 102px; right: 10px; color: #91dbe1; }
+  @media (prefers-reduced-motion: reduce) { .tile, .search-button { transition: none; } }
 </style>
 
 <script>
-  import '@/scripts/home-cover';
+  import '@/scripts/home-dashboard';
 </script>

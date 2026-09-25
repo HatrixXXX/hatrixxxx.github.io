@@ -16,6 +16,9 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     aria-hidden="true"
   ></div>
   <div class="header-inner" data-header-controls data-home-controls={homeMode ? '' : undefined}>
+    <button class="admin-logout" type="button" data-admin-logout hidden>
+      退出管理员身份
+    </button>
 
     <nav class="desktop-nav" aria-label="主导航">
       <ul>
@@ -45,9 +48,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     </nav>
 
     <div class="header-actions">
-      <button class="admin-logout" type="button" data-admin-logout hidden>
-        退出管理员身份
-      </button>
       <button class="header-action" type="button" aria-label="搜索文章" data-open-search>
         <svg
           class="search-icon"
@@ -141,12 +141,16 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     transform: translateX(-50%);
   }
 
+  .site-header:has(.mobile-nav:not([hidden])) {
+    z-index: 100;
+  }
+
   .header-inner {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     width: 100%;
     min-height: var(--site-header-height);
     align-items: center;
-    justify-content: flex-end;
     gap: 0.875rem;
     padding-inline: 36px;
   }
@@ -164,8 +168,16 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     gap: 0.15rem;
   }
 
+  .desktop-nav > ul > li {
+    display: flex;
+    min-height: var(--site-header-height);
+    align-items: center;
+  }
+
   .desktop-nav {
     position: relative;
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .desktop-nav > ul > li > a {
@@ -176,6 +188,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     border-radius: 999px;
     color: #eee;
     font-size: 15.21px;
+    white-space: nowrap;
     text-shadow: 1px 1px 2px rgb(0 0 0 / 30%);
     transition: color 160ms ease, background-color 160ms ease;
   }
@@ -194,9 +207,9 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   }
 
   .desktop-nav .submenu {
-    position: absolute;
+    position: fixed;
     z-index: 1;
-    top: 100%;
+    top: var(--site-header-height);
     left: 50%;
     display: flex;
     width: max-content;
@@ -213,7 +226,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     opacity: 0;
     pointer-events: none;
     transform: translate(-50%, -0.35rem);
-    transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
+    transition: opacity 160ms ease, transform 160ms ease;
   }
 
   .desktop-nav .submenu a {
@@ -235,37 +248,19 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     transform: translate(-50%, 0);
   }
 
-  .desktop-nav > ul:has(> li:hover) > li:not(:hover) > .submenu {
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-50%, -0.35rem);
-  }
-
-  .desktop-nav .submenu {
-    position: fixed;
-    top: 60px;
-    right: 16px;
-    left: auto;
-    transform: translateY(-0.35rem);
-  }
-
-  .desktop-nav > ul > li:hover > .submenu,
-  .desktop-nav > ul > li:focus-within > .submenu {
-    transform: translateY(0);
-  }
-
-  .desktop-nav > ul:has(> li:hover) > li:not(:hover) > .submenu {
-    transform: translateY(-0.35rem);
-  }
-
   .header-actions {
     display: flex;
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
     align-items: center;
     gap: 0.35rem;
   }
 
   .admin-logout {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
     min-height: 40px;
     border: 1px solid rgb(255 255 255 / 28%);
     border-radius: 999px;
@@ -372,10 +367,16 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     background: currentColor;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1199px) {
     .header-inner {
+      display: flex;
+      justify-content: center;
       width: 100%;
       padding-inline: 16px;
+    }
+
+    .header-inner:has(.admin-logout:not([hidden])) {
+      justify-content: space-between;
     }
 
     .admin-logout {

@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
+import { ABOUT_SECTION_LINKS, BLOG_SUBNAV_LINKS } from '../../src/config/navigation';
 
 for (const { route, href, label } of [
-  { route: '/blog/', href: '/', label: '返回主页' },
-  { route: '/blog/all/', href: '/blog/', label: '返回博客文章分类' },
-  { route: '/blog/tech-notes/', href: '/blog/', label: '返回博客文章分类' },
-  { route: '/about/', href: '/', label: '返回主页' },
-  { route: '/about/hobbies/', href: '/about/', label: '返回关于我' },
-  { route: '/projects/', href: '/', label: '返回主页' },
-  { route: '/guestbook/', href: '/', label: '返回主页' },
+  ...[
+    '/blog/', '/about/', '/projects/', '/guestbook/', '/plans/', '/lab/', '/archives/', '/404.html',
+    ...ABOUT_SECTION_LINKS.map(({ href }) => href),
+    ...Array.from({ length: 6 }, (_, index) => `/page/${index + 2}/`)
+  ].map((route) => ({ route, href: '/', label: '返回主页' })),
+  ...BLOG_SUBNAV_LINKS.map(({ href: route }) => ({ route, href: '/blog/', label: '返回博客文章分类' })),
   { route: '/posts/本科数学大杂烩/', href: '/blog/tech-notes/', label: '返回技术笔记' }
 ]) {
   test(`${route} exposes a consistent back destination`, async ({ page }) => {
@@ -16,6 +16,8 @@ for (const { route, href, label } of [
     await expect(backButton).toHaveAttribute('href', href);
     await expect(backButton).toHaveAttribute('aria-label', label);
     await expect(backButton).toBeVisible();
+    await backButton.click();
+    await expect(page).toHaveURL(href);
   });
 }
 
