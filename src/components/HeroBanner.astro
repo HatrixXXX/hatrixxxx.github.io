@@ -17,9 +17,7 @@ const safeHeroImage = heroImage.replaceAll('"', '%22');
 const backgroundImage = `--hero-image: url("${safeHeroImage}")`;
 ---
 
-<style define:vars={{ heroImageUrl: `url("${safeHeroImage}")` }}>
-  :root { --page-hero-image: var(--heroImageUrl); }
-</style>
+<Fragment set:html={`<style>:root{--page-hero-image:url("${safeHeroImage}")}</style>`} />
 
 <section
   data-hero
