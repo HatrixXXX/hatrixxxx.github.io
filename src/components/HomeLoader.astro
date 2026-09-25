@@ -3,32 +3,46 @@
 
 <!--
   首页首次加载遮罩。
-  - 纯 inline style 默认可见，不依赖 JS，HTML 到达即刻遮住空白。
-  - home-loader.ts 监听立绘 load 后添加 is-done class 触发淡出。
-  - View Transitions 内部导航（astro:page-load 时 performance.navigation.type !== 0）不重新显示。
+  设计：
+  - 默认 hidden（display:none），由 <head> 内联脚本判断后立即移除 hidden 属性显示。
+  - 仅在本次会话首次硬导航到首页时显示，sessionStorage 标记后不再触发。
+  - home-loader.ts 在 astro:page-load 时监听立绘 load，完成后淡出并移除。
+  - View Transitions 回到首页时遮罩已被 remove，不会重新出现。
 -->
-<div id="home-loader" aria-hidden="true">
+<div id="home-loader" hidden aria-hidden="true">
   <svg class="hl-svg" viewBox="0 0 600 600" aria-hidden="true">
-    <!-- 轨道底环 -->
     <circle class="hl-track" cx="300" cy="300" r="220" />
-    <!-- halo 光晕层 -->
     <circle class="hl-arc hl-arc--halo" cx="300" cy="300" r="220" />
-    <!-- tube 发光层 -->
-    <circle class="hl-arc hl-arc--tube" cx="300" cy="300" r="220" />
-    <!-- 主体弧线 -->
-    <circle class="hl-arc hl-arc--body" cx="300" cy="300" r="220" />
-    <!-- LOADING 文字三层 -->
+    <circle class="hl-arc hl-arc--tube"  cx="300" cy="300" r="220" />
+    <circle class="hl-arc hl-arc--body"  cx="300" cy="300" r="220" />
     <text class="hl-text hl-text--halo" x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
-    <text class="hl-text hl-text--tube" x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
-    <text class="hl-text hl-text--core" x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
+    <text class="hl-text hl-text--tube"  x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
+    <text class="hl-text hl-text--core"  x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
   </svg>
 </div>
+
+<!--
+  内联脚本：在 HTML 解析阶段（JS bundle 加载前）立即决定是否显示遮罩。
+  条件：会话内未显示过（无 sessionStorage 标记）且当前是首页。
+  满足条件则移除 hidden，使遮罩立即可见；并打标记防止后续重复触发。
+-->
+<script is:inline>
+  (function () {
+    var SHOWN_KEY = 'hatrix-home-loaded';
+    try {
+      if (!sessionStorage.getItem(SHOWN_KEY)) {
+        var el = document.getElementById('home-loader');
+        if (el) el.removeAttribute('hidden');
+        sessionStorage.setItem(SHOWN_KEY, '1');
+      }
+    } catch (_) { /* sessionStorage 不可用时静默跳过 */ }
+  })();
+</script>
 
 <style>
   /*
    * 圆周 = 2π × 220 ≈ 1382.3
-   * 弧长 28%：1382.3 × 0.28 ≈ 387
-   * stroke-dasharray: 387 995.3
+   * 弧长 28%：≈ 387；间隔：≈ 995
    */
 
   #home-loader {
@@ -37,19 +51,17 @@
     z-index: 9999;
     display: grid;
     place-items: center;
-    background: #17151d;          /* --color-bg dark，inline 硬编码确保 JS 前正确 */
-    transition: opacity 0.55s cubic-bezier(.4, 0, .2, 1),
-                visibility 0.55s cubic-bezier(.4, 0, .2, 1);
+    background: #17151d;
+    opacity: 1;
+    transition: opacity 0.55s cubic-bezier(.4, 0, .2, 1);
   }
 
-  /* 亮色主题下背景切换（主题已由 inline script 在 <head> 写入 data-theme） */
   :root[data-theme='light'] #home-loader {
     background: #f0ece4;
   }
 
   #home-loader.is-done {
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
   }
 
@@ -60,18 +72,14 @@
     overflow: visible;
   }
 
-  /* ── 轨道 ────────────────────────── */
   .hl-track {
     fill: none;
     stroke: #f3bb6220;
     stroke-width: 13;
   }
 
-  :root[data-theme='light'] .hl-track {
-    stroke: #75522620;
-  }
+  :root[data-theme='light'] .hl-track { stroke: #75522620; }
 
-  /* ── 弧线公共 ────────────────────── */
   .hl-arc {
     fill: none;
     stroke-linecap: round;
@@ -80,7 +88,6 @@
     animation: hl-spin 3.4s linear infinite;
   }
 
-  /* ── halo ────────────────────────── */
   .hl-arc--halo {
     stroke: #f3bb6288;
     stroke-width: 28;
@@ -88,11 +95,8 @@
     opacity: 0.65;
   }
 
-  :root[data-theme='light'] .hl-arc--halo {
-    stroke: #75522688;
-  }
+  :root[data-theme='light'] .hl-arc--halo { stroke: #75522688; }
 
-  /* ── tube ────────────────────────── */
   .hl-arc--tube {
     stroke: #f3bb62;
     stroke-width: 17;
@@ -105,7 +109,6 @@
     filter: blur(2.5px) drop-shadow(0 0 7px #755226bb) drop-shadow(0 0 18px #75522644);
   }
 
-  /* ── body ────────────────────────── */
   .hl-arc--body {
     stroke: #f3bb62;
     stroke-width: 13;
@@ -122,7 +125,6 @@
     to   { transform: rotate(270deg); }
   }
 
-  /* ── LOADING 文字 ─────────────────── */
   .hl-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 34px;
@@ -165,11 +167,9 @@
     50%       { opacity: 1; }
   }
 
-  /* ── 减少动态效果 ─────────────────── */
   @media (prefers-reduced-motion: reduce) {
     .hl-arc  { animation: none; transform: rotate(-90deg); }
     .hl-text { animation: none; }
-    /* reduced motion：更短的淡出 */
     #home-loader { transition-duration: 0.15s; }
   }
 </style>

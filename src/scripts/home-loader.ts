@@ -1,12 +1,15 @@
 /**
- * 首页首次加载遮罩控制器。
+ * 首页加载遮罩控制器。
  *
- * 触发条件：
- *   - 当前页面是首页（data-page-kind="home"）
- *   - 是硬导航（performance.navigation.type === 0 或 PerformanceNavigationTiming type === 'navigate'）
- *     View Transitions 内部跳转不重新触发。
+ * HomeLoader.astro 的内联脚本已在 HTML 解析时决定遮罩是否可见。
+ * 本模块负责：在 astro:page-load（首页激活）时找到遮罩并监听立绘加载完成，
+ * 之后淡出并从 DOM 移除。
  *
- * 消失条件：立绘 img[data-home-character-img] 的 load 事件，或最长等待 8s 兜底。
+ * 关键点：
+ * - 遮罩用 sessionStorage 标记控制只在会话首次访问首页时出现。
+ * - View Transitions 回到首页时遮罩已被 remove()，此处 getLoader() 返回 null，直接跳过。
+ * - 图片已缓存（img.complete）时给 120ms 展示后快速消失。
+ * - 8s 兜底防止图片加载失败时永久卡住。
  */
 
 const FALLBACK_MS = 8_000;
@@ -17,31 +20,21 @@ function getLoader(): HTMLElement | null {
 
 function dismiss(loader: HTMLElement): void {
   loader.classList.add('is-done');
-  // transition 结束后从 DOM 移除，避免遮住链接
   loader.addEventListener('transitionend', () => loader.remove(), { once: true });
-}
-
-function isHardNavigation(): boolean {
-  // PerformanceNavigationTiming（现代）
-  const entries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
-  if (entries.length > 0) return entries[0].type === 'navigate' || entries[0].type === 'reload';
-  // 旧 API 兜底
-  return (performance.navigation?.type ?? 0) <= 1;
+  // 保底：transition 可能因 prefers-reduced-motion 很短，600ms 后强制移除
+  window.setTimeout(() => loader.remove(), 700);
 }
 
 function initLoader(): void {
   const loader = getLoader();
+  // 不在首页，或遮罩已被移除（View Transitions 回首页）：跳过
   if (!loader) return;
-
-  // View Transitions 二次进入首页时：loader 已被上次 remove，无需处理
-  // 但若用户从其他页 back/forward 回首页，loader 不在 DOM 里，也无需处理
-  // 只需处理真正的首次硬导航
-  if (!isHardNavigation()) {
+  // 遮罩存在但是 hidden（sessionStorage 已标记，不该显示）：直接移除
+  if (loader.hidden) {
     loader.remove();
     return;
   }
 
-  // 等立绘加载完
   const img = document.querySelector<HTMLImageElement>('[data-home-character] img');
 
   const done = (): void => {
@@ -52,25 +45,20 @@ function initLoader(): void {
   const fallback = window.setTimeout(done, FALLBACK_MS);
 
   if (!img) {
-    // 找不到立绘元素，短暂后退出
     window.setTimeout(done, 300);
     return;
   }
 
   if (img.complete && img.naturalWidth > 0) {
-    // 图片已缓存，直接消失（给极短的展示时间让用户感知到动画）
+    // 图片已缓存：极短展示后消失
     window.setTimeout(done, 120);
     return;
   }
 
-  img.addEventListener('load', done, { once: true });
+  img.addEventListener('load',  done, { once: true });
   img.addEventListener('error', done, { once: true });
 }
 
-// 仅在首页执行
-if (document.documentElement.dataset.pageKind === 'home') {
-  initLoader();
-}
-
-// View Transitions：从首页导航到其他页再 back 不重新触发（loader 已从 DOM 移除）
-// 如有需要未来可在 astro:page-load 里检查并重新插入，但目前需求不含此场景
+// 每次首页激活都检查（首次硬导航 + View Transitions 回首页均会触发）
+document.addEventListener('astro:page-load', initLoader);
+// 首次硬导航时 astro:page-load 也会触发，无需单独调用
