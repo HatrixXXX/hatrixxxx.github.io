@@ -1,69 +1,52 @@
 ---
-const hexSegments = [
-  { d: 'M 107 185 L 107 415' },
-  { d: 'M 107 415 L 300 526' },
-  { d: 'M 300 526 L 493 415' },
-  { d: 'M 493 415 L 493 185' },
-  { d: 'M 493 185 L 300 74' },
-  { d: 'M 300 74 L 107 185' }
-];
 ---
 
 <section class="project-load-shell" aria-label="作品页加载动画" aria-live="polite">
   <div class="project-load-stage">
     <svg class="project-load-svg" viewBox="0 0 600 600" aria-hidden="true">
-      <g aria-hidden="true">
-        {
-          hexSegments.map((segment) => (
-            <path
-              class="project-load-hex project-load-hex--progress"
-              d={segment.d}
-              pathLength="1"
-            />
-          ))
-        }
-      </g>
+      <!-- 轨道底环 -->
+      <circle class="project-load-track" cx="300" cy="300" r="230" />
 
-      <g aria-hidden="true">
-        <text
-          class="project-load-text project-load-text--halo"
-          x="309"
-          y="313"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          textLength="172"
-          lengthAdjust="spacing"
-        >
-          LOADING
-        </text>
-        <text
-          class="project-load-text project-load-text--tube"
-          x="309"
-          y="313"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          textLength="172"
-          lengthAdjust="spacing"
-        >
-          LOADING
-        </text>
-        <text
-          class="project-load-text project-load-text--core"
-          x="309"
-          y="313"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          textLength="172"
-          lengthAdjust="spacing"
-        >
-          LOADING
-        </text>
-      </g>
+      <!-- 光晕层（模糊宽弧，营造辉光感） -->
+      <circle class="project-load-arc project-load-arc--halo" cx="300" cy="300" r="230" />
+
+      <!-- 发光层（tube） -->
+      <circle class="project-load-arc project-load-arc--tube" cx="300" cy="300" r="230" />
+
+      <!-- 主体弧线 -->
+      <circle class="project-load-arc project-load-arc--body" cx="300" cy="300" r="230" />
+
+      <!-- LOADING 文字，三层辉光管效果 -->
+      <text
+        class="project-load-text project-load-text--halo"
+        x="300" y="308"
+        text-anchor="middle" dominant-baseline="middle"
+        textLength="172" lengthAdjust="spacing"
+      >LOADING</text>
+      <text
+        class="project-load-text project-load-text--tube"
+        x="300" y="308"
+        text-anchor="middle" dominant-baseline="middle"
+        textLength="172" lengthAdjust="spacing"
+      >LOADING</text>
+      <text
+        class="project-load-text project-load-text--core"
+        x="300" y="308"
+        text-anchor="middle" dominant-baseline="middle"
+        textLength="172" lengthAdjust="spacing"
+      >LOADING</text>
     </svg>
   </div>
 </section>
 
 <style>
+  /*
+   * 圆周 = 2π × 230 ≈ 1445.13
+   * 弧长约占 28%：1445.13 × 0.28 ≈ 404.6
+   * stroke-dasharray: <弧长> <空白>  →  404.6  1040.53
+   * 旋转从 12 点位置（-90°）开始，整圈用 transform rotate 动画驱动
+   */
+
   .project-load-shell {
     position: relative;
     min-height: calc(100svh - var(--header-height));
@@ -74,7 +57,7 @@ const hexSegments = [
   }
 
   .project-load-stage {
-    width: min(740px, 92vw);
+    width: min(420px, 72vw);
     aspect-ratio: 1;
   }
 
@@ -85,25 +68,61 @@ const hexSegments = [
     overflow: visible;
   }
 
-  .project-load-hex {
+  /* ── 轨道底环 ─────────────────────────── */
+  .project-load-track {
     fill: none;
-    vector-effect: non-scaling-stroke;
+    stroke: color-mix(in srgb, var(--color-accent) 13%, transparent);
+    stroke-width: 14;
   }
 
-  .project-load-hex--progress {
+  /* ── 弧线公共基础 ─────────────────────── */
+  .project-load-arc {
+    fill: none;
+    stroke-linecap: round;
+    /*
+     * 弧段约 28% 圆周；其余为透明间隔
+     * 注意：实际因 round cap 会略微延长，视觉上微调到约 26% 圆周
+     */
+    stroke-dasharray: 374 1071;
+    /* 从 12 点位置（−90°）开始绕圈 */
+    transform-origin: 300px 300px;
+    animation: project-load-spin 3.4s linear infinite;
+  }
+
+  /* ── halo：宽模糊光晕 ─────────────────── */
+  .project-load-arc--halo {
+    stroke: color-mix(in srgb, var(--color-accent) 50%, transparent);
+    stroke-width: 30;
+    filter: blur(10px);
+    opacity: 0.65;
+  }
+
+  /* ── tube：中层发光 ───────────────────── */
+  .project-load-arc--tube {
     stroke: var(--color-accent);
-    stroke-width: 15;
-    stroke-linecap: butt;
-    stroke-linejoin: round;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    animation: project-load-segment-fill 3.2s linear infinite;
+    stroke-width: 18;
     filter:
-      drop-shadow(0 0 2px color-mix(in srgb, var(--color-heading) 22%, transparent))
-      drop-shadow(0 0 7px color-mix(in srgb, var(--color-accent) 48%, transparent))
-      drop-shadow(0 0 20px color-mix(in srgb, var(--color-accent) 18%, transparent));
+      blur(2.5px)
+      drop-shadow(0 0 7px color-mix(in srgb, var(--color-accent) 75%, transparent))
+      drop-shadow(0 0 18px color-mix(in srgb, var(--color-accent) 30%, transparent));
+    opacity: 0.9;
   }
 
+  /* ── body：主体弧线 ───────────────────── */
+  .project-load-arc--body {
+    stroke: var(--color-accent);
+    stroke-width: 14;
+    filter:
+      drop-shadow(0 0 3px color-mix(in srgb, var(--color-accent) 80%, transparent))
+      drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 35%, transparent));
+  }
+
+  @keyframes project-load-spin {
+    from { transform: rotate(-90deg); }
+    to   { transform: rotate(270deg); }
+  }
+
+  /* ── LOADING 文字 ─────────────────────── */
   .project-load-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 34px;
@@ -137,55 +156,38 @@ const hexSegments = [
     animation-delay: -0.6s;
   }
 
-  @keyframes project-load-segment-fill {
-    0% {
-      stroke-dashoffset: 1;
-    }
-    100% {
-      stroke-dashoffset: 0;
-    }
-  }
-
   @keyframes project-load-text-pulse {
-    0%,
-    100% {
-      opacity: 0.92;
-    }
-    50% {
-      opacity: 1;
-    }
+    0%, 100% { opacity: 0.92; }
+    50%       { opacity: 1; }
   }
 
+  /* ── 响应式 ───────────────────────────── */
   @media (max-width: 768px) {
     .project-load-stage {
-      width: min(560px, 92vw);
-    }
-
-    .project-load-hex--progress {
-      stroke-width: 12.5;
+      width: min(300px, 72vw);
     }
 
     .project-load-text {
-      font-size: 28px;
+      font-size: 26px;
     }
 
-    .project-load-text--halo {
-      stroke-width: 6;
-    }
+    .project-load-track  { stroke-width: 11; }
+    .project-load-arc--halo { stroke-width: 22; }
+    .project-load-arc--tube { stroke-width: 14; }
+    .project-load-arc--body { stroke-width: 11; }
 
-    .project-load-text--tube {
-      stroke-width: 1.5;
-    }
+    .project-load-text--halo { stroke-width: 6; }
+    .project-load-text--tube { stroke-width: 1.5; }
   }
 
+  /* ── 减少动态效果 ─────────────────────── */
   @media (prefers-reduced-motion: reduce) {
-    .project-load-hex--progress,
-    .project-load-text {
-      animation: none;
-    }
+    .project-load-arc { animation: none; }
+    .project-load-text { animation: none; }
 
-    .project-load-hex--progress {
-      stroke-dashoffset: 0;
+    /* 静止时显示一段固定弧，视觉上仍清晰 */
+    .project-load-arc {
+      transform: rotate(-90deg);
     }
   }
 </style>

@@ -1,0 +1,175 @@
+---
+---
+
+<!--
+  首页首次加载遮罩。
+  - 纯 inline style 默认可见，不依赖 JS，HTML 到达即刻遮住空白。
+  - home-loader.ts 监听立绘 load 后添加 is-done class 触发淡出。
+  - View Transitions 内部导航（astro:page-load 时 performance.navigation.type !== 0）不重新显示。
+-->
+<div id="home-loader" aria-hidden="true">
+  <svg class="hl-svg" viewBox="0 0 600 600" aria-hidden="true">
+    <!-- 轨道底环 -->
+    <circle class="hl-track" cx="300" cy="300" r="220" />
+    <!-- halo 光晕层 -->
+    <circle class="hl-arc hl-arc--halo" cx="300" cy="300" r="220" />
+    <!-- tube 发光层 -->
+    <circle class="hl-arc hl-arc--tube" cx="300" cy="300" r="220" />
+    <!-- 主体弧线 -->
+    <circle class="hl-arc hl-arc--body" cx="300" cy="300" r="220" />
+    <!-- LOADING 文字三层 -->
+    <text class="hl-text hl-text--halo" x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
+    <text class="hl-text hl-text--tube" x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
+    <text class="hl-text hl-text--core" x="300" y="308" text-anchor="middle" dominant-baseline="middle" textLength="172" lengthAdjust="spacing">LOADING</text>
+  </svg>
+</div>
+
+<style>
+  /*
+   * 圆周 = 2π × 220 ≈ 1382.3
+   * 弧长 28%：1382.3 × 0.28 ≈ 387
+   * stroke-dasharray: 387 995.3
+   */
+
+  #home-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    background: #17151d;          /* --color-bg dark，inline 硬编码确保 JS 前正确 */
+    transition: opacity 0.55s cubic-bezier(.4, 0, .2, 1),
+                visibility 0.55s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  /* 亮色主题下背景切换（主题已由 inline script 在 <head> 写入 data-theme） */
+  :root[data-theme='light'] #home-loader {
+    background: #f0ece4;
+  }
+
+  #home-loader.is-done {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .hl-svg {
+    width: min(340px, 60vw);
+    height: min(340px, 60vw);
+    display: block;
+    overflow: visible;
+  }
+
+  /* ── 轨道 ────────────────────────── */
+  .hl-track {
+    fill: none;
+    stroke: #f3bb6220;
+    stroke-width: 13;
+  }
+
+  :root[data-theme='light'] .hl-track {
+    stroke: #75522620;
+  }
+
+  /* ── 弧线公共 ────────────────────── */
+  .hl-arc {
+    fill: none;
+    stroke-linecap: round;
+    stroke-dasharray: 357 1025;
+    transform-origin: 300px 300px;
+    animation: hl-spin 3.4s linear infinite;
+  }
+
+  /* ── halo ────────────────────────── */
+  .hl-arc--halo {
+    stroke: #f3bb6288;
+    stroke-width: 28;
+    filter: blur(10px);
+    opacity: 0.65;
+  }
+
+  :root[data-theme='light'] .hl-arc--halo {
+    stroke: #75522688;
+  }
+
+  /* ── tube ────────────────────────── */
+  .hl-arc--tube {
+    stroke: #f3bb62;
+    stroke-width: 17;
+    filter: blur(2.5px) drop-shadow(0 0 7px #f3bb62bb) drop-shadow(0 0 18px #f3bb6244);
+    opacity: 0.9;
+  }
+
+  :root[data-theme='light'] .hl-arc--tube {
+    stroke: #755226;
+    filter: blur(2.5px) drop-shadow(0 0 7px #755226bb) drop-shadow(0 0 18px #75522644);
+  }
+
+  /* ── body ────────────────────────── */
+  .hl-arc--body {
+    stroke: #f3bb62;
+    stroke-width: 13;
+    filter: drop-shadow(0 0 3px #f3bb62cc) drop-shadow(0 0 10px #f3bb6244);
+  }
+
+  :root[data-theme='light'] .hl-arc--body {
+    stroke: #755226;
+    filter: drop-shadow(0 0 3px #755226cc) drop-shadow(0 0 10px #75522644);
+  }
+
+  @keyframes hl-spin {
+    from { transform: rotate(-90deg); }
+    to   { transform: rotate(270deg); }
+  }
+
+  /* ── LOADING 文字 ─────────────────── */
+  .hl-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: 0;
+    paint-order: stroke fill;
+    animation: hl-pulse 2.2s ease-in-out infinite;
+  }
+
+  .hl-text--halo {
+    fill: none;
+    stroke: #f3bb629a;
+    stroke-width: 8;
+    opacity: 0.9;
+    filter: blur(8px) drop-shadow(0 0 22px #f3bb6244);
+    animation-delay: 0s;
+  }
+
+  .hl-text--tube {
+    fill: #f3bb62;
+    stroke: #f3bb62;
+    stroke-width: 1.8;
+    filter: blur(0.35px) drop-shadow(0 0 10px #f3bb6294);
+    animation-delay: -0.35s;
+  }
+
+  .hl-text--core {
+    fill: #f5f0e8;
+    stroke: none;
+    filter: drop-shadow(0 0 4px #f5f0e86a);
+    animation-delay: -0.6s;
+  }
+
+  :root[data-theme='light'] .hl-text--halo { stroke: #7552269a; filter: blur(8px) drop-shadow(0 0 22px #75522644); }
+  :root[data-theme='light'] .hl-text--tube { fill: #755226; stroke: #755226; filter: blur(0.35px) drop-shadow(0 0 10px #75522694); }
+  :root[data-theme='light'] .hl-text--core { fill: #322d38; filter: drop-shadow(0 0 4px #322d386a); }
+
+  @keyframes hl-pulse {
+    0%, 100% { opacity: 0.9; }
+    50%       { opacity: 1; }
+  }
+
+  /* ── 减少动态效果 ─────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .hl-arc  { animation: none; transform: rotate(-90deg); }
+    .hl-text { animation: none; }
+    /* reduced motion：更短的淡出 */
+    #home-loader { transition-duration: 0.15s; }
+  }
+</style>
