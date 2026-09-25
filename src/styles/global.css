@@ -26,7 +26,7 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: Mulish, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.7;
   text-rendering: optimizeLegibility;
@@ -34,9 +34,9 @@ body {
   -ms-overflow-style: none;
 }
 
-body::selection {
-  background: var(--color-accent-strong);
-  color: #161a20;
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 img,
@@ -56,6 +56,22 @@ textarea,
 select {
   color: inherit;
   font: inherit;
+}
+
+input,
+textarea {
+  caret-color: var(--color-accent);
+  accent-color: var(--color-link);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+button {
+  touch-action: manipulation;
 }
 
 :focus-visible {

@@ -53,8 +53,8 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
     min-width: 0;
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-panel);
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: var(--shadow-inset), var(--shadow-panel);
     min-height: 0;
   }
 
@@ -71,9 +71,9 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
   h2,
   summary {
     margin: 0;
-    color: #fff;
+    color: var(--color-heading);
     font-size: 0.94rem;
-    font-weight: 800;
+    font-weight: 650;
   }
 
   summary {
@@ -109,12 +109,18 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
     font-size: 0.82rem;
     line-height: 1.45;
     overflow-wrap: anywhere;
+    transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
   }
 
-  a:hover,
+  a:hover {
+    border-left-color: var(--color-link);
+    color: var(--color-link);
+  }
+
   a[aria-current='location'] {
     border-left-color: var(--color-accent);
-    color: var(--color-accent);
+    color: var(--color-heading);
+    background: var(--color-accent-soft);
   }
 
   .toc-desktop {

@@ -41,9 +41,9 @@ test('decorative motion stops when reduced motion is requested', async ({ page }
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/blog/');
 
-  const durations = await page.locator('[data-decorative-motion]').evaluateAll((elements) =>
+  const durations = await page.locator('[data-blog-category-card]').evaluateAll((elements) =>
     elements.map((element) => {
-      const style = getComputedStyle(element);
+      const style = getComputedStyle(element.parentElement!);
       return { animation: style.animationDuration, transition: style.transitionDuration };
     })
   );
@@ -51,6 +51,8 @@ test('decorative motion stops when reduced motion is requested', async ({ page }
   expect(durations.every(({ animation }) => animation === '0s')).toBe(true);
   expect(durations.every(({ transition }) => transition === '0s')).toBe(true);
 
+  await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
+  await page.goto('/about/');
   const sakanaLayer = page.locator('[data-sakana-layer]');
   await expect(sakanaLayer).toHaveAttribute('data-sakana-state', 'ready');
   await expect(sakanaLayer).toHaveAttribute('data-sakana-motion', 'reduced');

@@ -45,16 +45,26 @@ const hrefFor = (page: number) => (page === 1 ? '/' : `${basePath}${page}/`);
     min-height: 2.4rem;
     place-items: center;
     border: 1px solid var(--color-line);
-    border-radius: 999px;
-    background: var(--color-surface);
-    color: var(--color-muted);
+    border-radius: var(--radius-control);
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: var(--shadow-inset);
+    color: var(--color-text);
     font-size: 0.86rem;
+    font-variant-numeric: tabular-nums;
+    transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
   }
 
-  a:hover,
+  a:hover {
+    border-color: var(--color-line-strong);
+    background-color: var(--color-surface-raised);
+    color: var(--color-link);
+  }
+
   span[aria-current='page'] {
     border-color: var(--color-accent);
+    background: var(--color-accent-soft);
     color: var(--color-accent);
+    font-weight: 700;
   }
 
   .pagination-step {

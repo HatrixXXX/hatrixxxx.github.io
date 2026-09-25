@@ -32,7 +32,7 @@ const { archives } = Astro.props;
 
   .archive-month {
     margin-left: 0.5rem;
-    border-left: 2px solid var(--color-accent);
+    border-left: 2px solid var(--color-copper);
     padding: 0 0 1.75rem 1.25rem;
   }
 
@@ -42,8 +42,9 @@ const { archives } = Astro.props;
 
   h2 {
     margin: 0;
-    color: var(--color-heading, #fff);
+    color: var(--color-heading);
     font-size: 1.25rem;
+    font-weight: 650;
   }
 
   ul {
@@ -64,6 +65,7 @@ const { archives } = Astro.props;
     flex: none;
     color: var(--color-muted);
     font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
   }
 
   .archive-groups :global(a) {
@@ -71,6 +73,6 @@ const { archives } = Astro.props;
   }
 
   .archive-groups :global(a:hover) {
-    color: var(--color-accent);
+    color: var(--color-link);
   }
 </style>

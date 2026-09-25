@@ -61,8 +61,14 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     overflow: hidden;
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-panel);
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: var(--shadow-inset), var(--shadow-panel);
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .post-card:hover,
+  .post-card:focus-within {
+    border-color: var(--color-line-strong);
   }
 
   .post-card-media {
@@ -70,6 +76,7 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     overflow: hidden;
     aspect-ratio: 16 / 10;
     background: var(--color-surface-raised);
+    box-shadow: inset 0 -1px var(--color-line);
     user-select: none;
     -webkit-user-drag: none;
   }
@@ -78,12 +85,12 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 320ms ease;
+    transition: transform var(--duration-normal) var(--ease-out);
     -webkit-user-drag: none;
   }
 
   .post-card:hover .post-card-media :global(img) {
-    transform: scale(1.035);
+    transform: scale(1.015);
   }
 
   .post-card-content {
@@ -96,14 +103,15 @@ const published = new Intl.DateTimeFormat('zh-CN', {
 
   h2 {
     margin: 0;
-    color: var(--color-heading, #fff);
+    color: var(--color-heading);
     font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+    font-weight: 650;
     line-height: 1.35;
     overflow-wrap: anywhere;
   }
 
   h2 a:hover {
-    color: var(--color-accent);
+    color: var(--color-link);
   }
 
   .post-meta {
@@ -113,7 +121,14 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     margin-top: auto;
     padding-top: 1.15rem;
     color: var(--color-muted);
-    font-size: 0.78rem;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .post-card:hover .post-card-media :global(img) {
+      transform: none;
+    }
   }
 
   @media (max-width: 768px) {

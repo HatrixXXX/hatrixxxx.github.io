@@ -211,7 +211,7 @@ test('theme transition runs once and persists the destination theme', async ({ p
   });
   expect(dayCat).toMatchObject({
     width: '108px',
-    background: 'rgb(119, 119, 119)',
+    background: 'rgb(112, 101, 117)',
     borderRadius: '0px',
     boxShadow: 'none'
   });
@@ -240,11 +240,11 @@ test('theme transition runs once and persists the destination theme', async ({ p
     const style = getComputedStyle(element);
     return { width: style.width, height: style.height, background: style.backgroundColor };
   });
-  expect(dayEye).toEqual({ width: '32px', background: 'rgb(255, 238, 148)' });
+  expect(dayEye).toEqual({ width: '32px', background: 'rgb(243, 187, 98)' });
   expect(dayPupil).toEqual({
     width: '4px',
     height: '30px',
-    background: 'rgb(255, 179, 153)'
+    background: 'rgb(33, 30, 41)'
   });
 
   await toggle.click();
@@ -299,7 +299,7 @@ test('theme transition runs once and persists the destination theme', async ({ p
   });
   expect(nightPupilFrames.at(-1)).toEqual({ width: '27px', height: '27px' });
   await expect.poll(() => cat.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-    'rgb(68, 68, 68)'
+    'rgb(50, 45, 56)'
   );
 
   await toggle.dispatchEvent('click');

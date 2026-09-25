@@ -15,7 +15,6 @@ import SocialIcon from '@/components/SocialIcon.astro';
           aria-disabled="true"
           data-social-id={social.id}
           data-social-pending={social.id}
-          style={`--social-color: ${social.color}`}
         >
           <SocialIcon id={social.id} />
         </span>
@@ -24,7 +23,6 @@ import SocialIcon from '@/components/SocialIcon.astro';
           href={social.url}
           aria-label={social.label}
           data-social-id={social.id}
-          style={`--social-color: ${social.color}`}
           target={social.url.startsWith('http') ? '_blank' : undefined}
           rel={social.url.startsWith('http') ? 'me noreferrer' : undefined}
         >
@@ -43,8 +41,8 @@ import SocialIcon from '@/components/SocialIcon.astro';
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
     padding: 1.5rem 1.25rem;
-    background: var(--color-surface);
-    box-shadow: var(--shadow-panel);
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: var(--shadow-inset), var(--shadow-panel);
     text-align: center;
   }
 
@@ -52,15 +50,16 @@ import SocialIcon from '@/components/SocialIcon.astro';
     width: 112px;
     height: 112px;
     margin-inline: auto;
-    border: 3px solid rgb(255 255 255 / 75%);
+    border: 3px solid var(--color-line-strong);
     border-radius: 50%;
     object-fit: cover;
   }
 
   h2 {
     margin: 1rem 0 0;
-    color: var(--color-heading, var(--color-text));
+    color: var(--color-heading);
     font-size: 1.35rem;
+    font-weight: 650;
   }
 
   p {
@@ -84,23 +83,39 @@ import SocialIcon from '@/components/SocialIcon.astro';
     height: 42px;
     place-items: center;
     justify-self: center;
-    border: 1px solid color-mix(in srgb, var(--social-color) 45%, transparent);
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--social-color) 12%, transparent);
-    color: var(--social-color);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-inset);
+    color: var(--color-link);
+    transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
   }
 
   nav a:hover {
-    border-color: var(--social-color);
-    background: color-mix(in srgb, var(--social-color) 20%, transparent);
+    border-color: var(--color-copper);
+    background: var(--color-surface-raised);
+    color: var(--color-heading);
+  }
+
+  nav a:active {
+    background: var(--color-inset);
+    transition-duration: 100ms;
   }
 
   nav > span {
+    color: var(--color-muted);
     opacity: 0.65;
   }
 
   [data-social-id='qqmusic'] {
-    --qqmusic-cutout: color-mix(in srgb, var(--social-color) 12%, var(--color-surface));
+    --qqmusic-cutout: var(--color-inset);
+  }
+
+  a[data-social-id='qqmusic']:hover {
+    --qqmusic-cutout: var(--color-surface-raised);
+  }
+
+  a[data-social-id='qqmusic']:active {
+    --qqmusic-cutout: var(--color-inset);
   }
 
 </style>

@@ -1,0 +1,36 @@
+{
+  "installedAt": "2026-09-25",
+  "scope": "repository",
+  "skills": [
+    {
+      "name": "impeccable",
+      "repository": "https://github.com/pbakaus/impeccable",
+      "commit": "9d715cc4f5564a990ca8345abfdd5df6dc9b41c8",
+      "sourcePath": ".agents/skills/impeccable",
+      "installedPath": ".agents/skills/impeccable",
+      "skillVersion": "4.4.0"
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "commit": "dcc40ff5133ef78276117db0cc34e7b83cc8aeba",
+      "sourcePath": ".claude/skills/ui-ux-pro-max",
+      "installedPath": ".agents/skills/ui-ux-pro-max"
+    },
+    {
+      "name": "frontend-design",
+      "repository": "https://github.com/anthropics/skills",
+      "commit": "33375500bcea98d610eb30ce10ac4e59b89c390d",
+      "sourcePath": "skills/frontend-design",
+      "installedPath": ".agents/skills/frontend-design"
+    }
+  ],
+  "impeccableEngine": {
+    "version": "0.1.6",
+    "platform": "windows-x64",
+    "url": "https://github.com/pbakaus/impeccable/releases/download/engine-v0.1.6/impeccable-windows-x64.exe",
+    "sha256": "9f7e10589ff001d50bc6c3573d525e8b176f1ec051f6bcd1c6b13822d8bfc777",
+    "installedPath": ".agents/skills/impeccable/scripts/bin/windows-x64/impeccable.exe",
+    "tracked": false
+  }
+}

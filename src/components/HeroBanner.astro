@@ -1,4 +1,7 @@
 ---
+import { getImage } from 'astro:assets';
+import workshop from '@/assets/home/liupin-workshop-v5.png';
+
 interface Props {
   title: string;
   subtitle?: string;
@@ -7,7 +10,10 @@ interface Props {
 }
 
 const { title, subtitle, image, compact = false } = Astro.props;
-const backgroundImage = `--hero-image: url("${encodeURI(image).replaceAll('"', '%22')}")`;
+const heroImage = image === '/images/default-cover.svg'
+  ? (await getImage({ src: workshop, format: 'webp', quality: 85 })).src
+  : image;
+const backgroundImage = `--hero-image: url("${heroImage.replaceAll('"', '%22')}")`;
 ---
 
 <section
@@ -25,6 +31,8 @@ const backgroundImage = `--hero-image: url("${encodeURI(image).replaceAll('"', '
 
 <style>
   .hero {
+    --hero-text: #f5f0e8;
+    --hero-muted: #ded6dc;
     position: relative;
     display: grid;
     height: clamp(440px, 76svh, 720px);
@@ -33,9 +41,10 @@ const backgroundImage = `--hero-image: url("${encodeURI(image).replaceAll('"', '
     isolation: isolate;
     background-color: var(--color-surface);
     background-image: var(--hero-image);
-    background-position: center;
+    background-position: center 44%;
     background-size: cover;
-    color: #fff;
+    color: var(--hero-text);
+    border-bottom: 1px solid #b58c6566;
   }
 
   .hero--compact {
@@ -54,30 +63,28 @@ const backgroundImage = `--hero-image: url("${encodeURI(image).replaceAll('"', '
     position: absolute;
     z-index: -1;
     inset: 0;
-    background:
-      linear-gradient(to bottom, rgb(8 10 13 / 18%), rgb(8 10 13 / 68%)),
-      radial-gradient(circle at 50% 42%, rgb(255 143 166 / 10%), transparent 48%);
+    background: linear-gradient(90deg, rgb(23 21 29 / 50%), rgb(23 21 29 / 75%) 45%, rgb(23 21 29 / 62%));
   }
 
   .hero-content {
     padding-block: calc(var(--header-height) + 3rem) 5rem;
     text-align: center;
-    text-shadow: 0 3px 20px rgb(0 0 0 / 72%);
+    text-shadow: 0 2px 8px rgb(0 0 0 / 40%);
   }
 
   h1 {
     margin: 0;
     font-size: clamp(2.6rem, 7vw, 5.6rem);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.05;
+    font-weight: 650;
+    letter-spacing: .02em;
+    line-height: 1.2;
   }
 
   p {
     margin: 1rem 0 0;
-    color: rgb(255 255 255 / 88%);
+    color: var(--hero-muted);
     font-size: clamp(1rem, 2vw, 1.3rem);
-    letter-spacing: 0.12em;
+    letter-spacing: .03em;
   }
 
   @media (max-width: 768px) {

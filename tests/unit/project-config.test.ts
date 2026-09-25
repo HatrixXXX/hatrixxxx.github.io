@@ -195,8 +195,8 @@ describe('Astro project tooling', () => {
   it('ships an opaque Giscus dark theme matching the site canvas', () => {
     const theme = readFileSync('src/styles/giscus-dark.css', 'utf8');
 
-    expect(theme).toContain('background: #161a20;');
-    expect(theme).toContain('--color-canvas-default: #161a20;');
+    expect(theme).toContain('background: #17151d;');
+    expect(theme).toContain('--color-canvas-default: #17151d;');
     expect(theme).not.toContain('@import');
   });
 

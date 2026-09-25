@@ -4,6 +4,14 @@ import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_TYPE_LINKS];
+const categoryIcons = [
+  'M4 4h6v16H4zM14 4h6v16h-6zM7 8h0M17 8h0',
+  'm8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18',
+  'm12 3 10 18H2zM12 9v5m0 4h0',
+  'M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+  'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z',
+  'm15 4 5 5M4 20l4-1 12-12-4-4L4 15zM4 20h16'
+];
 ---
 
 <BaseLayout title="博客文章">
@@ -20,6 +28,9 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
               href={category.href}
               data-blog-category-card
             >
+              <svg class="blog-category-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d={categoryIcons[index]} />
+              </svg>
               <span class="blog-category-label">{category.label}</span>
             </a>
           </li>
@@ -40,9 +51,7 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
     min-height: 100svh;
     overflow: hidden;
     padding-block: clamp(2rem, 4vw, 4rem) clamp(2rem, 5vw, 4rem);
-    background:
-      radial-gradient(circle at 12% 8%, rgb(255 143 166 / 10%), transparent 32rem),
-      var(--color-bg);
+    background: var(--color-bg);
   }
 
   .blog-category-heading,
@@ -60,9 +69,10 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
   .blog-category-heading h1 {
     max-width: 12ch;
     margin: 0;
-    color: var(--color-heading, #fff);
+    color: var(--color-heading);
     font-size: clamp(1.8rem, 3.5vw, 3.25rem);
-    letter-spacing: 0.18em;
+    font-weight: 650;
+    letter-spacing: 0.08em;
     line-height: 1;
   }
 
@@ -85,20 +95,19 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
     display: flex;
     min-width: 0;
     flex: 1 0 0;
-    will-change: transform, opacity;
-    animation: blog-card-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: blog-card-enter 320ms var(--ease-out) both;
     animation-delay: calc(var(--blog-card-index) * 72ms);
   }
 
   @keyframes blog-card-enter {
     0% {
-      opacity: 0;
-      transform: translate3d(calc(100vw + 4rem), 0, 0) rotate(8deg);
+      opacity: 0.5;
+      transform: translate3d(0, 4px, 0);
     }
 
     100% {
       opacity: 1;
-      transform: translate3d(0, 0, 0) rotate(0);
+      transform: translate3d(0, 0, 0);
     }
   }
 
@@ -112,33 +121,43 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
     padding: 1.25rem 1.1rem 1.4rem;
-    background: linear-gradient(145deg, var(--color-surface-raised), var(--color-surface));
-    color: var(--color-text);
-    box-shadow: var(--shadow-panel);
-    transition: transform 180ms ease, border-color 180ms ease, color 180ms ease;
+    background: var(--surface-sheen), var(--color-surface);
+    color: var(--color-heading);
+    box-shadow: var(--shadow-inset), var(--shadow-panel);
+    transition: transform var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
   }
 
   .blog-category-list a::before {
     position: absolute;
-    inset: 0 auto 0 0;
-    width: 3px;
-    background: var(--color-accent);
+    inset: auto 1.1rem 1.4rem;
+    height: 1px;
+    background: var(--color-line-strong);
     content: '';
-    transform: scaleY(0.16);
-    transform-origin: bottom;
-    transition: transform 180ms ease;
+    transition: background-color var(--duration-fast) var(--ease-out);
   }
 
   .blog-category-list a:hover,
   .blog-category-list a:focus-visible {
-    border-color: var(--color-accent);
-    color: var(--color-heading, #fff);
-    transform: translateY(-0.35rem);
+    border-color: var(--color-copper);
+    background-color: var(--color-surface-raised);
+    transform: translateY(-2px);
   }
 
   .blog-category-list a:hover::before,
   .blog-category-list a:focus-visible::before {
-    transform: scaleY(1);
+    background: var(--color-copper);
+  }
+
+  .blog-category-list a:active {
+    transform: translateY(0);
+    transition-duration: 100ms;
+  }
+
+  .blog-category-icon {
+    position: absolute;
+    top: 1.5rem;
+    left: calc(50% - 12px);
+    color: var(--color-copper);
   }
 
   .blog-category-label {
@@ -177,6 +196,12 @@ const blogCategories = [{ label: '全部文章', href: '/blog/all/' }, ...POST_T
     .blog-category-list li {
       animation: none;
       opacity: 1;
+      transform: none;
+    }
+
+    .blog-category-list a:hover,
+    .blog-category-list a:focus-visible,
+    .blog-category-list a:active {
       transform: none;
     }
   }

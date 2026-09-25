@@ -1,6 +1,4 @@
 ---
-import '@fontsource/orbitron/400.css';
-
 const hexSegments = [
   { d: 'M 107 185 L 107 415' },
   { d: 'M 107 415 L 300 526' },
@@ -72,7 +70,7 @@ const hexSegments = [
     display: grid;
     place-items: center;
     overflow: hidden;
-    background: #000;
+    background: var(--color-bg);
   }
 
   .project-load-stage {
@@ -93,7 +91,7 @@ const hexSegments = [
   }
 
   .project-load-hex--progress {
-    stroke: rgb(38 214 255);
+    stroke: var(--color-accent);
     stroke-width: 15;
     stroke-linecap: butt;
     stroke-linejoin: round;
@@ -101,13 +99,13 @@ const hexSegments = [
     stroke-dashoffset: 1;
     animation: project-load-segment-fill 3.2s linear infinite;
     filter:
-      drop-shadow(0 0 2px rgb(255 255 255 / 0.22))
-      drop-shadow(0 0 7px rgb(37 211 255 / 0.88))
-      drop-shadow(0 0 20px rgb(37 211 255 / 0.34));
+      drop-shadow(0 0 2px color-mix(in srgb, var(--color-heading) 22%, transparent))
+      drop-shadow(0 0 7px color-mix(in srgb, var(--color-accent) 48%, transparent))
+      drop-shadow(0 0 20px color-mix(in srgb, var(--color-accent) 18%, transparent));
   }
 
   .project-load-text {
-    font-family: 'Orbitron', 'IBM Plex Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 34px;
     font-weight: 400;
     letter-spacing: 0;
@@ -117,25 +115,25 @@ const hexSegments = [
 
   .project-load-text--halo {
     fill: none;
-    stroke: rgb(65 213 255 / 0.6);
+    stroke: color-mix(in srgb, var(--color-accent) 60%, transparent);
     stroke-width: 8;
     opacity: 0.9;
-    filter: blur(8px) drop-shadow(0 0 22px rgb(34 191 255 / 0.75));
+    filter: blur(8px) drop-shadow(0 0 22px color-mix(in srgb, var(--color-accent) 32%, transparent));
     animation-delay: 0s;
   }
 
   .project-load-text--tube {
-    fill: rgb(31 205 255);
-    stroke: rgb(31 205 255);
+    fill: var(--color-accent);
+    stroke: var(--color-accent);
     stroke-width: 1.8;
-    filter: blur(0.35px) drop-shadow(0 0 10px rgb(34 191 255 / 0.95));
+    filter: blur(0.35px) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 58%, transparent));
     animation-delay: -0.35s;
   }
 
   .project-load-text--core {
-    fill: rgb(216 252 255);
+    fill: var(--color-heading);
     stroke: none;
-    filter: drop-shadow(0 0 4px rgb(178 244 255 / 0.9));
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-heading) 42%, transparent));
     animation-delay: -0.6s;
   }
 
@@ -184,6 +182,10 @@ const hexSegments = [
     .project-load-hex--progress,
     .project-load-text {
       animation: none;
+    }
+
+    .project-load-hex--progress {
+      stroke-dashoffset: 0;
     }
   }
 </style>

@@ -24,9 +24,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <style>
   .about-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3rem); align-items: start; overflow: visible; padding-block: clamp(2.5rem, 6vw, 5rem); }
-  article { min-width: 0; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: clamp(1.5rem, 5vw, 3rem); background: var(--color-surface); box-shadow: var(--shadow-panel); }
-  h1 { margin: 0; color: var(--color-heading, var(--color-text)); }
-  p { color: var(--color-muted); }
+  article { min-width: 0; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: clamp(1.5rem, 5vw, 3rem); background: var(--surface-sheen), var(--color-surface); box-shadow: var(--shadow-inset), var(--shadow-panel); }
+  h1 { margin: 0; color: var(--color-heading); font-weight: 650; }
+  p { color: var(--color-text); }
   @media (min-width: 1025px) {
     .about-main { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr); }
     article { grid-column: 2; grid-row: 1; }

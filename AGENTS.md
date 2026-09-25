@@ -10,6 +10,23 @@
 - 发现并行修改、未提交内容或文件状态与预期不一致时，保留现有改动，调整自己的修改以兼容，并在必要时说明具体冲突。
 - 本地预览统一使用 `corepack pnpm astro dev --background --host 127.0.0.1 --port 4321` 启动；修改完成后先用 `corepack pnpm astro dev status` 和 HTTP 请求确认服务，再提供 `http://127.0.0.1:4321/`。
 
+## 项目级前端设计 Skills
+
+- 本项目在 `.agents/skills/` 安装 `impeccable`、`ui-ux-pro-max` 和 `frontend-design`，仅供本仓库及其子目录中的会话发现和调用。不要为这三个工具添加全局 skill、全局自动调用规则或全局 MCP 配置。来源、固定版本和使用命令见 `.agents/README.md` 与 `.agents/skills-sources.json`。
+- 用户要求设计、重设计、美化页面或组件，调整排版、配色、响应式、交互或动效时，按下表读取对应 `SKILL.md`；纯内容编辑、后台逻辑和非视觉配置任务不自动加载它们。
+
+| Skill | 项目内入口 | 使用时机 |
+| --- | --- | --- |
+| `ui-ux-pro-max` | `.agents/skills/ui-ux-pro-max/SKILL.md` | 查询设计规则、字体、配色、UX 和无障碍要求；涉及框架实现时明确使用 `astro`，局部问题只查相关 domain。 |
+| `frontend-design` | `.agents/skills/frontend-design/SKILL.md` | 新建或重新设计页面、组件时确定构图与视觉方向，并落实为现有 Astro 架构下的代码。 |
+| `impeccable` | `.agents/skills/impeccable/SKILL.md` | 审查和打磨已有界面，按需使用 `critique`、`audit`、`layout`、`typeset`、`polish`、`animate` 等命令；只加载当前任务需要的参考文件。 |
+
+- 完整页面设计通常先查 `ui-ux-pro-max`，再用 `frontend-design` 实现，最后用 `impeccable` 审查；小改动只用相关工具，不重复生成三套方案。用户明确指定某个 skill 时优先使用该工具。
+- 用户提供的参考图、参考站、明确偏好和本文件的稳定约束优先于 skill 的通用审美建议。参考只用于理解视觉特征，不复制他人源码、文案或个人资产。已有页面的局部调整应保留其他区域和功能。
+- 用户可以只描述视觉效果；代码实现、运行预览、检查桌面和手机画面由 agent 完成。动效必须实际触发并检查减少动态效果设置，不能只用代码检查或静态截图判断完成。沿用本项目的协作与决策规则，不因多个 skill 叠加而逐项要求用户确认。
+- UI UX Pro Max 上游示例中的 `${CLAUDE_PLUGIN_ROOT}` 不适用于本安装；统一从项目根目录运行 `python .agents/skills/ui-ux-pro-max/scripts/search.py`，或使用该脚本的绝对路径。
+- Windows 下使用 `.agents/skills/impeccable/scripts/impeccable.cmd`；调用前在当前命令中将 `IMPECCABLE_HOME` 设为项目根目录下的 `.impeccable`。本安装不注册 MCP 服务或自动 hook，运行时文件和引擎二进制不提交。
+
 ## 常用命令
 
 ```powershell
@@ -51,10 +68,11 @@ corepack pnpm test:e2e
 - 作品状态只能是 `idea|active|done|archived`。作品、歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
 - 音乐播放器在首页左下透视卡片中常驻，所有非首页页面默认固定折叠到左侧，只露半张唱片；点击展开，点击卡片空白或收起按钮折叠，播放控件不得误触收起。全站只挂载一个播放器，以 `transition:persist` 保留 DOM 和 Audio；跨客户端导航后按当前路径更新首页/侧边模式，不依赖保留下来的旧 props。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。
-- Playwright 当前收集 211 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀；其中首页 3 张已覆盖本次改版，其余基线未更新。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
-- 首页使用 `1920×1080` 固定画布，以四角坐标经 `projectPanel` 生成 `matrix3d` 卡片投影，按有效 CSS 视口等比完整居中显示；不同分辨率和浏览器缩放下保持相对位置，竖屏留上下空白。角色区域暂空，不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
-- 首页金句语料在 `src/data/home-quotes.ts`，每 15 秒切换，支持双击、Enter/空格和暂停；减少动态效果时默认暂停自动切换。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。收藏推荐仅作标题，快捷链接复用既有关于子页；计划和实验场分别为 `/plans/`、`/lab/`。
-- 所有非首页普通 Hero 与文章题图在同一视口下等高：桌面和平板为 `240px`，宽度不超过 `768px` 时为 `200px`；全站不渲染波浪分隔。
+- Playwright 当前收集 217 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀；18 张均已更新为留频街全站视觉版本，首页包含 v5 立绘、背景、裁切和年龄等级。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
+- 首页使用 `1920×1080` 设计画布并等比缩放。右侧 7 个面板共用一个 `matrix3d` 父平面，子卡片只设置局部位置和尺寸，不单独旋转；组内间距保持固定。超宽屏用纯 CSS 平移左右两组贴近视口边缘，竖屏留上下空白，不改为单列。角色层使用用户明确选定的 `src/assets/home/hatrix-character-v5.png`，与 `output/imagegen/hatrix-character-v5.png` 原图一致，保留该版本的全部人物与外围元素；此前迭代中的元素删减要求不再用于改写这张已选定图片。立绘按前景近景比例裁在画布内；背景为 `src/assets/home/liupin-workshop-v5.png`，按 v5 立绘和人机协作设定重画。人物位于背景之上、入口面板之下，允许与卡片重叠，不拦截输入；不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
+- 首页金句语料在 `src/data/home-quotes.ts`，每 15 秒切换，支持双击、Enter/空格和暂停；减少动态效果时默认暂停自动切换。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。工具推荐仅作标题，快捷链接复用既有关于子页；计划和实验场分别为 `/plans/`、`/lab/`。
+- 首页左侧等级圆环替代可见的 Hatrix 字样。生日为 `2002-07-29`，等级按北京时间的周岁计算，每年 7 月 29 日零点升级；进度为距上次生日的整天数除以两次生日之间的实际天数（365 或 366）。浏览器进入首页、跨日和恢复页面时更新，不使用构建日期；无 JavaScript 时显示未知等级。
+- 现有非首页普通 Hero 高度为桌面和平板 `240px`，宽度不超过 `768px` 时为 `200px`；文章详情保持标题和元信息开头，不恢复题图横幅；全站不渲染波浪分隔。
 - 当前仅文章页启用页脚及站点统计，普通布局默认不显示页脚；页脚版权区显示版权与“保留所有权利”，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
 - `SidebarStack` 承载作者资料，统计按页面配置显示；当前关于页及子页只显示作者资料，文章侧栏显示目录和最近文章。播放器独立于侧栏。Vercount 只在生产环境加载固定脚本 `https://events.vercount.one/js`；开发和测试不得请求该服务，加载失败时访客数保持 `—`。
 - Sakana 的许可和素材来源告知固定在 `public/third-party-notices.txt`，构建后必须复制到 `dist/third-party-notices.txt`。内置千束与泷奈插画只用于非商业网页；站点用途或依赖版本变化时必须重新核对授权。
@@ -66,7 +84,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 3976 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 3977 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 ## 禁止事项

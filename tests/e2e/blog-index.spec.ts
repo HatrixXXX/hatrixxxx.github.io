@@ -180,12 +180,12 @@ test('card and archive headings remain readable in the light theme', async ({ pa
 
   await expect(page.locator('article[data-post-card] h2').first()).toHaveCSS(
     'color',
-    'rgb(22, 26, 32)'
+    'rgb(50, 45, 56)'
   );
   await page.locator('[data-blog-view-toggle]').click();
   await expect(page.locator('[data-blog-archive-view] h2').first()).toHaveCSS(
     'color',
-    'rgb(22, 26, 32)'
+    'rgb(50, 45, 56)'
   );
 });
 
@@ -200,15 +200,14 @@ test('focused post rail supports native arrow-key scrolling', async ({ page }) =
 
 test('blog navigation opens categories and the all-posts submenu page', async ({ page }) => {
   await page.goto('/');
-  const blogNavigation = page
-    .getByRole('navigation', { name: '主导航' })
-    .getByRole('link', { name: '博客文章', exact: true });
+  const blogNavigation = page.locator('[data-home-blog]');
   await expect(blogNavigation).toHaveAttribute('href', '/blog/');
   await blogNavigation.click();
   await page.waitForURL('**/blog/');
   await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
   await expect(page.locator('[data-blog-view-toggle]')).toHaveCount(0);
 
+  await page.locator('[data-nav-item="博客文章"] > a').focus();
   await page.locator('.desktop-nav .submenu').getByRole('link', { name: '全部文章', exact: true }).click();
   await page.waitForURL('**/blog/all/');
   const toggle = page.locator('[data-blog-view-toggle]');

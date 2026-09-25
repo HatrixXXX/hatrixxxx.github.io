@@ -1,35 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title description">
-  <title id="title">粉色与深蓝色的抽象几何背景</title>
-  <desc id="description">由渐变光晕、网格和细线构成的博客默认题图</desc>
+  <title id="title">留频街计算基板</title>
+  <desc id="description">旧白面板、石墨计算单元与铜色接线组成的抽象默认题图</desc>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#111820"/>
-      <stop offset="0.55" stop-color="#242032"/>
-      <stop offset="1" stop-color="#171b24"/>
+      <stop offset="0" stop-color="#312a3a"/>
+      <stop offset="0.55" stop-color="#24202d"/>
+      <stop offset="1" stop-color="#17151d"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#ff8fa6" stop-opacity=".58"/>
-      <stop offset="1" stop-color="#ff8fa6" stop-opacity="0"/>
-    </radialGradient>
-    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
-      <path d="M64 0H0v64" fill="none" stroke="#fff" stroke-opacity=".055"/>
-    </pattern>
-    <filter id="blur">
-      <feGaussianBlur stdDeviation="28"/>
-    </filter>
+    <linearGradient id="ceramic" x2="0" y2="1">
+      <stop stop-color="#d9d0c1"/>
+      <stop offset="1" stop-color="#b5a999"/>
+    </linearGradient>
   </defs>
   <rect width="1600" height="900" fill="url(#background)"/>
-  <rect width="1600" height="900" fill="url(#grid)"/>
-  <ellipse cx="350" cy="200" rx="460" ry="370" fill="url(#glow)" filter="url(#blur)" opacity=".54"/>
-  <ellipse cx="1320" cy="720" rx="520" ry="410" fill="url(#glow)" filter="url(#blur)" opacity=".42"/>
-  <g fill="none" stroke="#ffb1c0" stroke-opacity=".32">
-    <path d="M-60 650C260 350 490 780 810 480s530-180 850-470" stroke-width="3"/>
-    <path d="M-80 730C240 430 540 840 860 540s510-150 800-430"/>
+  <g fill="none" stroke="#b58c65" stroke-width="2" opacity=".5">
+    <path d="M0 186h386l54 54h202M0 220h368l54 54h220M988 346h232l80-80h300M988 382h250l80-80h282M720 570v170H260v160M754 570v204H294v126"/>
   </g>
-  <g fill="#fff" fill-opacity=".42">
-    <circle cx="271" cy="298" r="3"/>
-    <circle cx="1050" cy="205" r="2"/>
-    <circle cx="1312" cy="395" r="3"/>
-    <circle cx="820" cy="690" r="2"/>
+  <path fill="url(#ceramic)" d="M530 180h510l40 40v360l-40 40H530l-40-40V220z"/>
+  <path fill="#292531" stroke="#756474" stroke-width="2" d="M552 242h466v316H552z"/>
+  <g fill="#211e29" stroke="#8d735b" stroke-width="2">
+    <path d="M576 268h192v124H576zM796 268h198v124H796zM576 420h192v112H576zM796 420h198v112H796z"/>
   </g>
+  <g fill="#b58c65">
+    <path d="M574 224h198v3H574zM794 224h200v3H794zM574 574h198v3H574zM794 574h200v3H794z"/>
+    <path d="M470 290h38v6h-38zM470 330h38v6h-38zM470 370h38v6h-38zM1058 446h42v6h-42zM1058 486h42v6h-42z"/>
+  </g>
+  <path fill="none" stroke="#706277" d="M1100 610h244l24 24v118h-268zM214 82h236v78H214z"/>
+  <path fill="#84d4c6" d="M578 268h22v3h-22z"/>
+  <path fill="#f3bb62" d="M964 528h30v3h-30z"/>
 </svg>

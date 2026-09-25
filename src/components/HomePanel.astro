@@ -4,12 +4,14 @@ interface Props {
   name: string;
   width: number;
   height: number;
-  corners: readonly Point[];
+  corners?: readonly Point[];
+  x?: number;
+  y?: number;
 }
-const { name, width, height, corners } = Astro.props;
-const transform = `matrix3d(${projectPanel(width, height, corners).join(',')})`;
+const { name, width, height, corners, x = 0, y = 0 } = Astro.props;
+const transform = corners ? `matrix3d(${projectPanel(width, height, corners).join(',')})` : 'none';
 ---
-<div class="home-panel" data-home-panel={name} style={`width:${width}px;height:${height}px;transform:${transform}`}>
+<div class="home-panel" data-home-panel={name} style={`left:${x}px;top:${y}px;width:${width}px;height:${height}px;transform:${transform}`}>
   <slot />
 </div>
 <style>

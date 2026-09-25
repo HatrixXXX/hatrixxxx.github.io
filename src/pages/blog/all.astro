@@ -44,11 +44,13 @@ const archives = buildArchives(posts);
   .blog-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
   .blog-view { min-width: 0; }
   .blog-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.25rem; margin-bottom: 1.5rem; }
-  .blog-total { margin: 0; color: var(--color-muted); }
-  .blog-total strong { color: var(--color-accent); font-size: 1.25em; }
-  button { display: inline-flex; min-height: 44px; align-items: center; border: 1px solid var(--color-line); border-radius: 999px; padding: 0.55rem 1rem; background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+  .blog-total { margin: 0; color: var(--color-muted); font-size: 0.875rem; }
+  .blog-total strong { color: var(--color-heading); font-family: 'IBM Plex Mono', monospace; font-size: 1.25em; font-weight: 600; font-variant-numeric: tabular-nums; }
+  button { display: inline-flex; min-height: 44px; align-items: center; border: 1px solid var(--color-line-strong); border-radius: var(--radius-control); padding: 0.55rem 1rem; background: var(--surface-sheen), var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-inset); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
   button[hidden] { display: none; }
-  button:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  button:hover { border-color: var(--color-copper); background-color: var(--color-surface-raised); color: var(--color-heading); }
+  button[aria-pressed='true'] { border-color: var(--color-copper); background-color: var(--color-accent-soft); color: var(--color-accent); }
+  button:active { background-color: var(--color-inset); transition-duration: 100ms; }
   [data-blog-archive-view] { min-width: 0; }
   @media (min-width: 1025px) { .blog-rail-shell { width: calc(100% - 4rem); } }
 </style>

@@ -1,10 +1,19 @@
-<span class="lock-indicator" role="img" aria-label="加锁内容">🔒</span>
+<span class="lock-indicator" role="img" aria-label="加锁内容">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="5" y="10" width="14" height="11" rx="2" />
+    <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+  </svg>
+</span>
 
 <style>
   .lock-indicator {
     display: inline-block;
+    width: 1em;
+    height: 1em;
     margin-inline-start: 0.25em;
+    color: var(--color-accent);
     font-size: 0.78em;
     line-height: 1;
+    vertical-align: -0.08em;
   }
 </style>

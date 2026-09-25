@@ -16,6 +16,10 @@ reports/
 # Agent work files
 .superpowers/
 .worktrees/
+.impeccable/
+.agents/skills/impeccable/scripts/bin/
+.agents/skills/**/__pycache__/
+.agents/skills/**/*.py[cod]
 
 # IDE configurations
 .idea/

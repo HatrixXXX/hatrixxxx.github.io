@@ -7,7 +7,7 @@
 html,
 body,
 main {
-  background: #161a20;
+  background: #17151d;
   color-scheme: dark;
 }
 
@@ -27,7 +27,7 @@ main {
   --color-prettylights-syntax-carriage-return-bg: #b62324;
   --color-prettylights-syntax-string-regexp: #7ee787;
   --color-prettylights-syntax-markup-list: #f2cc60;
-  --color-prettylights-syntax-markup-heading: #1f6feb;
+  --color-prettylights-syntax-markup-heading: #266f69;
   --color-prettylights-syntax-markup-italic: #c9d1d9;
   --color-prettylights-syntax-markup-bold: #c9d1d9;
   --color-prettylights-syntax-markup-deleted-text: #ffdcd7;
@@ -43,46 +43,46 @@ main {
   --color-prettylights-syntax-sublimelinter-gutter-mark: #484f58;
   --color-prettylights-syntax-constant-other-reference-link: #a5d6ff;
   --color-btn-text: #c9d1d9;
-  --color-btn-bg: #242a32;
+  --color-btn-bg: #2c2735;
   --color-btn-border: rgb(240 246 252 / 10%);
   --color-btn-shadow: 0 0 transparent;
   --color-btn-inset-shadow: 0 0 transparent;
-  --color-btn-hover-bg: #30363d;
+  --color-btn-hover-bg: #494151;
   --color-btn-hover-border: #8b949e;
   --color-btn-active-bg: #282e33;
   --color-btn-active-border: #6e7681;
-  --color-btn-selected-bg: #242a32;
-  --color-btn-primary-text: #fff;
-  --color-btn-primary-bg: #238636;
+  --color-btn-selected-bg: #2c2735;
+  --color-btn-primary-text: #241c13;
+  --color-btn-primary-bg: #f3bb62;
   --color-btn-primary-border: rgb(240 246 252 / 10%);
   --color-btn-primary-shadow: 0 0 transparent;
   --color-btn-primary-inset-shadow: 0 0 transparent;
-  --color-btn-primary-hover-bg: #2ea043;
+  --color-btn-primary-hover-bg: #ffd28c;
   --color-btn-primary-hover-border: rgb(240 246 252 / 10%);
-  --color-btn-primary-selected-bg: #238636;
+  --color-btn-primary-selected-bg: #e9aa4a;
   --color-btn-primary-selected-shadow: 0 0 transparent;
-  --color-btn-primary-disabled-text: rgb(240 246 252 / 50%);
-  --color-btn-primary-disabled-bg: rgb(35 134 54 / 60%);
+  --color-btn-primary-disabled-text: #241c13;
+  --color-btn-primary-disabled-bg: rgb(243 187 98 / 35%);
   --color-btn-primary-disabled-border: rgb(240 246 252 / 10%);
   --color-action-list-item-default-hover-bg: rgb(144 157 171 / 12%);
   --color-segmented-control-bg: rgb(99 110 123 / 10%);
-  --color-segmented-control-button-bg: #161a20;
+  --color-segmented-control-button-bg: #17151d;
   --color-segmented-control-button-selected-border: #636e7b;
-  --color-fg-default: #d8d9dc;
-  --color-fg-muted: #9298a1;
-  --color-fg-subtle: #6e7681;
-  --color-canvas-default: #161a20;
-  --color-canvas-overlay: #1d2229;
-  --color-canvas-inset: #111419;
-  --color-canvas-subtle: #1d2229;
-  --color-border-default: #30363d;
-  --color-border-muted: #21262d;
+  --color-fg-default: #e9e4dc;
+  --color-fg-muted: #b9b0c2;
+  --color-fg-subtle: #a499ae;
+  --color-canvas-default: #17151d;
+  --color-canvas-overlay: #211e29;
+  --color-canvas-inset: #19161f;
+  --color-canvas-subtle: #211e29;
+  --color-border-default: #494151;
+  --color-border-muted: #302938;
   --color-neutral-muted: rgb(110 118 129 / 20%);
   --color-neutral-subtle: rgb(110 118 129 / 10%);
-  --color-accent-fg: #58a6ff;
-  --color-accent-emphasis: #1f6feb;
-  --color-accent-muted: rgb(56 139 253 / 40%);
-  --color-accent-subtle: rgb(65 132 228 / 10%);
+  --color-accent-fg: #84d4c6;
+  --color-accent-emphasis: #266f69;
+  --color-accent-muted: rgb(132 212 198 / 35%);
+  --color-accent-subtle: rgb(132 212 198 / 10%);
   --color-success-fg: #3fb950;
   --color-attention-fg: #c69026;
   --color-attention-muted: rgb(174 124 20 / 40%);
@@ -91,8 +91,8 @@ main {
   --color-danger-muted: rgb(229 83 75 / 40%);
   --color-danger-subtle: rgb(229 83 75 / 10%);
   --color-primer-shadow-inset: 0 0 transparent;
-  --color-scale-gray-7: #21262d;
-  --color-scale-blue-8: #0c2d6b;
+  --color-scale-gray-7: #302938;
+  --color-scale-blue-8: #254b46;
   --color-social-reaction-bg-hover: var(--color-scale-gray-7);
   --color-social-reaction-bg-reacted-hover: var(--color-scale-blue-8);
 }

@@ -42,7 +42,7 @@ function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute(
     'content',
-    theme === 'dark' ? '#161a20' : '#f7f7f9'
+    theme === 'dark' ? '#17151d' : '#f0ece4'
   );
   syncThemeToggles(theme);
   if (changed) updateGiscusTheme(theme);

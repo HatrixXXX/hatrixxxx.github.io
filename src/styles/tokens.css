@@ -1,29 +1,54 @@
 :root {
-  --color-bg: #161a20;
-  --color-surface: #1d2229;
-  --color-surface-raised: #242a32;
-  --color-text: #d8d9dc;
-  --color-muted: #9298a1;
-  --color-accent: #ff8fa6;
-  --color-accent-strong: #ff6f91;
-  --color-line: rgb(255 255 255 / 10%);
-  --shadow-panel: 0 16px 40px rgb(0 0 0 / 28%);
+  --color-bg: #17151d;
+  --color-surface: #211e29;
+  --color-surface-raised: #2c2735;
+  --color-inset: #19161f;
+  --color-text: #e9e4dc;
+  --color-heading: #f5f0e8;
+  --color-muted: #b9b0c2;
+  --color-accent: #f3bb62;
+  --color-accent-strong: #ffd28c;
+  --color-accent-soft: rgb(243 187 98 / 10%);
+  --color-on-accent: #241c13;
+  --color-link: #84d4c6;
+  --color-copper: #b58c65;
+  --color-line: rgb(190 174 204 / 18%);
+  --color-line-strong: #655770;
+  --surface-sheen: linear-gradient(155deg, rgb(245 224 193 / 4%), transparent 48%);
+  --shadow-panel: 0 6px 18px rgb(10 8 14 / 18%);
+  --shadow-inset: inset 0 1px 0 rgb(248 231 207 / 5%), inset 0 -1px 0 rgb(0 0 0 / 15%);
+  --font-body: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-data: 'IBM Plex Mono', Consolas, monospace;
+  --radius-control: 5px;
+  --duration-fast: 160ms;
+  --duration-normal: 200ms;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
   --content-width: 1180px;
   --reading-width: 780px;
   --header-height: 56px;
   --inner-page-banner-height: 240px;
-  --radius-card: 12px;
+  --radius-card: 8px;
 }
 
 :root[data-theme='light'] {
-  --color-bg: #f7f7f9;
-  --color-surface: #fff;
-  --color-surface-raised: #eceef2;
-  --color-text: #30343b;
-  --color-muted: #676d78;
-  --color-line: rgb(22 26 32 / 12%);
-  --shadow-panel: 0 16px 40px rgb(30 35 42 / 14%);
-  --color-heading: #161a20;
+  --color-bg: #f0ece4;
+  --color-surface: #faf8f3;
+  --color-surface-raised: #e8e2d8;
+  --color-inset: #e5ded4;
+  --color-text: #322d38;
+  --color-heading: #322d38;
+  --color-muted: #655a6b;
+  --color-accent: #755226;
+  --color-accent-strong: #543815;
+  --color-accent-soft: rgb(117 82 38 / 8%);
+  --color-on-accent: #faf8f3;
+  --color-link: #266f69;
+  --color-copper: #856143;
+  --color-line: rgb(84 65 94 / 18%);
+  --color-line-strong: #a699ac;
+  --surface-sheen: linear-gradient(155deg, rgb(255 255 255 / 55%), transparent 48%);
+  --shadow-panel: 0 6px 18px rgb(58 43 35 / 7%);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 65%), inset 0 -1px 0 rgb(78 58 34 / 5%);
 }
 
 @media (max-width: 768px) {

@@ -21,19 +21,21 @@ const { title } = Astro.props;
     gap: 0.35rem;
     margin: 0;
     padding: 0;
-    color: rgb(255 255 255 / 74%);
+    color: var(--hero-muted, var(--color-muted));
     font-size: 0.82rem;
     list-style: none;
   }
 
   .breadcrumbs li:not(:last-child)::after {
     margin-left: 0.35rem;
-    color: rgb(255 255 255 / 42%);
+    color: var(--hero-muted, var(--color-muted));
     content: '/';
   }
 
   .breadcrumbs a:hover {
-    color: var(--color-accent);
+    color: var(--hero-text, var(--color-link));
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
 
   .breadcrumbs [aria-current='page'] {

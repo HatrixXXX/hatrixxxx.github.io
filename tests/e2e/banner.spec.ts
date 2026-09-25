@@ -20,7 +20,19 @@ test('non-home pages use the blog category header and omit article cover banners
       await page.goto(route);
       if (route === '/blog/') await expect(page.locator('[data-blog-category-nav]')).toBeVisible();
       else if (route.startsWith('/posts/')) await expect(page.locator('.post-hero')).toHaveCount(0);
-      else await expect(page.locator('[data-hero]')).toBeVisible();
+      else {
+        const hero = page.locator('[data-hero]');
+        await expect(hero).toBeVisible();
+        expect((await hero.boundingBox())?.height).toBe(viewport.bannerHeight);
+        const imageWidth = await hero.evaluate(async (element) => {
+          const background = getComputedStyle(element).backgroundImage;
+          const image = new Image();
+          image.src = background.slice(5, -2);
+          await image.decode();
+          return image.naturalWidth;
+        });
+        expect(imageWidth).toBeGreaterThan(0);
+      }
       await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
     }
   }

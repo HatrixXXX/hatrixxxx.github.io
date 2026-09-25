@@ -10,11 +10,74 @@ test('home presents the spatial panels and a permanent music player', async ({ p
   await expect(page.locator('[data-home-title]')).toHaveText('Hatrix');
   await expect(page.locator('[data-open-search]')).toHaveCount(1);
   await expect(page.locator('[data-music-player]')).toBeVisible();
-  await expect(page.locator('[data-home-panel="recommendations"]')).toContainText('收藏推荐');
+  await expect(page.locator('[data-home-panel="recommendations"]')).toContainText('工具推荐');
   await expect(page.locator('[data-home-panel="recommendations"] a')).toHaveCount(3);
   await expect(page.locator('header[data-site-header], footer[data-site-footer]')).toHaveCount(0);
   await expect(page.locator('[data-sakana-layer], [data-cursor-trail], [data-sidebar-stack]')).toHaveCount(0);
   await expect(page.locator('article[data-post-card], .pagination')).toHaveCount(0);
+});
+
+test('right-side cards share one perspective plane with aligned rows', async ({ page }) => {
+  await page.goto('/');
+  const plane = page.locator('[data-home-plane="right"]');
+  await expect(plane).toHaveCount(1);
+  const geometry = await plane.evaluate((element) => {
+    const panels = [...element.querySelectorAll<HTMLElement>('[data-home-panel]')];
+    const box = (name: string) => panels.find((panel) => panel.dataset.homePanel === name)!;
+    const projects = box('projects');
+    const about = box('about');
+    const plans = box('plans');
+    const lab = box('lab');
+    return {
+      projected: getComputedStyle(element).transform.startsWith('matrix3d('),
+      flatChildren: panels.every((panel) => getComputedStyle(panel).transform === 'none'),
+      names: panels.map((panel) => panel.dataset.homePanel),
+      middleAligned: projects.offsetTop === about.offsetTop && projects.offsetHeight === about.offsetHeight,
+      bottomAligned: plans.offsetTop === lab.offsetTop && plans.offsetHeight === lab.offsetHeight,
+      middleGap: about.offsetLeft - projects.offsetLeft - projects.offsetWidth,
+      bottomGap: lab.offsetLeft - plans.offsetLeft - plans.offsetWidth
+    };
+  });
+  expect(geometry.projected).toBe(true);
+  expect(geometry.flatChildren).toBe(true);
+  expect(geometry.names).toEqual(['clock', 'blog', 'projects', 'about', 'recommendations', 'plans', 'lab']);
+  expect(geometry.middleAligned).toBe(true);
+  expect(geometry.bottomAligned).toBe(true);
+  for (const gap of [geometry.middleGap, geometry.bottomGap]) {
+    expect(gap).toBeGreaterThan(0);
+    expect(gap).toBeLessThanOrEqual(16);
+  }
+});
+
+test('home recommendations use a full-height bookmark and the bottom row is fully linked', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  const group = page.locator('[data-home-panel="recommendations"] section');
+  await expect(group).toHaveAccessibleName('工具推荐');
+  const arrangement = await group.evaluate((section) => {
+    const bookmark = section.querySelector<HTMLAnchorElement>('a[href="/about/bookmarks/"]')!;
+    const software = section.querySelector<HTMLAnchorElement>('a[href="/about/tools/"]')!;
+    const gear = section.querySelector<HTMLAnchorElement>('a[href="/about/gear/"]')!;
+    const heading = section.querySelector<HTMLElement>('h2')!;
+    return {
+      fullHeight: bookmark.offsetHeight === section.clientHeight,
+      headingToRight: heading.offsetLeft > bookmark.offsetLeft + bookmark.offsetWidth,
+      softwareUnderHeading: software.offsetTop > heading.offsetTop + heading.offsetHeight,
+      pairedBottomRow: software.offsetTop === gear.offsetTop && software.offsetHeight === gear.offsetHeight
+    };
+  });
+  expect(arrangement).toEqual({ fullHeight: true, headingToRight: true, softwareUnderHeading: true, pairedBottomRow: true });
+  const auxiliary = page.locator('[data-home-auxiliary-slot]');
+  await expect(auxiliary).toHaveCount(0);
+  for (const name of ['plans', 'lab']) {
+    const link = page.locator(`[data-home-panel="${name}"] > a`);
+    await expect(link).toHaveCount(1);
+    expect(await link.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const parent = element.parentElement!.getBoundingClientRect();
+      return Math.abs(box.width - parent.width) < 1 && Math.abs(box.height - parent.height) < 1;
+    })).toBe(true);
+  }
 });
 
 test('home keeps panel proportions and positions across effective viewport sizes', async ({ page }) => {
@@ -24,7 +87,7 @@ test('home keeps panel proportions and positions across effective viewport sizes
   const baseline = await page.locator('[data-home-panel]').evaluateAll((panels) =>
     panels.map((panel) => {
       const rect = panel.getBoundingClientRect();
-      return { name: panel.getAttribute('data-home-panel'), x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      return { name: panel.getAttribute('data-home-panel'), side: panel.closest('[data-home-side]')?.getAttribute('data-home-side'), x: rect.x, y: rect.y, width: rect.width, height: rect.height };
     })
   );
   expect(baseline.length).toBeGreaterThanOrEqual(13);
@@ -51,7 +114,7 @@ test('home keeps panel proportions and positions across effective viewport sizes
     const panels = await page.locator('[data-home-panel]').evaluateAll((nodes) =>
       nodes.map((node) => {
         const rect = node.getBoundingClientRect();
-        return { name: node.getAttribute('data-home-panel'), x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        return { name: node.getAttribute('data-home-panel'), side: node.closest('[data-home-side]')?.getAttribute('data-home-side'), x: rect.x, y: rect.y, width: rect.width, height: rect.height };
       })
     );
     expect(panels.map(({ name }) => name)).toEqual(baseline.map(({ name }) => name));
@@ -59,7 +122,8 @@ test('home keeps panel proportions and positions across effective viewport sizes
       const panel = panels[index];
       const original = baseline[index];
       const label = `${panel.name} at ${viewport.width}x${viewport.height}`;
-      expect(Math.abs((panel.x - offsetX) / scale - original.x), `${label} x`).toBeLessThan(1);
+      const sideShift = panel.side === 'left' ? -offsetX : offsetX;
+      expect(Math.abs((panel.x - offsetX - sideShift) / scale - original.x), `${label} x`).toBeLessThan(1);
       expect(Math.abs((panel.y - offsetY) / scale - original.y), `${label} y`).toBeLessThan(1);
       expect(Math.abs(panel.width / scale - original.width), `${label} width`).toBeLessThan(1);
       expect(Math.abs(panel.height / scale - original.height), `${label} height`).toBeLessThan(1);
@@ -128,6 +192,13 @@ test('home quote advances automatically after fifteen seconds', async ({ page })
   await page.goto('/');
   const text = page.locator('[data-quote-text]');
   await expect(text).toHaveText(firstQuote);
+  const pause = page.locator('[data-quote-pause]');
+  await pause.click();
+  await expect(pause).toHaveAttribute('aria-pressed', 'true');
+  await page.clock.runFor(15_100);
+  await expect(text).toHaveText(firstQuote);
+  await pause.click();
+  await expect(pause).toHaveAttribute('aria-pressed', 'false');
   await page.clock.runFor(15_100);
   await expect(text).toHaveText(secondQuote);
 });
@@ -152,6 +223,12 @@ test('home clock exposes the complete local date and updates every second', asyn
   await page.clock.runFor(1_000);
   await expect(clock).toHaveAttribute('aria-label', /^2026\/09\/05 \d{2}:44:16$/);
   await expect(clock).toHaveAttribute('datetime', /2026-09-05T/);
+  const overflow = await clock.evaluate((element) => ({
+    time: element.scrollWidth > element.clientWidth,
+    card: element.parentElement!.scrollWidth > element.parentElement!.clientWidth,
+    digits: [...element.querySelectorAll('[data-clock-digit]')].some((digit) => digit.scrollWidth > digit.clientWidth)
+  }));
+  expect(overflow).toEqual({ time: false, card: false, digits: false });
 });
 
 test('home links open their independent pages', async ({ page }) => {
@@ -181,12 +258,19 @@ test('returning home reinitializes quotes and the clock once', async ({ page }) 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install();
   await page.goto('/');
+  await page.locator('[data-music-player]').evaluate((player) => player.setAttribute('data-home-persist-probe', 'same-node'));
   for (let visit = 0; visit < 2; visit += 1) {
     await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
     await expect(page).toHaveURL('/plans/');
+    await expect(page.locator('[data-music-player]')).toHaveCount(1);
+    await expect(page.locator('[data-music-player]')).toHaveAttribute('data-home-persist-probe', 'same-node');
+    await expect(page.locator('[data-music-player]')).toHaveAttribute('data-display-mode', 'dock');
     await page.locator('[data-back-button]').click();
     await expect(page).toHaveURL('/');
     await expect(page.locator('[data-home-canvas]')).toHaveCount(1);
+    await expect(page.locator('[data-music-player]')).toHaveCount(1);
+    await expect(page.locator('[data-music-player]')).toHaveAttribute('data-home-persist-probe', 'same-node');
+    await expect(page.locator('[data-music-player]')).toHaveAttribute('data-display-mode', 'home');
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
     await page.locator('[data-home-quote]').dblclick();
     await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);

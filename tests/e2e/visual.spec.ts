@@ -15,14 +15,8 @@ for (const path of routes) {
     await page.route('https://giscus.app/**', (route) => route.abort());
     if (path === '/') await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(path);
-    if (path === '/') {
-      await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
-    } else {
-      await expect(page.locator('[data-sakana-layer]')).toHaveAttribute(
-        'data-sakana-state',
-        'ready'
-      );
-    }
+    // Sakana is limited to About routes; none of these representative routes use it.
+    await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
     await page.evaluate(() => document.fonts.ready);
     await page.locator('img').evaluateAll((images) => {
       for (const image of images) (image as HTMLImageElement).loading = 'eager';

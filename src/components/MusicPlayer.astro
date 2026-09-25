@@ -140,9 +140,12 @@ const cover = currentTrack?.cover;
 <style>
   .music-player {
     --record-size: 118px;
-    --player-ink: #e6eff0;
-    --player-muted: #aac1c5;
-    --player-accent: #72bdc6;
+    --player-ink: var(--color-heading);
+    --player-muted: var(--color-muted);
+    --player-accent: var(--color-accent);
+    --player-accent-hover: var(--color-accent-strong);
+    --player-on-accent: var(--color-on-accent);
+    --player-track: var(--color-line-strong);
     position: relative;
     z-index: 3;
     width: 100%;
@@ -150,9 +153,10 @@ const cover = currentTrack?.cover;
     min-height: 0;
     box-sizing: border-box;
     padding: 19px 18px 16px;
-    border: 1px solid #a4c4cc50;
-    border-radius: 0;
-    background: #172a31;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-card);
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: var(--shadow-inset), var(--shadow-panel);
     color: var(--player-ink);
     isolation: isolate;
   }
@@ -204,13 +208,15 @@ const cover = currentTrack?.cover;
     height: 32px;
     padding: 0;
     border: 0;
-    border-radius: 0;
+    border-radius: var(--radius-control);
     background: transparent;
     color: var(--player-ink);
     cursor: pointer;
+    transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease, transform 100ms ease;
   }
 
-  .player-controls button:hover:not(:disabled), .player-collapse:hover { color: var(--player-accent); }
+  .player-controls button:hover:not(:disabled), .player-collapse:hover { background: var(--color-accent-soft); color: var(--player-accent); }
+  .player-controls button:active:not(:disabled), .player-collapse:active { transform: translateY(1px); }
   .player-controls button:focus-visible, .player-toggle:focus-visible,
   .player-collapse:focus-visible, input:focus-visible {
     outline: 2px solid var(--player-accent);
@@ -225,8 +231,8 @@ const cover = currentTrack?.cover;
     stroke-linejoin: round;
     stroke-width: 1.8;
   }
-  .player-controls .play-button { width: 35px; height: 35px; background: var(--player-accent); color: #12242c; }
-  .player-controls .play-button:hover:not(:disabled) { background: #a0d4db; color: #12242c; }
+  .player-controls .play-button { width: 35px; height: 35px; background: var(--player-accent); color: var(--player-on-accent); box-shadow: inset 0 1px 0 rgb(250 248 243 / 18%); }
+  .player-controls .play-button:hover:not(:disabled) { background: var(--player-accent-hover); color: var(--player-on-accent); }
   .play-button [data-pause-icon], .music-player[data-playback-state='playing'] .play-button [data-play-icon] { display: none; }
   .music-player[data-playback-state='playing'] .play-button [data-pause-icon] { display: block; }
   .player-controls button:disabled, input:disabled { opacity: .4; cursor: not-allowed; }
@@ -242,7 +248,7 @@ const cover = currentTrack?.cover;
     margin: 0;
     border: 0;
     border-radius: 0;
-    background: #6c8b945c;
+    background: var(--player-track);
     accent-color: var(--player-accent);
     cursor: pointer;
   }
@@ -259,8 +265,8 @@ const cover = currentTrack?.cover;
   }
   input[type='range']::-moz-range-thumb { width: 8px; height: 11px; border: 0; border-radius: 0; background: var(--player-ink); }
   .progress-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 7px; margin-top: 12px; color: var(--player-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
-  .progress-time { white-space: nowrap; }
-  input.progress-slider { background: linear-gradient(90deg, var(--player-accent) var(--played, 0%), #6c8b945c var(--played, 0%)); }
+  .progress-time { font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+  input.progress-slider { background: linear-gradient(90deg, var(--player-accent) var(--played, 0%), var(--player-track) var(--played, 0%)); }
 
   .turntable {
     position: absolute;
@@ -273,30 +279,30 @@ const cover = currentTrack?.cover;
     transform: translateY(-50%);
     pointer-events: none;
   }
-  .turntable-platter { position: absolute; inset: 0; border-radius: 50%; background: #0e171c; border: 2px solid #49616a; }
+  .turntable-platter { position: absolute; inset: 0; border-radius: 50%; background: #17151d; border: 2px solid var(--color-copper); }
   .turntable-record {
     position: absolute;
     inset: 5px;
-    border: 5px solid #101d24;
+    border: 5px solid #17151d;
     border-radius: 50%;
-    background: repeating-radial-gradient(circle, #11222a 0 2px, #22343c 2px 3px);
+    background: repeating-radial-gradient(circle, #211e29 0 2px, #39323f 2px 3px);
   }
   .turntable-record::after {
     content: '';
     position: absolute;
     inset: 31%;
-    border: 6px solid #193440;
+    border: 6px solid #2c2735;
     border-radius: 50%;
-    background: var(--record-cover, #72a5af);
+    background: var(--record-cover, #b58c65);
     background-size: cover;
     background-position: center;
   }
   .turntable-tonearm { position: absolute; inset: -5px 0; }
-  .tonearm-cap { position: absolute; right: 0; top: 0; width: 11px; height: 11px; border-radius: 50%; background: #a1b8bd; }
-  .tonearm-pivot { position: absolute; right: 3px; top: 3px; width: 5px; height: 5px; border-radius: 50%; background: #243a43; }
-  .tonearm-post { position: absolute; right: 4px; top: 9px; width: 3px; height: 55px; background: #91a6ac; transform: rotate(16deg); transform-origin: top; }
-  .tonearm-arm { position: absolute; right: 12px; top: 61px; width: 3px; height: 24px; background: #91a6ac; transform: rotate(43deg); transform-origin: top; }
-  .tonearm-head { position: absolute; right: 27px; top: 76px; width: 7px; height: 12px; background: #c9d7d9; transform: rotate(43deg); }
+  .tonearm-cap { position: absolute; right: 0; top: 0; width: 11px; height: 11px; border-radius: 50%; background: var(--color-copper); }
+  .tonearm-pivot { position: absolute; right: 3px; top: 3px; width: 5px; height: 5px; border-radius: 50%; background: #2c2735; }
+  .tonearm-post { position: absolute; right: 4px; top: 9px; width: 3px; height: 55px; background: #b9b0c2; transform: rotate(16deg); transform-origin: top; }
+  .tonearm-arm { position: absolute; right: 12px; top: 61px; width: 3px; height: 24px; background: #b9b0c2; transform: rotate(43deg); transform-origin: top; }
+  .tonearm-head { position: absolute; right: 27px; top: 76px; width: 7px; height: 12px; background: #e9e4dc; transform: rotate(43deg); }
   .turntable-caption { position: absolute; top: calc(100% + 10px); width: 100%; color: var(--player-muted); text-align: center; font-size: 10px; letter-spacing: .15em; }
   .music-player[data-playback-state='playing'] .turntable-record { animation: record-spin 5s linear infinite; }
   @keyframes record-spin { to { transform: rotate(360deg); } }
@@ -305,11 +311,11 @@ const cover = currentTrack?.cover;
   .player-collapse { width: 20px; height: 19px; }
   .music-player[data-display-mode='home'] .player-toggle,
   .music-player[data-display-mode='home'] .player-collapse { display: none; }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] { transform: translateX(calc(-100% + 71px)); border-color: transparent; background: transparent; }
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] { transform: translateX(calc(-100% + 71px)); border-color: transparent; background: transparent; box-shadow: none; }
   .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-main,
   .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable-tonearm,
   .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable-caption { visibility: hidden; }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable { filter: drop-shadow(3px 5px 8px #0006); }
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable { filter: drop-shadow(3px 5px 8px rgb(23 21 29 / 40%)); }
   .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-toggle { clip-path: inset(0 0 0 50%); }
 
   @media (max-width: 400px) { .music-player[data-display-mode='dock'] { bottom: 20px; } }

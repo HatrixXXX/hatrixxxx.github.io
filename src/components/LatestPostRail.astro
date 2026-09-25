@@ -19,11 +19,11 @@ const latest = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDa
 </section>}
 
 <style>
-  .latest-posts { margin-top: 0.15rem; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1rem; background: var(--color-surface); box-shadow: var(--shadow-panel); }
-  h2 { margin: 0 0 .75rem; color: var(--color-heading, #fff); font-size: .94rem; }
+  .latest-posts { margin-top: 0.15rem; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 1rem; background: var(--surface-sheen), var(--color-surface); box-shadow: var(--shadow-inset), var(--shadow-panel); }
+  h2 { margin: 0 0 .75rem; color: var(--color-heading); font-size: .94rem; font-weight: 650; }
   .latest-list { display: grid; gap: .75rem; }
-  .latest-item { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: .65rem; align-items: center; color: var(--color-heading, #fff); font-size: .82rem; line-height: 1.35; }
-  .latest-item :global(img) { width: 88px; height: 56px; border-radius: .45rem; object-fit: cover; }
-  .latest-item span { overflow-wrap: anywhere; }
-  .latest-item:hover span { color: var(--color-accent); }
+  .latest-item { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: .65rem; align-items: center; color: var(--color-heading); font-size: .82rem; line-height: 1.45; }
+  .latest-item :global(img) { width: 88px; height: 56px; border-radius: var(--radius-control); object-fit: cover; outline: 1px solid var(--color-line); outline-offset: -1px; }
+  .latest-item span { overflow-wrap: anywhere; transition: color var(--duration-fast) var(--ease-out); }
+  .latest-item:hover span { color: var(--color-link); }
 </style>

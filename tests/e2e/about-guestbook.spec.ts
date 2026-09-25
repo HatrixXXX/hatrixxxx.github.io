@@ -69,7 +69,7 @@ test('about and article routes retain their contextual sidebar with one separate
   }
 });
 
-test('about sidebar exposes the requested profile, social links and static statistics', async ({ page }) => {
+test('about sidebar exposes the requested profile and social links without statistics', async ({ page }) => {
   await page.goto('/about/');
   const profile = page.locator('[data-profile-card]');
   await expect(profile.getByRole('heading', { name: 'Hatrixの窝' })).toBeVisible();
@@ -119,22 +119,17 @@ test('about sidebar exposes the requested profile, social links and static stati
     await expect(profile.getByRole('link', { name: absent, exact: true })).toHaveCount(0);
   }
 
-  const stats = page.locator('[data-site-stats]');
-  await expect(stats.locator('[data-stat="posts"]')).toHaveText('41');
-  await expect(stats.locator('[data-stat="visitors"]')).toHaveText('—');
+  await expect(page.locator('[data-site-stats]')).toHaveCount(0);
 });
 
 test('contextual sidebar cards remain readable in the light theme', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.goto('/about/');
 
-  await expect(page.locator('.about-main article > h1')).toHaveCSS('color', 'rgb(22, 26, 32)');
-  await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(22, 26, 32)');
-  await expect(page.locator('[data-site-stats] h2')).toHaveCSS('color', 'rgb(22, 26, 32)');
-  await expect(page.locator('[data-site-stats] dd').first()).toHaveCSS(
-    'color',
-    'rgb(48, 52, 59)'
-  );
+  await expect(page.locator('.about-main article > h1')).toHaveCSS('color', 'rgb(50, 45, 56)');
+  await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(50, 45, 56)');
+  await expect(page.locator('[data-profile-card]').getByText('轻松即单纯，速成即精准')).toHaveCSS('color', 'rgb(101, 90, 107)');
+  await expect(page.locator('[data-site-stats]')).toHaveCount(0);
 });
 
 test('the player dock reveals half a record and keeps playback controls independent from collapse', async ({ page }) => {

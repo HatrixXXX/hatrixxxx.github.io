@@ -16,7 +16,8 @@ import {
 import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
-export const EXPECTED_LOCAL_LINKS = 3976;
+// Includes the optimized homepage character image added to the empty character layer.
+export const EXPECTED_LOCAL_LINKS = 3977;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://giscus.app/client.js'
