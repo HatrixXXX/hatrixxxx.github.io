@@ -117,8 +117,7 @@ const showSakanaCharacters = isAboutPage;
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
     {image !== '/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
-  <body class={bodyClass}>
-    <PageLoader />
+  <body class={bodyClass}>    <PageLoader />
     {!isHome && <SiteHeader />}
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
@@ -155,3 +154,5 @@ const showSakanaCharacters = isAboutPage;
     )}
   </body>
 </html>
+
+

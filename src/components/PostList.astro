@@ -9,47 +9,73 @@ interface Props {
 const { posts } = Astro.props;
 ---
 
-<section
-  class="post-list"
+<div
+  class="coverflow-shell"
   aria-label="文章列表"
   aria-describedby="post-list-instructions"
   tabindex="0"
-  data-post-rail
+  data-post-coverflow
 >
-  {posts.map((post, index) => <PostCard post={post} index={index} />)}
-</section>
+  <div class="coverflow-scene">
+    {posts.map((post, index) => <PostCard post={post} index={index} />)}
+  </div>
+</div>
 <p id="post-list-instructions" class="post-list-instructions">
-  使用鼠标滚轮、拖拽、触摸滑动或方向键横向浏览文章。
+  滚动鼠标滚轮或使用方向键浏览文章，点击侧边卡片直接跳转。
 </p>
 
 <script>
-  import '@/scripts/post-rail';
+  import '@/scripts/post-coverflow';
 </script>
 
 <style>
-  .post-list {
-    display: flex;
-    min-width: 0;
-    align-items: stretch;
-    gap: clamp(1rem, 2.2vw, 1.5rem);
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 0.25rem 0.125rem;
-    cursor: grab;
-    scrollbar-width: none;
+  /*
+   * Shell fills everything below the compact banner.
+   * Banner compact total = --inner-page-banner-height + --header-height.
+   */
+  .coverflow-shell {
+    position: relative;
+    width: 100%;
+    height: calc(100dvh - var(--inner-page-banner-height, 240px) - var(--header-height, 56px));
+    min-height: 400px;
+    overflow: visible;
+    outline: none;
+    cursor: default;
   }
 
-  .post-list::-webkit-scrollbar {
-    display: none;
+  .coverflow-shell:focus-visible {
+    outline: 2px solid var(--color-copper, #b87333);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
-  .post-list[data-dragging='true'] {
-    cursor: grabbing;
+  .coverflow-scene {
+    position: absolute;
+    inset: 0;
+    perspective: 1400px;
+    perspective-origin: 50% 50%;
+    overflow: hidden;
   }
 
-  .post-list[data-dragging='true'] :global(*) {
-    cursor: grabbing;
-    user-select: none;
+  /* Active card centred; height fills ~88% of the shell */
+  .coverflow-scene :global([data-post-card]) {
+    --card-h: clamp(360px, calc((100dvh - var(--inner-page-banner-height, 240px) - var(--header-height, 56px)) * 0.88), 760px);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center center;
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+    width: clamp(280px, 28vw, 420px);
+    margin-left: calc(clamp(280px, 28vw, 420px) / -2);
+    height: var(--card-h);
+    margin-top: calc(var(--card-h) / -2);
+    transition: opacity 0.1s linear;
+    cursor: pointer;
+  }
+
+  .coverflow-scene :global([data-post-card][data-active='true']) {
+    cursor: default;
   }
 
   .post-list-instructions {
@@ -62,4 +88,19 @@ const { posts } = Astro.props;
     white-space: nowrap;
   }
 
+  @media (max-width: 768px) {
+    .coverflow-shell {
+      min-height: 360px;
+    }
+    .coverflow-scene :global([data-post-card]) {
+      width: clamp(200px, 70vw, 300px);
+      margin-left: calc(clamp(200px, 70vw, 300px) / -2);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .coverflow-scene :global([data-post-card]) {
+      transition: none;
+    }
+  }
 </style>

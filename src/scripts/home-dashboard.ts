@@ -1,4 +1,3 @@
-import { HOME_QUOTES, HOME_QUOTE_INTERVAL } from '@/data/home-quotes';
 import { getHomeLevel } from '@/lib/home-level';
 
 let cleanup: (() => void) | undefined;
@@ -15,12 +14,6 @@ function initializeHomeDashboard(): void {
   const levelBadge = stage.querySelector<HTMLElement>('[data-home-level]')!;
   const levelNumber = stage.querySelector<HTMLElement>('[data-level-number]')!;
   const levelRing = stage.querySelector<SVGCircleElement>('[data-level-progress]')!;
-  const quote = stage.querySelector<HTMLButtonElement>('[data-home-quote]')!;
-  const quoteText = stage.querySelector<HTMLElement>('[data-quote-text]')!;
-  const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  let quoteIndex = 0;
-  let animation: Animation | undefined;
-  let quoteTimer: number | undefined;
   let displayedLevelDay = '';
 
   const updateLevel = (now: Date): void => {
@@ -49,39 +42,14 @@ function initializeHomeDashboard(): void {
       if (digit.textContent !== numbers[index]) digit.textContent = numbers[index];
     });
   };
-  const scheduleQuote = (): void => {
-    window.clearTimeout(quoteTimer);
-    if (!document.hidden) quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
-  };
-  const nextQuote = (): void => {
-    animation?.cancel();
-    quoteIndex = (quoteIndex + 1) % HOME_QUOTES.length;
-    quoteText.textContent = HOME_QUOTES[quoteIndex];
-    quote.setAttribute('aria-label', `金句：${HOME_QUOTES[quoteIndex]}。双击切换；键盘按 Enter 或空格切换`);
-    if (!motion.matches) {
-      animation = quoteText.animate([
-        { transform: 'translateY(100%)', opacity: 0 },
-        { transform: 'translateY(0)', opacity: 1 }
-      ], { duration: 420, easing: 'cubic-bezier(.16, 1, .3, 1)' });
-    }
-    scheduleQuote();
-  };
 
-  quote.addEventListener('dblclick', nextQuote, { signal });
-  quote.addEventListener('click', (event) => { if (event.detail === 0) nextQuote(); }, { signal });
-  document.addEventListener('visibilitychange', () => { updateClock(); scheduleQuote(); }, { signal });
-  motion.addEventListener('change', () => {
-    if (motion.matches) { animation?.cancel(); scheduleQuote(); }
-  }, { signal });
+  document.addEventListener('visibilitychange', () => { updateClock(); }, { signal });
 
   updateClock();
-  scheduleQuote();
   const clockTimer = window.setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
   cleanup = () => {
     controller.abort();
     window.clearInterval(clockTimer);
-    window.clearTimeout(quoteTimer);
-    animation?.cancel();
   };
 }
 

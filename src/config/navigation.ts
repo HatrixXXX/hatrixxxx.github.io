@@ -19,7 +19,7 @@ export const POST_TYPE_LINKS = [
 export const ALL_POSTS_LINK = {
   label: '全部文章',
   slug: 'all',
-  href: '/blog/all/'
+  href: '/blog/'
 } as const;
 
 export const BLOG_SUBNAV_LINKS = [ALL_POSTS_LINK, ...POST_TYPE_LINKS] as const;
@@ -38,7 +38,7 @@ export const ABOUT_SECTION_LINKS = [
 
 // Home cards and the primary navigation share the same route definitions.
 export const HOME_LINKS = {
-  blog: { label: '博客文章', href: '/blog/all/' },
+  blog: { label: '博客文章', href: '/blog/' },
   projects: { label: '作品橱窗', href: '/projects/' },
   about: { label: '关于我', href: '/about/' },
   guestbook: { label: '留言板', href: '/guestbook/' },

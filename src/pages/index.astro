@@ -1,10 +1,9 @@
 ---
 import { Image, getImage } from 'astro:assets';
-import homeWorkshop from '@/assets/home/liupin-workshop-v5.png';
+import homeWorkshop from '@/assets/home/liupin-workshop-v6.png';
 import homeCharacter from '@/assets/home/hatrix-character-v5.png';
 import { SITE } from '@/config/site';
 import { HOME_LINKS } from '@/config/navigation';
-import { HOME_QUOTES } from '@/data/home-quotes';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HomePanel from '@/components/HomePanel.astro';
 import HomeIcon from '@/components/HomeIcon.astro';
@@ -16,8 +15,7 @@ const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quali
 // The left cards retain their subtle inward projection and tighter local gaps.
 const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
-  identity: { width: 180, height: 180, corners: [[72, 395], [252, 395], [252, 575], [72, 575]] },
-  quote: { width: 595, height: 110, corners: [[10, 696], [604.4, 668], [605.9, 762], [12, 775]] },
+  identity: { width: 180, height: 180, corners: [[72, 395], [252, 395], [252, 575], [72, 575]] },
   music: { width: 380, height: 195, corners: [[12, 785], [387, 768], [392, 948], [15, 976]] },
   friends: { width: 208, height: 88, corners: [[399, 768], [606, 756], [607, 843], [401, 855]] },
   guestbook: { width: 208, height: 80, corners: [[402, 865], [607, 851], [608, 929], [404, 944]] }
@@ -64,15 +62,8 @@ const rightPanels = {
           </div>
           <noscript><p class="level-fallback">启用 JavaScript 后显示等级</p></noscript>
         </HomePanel>
-        <HomePanel name="quote" {...leftPanels.quote}>
-          <div class="quote-card">
-            <button type="button" class="quote-switch" data-home-quote aria-label={`金句：${HOME_QUOTES[0]}。双击切换；键盘按 Enter 或空格切换`} title="双击切换金句">
-              <span class="quote-window"><span data-quote-text>{HOME_QUOTES[0]}</span></span>
-            </button>
-          </div>
-        </HomePanel>
-        <HomePanel name="music" {...leftPanels.music}>
           <MusicPlayer mode="home" />
+        <HomePanel name="music" {...leftPanels.music}>
         </HomePanel>
         <HomePanel name="friends" {...leftPanels.friends}>
           <a class="tile small-tile" data-astro-prefetch="tap" href={HOME_LINKS.friends.href}><HomeIcon name="friends" /><span>友链</span></a>
@@ -158,10 +149,11 @@ const rightPanels = {
   .home-side--left { transform: translateX(calc(-1 * var(--home-side-offset))); }
   .home-side--right { transform: translateX(var(--home-side-offset)); }
   .home-side :global([data-home-panel]) { pointer-events: auto; }
+  .home-side :global([data-music-player][data-display-mode='home']) { pointer-events: auto; }
   .right-plane { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   /* Crop inside the design canvas so portrait letterboxing stays empty. */
   .character-space { position: absolute; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; }
-  .home-character { position: absolute; left: 320px; top: 40px; display: block; width: 820px; height: auto; max-width: none; user-select: none; }
+  .home-character { position: absolute; left: 380px; top: 55px; display: block; width: 714px; height: auto; max-width: none; user-select: none; }
   .home-stage :is(button, a, summary) { -webkit-tap-highlight-color: transparent; }
   .home-stage :is(button, a, summary):focus-visible { outline: 4px solid #f6d28e; outline-offset: -7px; }
   .home-stage ::selection { background: var(--home-accent); color: #172329; }
@@ -269,3 +261,5 @@ const rightPanels = {
 <script>
   import '@/scripts/home-dashboard';
 </script>
+
+

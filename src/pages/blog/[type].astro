@@ -1,4 +1,4 @@
-﻿---
+---
 import { getCollection } from 'astro:content';
 import EmptyState from '@/components/EmptyState.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
@@ -29,17 +29,19 @@ const { title, posts } = Astro.props;
   <main class="blog-main">
     {posts.length === 0 ? (
       <div class="container">
-        <EmptyState title="这个类型还没有文章" description="以后写到这类内容时，会放在这里。" />
+        <EmptyState title="这个分类还没有文章" description="以后写了文章再来这里看吧" />
       </div>
     ) : (
-      <div class="blog-rail-shell container">
-        <PostList posts={posts} />
-      </div>
+      <PostList posts={posts} />
     )}
   </main>
 </BaseLayout>
 
 <style>
-  .blog-main { padding-block: clamp(2.5rem, 6vw, 5rem); }
-  @media (min-width: 1025px) { .blog-rail-shell { width: calc(100% - 4rem); } }
+  .blog-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
 </style>

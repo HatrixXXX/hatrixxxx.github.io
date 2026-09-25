@@ -20,274 +20,333 @@ const cover = currentTrack?.cover;
   data-ui-state={mode === 'home' ? 'expanded' : 'collapsed'}
   transition:persist="music-player"
 >
+  <!-- click zone for expanding when collapsed (dock mode) -->
   <button
     class="player-toggle"
     type="button"
     data-player-toggle
     aria-label="展开音乐播放器"
     aria-expanded="false"
-    aria-controls="music-player-controls"
+    aria-controls="music-player-inner"
   ></button>
 
-  <div class="player-main" id="music-player-controls" data-player-main inert={mode === 'dock'}>
-    <div class="player-heading">
-      <span>音乐播放器</span>
-      <button class="player-collapse" type="button" data-player-collapse aria-label="收起音乐播放器">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
-      </button>
-    </div>
-    <div class="track-copy" aria-live="polite" aria-atomic="true">
-      <strong data-player-title title={currentTrack?.title}>
-        {currentTrack?.title ?? '歌单待添加'}
-      </strong>
-      <span data-player-artist title={currentTrack?.artist}>{currentTrack?.artist ?? ''}</span>
-    </div>
+  <div class="player-inner" id="music-player-inner" data-player-main inert={mode === 'dock'}>
 
-    <div class="player-controls" aria-label="播放控制">
-      <div class="control-item">
-        <button type="button" aria-label="上一曲" data-player-prev disabled={isEmpty}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 5v14M18 6 9 12l9 6V6Z" />
-          </svg>
-        </button>
-        <span>上一曲</span>
+    <!-- LEFT: text + controls + progress -->
+    <div class="player-left">
+      <div class="track-copy" aria-live="polite" aria-atomic="true">
+        <strong data-player-title title={currentTrack?.title}>
+          {currentTrack?.title ?? '歌单待添加'}
+        </strong>
+        <span data-player-artist title={currentTrack?.artist}>{currentTrack?.artist ?? ''}</span>
       </div>
 
-      <div class="control-item">
-        <button
-          type="button"
-          class="play-button"
-          aria-label="播放"
-          aria-pressed="false"
-          data-player-play
+      <div class="controls-bar">
+        <div class="btn-group">
+          <button type="button" aria-label="上一曲" data-player-prev disabled={isEmpty}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 6 9 12l9 6V6Z"/></svg>
+          </button>
+          <button type="button" class="play-btn" aria-label="播放" aria-pressed="false" data-player-play disabled={isEmpty}>
+            <svg data-play-icon viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
+            <svg data-pause-icon viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>
+          </button>
+          <button type="button" aria-label="下一曲" data-player-next disabled={isEmpty}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 6l9 6-9 6V6Z"/></svg>
+          </button>
+        </div>
+
+        <div class="vol-group">
+          <span class="vol-label" aria-hidden="true">VOL</span>
+          <label class="vol-wrap">
+            <span class="sr-only">音量调节</span>
+            <input
+              type="range"
+              class="vol-slider"
+              min="0" max="1" step="0.02" value="0.7"
+              aria-label="音量调节"
+              data-player-volume
+              disabled={isEmpty}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div class="progress-bar" role="group" aria-label="播放进度">
+        <span class="prog-time" data-player-current-time>0:00</span>
+        <input
+          class="prog-slider"
+          type="range" min="0" max="0" step="0.1" value="0"
+          aria-label="播放进度"
+          data-player-progress
           disabled={isEmpty}
-        >
-          <svg data-play-icon viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m8 5 11 7-11 7V5Z" />
-          </svg>
-          <svg data-pause-icon viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M8 5v14M16 5v14" />
-          </svg>
-        </button>
-        <span>播放/暂停</span>
-      </div>
-
-      <div class="control-item">
-        <button type="button" aria-label="下一曲" data-player-next disabled={isEmpty}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M18 5v14M6 6l9 6-9 6V6Z" />
-          </svg>
-        </button>
-        <span>下一曲</span>
-      </div>
-
-      <div class="control-item volume-item">
-        <label class="volume-control">
-          <span class="visually-hidden">音量调节</span>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.02"
-            value="0.7"
-            aria-label="音量调节"
-            data-player-volume
-            disabled={isEmpty}
-          />
-        </label>
-        <span>音量调节</span>
+        />
+        <span class="prog-time" data-player-duration>0:00</span>
       </div>
     </div>
 
-    <div class="progress-row">
-      <span class="progress-time" data-player-current-time>0:00</span>
-      <input
-        class="progress-slider"
-        type="range"
-        min="0"
-        max="0"
-        step="0.1"
-        value="0"
-        aria-label="播放进度"
-        data-player-progress
-        disabled={isEmpty}
-      />
-      <span class="progress-time" data-player-duration>0:00</span>
-    </div>
+    <!-- RIGHT: turntable -->
+    <figure class="turntable" aria-hidden="true">
+      <div class="platter">
+        <div
+          class="record"
+          data-turntable-record
+          style={cover ? `--record-cover: url(${cover})` : undefined}
+        ></div>
+      </div>
+      <div class="tonearm" data-turntable-tonearm>
+        <span class="ta-cap"></span>
+        <span class="ta-pivot"></span>
+        <span class="ta-post"></span>
+        <span class="ta-arm"></span>
+        <span class="ta-head"></span>
+      </div>
+    </figure>
+
   </div>
-
-  <figure class="turntable" aria-hidden="true">
-    <div class="turntable-platter">
-      <div
-        class="turntable-record"
-        data-turntable-record
-        style={cover ? `--record-cover: url(${cover})` : undefined}
-      ></div>
-    </div>
-
-    <div class="turntable-tonearm" data-turntable-tonearm>
-      <span class="tonearm-cap"></span>
-      <span class="tonearm-pivot" data-turntable-pivot></span>
-      <span class="tonearm-post" data-turntable-post></span>
-      <span class="tonearm-arm"></span>
-      <span class="tonearm-head"></span>
-    </div>
-
-    <figcaption class="turntable-caption">唱片机</figcaption>
-  </figure>
 </aside>
 
 <style>
+  /* ── tokens ─────────────────────────────────────── */
   .music-player {
-    --record-size: 118px;
-    --player-ink: var(--color-heading);
-    --player-muted: var(--color-muted);
-    --player-accent: var(--color-accent);
-    --player-accent-hover: var(--color-accent-strong);
-    --player-on-accent: var(--color-on-accent);
-    --player-track: var(--color-line-strong);
+    --disc: 124px;       /* turntable diameter          */
+    --btn: 34px;         /* playback button size        */
+    --vol-h: 52px;       /* vertical volume bar height  */
+    --pad: 14px;         /* card padding                */
+    --gap: 10px;         /* left↔right gap              */
+
+    --ink:   var(--color-heading);
+    --muted: var(--color-muted);
+    --acc:   var(--color-accent);
+    --acc2:  var(--color-accent-strong);
+    --on-acc:var(--color-on-accent);
+    --trk:   var(--color-line-strong);
+
     position: relative;
     z-index: 3;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
     box-sizing: border-box;
-    padding: 19px 18px 16px;
+    padding: var(--pad);
     border: 1px solid var(--color-line-strong);
     border-radius: var(--radius-card);
     background: var(--surface-sheen), var(--color-surface);
     box-shadow: var(--shadow-inset), var(--shadow-panel);
-    color: var(--player-ink);
-    isolation: isolate;
+    color: var(--ink);
+    font-size: 11px;
+    contain: layout;
+    transition: transform .35s var(--ease-out-expo, cubic-bezier(.19,1,.22,1)),
+                border-color .2s, background .2s, box-shadow .2s;
   }
 
+  /* ── dock: fixed bottom-left ─────────────────────── */
   .music-player[data-display-mode='dock'] {
     position: fixed;
     z-index: 90;
     left: 0;
     bottom: 28px;
     width: 330px;
-    height: 196px;
-    transition: transform 280ms cubic-bezier(.2,.8,.2,1), background-color 180ms ease, border-color 180ms ease;
+    height: 170px;
+    transition: transform 280ms cubic-bezier(.2,.8,.2,1),
+                background-color 180ms ease, border-color 180ms ease;
   }
 
-  .player-main {
-    position: relative;
-    z-index: 2;
-    width: calc(100% - 123px);
+  /* ── home: sized to panel, JS handles position ───── */
+  .music-player[data-display-mode='home'] {
+    position: absolute;
+    width: 380px;
+    height: 195px;
+  }
+
+  /* ── inner: two-column grid ──────────────────────── */
+  .player-inner {
+    display: grid;
+    /* left col = remaining space; right col = disc */
+    grid-template-columns: 1fr var(--disc);
+    column-gap: var(--gap);
+    align-items: center;
+    width: 100%;
     height: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ── left column ─────────────────────────────────── */
+  .player-left {
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    gap: 8px;
     min-width: 0;
+    height: 100%;
   }
 
-  .player-heading {
+  /* ── track info ──────────────────────────────────── */
+  .track-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+  .track-copy strong,
+  .track-copy span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.45;
+  }
+  .track-copy strong { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .track-copy span   { font-size: 10px; color: var(--muted); }
+
+  /* ── controls bar: buttons + VOL side-by-side ────── */
+  .controls-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    min-height: 19px;
-    margin-bottom: 10px;
-    color: var(--player-muted);
-    font-size: 11px;
-    letter-spacing: .09em;
-  }
-
-  .track-copy { display: grid; gap: 3px; min-width: 0; }
-  .track-copy strong, .track-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .track-copy strong { color: var(--player-ink); font-size: 19px; line-height: 1.25; }
-  .track-copy span { color: var(--player-muted); font-size: 12px; line-height: 1.4; }
-  .player-controls { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: auto; }
-  .control-item { display: flex; align-items: center; min-width: 0; }
-  .control-item > span { display: none; }
-
-  .player-controls button, .player-collapse {
-    display: grid;
-    place-items: center;
+    gap: 8px;
     flex-shrink: 0;
-    width: 29px;
-    height: 32px;
+  }
+
+  /* playback buttons */
+  .btn-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn-group button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--btn);
+    height: var(--btn);
     padding: 0;
-    border: 0;
-    border-radius: var(--radius-control);
-    background: transparent;
-    color: var(--player-ink);
+    background: none;
+    border: none;
+    border-radius: 50%;
     cursor: pointer;
-    transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease, transform 100ms ease;
+    color: var(--ink);
+    transition: background .15s;
+    flex-shrink: 0;
   }
-
-  .player-controls button:hover:not(:disabled), .player-collapse:hover { background: var(--color-accent-soft); color: var(--player-accent); }
-  .player-controls button:active:not(:disabled), .player-collapse:active { transform: translateY(1px); }
-  .player-controls button:focus-visible, .player-toggle:focus-visible,
-  .player-collapse:focus-visible, input:focus-visible {
-    outline: 2px solid var(--player-accent);
-    outline-offset: 3px;
-  }
-  .player-controls button svg, .player-collapse svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.8;
-  }
-  .player-controls .play-button { width: 35px; height: 35px; background: var(--player-accent); color: var(--player-on-accent); box-shadow: inset 0 1px 0 rgb(250 248 243 / 18%); }
-  .player-controls .play-button:hover:not(:disabled) { background: var(--player-accent-hover); color: var(--player-on-accent); }
-  .play-button [data-pause-icon], .music-player[data-playback-state='playing'] .play-button [data-play-icon] { display: none; }
-  .music-player[data-playback-state='playing'] .play-button [data-pause-icon] { display: block; }
-  .player-controls button:disabled, input:disabled { opacity: .4; cursor: not-allowed; }
-  .volume-item { flex: 1; min-width: 25px; }
-  .volume-control { display: flex; align-items: center; width: 100%; height: 32px; }
-
-  input[type='range'] {
-    appearance: none;
-    width: 100%;
-    min-width: 0;
-    height: 3px;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    background: var(--player-track);
-    accent-color: var(--player-accent);
-    cursor: pointer;
-  }
-  input[type='range']::-webkit-slider-runnable-track { height: 3px; background: transparent; }
-  input[type='range']::-moz-range-track { height: 3px; border: 0; background: transparent; }
-  input[type='range']::-webkit-slider-thumb {
-    appearance: none;
-    width: 8px;
-    height: 11px;
-    margin-top: -4px;
-    border: 0;
-    border-radius: 0;
-    background: var(--player-ink);
-  }
-  input[type='range']::-moz-range-thumb { width: 8px; height: 11px; border: 0; border-radius: 0; background: var(--player-ink); }
-  .progress-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 7px; margin-top: 12px; color: var(--player-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
-  .progress-time { font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
-  input.progress-slider { background: linear-gradient(90deg, var(--player-accent) var(--played, 0%), var(--player-track) var(--played, 0%)); }
-
-  .turntable {
-    position: absolute;
-    z-index: 1;
-    right: 12px;
-    top: 50%;
-    width: var(--record-size);
-    height: var(--record-size);
-    margin: 0;
-    transform: translateY(-50%);
+  .btn-group button:hover { background: color-mix(in srgb, var(--acc) 15%, transparent); }
+  .btn-group button svg {
+    width: 15px; height: 15px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
     pointer-events: none;
   }
-  .turntable-platter { position: absolute; inset: 0; border-radius: 50%; background: #17151d; border: 2px solid var(--color-copper); }
-  .turntable-record {
+  .play-btn {
+    background: var(--acc) !important;
+    color: var(--on-acc) !important;
+  }
+  .play-btn:hover { background: var(--acc2) !important; }
+  .play-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+  [data-play-icon]  { display: block; }
+  [data-pause-icon] { display: none; }
+  .music-player[data-playback-state='playing'] [data-play-icon]  { display: none; }
+  .music-player[data-playback-state='playing'] [data-pause-icon] { display: block; }
+  .btn-group button:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* vertical VOL slider */
+  .vol-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .vol-label {
+    font-size: 8px;
+    letter-spacing: .1em;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1;
+  }
+  .vol-wrap {
+    position: relative;
+    width: 18px;
+    height: var(--vol-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  }
+  .vol-slider {
+    appearance: none;
+    position: absolute;
+    width: var(--vol-h);   /* horizontal length becomes vertical height after rotation */
+    height: 3px;
+    padding: 0; margin: 0; border: 0;
+    border-radius: 2px;
+    background: var(--trk);
+    accent-color: var(--acc);
+    cursor: pointer;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  .vol-slider::-webkit-slider-runnable-track { height: 3px; background: transparent; }
+  .vol-slider::-moz-range-track { height: 3px; border: 0; background: transparent; }
+  .vol-slider::-webkit-slider-thumb {
+    appearance: none; width: 8px; height: 11px;
+    margin-top: -4px; border: 0; border-radius: 0; background: var(--ink);
+  }
+  .vol-slider::-moz-range-thumb { width: 8px; height: 11px; border: 0; border-radius: 0; background: var(--ink); }
+  .vol-slider:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── progress bar ────────────────────────────────── */
+  .progress-bar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .prog-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .prog-slider {
+    appearance: none;
+    width: 100%; min-width: 0;
+    height: 3px; padding: 0; margin: 0; border: 0; border-radius: 0;
+    background: linear-gradient(90deg, var(--acc) var(--played,0%), var(--trk) var(--played,0%));
+    accent-color: var(--acc);
+    cursor: pointer;
+  }
+  .prog-slider::-webkit-slider-runnable-track { height: 3px; background: transparent; }
+  .prog-slider::-moz-range-track { height: 3px; border: 0; background: transparent; }
+  .prog-slider::-webkit-slider-thumb {
+    appearance: none; width: 8px; height: 11px;
+    margin-top: -4px; border: 0; border-radius: 0; background: var(--ink);
+  }
+  .prog-slider::-moz-range-thumb { width: 8px; height: 11px; border: 0; border-radius: 0; background: var(--ink); }
+  .prog-slider:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── turntable (right grid cell) ─────────────────── */
+  .turntable {
+    position: relative;
+    width: var(--disc);
+    height: var(--disc);
+    margin: 0;
+    flex-shrink: 0;
+    align-self: center;
+    pointer-events: none;
+  }
+  .platter {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #17151d;
+    border: 2px solid var(--color-copper);
+  }
+  .record {
     position: absolute;
     inset: 5px;
     border: 5px solid #17151d;
     border-radius: 50%;
     background: repeating-radial-gradient(circle, #211e29 0 2px, #39323f 2px 3px);
   }
-  .turntable-record::after {
+  .record::after {
     content: '';
     position: absolute;
     inset: 31%;
@@ -297,29 +356,82 @@ const cover = currentTrack?.cover;
     background-size: cover;
     background-position: center;
   }
-  .turntable-tonearm { position: absolute; inset: -5px 0; }
-  .tonearm-cap { position: absolute; right: 0; top: 0; width: 11px; height: 11px; border-radius: 50%; background: var(--color-copper); }
-  .tonearm-pivot { position: absolute; right: 3px; top: 3px; width: 5px; height: 5px; border-radius: 50%; background: #2c2735; }
-  .tonearm-post { position: absolute; right: 4px; top: 9px; width: 3px; height: 55px; background: #b9b0c2; transform: rotate(16deg); transform-origin: top; }
-  .tonearm-arm { position: absolute; right: 12px; top: 61px; width: 3px; height: 24px; background: #b9b0c2; transform: rotate(43deg); transform-origin: top; }
-  .tonearm-head { position: absolute; right: 27px; top: 76px; width: 7px; height: 12px; background: #e9e4dc; transform: rotate(43deg); }
-  .turntable-caption { position: absolute; top: calc(100% + 10px); width: 100%; color: var(--player-muted); text-align: center; font-size: 10px; letter-spacing: .15em; }
-  .music-player[data-playback-state='playing'] .turntable-record { animation: record-spin 5s linear infinite; }
-  @keyframes record-spin { to { transform: rotate(360deg); } }
+  .music-player[data-playback-state='playing'] .record {
+    animation: spin 1.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  .player-toggle { position: absolute; z-index: 4; right: 12px; top: 50%; width: var(--record-size); height: var(--record-size); transform: translateY(-50%); padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
-  .player-collapse { width: 20px; height: 19px; }
-  .music-player[data-display-mode='home'] .player-toggle,
-  .music-player[data-display-mode='home'] .player-collapse { display: none; }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] { transform: translateX(calc(-100% + 71px)); border-color: transparent; background: transparent; box-shadow: none; }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-main,
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable-tonearm,
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable-caption { visibility: hidden; }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable { filter: drop-shadow(3px 5px 8px rgb(23 21 29 / 40%)); }
+  /* ── tonearm ─────────────────────────────────────── */
+  /*
+   * Whole arm pivots around the cap (top-right corner).
+   * idle  = -20 deg (lifted)   play = 0 deg (on groove)
+   */
+  .tonearm {
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    width: 52px;
+    height: 100px;
+    transform-origin: 100% 0%;
+    transform: rotate(var(--arm-angle, -20deg));
+    transition: transform .6s cubic-bezier(.4,0,.2,1);
+  }
+  .music-player[data-playback-state='playing'] .tonearm { --arm-angle: 0deg; }
+
+  .ta-cap   { position:absolute;right:0;top:0;width:13px;height:13px;border-radius:50%;background:var(--color-copper);box-shadow:0 1px 3px rgb(0 0 0/.5); }
+  .ta-pivot { position:absolute;right:4px;top:4px;width:5px;height:5px;border-radius:50%;background:#2c2735; }
+  .ta-post  { position:absolute;right:5px;top:12px;width:3px;height:58px;background:linear-gradient(90deg,#9e96a8,#d4cedd,#9e96a8);border-radius:2px; }
+  .ta-arm   { position:absolute;right:5px;top:68px;width:3px;height:26px;background:linear-gradient(90deg,#9e96a8,#d4cedd,#9e96a8);border-radius:1px;transform:rotate(35deg);transform-origin:top center; }
+  .ta-head  { position:absolute;right:18px;top:83px;width:9px;height:14px;background:#e9e4dc;border-radius:2px 2px 0 0;transform:rotate(35deg);transform-origin:top center;box-shadow:0 2px 4px rgb(0 0 0/.4); }
+  .ta-head::after { content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:2px;height:5px;background:#888;border-radius:0 0 1px 1px; }
+
+  /* ── toggle (click disc to expand) ──────────────── */
+  .player-toggle {
+    position: absolute;
+    z-index: 4;
+    /* align with turntable: right=pad, top=center */
+    right: var(--pad);
+    top: 50%;
+    width: var(--disc);
+    height: var(--disc);
+    transform: translateY(-50%);
+    padding: 0; border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  /* ── show/hide ───────────────────────────────────── */
+  .music-player[data-display-mode='home'] .player-toggle { display: none; }
+  .music-player[data-display-mode='dock'] .player-collapse { display: none; }
+
+  /* collapsed dock */
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] {
+    transform: translateX(calc(-100% + 77px));
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-left { visibility: hidden; }
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .tonearm     { visibility: hidden; }
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable   { filter: drop-shadow(3px 5px 8px rgb(23 21 29/.4)); }
   .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-toggle { clip-path: inset(0 0 0 50%); }
 
-  @media (max-width: 400px) { .music-player[data-display-mode='dock'] { bottom: 20px; } }
+  /* ── a11y ────────────────────────────────────────── */
+  .sr-only {
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+
+  /* ── responsive / motion ─────────────────────────── */
+  @media (max-width: 400px) {
+    .music-player[data-display-mode='dock'] { bottom: 20px; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .music-player, .music-player *, .music-player *::before, .music-player *::after { animation: none !important; transition: none !important; }
+    .music-player, .music-player *, .music-player *::before, .music-player *::after {
+      animation: none !important;
+      transition: none !important;
+    }
   }
 </style>
+

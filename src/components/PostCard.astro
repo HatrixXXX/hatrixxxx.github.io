@@ -32,10 +32,10 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     <Image
       src={post.data.cover || '/images/default-cover.svg'}
       alt=""
-      width={720}
-      height={480}
+      width={480}
+      height={270}
       layout="constrained"
-      widths={[360, 540, 720]}
+      widths={[240, 360, 480]}
       loading={isAboveFold ? "eager" : "lazy"}
       decoding={isAboveFold ? "sync" : "async"}
       fetchpriority={isAboveFold ? "high" : "auto"}
@@ -43,6 +43,7 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     />
   </a>
   <div class="post-card-content">
+    <div class="post-type-tag">{post.data.type}</div>
     <h2>
       <a href={href} data-locked-link={post.data.locked ? '' : undefined}>
         {post.data.title}{post.data.locked && <LockIndicator />}
@@ -56,10 +57,14 @@ const published = new Intl.DateTimeFormat('zh-CN', {
 </article>
 
 <style>
+  /* PostCard is sized by its parent (.coverflow-scene via data-post-card selector).
+     Width and height are fully controlled by PostList.astro / coverflow JS.
+     We only define internal layout here. */
+
   .post-card {
     display: flex;
-    flex: 0 0 clamp(17rem, 27vw, 22rem);
-    min-width: 0;
+    width: 100%;
+    height: 100%;
     flex-direction: column;
     overflow: hidden;
     border: 1px solid var(--color-line);
@@ -67,17 +72,19 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     background: var(--surface-sheen), var(--color-surface);
     box-shadow: var(--shadow-inset), var(--shadow-panel);
     transition: border-color var(--duration-fast) var(--ease-out);
+    backface-visibility: hidden;
   }
 
-  .post-card:hover,
+  .post-card[data-active='true'],
   .post-card:focus-within {
     border-color: var(--color-line-strong);
   }
 
+  /* Cover image: fixed height at top of card (roughly 40% of card height) */
   .post-card-media {
     display: block;
+    flex: 0 0 42%;
     overflow: hidden;
-    aspect-ratio: 16 / 10;
     background: var(--color-surface-raised);
     box-shadow: inset 0 -1px var(--color-line);
     user-select: none;
@@ -92,8 +99,9 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     -webkit-user-drag: none;
   }
 
+  .post-card[data-active='true'] .post-card-media :global(img),
   .post-card:hover .post-card-media :global(img) {
-    transform: scale(1.015);
+    transform: scale(1.03);
   }
 
   .post-card-content {
@@ -101,16 +109,35 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     min-width: 0;
     flex: 1;
     flex-direction: column;
-    padding: 1.35rem;
+    padding: 1.1rem 1.25rem 1.25rem;
+    gap: 0.5rem;
+  }
+
+  .post-type-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-copper, #b87333);
+    text-transform: uppercase;
+    opacity: 0.85;
   }
 
   h2 {
     margin: 0;
     color: var(--color-heading);
-    font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+    font-size: clamp(1rem, 1.5vw, 1.3rem);
     font-weight: 650;
     line-height: 1.35;
     overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  h2 a {
+    color: inherit;
+    text-decoration: none;
   }
 
   h2 a:hover {
@@ -120,27 +147,18 @@ const published = new Intl.DateTimeFormat('zh-CN', {
   .post-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem 1rem;
+    gap: 0.3rem 0.85rem;
     margin-top: auto;
-    padding-top: 1.15rem;
+    padding-top: 0.75rem;
     color: var(--color-muted);
-    font-size: 0.8125rem;
+    font-size: 0.78rem;
     font-variant-numeric: tabular-nums;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .post-card:hover .post-card-media :global(img) {
+    .post-card:hover .post-card-media :global(img),
+    .post-card[data-active='true'] .post-card-media :global(img) {
       transform: none;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .post-card {
-      flex-basis: min(84vw, 21rem);
-    }
-
-    .post-card-content {
-      padding: 1.25rem;
     }
   }
 </style>

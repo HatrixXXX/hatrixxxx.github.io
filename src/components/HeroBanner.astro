@@ -1,7 +1,4 @@
 ---
-import { getImage } from 'astro:assets';
-import workshop from '@/assets/home/liupin-workshop-v5.png';
-
 interface Props {
   title: string;
   subtitle?: string;
@@ -10,14 +7,9 @@ interface Props {
 }
 
 const { title, subtitle, image, compact = false } = Astro.props;
-const heroImage = image === '/images/default-cover.svg'
-  ? (await getImage({ src: workshop, format: 'webp', quality: 85 })).src
-  : image;
-const safeHeroImage = heroImage.replaceAll('"', '%22');
-const backgroundImage = `--hero-image: url("${safeHeroImage}")`;
+const safeImage = image.replaceAll('"', '%22');
+const backgroundImage = `--hero-image: url("${safeImage}")`;
 ---
-
-<Fragment set:html={`<style>:root{--page-hero-image:url("${safeHeroImage}")}</style>`} />
 
 <section
   data-hero

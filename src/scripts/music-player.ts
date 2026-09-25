@@ -70,6 +70,24 @@ export function initializeMusicPlayer(
   }
   if (pathname) player.dataset.playerPath = pathname;
 
+  // When transition:persist moves the player to the home-side layer,
+  // sync its position and transform to match the HomePanel[data-home-panel="music"].
+  if (mode === 'home') {
+    const panel = root.querySelector<HTMLElement>('[data-home-panel="music"]');
+    if (panel) {
+      const ps = panel.style;
+      player.style.left = ps.left || '0px';
+      player.style.top = ps.top || '0px';
+      player.style.transform = ps.transform || '';
+      player.style.transformOrigin = '0 0';
+    }
+  } else {
+    player.style.left = '';
+    player.style.top = '';
+    player.style.transform = '';
+    player.style.transformOrigin = '';
+  }
+
   if (player.dataset.bound === 'true') {
     return audio;
   }
@@ -240,3 +258,4 @@ if (typeof document !== 'undefined') {
   });
   initializeMusicPlayer();
 }
+
