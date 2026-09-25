@@ -98,7 +98,9 @@ corepack pnpm test:e2e
 
 ### 站内链接计数（`check:site` / 单元测试）
 - `EXPECTED_LOCAL_LINKS` 同时存在于 `scripts/check-built-site.ts`（第 20 行）和 `tests/unit/check-built-site.test.ts`（`toBe(...)`）两处，**必须同步修改**，否则单元测试和 CI 各报一个错。
-- 新增或删除页面、组件、导航项后，先本地构建或从 CI 日志读取实际链接数，再统一更新两处。
+- 计数逻辑：脚本用正则扫所有构建产物 HTML 中的 `href=` 和 `src=` 属性，过滤出站内路径后累加。导航栏、页脚、组件内的每个站内 `href`/`src` 都会在**每个页面**重复计入，因此每新增一个全局导航项，计数增量约等于总页面数。
+- **只有在明确知道增删了多少链接节点时才修改这个值**——不要看到 CI 报错就跟着 CI 日志的"found N"改；CI 偶发的构建差异（缓存、私有文章数变化）会导致数字不稳定。
+- 正确流程：本地执行 `corepack pnpm build && corepack pnpm check:site` 失败后，日志第一行 `Checked N local links` 的 N 才是当前稳定值，以此更新两处。
 
 ### TypeScript 检查（`check`）
 - Astro 模板 frontmatter 中定义的变量不能在模板体里使用未声明的别名；`getStaticPaths` 传入的 `props` 中没有的变量名会在 `corepack pnpm check` 时报 `ts(2304)`。
