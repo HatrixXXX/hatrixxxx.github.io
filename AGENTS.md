@@ -1,4 +1,4 @@
-﻿# 项目规则
+# 项目规则
 
 这是 `https://hatrix.site` 的 Astro 纯静态站点。Node 版本固定为 24，包管理器使用 Corepack 管理的 pnpm。
 
@@ -112,6 +112,15 @@ corepack pnpm test:e2e
 
 ### 测试 fixture 中的预期报错
 - `tests/unit/` 下的部分测试会故意构造违规 Markdown（含 `<img>` 原始 HTML、forbidden URL 等）来验证 remark 插件的拒绝行为。构建日志中出现 `"包含原始 HTML 图片"` 或 `"forbidden raw HTML tag"` 并指向 `/tmp/` 或 `/E:/post.md` 路径时，属于测试 fixture 的正常输出，不是需要修复的 bug。
+
+### 推送前必须先跑单元测试
+- **每次推送前必须先本地执行 `corepack pnpm test:run`，全部通过后才能 `git push`**；不要依赖 CI 来发现单元测试失败。
+- 修改以下任何一项时，必须同步检查并更新对应测试：
+  - `src/config/navigation.ts`（路径、标签变动）→ `tests/unit/navigation-config.test.ts` 中的 href/label 断言。
+  - `src/scripts/music-player.ts`（逻辑、DOM 结构变动）→ `tests/unit/music-player.test.ts` 中的 source contains 断言和 fixture。
+  - `src/components/MusicPlayer.astro`（data 属性增删）→ `tests/unit/music-player.test.ts` 中对应的 `toContain` 断言。
+- **fixture 需跟进脚本改动**：若脚本新增了对 DOM 属性（如 `player.style`、`panel.style`）的访问，测试 fixture 里的模拟对象也要同步加上该属性，否则会抛 `Cannot set properties of undefined`。
+- **source-contains 断言需跟进代码改动**：测试用 `readFile` 做字符串断言时，断言内容必须与源码完全一致，包括括号和运算符（如 `tracks.length - 1` vs `tracks.length`）。
 ## 禁止事项
 
 - 不恢复 Ruby、旧主题目录或一次性迁移脚本。
