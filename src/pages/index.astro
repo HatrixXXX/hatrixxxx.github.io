@@ -13,7 +13,6 @@ import { projectPanel, type Point } from '@/lib/home-projection';
 
 const clockTemplate = '0000/00/00 00:00:00';
 const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quality: 85 });
-
 // The left cards retain their subtle inward projection and tighter local gaps.
 const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
@@ -39,6 +38,7 @@ const rightPanels = {
 ---
 
 <BaseLayout title={SITE.title} pageKind="home">
+  <link rel="preload" href={homeBackground.src} as="image" />
   <main data-home-stage aria-labelledby="home-title" class="home-stage">
     <div class="home-canvas" data-home-canvas style={{ '--home-background-image': `url("${homeBackground.src}")` }}>
       <div class="character-space" data-home-character aria-hidden="true">

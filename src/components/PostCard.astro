@@ -7,10 +7,12 @@ import { postPath } from '@/lib/urls';
 
 interface Props {
   post: PostEntry;
+  index?: number;
 }
 
-const { post } = Astro.props;
+const { post, index = 0 } = Astro.props;
 const href = postPath(post.data.legacySlug);
+const isAboveFold = index < 4;
 const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
 const published = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
@@ -34,8 +36,9 @@ const published = new Intl.DateTimeFormat('zh-CN', {
       height={480}
       layout="constrained"
       widths={[360, 540, 720]}
-      loading="lazy"
-      decoding="async"
+      loading={isAboveFold ? "eager" : "lazy"}
+      decoding={isAboveFold ? "sync" : "async"}
+      fetchpriority={isAboveFold ? "high" : "auto"}
       data-decorative-motion
     />
   </a>
