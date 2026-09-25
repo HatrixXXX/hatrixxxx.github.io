@@ -34,12 +34,12 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
             >
               <img
                 class="friend-avatar"
-                src={friend.avatar}
+                src="/images/avatar.jpg"
+                data-avatar={friend.avatar}
                 alt={friend.name}
                 width="64"
                 height="64"
                 loading="lazy"
-                onerror="this.src='/images/avatar.jpg'"
               />
               <div class="friend-info">
                 <span class="friend-name">{friend.name}</span>
@@ -52,6 +52,16 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
       </ul>
     </div>
   </main>
+
+<script>
+  document.querySelectorAll('img[data-avatar]').forEach((img) => {
+    const src = img.dataset.avatar;
+    if (!src) return;
+    const probe = new Image();
+    probe.onload = () => { img.src = src; };
+    probe.src = src;
+  });
+</script>
 </BaseLayout>
 
 <style>
