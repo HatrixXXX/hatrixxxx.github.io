@@ -1,9 +1,11 @@
-// Coverflow carousel for post list
+﻿// Coverflow carousel for post list
 // - Active card faces forward (rotateY 0), neighbours fold inward
 // - Mouse wheel over the rail scrolls through cards with spring damping
 // - First card starts active; last card can be active with right-side whitespace
 
 const RAIL_SELECTOR = '[data-post-coverflow]';
+const INDEX_KEY = 'blog-coverflow-index';
+const FROM_POST_KEY = 'blog-coverflow-from-post';
 
 // Spring constants
 const SPRING_STIFFNESS = 260;   // how snappy the spring is
@@ -18,14 +20,12 @@ const ACTIVE_SCALE     = 1.0;
 const CARD_GAP_FACTOR  = 0.62;  // fraction of card width used as step offset
 
 interface CoverflowState {
-  // current animated index (fractional during animation)
   current: number;
-  // integer target index
   target: number;
   velocity: number;
   raf: number | null;
   lastTime: number | null;
-  wheelAccum: number;   // accumulated wheel delta for threshold-based stepping
+  wheelAccum: number;
   reducedMotion: boolean;
 }
 
@@ -59,33 +59,21 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
   const cardCount = cards.length;
   if (cardCount === 0) return;
 
-  // Use the actual rendered card width for offset calculation
   const cardWidth = cards[0]?.offsetWidth ?? 280;
   const step = cardWidth * CARD_GAP_FACTOR;
 
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
-    const offset = i - currentIndex;          // signed distance from active
+    const offset = i - currentIndex;
     const absOffset = Math.abs(offset);
     const sign = offset >= 0 ? 1 : -1;
 
-    // Rotation: 0 at active, SIDE_ROTATE_DEG asymptotic for far cards
     const rotateY = sign * Math.min(absOffset * SIDE_ROTATE_DEG, SIDE_ROTATE_DEG);
-
-    // Z translation: push back non-active cards
-    const translateZ = absOffset === 0
-      ? 0
-      : SIDE_TRANSLATE_Z * Math.min(absOffset, 1);
-
-    // Lateral translation: cards fan out from centre
+    const translateZ = absOffset === 0 ? 0 : SIDE_TRANSLATE_Z * Math.min(absOffset, 1);
     const translateX = offset * step;
-
-    // Scale
     const scaleFactor = absOffset === 0
       ? ACTIVE_SCALE
       : SIDE_SCALE + (1 - SIDE_SCALE) * Math.max(0, 1 - absOffset);
-
-    // Opacity: distant cards fade slightly
     const opacity = absOffset > 2 ? Math.max(0.25, 1 - (absOffset - 2) * 0.35) : 1;
 
     card.style.transform = `translateX(${translateX.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) rotateY(${rotateY.toFixed(2)}deg) scale(${scaleFactor.toFixed(4)})`;
@@ -122,13 +110,10 @@ function scheduleFrame(rail: HTMLElement): void {
     const dt = Math.min(state.lastTime === null ? 16 : time - state.lastTime, 50) / 1000;
     state.lastTime = time;
 
-    // Spring integration (semi-implicit Euler)
     const error = state.target - state.current;
     const force = SPRING_STIFFNESS * error - SPRING_DAMPING * state.velocity;
     state.velocity += force * dt;
     state.current += state.velocity * dt;
-
-    // Clamp to valid range
     state.current = Math.max(0, Math.min(maxIndex, state.current));
 
     applyTransforms(rail, state.current);
@@ -159,10 +144,51 @@ function navigateTo(rail: HTMLElement, index: number): void {
   scheduleFrame(rail);
 }
 
-// ─── Wheel handling ──────────────────────────────────────────────────────────
-// Accumulate wheel delta and step when threshold crossed; gives a natural
-// "one-card-per-notch" feel on clicky wheels and smooth feel on trackpads.
-const WHEEL_STEP_THRESHOLD = 60; // px accumulated before stepping
+// ─── Session helpers ──────────────────────────────────────────────────────────
+
+function ssGet(key: string): string | null {
+  try { return sessionStorage.getItem(key); } catch { return null; }
+}
+
+function ssSet(key: string, value: string): void {
+  try { sessionStorage.setItem(key, value); } catch { /* ignore */ }
+}
+
+function ssDel(key: string): void {
+  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+}
+
+// ─── Track navigation intent via Astro View Transitions events ───────────────
+// astro:before-preparation fires before each client-side navigation and exposes
+// reliable from/to URLs — unlike document.referrer which only updates on full
+// page loads and is therefore useless in a SPA-style router.
+
+document.addEventListener('astro:before-preparation', (e) => {
+  const event = e as unknown as { from: URL; to: URL };
+  const fromPath = event.from.pathname;
+  const toPath   = event.to.pathname;
+
+  const isBlogList = (p: string) => p === '/blog/' || p === '/blog/all/';
+
+  if (isBlogList(fromPath) && toPath.startsWith('/posts/')) {
+    // Leaving the blog list → entering a post: persist the current index.
+    const rail = document.querySelector<HTMLElement>(RAIL_SELECTOR);
+    if (rail) ssSet(INDEX_KEY, String(stateFor(rail).target));
+    ssSet(FROM_POST_KEY, '1');
+  } else if (isBlogList(toPath)) {
+    if (fromPath.startsWith('/posts/')) {
+      // Returning from a post → restore the saved index.
+      ssSet(FROM_POST_KEY, '1');
+    } else {
+      // Arriving from nav, home, or any other origin → reset to card 0.
+      ssDel(INDEX_KEY);
+      ssDel(FROM_POST_KEY);
+    }
+  }
+});
+
+// ─── Wheel handling ───────────────────────────────────────────────────────────
+const WHEEL_STEP_THRESHOLD = 60;
 
 document.addEventListener('wheel', (event: WheelEvent) => {
   const target = event.target instanceof Element ? event.target : null;
@@ -186,19 +212,17 @@ document.addEventListener('wheel', (event: WheelEvent) => {
   }
 }, { passive: false });
 
-// ─── Keyboard navigation ─────────────────────────────────────────────────────
+// ─── Keyboard navigation ──────────────────────────────────────────────────────
 document.addEventListener('keydown', (event: KeyboardEvent) => {
   const target = event.target instanceof Element ? event.target : null;
   const rail = target?.closest<HTMLElement>(RAIL_SELECTOR) ?? null;
   if (!rail) return;
   if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
     event.preventDefault();
-    const state = stateFor(rail);
-    navigateTo(rail, state.target + 1);
+    navigateTo(rail, stateFor(rail).target + 1);
   } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
     event.preventDefault();
-    const state = stateFor(rail);
-    navigateTo(rail, state.target - 1);
+    navigateTo(rail, stateFor(rail).target - 1);
   }
 });
 
@@ -217,7 +241,7 @@ document.addEventListener('click', (event: MouseEvent) => {
   if (index !== -1) navigateTo(rail, index);
 }, true);
 
-// ─── Touch swipe ─────────────────────────────────────────────────────────────
+// ─── Touch swipe ──────────────────────────────────────────────────────────────
 interface TouchSwipeState {
   rail: HTMLElement;
   startX: number;
@@ -225,14 +249,13 @@ interface TouchSwipeState {
   moved: boolean;
 }
 let touchSwipe: TouchSwipeState | null = null;
-const SWIPE_THRESHOLD = 40; // px to count as intentional swipe
+const SWIPE_THRESHOLD = 40;
 
 document.addEventListener('touchstart', (event: TouchEvent) => {
   const t = event.target instanceof Element ? event.target : null;
   const rail = t?.closest<HTMLElement>(RAIL_SELECTOR) ?? null;
   if (!rail || event.touches.length !== 1) return;
-  const state = stateFor(rail);
-  touchSwipe = { rail, startX: event.touches[0].clientX, startTarget: state.target, moved: false };
+  touchSwipe = { rail, startX: event.touches[0].clientX, startTarget: stateFor(rail).target, moved: false };
 }, { passive: true });
 
 document.addEventListener('touchmove', (event: TouchEvent) => {
@@ -240,23 +263,33 @@ document.addEventListener('touchmove', (event: TouchEvent) => {
   const dx = touchSwipe.startX - event.touches[0].clientX;
   if (!touchSwipe.moved && Math.abs(dx) > 8) touchSwipe.moved = true;
   if (touchSwipe.moved) {
-    const steps = Math.round(dx / SWIPE_THRESHOLD);
-    navigateTo(touchSwipe.rail, touchSwipe.startTarget + steps);
+    navigateTo(touchSwipe.rail, touchSwipe.startTarget + Math.round(dx / SWIPE_THRESHOLD));
   }
 }, { passive: true });
 
 document.addEventListener('touchend', () => { touchSwipe = null; });
 document.addEventListener('touchcancel', () => { touchSwipe = null; });
 
-// ─── Init ────────────────────────────────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────────────────────────────────
 function initRail(rail: HTMLElement): void {
   const state = stateFor(rail);
-  state.current = 0;
-  state.target = 0;
+  const cards = getCards(rail);
+
+  const fromPost = ssGet(FROM_POST_KEY) === '1';
+  const rawIndex = ssGet(INDEX_KEY);
+  const parsedIndex = rawIndex !== null ? parseInt(rawIndex, 10) : NaN;
+  const startIndex = (fromPost && Number.isFinite(parsedIndex) && parsedIndex >= 0)
+    ? Math.min(parsedIndex, Math.max(0, cards.length - 1))
+    : 0;
+
+  // Consume the flag so a subsequent non-post navigation resets to card 0.
+  ssDel(FROM_POST_KEY);
+
+  state.current = startIndex;
+  state.target  = startIndex;
   state.velocity = 0;
   state.wheelAccum = 0;
-  // Initial layout pass (synchronous, no animation)
-  applyTransforms(rail, 0);
+  applyTransforms(rail, startIndex);
 }
 
 function initAllRails(): void {

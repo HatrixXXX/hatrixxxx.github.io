@@ -14,7 +14,6 @@ import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
 import { postPath } from '@/lib/urls';
 import { latestPostLimit } from '@/lib/post-layout';
 import { SITE } from '@/config/site';
-import { POST_TYPE_LINKS } from '@/config/navigation';
 
 interface Heading {
   depth: number;
@@ -32,7 +31,6 @@ const { post, headings, adjacent } = Astro.props;
 const canonicalPath = postPath(post.data.legacySlug);
 const posts = await getCollection('posts');
 const stats = buildSiteStats(posts);
-const parentTypeLink = POST_TYPE_LINKS.find(({ label }) => label === post.data.type)?.href ?? '/blog/all/';
 
 ---
 
@@ -50,7 +48,7 @@ const parentTypeLink = POST_TYPE_LINKS.find(({ label }) => label === post.data.t
     runningDuration: formatRunningDurationAt(new Date())
   }}
 >
-  <BackButton href={parentTypeLink} label={`返回${post.data.type}`} />
+  <BackButton href="/blog/" label="返回博客文章" />
   <article data-post>
     <div class="post-intro container">
       <h1>{post.data.title}</h1>

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ABOUT_SECTION_LINKS, BLOG_SUBNAV_LINKS } from '../../src/config/navigation';
+import { ABOUT_SECTION_LINKS } from '../../src/config/navigation';
 
 for (const { route, href, label } of [
   ...[
@@ -8,8 +8,7 @@ for (const { route, href, label } of [
     ...Array.from({ length: 6 }, (_, index) => `/page/${index + 2}/`)
   ].map((route) => ({ route, href: '/', label: '返回主页' })),
   { route: '/blog/all/', href: '/', label: '返回主页' },
-  ...BLOG_SUBNAV_LINKS.filter(({ slug }) => slug !== 'all').map(({ href: route }) => ({ route, href: '/blog/all/', label: '返回博客文章' })),
-  { route: '/posts/本科数学大杂烩/', href: '/blog/tech-notes/', label: '返回技术笔记' }
+  { route: '/posts/本科数学大杂烩/', href: '/blog/', label: '返回博客文章' }
 ]) {
   test(`${route} exposes a consistent back destination`, async ({ page }) => {
     await page.goto(route);

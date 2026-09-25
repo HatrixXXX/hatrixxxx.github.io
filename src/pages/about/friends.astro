@@ -1,4 +1,4 @@
-﻿---
+---
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
@@ -13,7 +13,7 @@ const posts = await getCollection('posts');
 const stats = posts.length > 0 ? buildSiteStats(posts) : null;
 ---
 
-<BaseLayout title="友链">
+<BaseLayout title="友链" bodyClass="friends-page">
   <BackButton href="/" label="返回主页" />
   <HeroBanner title="友链" subtitle="一些有趣的人与站点" image="/images/default-cover.svg" compact />
   <main class="friends-main container">
@@ -87,16 +87,24 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
 </BaseLayout>
 
 <style>
+  :global(body.friends-page) {
+    overflow: hidden;
+  }
+
   .friends-main {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: clamp(1.5rem, 4vw, 3rem);
     align-items: start;
-    padding-block: clamp(2.5rem, 6vw, 5rem);
+    height: calc(100dvh - var(--inner-page-banner-height, 240px) - var(--header-height, 60px));
+    padding-inline: clamp(1rem, 4vw, 2rem);
   }
 
   .friends-content {
     min-width: 0;
+    height: 100%;
+    overflow-y: auto;
+    padding-block: clamp(2rem, 4vw, 3.5rem);
   }
 
   .friends-grid {
@@ -186,6 +194,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
   @media (min-width: 1025px) {
     .friends-main {
       grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+      padding-inline: 0;
     }
 
     .friends-content {
@@ -196,6 +205,23 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
     .friends-main :global([data-sidebar-stack]) {
       grid-column: 1;
       grid-row: 1;
+      position: static !important;
+      align-self: start;
+      height: 100%;
+      overflow-y: auto;
+      padding-block: clamp(2rem, 4vw, 3.5rem);
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .friends-main {
+      overflow-y: auto;
+    }
+
+    .friends-content {
+      height: auto;
+      overflow-y: visible;
+      padding-block: 1.5rem clamp(2.5rem, 6vw, 5rem);
     }
   }
 </style>

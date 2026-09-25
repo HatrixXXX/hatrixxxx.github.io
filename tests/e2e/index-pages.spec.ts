@@ -3,11 +3,6 @@ import { expect, test } from '@playwright/test';
 const generatedRoutes = [
   '/blog/',
   '/blog/all/',
-  '/blog/tech-notes/',
-  '/blog/troubleshooting/',
-  '/blog/life/',
-  '/blog/recommendations/',
-  '/blog/essays/',
   '/about/hobbies/',
   '/about/research/',
   '/about/reading/',
@@ -59,7 +54,6 @@ test('blog and archive indexes omit contextual sidebar cards', async ({ page }) 
   for (const path of [
     '/blog/',
     '/blog/all/',
-    '/blog/tech-notes/',
     '/archives/',
     '/projects/',
     '/guestbook/',

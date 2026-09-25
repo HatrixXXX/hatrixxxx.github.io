@@ -244,32 +244,3 @@ test('reduced motion skips wheel easing and drag inertia', async ({ page }) => {
   expect(await rail.evaluate((element) => element.scrollLeft)).toBeCloseTo(wheelPosition, 0);
 });
 
-for (const { route, title, count } of [
-  { route: '/blog/tech-notes/', title: '技术笔记', count: 38 },
-  { route: '/blog/troubleshooting/', title: '踩坑记录', count: 1 },
-  { route: '/blog/life/', title: '生活动态', count: 0 },
-  { route: '/blog/recommendations/', title: '好物推荐', count: 2 },
-  { route: '/blog/essays/', title: '随笔杂谈', count: 0 }
-]) {
-  test(`${title} blog type route lists its posts`, async ({ page, request }) => {
-    expect((await request.get(route)).status()).toBe(200);
-
-    await page.goto(route);
-    await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
-    await expect(page.locator('article[data-post-card]')).toHaveCount(count);
-    await expect(page.locator('[data-blog-view-toggle]')).toHaveCount(0);
-    if (count > 0) {
-      const railBox = await page.locator('[data-post-rail]').boundingBox();
-      expect(railBox?.x).toBeCloseTo(32, 0);
-      expect(railBox?.width).toBeCloseTo(1_376, 0);
-    }
-  });
-}
-
-for (const route of ['/blog/life/', '/blog/essays/']) {
-  test(`${route} shows the empty blog type state`, async ({ page }) => {
-    await page.goto(route);
-    await expect(page.getByRole('heading', { level: 2, name: '这个类型还没有文章', exact: true })).toBeVisible();
-    await expect(page.getByText('以后写到这类内容时，会放在这里。', { exact: true })).toBeVisible();
-  });
-}
