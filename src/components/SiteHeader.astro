@@ -105,14 +105,28 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     left: 0;
     min-height: var(--site-header-height);
     border-bottom: 0;
-    background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    background-color: var(--color-surface);
     background-image: var(--page-hero-image, none);
     background-position: center 44%;
     background-size: cover;
-    backdrop-filter: blur(2px);
     color: var(--color-text);
     box-shadow: var(--shadow-inset), inset 0 -1px var(--color-line);
     font-family: var(--font-body);
+  }
+
+  .site-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(90deg, rgb(23 21 29 / 50%), rgb(23 21 29 / 75%) 45%, rgb(23 21 29 / 62%));
+    pointer-events: none;
+  }
+
+  .site-header .header-inner,
+  .site-header .mobile-nav {
+    position: relative;
+    z-index: 1;
   }
 
   .header-content-boundary {
