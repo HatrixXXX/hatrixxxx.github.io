@@ -157,7 +157,13 @@ export function initializeMusicPlayer(
   index = Math.min(index, tracks.length - 1);
 
   const advanceTrack = (): void => {
-    load(Math.floor(Math.random() * tracks.length));
+    if (tracks.length > 1) {
+      let next = Math.floor(Math.random() * (tracks.length - 1));
+      if (next >= index) next++;
+      load(next);
+    } else {
+      load(0);
+    }
     void audio!.play().catch(() => undefined);
   };
 
@@ -258,4 +264,6 @@ if (typeof document !== 'undefined') {
   });
   initializeMusicPlayer();
 }
+
+
 
