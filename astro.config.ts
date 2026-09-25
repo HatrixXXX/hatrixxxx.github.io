@@ -51,7 +51,7 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   devToolbar: { enabled: process.env.PLAYWRIGHT_TEST !== '1' },
-  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
+  prefetch: { prefetchAll: true, defaultStrategy: 'viewport' },
   integrations: [
     sitemap({
       filter: (page) => !excludedFromSitemap.has(normalizeRoutePath(page))
@@ -69,7 +69,19 @@ export default defineConfig({
     ]
   },
   vite: {
-    optimizeDeps: { include: ['mermaid', 'sakana'] }
+    optimizeDeps: { include: ['mermaid', 'sakana'] },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/mermaid') || id.includes('node_modules/cytoscape') || id.includes('node_modules/dagre')) return 'mermaid';
+            if (id.includes('node_modules/katex')) return 'katex';
+            if (id.includes('node_modules/photoswipe')) return 'photoswipe';
+            if (id.includes('node_modules/sakana')) return 'sakana';
+          }
+        }
+      }
+    }
   },
   markdown: siteMarkdownConfig
 });
