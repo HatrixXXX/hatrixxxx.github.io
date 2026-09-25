@@ -1,14 +1,19 @@
 /**
  * 全站页面加载遮罩控制器。
  *
- * 两个入口：
- * A. 硬导航（首次打开网站）
- *    - PageLoader.astro 内联脚本已在 HTML 解析时决定显示/隐藏遮罩
- *    - astro:page-load 触发时处理：首页等立绘，其余直接完成
+ * 架构原则：每个页面都包含 PageLoader.astro，其 inline script 在 HTML 解析阶段
+ * 决定是否显示遮罩（首次访问该 URL 则显示）。
+ * 本脚本只负责：在 astro:page-load 时启动进度、完成进度、移除遮罩。
+ * 不在 astro:before-preparation 注入任何元素，避免 View Transitions DOM swap
+ * 把注入的元素替换掉导致状态失联。
  *
- * B. View Transitions 导航
- *    - astro:before-preparation：目标页未访问过则插入遮罩，开始假进度
- *    - astro:page-load：完成进度，淡出
+ * 流程：
+ *   astro:page-load
+ *     ├─ 找到 #page-loader
+ *     ├─ hidden=true  → 已访问过，直接 remove()
+ *     └─ hidden=false → 首次访问，markVisited，启动进度
+ *          ├─ 首页：runFakeProgress(85%) + waitHomeImage → complete
+ *          └─ 其余：runFakeProgress(100%, 600ms) → complete
  *
  * 访问记录：sessionStorage['hatrix-visited-pages']，关标签重置。
  */
@@ -27,25 +32,6 @@ function markVisited(path: string): void {
     const v = getVisited();
     if (!v.includes(path)) { v.push(path); sessionStorage.setItem(VISITED_KEY, JSON.stringify(v)); }
   } catch { /* ignore */ }
-}
-function hasVisited(path: string): boolean { return getVisited().includes(path); }
-
-// ── 遮罩模板（供 View Transitions 复用） ─────────────────────────────────────
-
-let loaderTemplate: HTMLElement | null = null;
-
-function saveTemplate(loader: HTMLElement): void {
-  if (!loaderTemplate) loaderTemplate = loader.cloneNode(true) as HTMLElement;
-}
-
-function injectLoader(): HTMLElement | null {
-  if (!loaderTemplate) return null;
-  const el = loaderTemplate.cloneNode(true) as HTMLElement;
-  el.removeAttribute('hidden');
-  el.classList.remove('is-done');
-  el.style.cssText = '';          // 清除残留 inline style
-  document.body.prepend(el);
-  return el;
 }
 
 // ── 进度动画 ─────────────────────────────────────────────────────────────────
@@ -71,16 +57,15 @@ function makeState(loader: HTMLElement): State {
 function applyProgress(state: State, pct: number): void {
   const p = Math.max(0, Math.min(100, pct));
   state.progress = p;
-  const offset = 100 - p;
-  state.arcs.forEach(a => a.setAttribute('stroke-dashoffset', String(offset)));
+  state.arcs.forEach(a => a.setAttribute('stroke-dashoffset', String(100 - p)));
   if (state.numEl) state.numEl.textContent = `${Math.round(p)}%`;
 }
 
-/** ease-out cubic 假进度，推到 targetPct */
+/** ease-out cubic 假进度推到 targetPct */
 function runFakeProgress(state: State, targetPct: number, durationMs = 2400): void {
-  const from  = state.progress;
-  const t0    = performance.now();
-  const tick  = (now: number) => {
+  const from = state.progress;
+  const t0   = performance.now();
+  const tick = (now: number) => {
     if (state.finished) return;
     const t = Math.min((now - t0) / durationMs, 1);
     applyProgress(state, from + (targetPct - from) * (1 - (1 - t) ** 3));
@@ -89,7 +74,7 @@ function runFakeProgress(state: State, targetPct: number, durationMs = 2400): vo
   state.raf = requestAnimationFrame(tick);
 }
 
-/** 跳到 100%，停顿，淡出，移除 */
+/** 跳到 100%，停顿 160ms，淡出，移除 */
 function complete(state: State): void {
   if (state.finished) return;
   state.finished = true;
@@ -107,50 +92,30 @@ function complete(state: State): void {
 
 function waitHomeImage(state: State): void {
   const img = document.querySelector<HTMLImageElement>('[data-home-character] img');
-  const done = () => complete(state);
-  const guard = window.setTimeout(done, 8_000);
-  const finish = () => { window.clearTimeout(guard); done(); };
+  const guard = window.setTimeout(() => complete(state), 8_000);
+  const done  = () => { window.clearTimeout(guard); complete(state); };
 
-  if (!img)                                   { window.setTimeout(done, 400); return; }
-  if (img.complete && img.naturalWidth > 0)   { window.setTimeout(done, 100); return; }
-  img.addEventListener('load',  finish, { once: true });
-  img.addEventListener('error', finish, { once: true });
+  if (!img)                                 { window.setTimeout(done, 400); return; }
+  if (img.complete && img.naturalWidth > 0) { window.setTimeout(done, 100); return; }
+  img.addEventListener('load',  done, { once: true });
+  img.addEventListener('error', done, { once: true });
 }
 
-// ── 当前活跃状态 ─────────────────────────────────────────────────────────────
+// ── 主入口：每次页面激活 ──────────────────────────────────────────────────────
 
-let activeState: State | null = null;
-
-// ── 硬导航：astro:page-load ───────────────────────────────────────────────────
-
-// 这里处理两种情况：
-//   1. 硬导航首次进入（遮罩由内联脚本显示，hidden=false）
-//   2. View Transitions 导航后激活（遮罩已在 before-preparation 插入）
 document.addEventListener('astro:page-load', () => {
-  const path = location.pathname;
-
-  // ─ 情况2：View Transitions 导航后 ─
-  if (activeState) {
-    // before-preparation 已启动假进度，now complete
-    complete(activeState);
-    markVisited(path);
-    activeState = null;
-    return;
-  }
-
-  // ─ 情况1：硬导航 ─
+  const path   = location.pathname;
   const loader = document.getElementById(LOADER_ID);
+
   if (!loader) return;
 
-  saveTemplate(loader);       // 保存模板供 VT 复用
-
   if (loader.hidden) {
-    // 已访问过（但这是硬导航，理论上不会出现；兜底移除）
+    // 已访问过（inline script 留了 hidden），直接移除
     loader.remove();
     return;
   }
 
-  // 首次访问此页
+  // 首次访问：标记并启动进度
   markVisited(path);
   const state = makeState(loader);
   applyProgress(state, 0);
@@ -160,26 +125,8 @@ document.addEventListener('astro:page-load', () => {
     runFakeProgress(state, 85);
     waitHomeImage(state);
   } else {
-    // 非首页硬导航：页面已在 page-load 时完全就绪，直接跑满
-    runFakeProgress(state, 100, 400);
-    window.setTimeout(() => complete(state), 450);
+    // 非首页：page-load 触发时内容已就绪，快速跑满
+    runFakeProgress(state, 100, 550);
+    window.setTimeout(() => complete(state), 600);
   }
-});
-
-// ── View Transitions：导航开始 ────────────────────────────────────────────────
-
-document.addEventListener('astro:before-preparation', (rawEvent) => {
-  // TransitionBeforePreparationEvent 带有 .to: URL 属性
-  const ev = rawEvent as unknown as { to?: URL };
-  const targetPath: string = ev.to?.pathname ?? '';
-
-  if (!targetPath || hasVisited(targetPath)) return;  // 已访问，不显示
-
-  const loader = injectLoader();
-  if (!loader) return;
-
-  const state = makeState(loader);
-  applyProgress(state, 0);
-  runFakeProgress(state, 80);
-  activeState = state;
 });
