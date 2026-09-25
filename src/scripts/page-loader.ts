@@ -169,10 +169,9 @@ document.addEventListener('astro:page-load', () => {
 // ── View Transitions：导航开始 ────────────────────────────────────────────────
 
 document.addEventListener('astro:before-preparation', (rawEvent) => {
-  // 取目标路径（Astro 4/5 两种 API 均兼容）
-  const ev = rawEvent as CustomEvent;
-  const to  = (ev as unknown as { to?: URL }).to;
-  const targetPath: string = to?.pathname ?? '';
+  // TransitionBeforePreparationEvent 带有 .to: URL 属性
+  const ev = rawEvent as unknown as { to?: URL };
+  const targetPath: string = ev.to?.pathname ?? '';
 
   if (!targetPath || hasVisited(targetPath)) return;  // 已访问，不显示
 
