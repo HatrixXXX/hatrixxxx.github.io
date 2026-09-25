@@ -5,7 +5,7 @@ export const CONTENT_SECURITY_POLICY = [
   "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://giscus.app https://events.vercount.one",
   "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline' https://giscus.app",
-  "img-src 'self' data: blob: https://cdn.jsdelivr.net",
+  "img-src 'self' data: blob: https://cdn.jsdelivr.net https:",
   "font-src 'self' data:",
   "connect-src 'self' https://events.vercount.one",
   "media-src 'self' data: blob:",

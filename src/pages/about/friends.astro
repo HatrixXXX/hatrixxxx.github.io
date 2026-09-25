@@ -1,0 +1,169 @@
+---
+import ProfileSidebar from '@/components/ProfileSidebar.astro';
+import HeroBanner from '@/components/HeroBanner.astro';
+import SidebarStack from '@/components/SidebarStack.astro';
+import SiteStats from '@/components/SiteStats.astro';
+import BackButton from '@/components/BackButton.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { FRIENDS } from '@/data/friends';
+import { getCollection } from 'astro:content';
+import { buildSiteStats } from '@/lib/site-stats';
+
+const posts = await getCollection('posts');
+const stats = posts.length > 0 ? buildSiteStats(posts) : null;
+---
+
+<BaseLayout title="我的友链">
+  <BackButton href="/" label="返回主页" />
+  <HeroBanner title="我的友链" subtitle="一些有趣的人与站点" image="/images/default-cover.svg" compact />
+  <main class="friends-main container">
+    <SidebarStack posts={[]} showClock={false} showStats={false}>
+      <ProfileSidebar />
+      {stats && <SiteStats stats={stats} showClock={false} />}
+    </SidebarStack>
+    <div class="friends-content">
+      <ul class="friends-grid" role="list">
+        {FRIENDS.map((friend) => (
+          <li>
+            <a
+              class="friend-card"
+              href={friend.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label={friend.name}
+            >
+              <img
+                class="friend-avatar"
+                src={friend.avatar}
+                alt={friend.name}
+                width="64"
+                height="64"
+                loading="lazy"
+                onerror="this.src='/images/avatar.jpg'"
+              />
+              <div class="friend-info">
+                <span class="friend-name">{friend.name}</span>
+                <span class="friend-desc">{friend.description}</span>
+                <span class="friend-url">{friend.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .friends-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .friends-content {
+    min-width: 0;
+  }
+
+  .friends-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .friend-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: var(--shadow-inset), var(--shadow-panel);
+    text-decoration: none;
+    transition:
+      border-color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
+  }
+
+  .friend-card:hover {
+    border-color: var(--color-copper);
+    background: var(--color-surface-raised);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-inset), 0 10px 28px rgb(10 8 14 / 28%);
+  }
+
+  .friend-card:active {
+    transform: translateY(0);
+    transition-duration: 80ms;
+  }
+
+  .friend-avatar {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--color-line-strong);
+    object-fit: cover;
+    background: var(--color-inset);
+  }
+
+  .friend-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .friend-name {
+    color: var(--color-heading);
+    font-size: 0.95rem;
+    font-weight: 650;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .friend-desc {
+    color: var(--color-text);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .friend-url {
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    font-family: var(--font-data);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (min-width: 1025px) {
+    .friends-main {
+      grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+    }
+
+    .friends-content {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .friends-main :global([data-sidebar-stack]) {
+      grid-column: 1;
+      grid-row: 1;
+    }
+  }
+</style>

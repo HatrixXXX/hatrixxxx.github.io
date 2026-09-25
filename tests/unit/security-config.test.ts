@@ -14,7 +14,7 @@ describe('browser security policy', () => {
       "script-src-attr 'none'",
       // Giscus injects its default.css into the host page.
       "style-src 'self' 'unsafe-inline' https://giscus.app",
-      "img-src 'self' data: blob: https://cdn.jsdelivr.net",
+      "img-src 'self' data: blob: https://cdn.jsdelivr.net https:",
       "font-src 'self' data:",
       "connect-src 'self' https://events.vercount.one",
       // Current pages generate data: media loads.

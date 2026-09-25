@@ -15,6 +15,7 @@ import SocialIcon from '@/components/SocialIcon.astro';
           aria-disabled="true"
           data-social-id={social.id}
           data-social-pending={social.id}
+          style={`--social-color: ${social.color}`}
         >
           <SocialIcon id={social.id} />
         </span>
@@ -25,6 +26,7 @@ import SocialIcon from '@/components/SocialIcon.astro';
           data-social-id={social.id}
           target={social.url.startsWith('http') ? '_blank' : undefined}
           rel={social.url.startsWith('http') ? 'me noreferrer' : undefined}
+          style={`--social-color: ${social.color}`}
         >
           <SocialIcon id={social.id} />
         </a>
@@ -86,14 +88,15 @@ import SocialIcon from '@/components/SocialIcon.astro';
     border: 1px solid var(--color-line);
     border-radius: var(--radius-control);
     background: var(--color-inset);
-    color: var(--color-link);
+    color: var(--social-color, var(--color-link));
     transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
   }
 
   nav a:hover {
-    border-color: var(--color-copper);
+    border-color: var(--social-color, var(--color-copper));
     background: var(--color-surface-raised);
-    color: var(--color-heading);
+    color: var(--social-color, var(--color-heading));
+    filter: brightness(1.15);
   }
 
   nav a:active {
@@ -102,7 +105,7 @@ import SocialIcon from '@/components/SocialIcon.astro';
   }
 
   nav > span {
-    color: var(--color-muted);
+    color: var(--social-color, var(--color-muted));
     opacity: 0.65;
   }
 
