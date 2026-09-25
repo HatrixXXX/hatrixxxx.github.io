@@ -19,7 +19,7 @@ const { section } = Astro.props;
 
 <BaseLayout title={section.label}>
   <BackButton href="/" label="返回主页" />
-  <HeroBanner title={section.label} subtitle="关于我的一些记录" image="/images/default-cover.svg" compact />
+  <HeroBanner title={section.label} subtitle={section.subtitle} image="/images/default-cover.svg" compact />
   <main class="about-section container">
     <div class="about-content">
       <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />

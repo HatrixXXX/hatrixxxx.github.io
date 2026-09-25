@@ -13,8 +13,13 @@ const { title, subtitle, image, compact = false } = Astro.props;
 const heroImage = image === '/images/default-cover.svg'
   ? (await getImage({ src: workshop, format: 'webp', quality: 85 })).src
   : image;
-const backgroundImage = `--hero-image: url("${heroImage.replaceAll('"', '%22')}")`;
+const safeHeroImage = heroImage.replaceAll('"', '%22');
+const backgroundImage = `--hero-image: url("${safeHeroImage}")`;
 ---
+
+<style define:vars={{ heroImageUrl: `url("${safeHeroImage}")` }}>
+  :root { --page-hero-image: var(--heroImageUrl); }
+</style>
 
 <section
   data-hero
@@ -48,7 +53,9 @@ const backgroundImage = `--hero-image: url("${heroImage.replaceAll('"', '%22')}"
   }
 
   .hero--compact {
-    height: var(--inner-page-banner-height);
+    margin-top: calc(-1 * var(--header-height, 60px));
+    padding-top: var(--header-height, 60px);
+    height: calc(var(--inner-page-banner-height) + var(--header-height, 60px));
   }
 
   .hero--compact .hero-content {
@@ -93,7 +100,7 @@ const backgroundImage = `--hero-image: url("${heroImage.replaceAll('"', '%22')}"
     }
 
     .hero--compact {
-      height: var(--inner-page-banner-height);
+      height: calc(var(--inner-page-banner-height) + var(--header-height, 60px));
     }
 
     .hero-content {

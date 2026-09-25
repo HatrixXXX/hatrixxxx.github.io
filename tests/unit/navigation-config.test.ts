@@ -24,15 +24,15 @@ describe('navigation configuration', () => {
     expect(BLOG_SUBNAV_LINKS.map((item) => item.label)).toEqual(['全部文章', ...POST_TYPES]);
     expect(ALL_POSTS_LINK.href).toBe('/blog/all/');
     expect(ABOUT_SECTION_LINKS.map((item) => item.label)).toEqual([
-      '我的爱好',
-      '我的研究',
-      '我爱看的',
-      '我爱玩的',
-      '我的相簿',
-      '我的装备',
-      '我的工具',
-      '我的书签',
-      '我的友链'
+      '爱好',
+      '研究',
+      '阅读',
+      '游戏',
+      '相簿',
+      '装备',
+      '工具',
+      '书签',
+      '友链'
     ]);
   });
 

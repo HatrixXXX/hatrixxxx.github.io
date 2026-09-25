@@ -25,15 +25,15 @@ export const ALL_POSTS_LINK = {
 export const BLOG_SUBNAV_LINKS = [ALL_POSTS_LINK, ...POST_TYPE_LINKS] as const;
 
 export const ABOUT_SECTION_LINKS = [
-  { label: '我的爱好', slug: 'hobbies', href: '/about/hobbies/' },
-  { label: '我的研究', slug: 'research', href: '/about/research/' },
-  { label: '我爱看的', slug: 'reading', href: '/about/reading/' },
-  { label: '我爱玩的', slug: 'games', href: '/about/games/' },
-  { label: '我的相簿', slug: 'albums', href: '/about/albums/' },
-  { label: '我的装备', slug: 'gear', href: '/about/gear/' },
-  { label: '我的工具', slug: 'tools', href: '/about/tools/' },
-  { label: '我的书签', slug: 'bookmarks', href: '/about/bookmarks/' },
-  { label: '我的友链', slug: 'friends', href: '/about/friends/' }
+  { label: '爱好', slug: 'hobbies', href: '/about/hobbies/', subtitle: '玩过、迷过、还在喜欢的东西' },
+  { label: '研究', slug: 'research', href: '/about/research/', subtitle: '学术方向与在研课题' },
+  { label: '阅读', slug: 'reading', href: '/about/reading/', subtitle: '读过的书与留下印象的内容' },
+  { label: '游戏', slug: 'games', href: '/about/games/', subtitle: '玩过和正在玩的游戏' },
+  { label: '相簿', slug: 'albums', href: '/about/albums/', subtitle: '拍过的照片与值得记住的瞬间' },
+  { label: '装备', slug: 'gear', href: '/about/gear/', subtitle: '日常使用的硬件与外设' },
+  { label: '工具', slug: 'tools', href: '/about/tools/', subtitle: '效率工具与常用软件' },
+  { label: '书签', slug: 'bookmarks', href: '/about/bookmarks/', subtitle: '值得反复翻看的链接' },
+  { label: '友链', slug: 'friends', href: '/about/friends/', subtitle: '一些有趣的人与站点' }
 ] as const;
 
 // Home cards and the primary navigation share the same route definitions.

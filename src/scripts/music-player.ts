@@ -120,6 +120,12 @@ export function initializeMusicPlayer(
       setExpanded(player, false);
     }
   });
+  root.addEventListener?.call(root, 'click', (event: Event) => {
+    if (player.dataset.displayMode !== 'dock' || player.dataset.uiState !== 'expanded') return;
+    if (!player.contains((event as MouseEvent).target as Node | null)) {
+      setExpanded(player, false);
+    }
+  }, { capture: false });
   root.defaultView?.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && player.dataset.displayMode === 'dock') {
       const focusWasInside = player.contains(root.activeElement);

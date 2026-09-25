@@ -61,7 +61,7 @@ const defaultFooterStats = {
 const footerStats = siteFooterStats ?? defaultFooterStats;
 
 const isHome = pageKind === 'home';
-const isPostPage = Astro.url.pathname.startsWith('/posts/');
+const isLabPage = Astro.url.pathname === '/lab/';
 const isAboutPage = Astro.url.pathname === '/about' || Astro.url.pathname.startsWith('/about/');
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
@@ -115,6 +115,7 @@ const showSakanaCharacters = isAboutPage;
     <ClientRouter />
     <link rel="preload" href={ibmPlexMono400Url} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
+    {image !== '/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
   <body class={bodyClass}>
     <PageLoader />
@@ -125,7 +126,7 @@ const showSakanaCharacters = isAboutPage;
     {showFooter && <SiteFooter stats={footerStats} />}
     {!isHome && showSakanaCharacters && <SakanaCharacters />}
     <ThemeTransition />
-    {isPostPage && <CursorTrail />}
+    {isLabPage && <CursorTrail />}
     <SearchOverlay />
     {!isHome && <MusicPlayer mode="dock" />}
     <span

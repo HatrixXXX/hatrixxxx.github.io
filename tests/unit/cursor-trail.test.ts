@@ -68,15 +68,13 @@ describe('cursor trail physics', () => {
     expect(classifyTrailRegion(1311, 801, bounds)).toBeNull();
   });
 
-  it('excludes every non-article route', () => {
-    expect(isCursorTrailExcludedPathname('/blog')).toBe(true);
+  it('only includes the lab route', () => {
+    expect(isCursorTrailExcludedPathname('/lab/')).toBe(false);
     expect(isCursorTrailExcludedPathname('/blog/')).toBe(true);
-    expect(isCursorTrailExcludedPathname('/blog/tech-notes/')).toBe(true);
-    expect(isCursorTrailExcludedPathname('/blog/essays/')).toBe(true);
-    expect(isCursorTrailExcludedPathname('/posts/example/')).toBe(false);
-    expect(isCursorTrailExcludedPathname('/page/2/')).toBe(true);
+    expect(isCursorTrailExcludedPathname('/posts/example/')).toBe(true);
     expect(isCursorTrailExcludedPathname('/projects/')).toBe(true);
-    expect(isCursorTrailExcludedPathname('/blogger/')).toBe(true);
+    expect(isCursorTrailExcludedPathname('/')).toBe(true);
+    expect(isCursorTrailExcludedPathname('/about/')).toBe(true);
   });
 
   it('creates twenty tendrils of fifty stationary nodes', () => {

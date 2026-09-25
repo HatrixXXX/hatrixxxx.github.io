@@ -98,14 +98,18 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
 <style>
   .site-header {
     --site-header-height: 60px;
-    position: absolute;
+    position: fixed;
     z-index: 20;
     top: 0;
     right: 0;
     left: 0;
     min-height: var(--site-header-height);
     border-bottom: 0;
-    background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+    background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    background-image: var(--page-hero-image, none);
+    background-position: center 44%;
+    background-size: cover;
+    backdrop-filter: blur(2px);
     color: var(--color-text);
     box-shadow: var(--shadow-inset), inset 0 -1px var(--color-line);
     font-family: var(--font-body);

@@ -13,9 +13,9 @@ const posts = await getCollection('posts');
 const stats = posts.length > 0 ? buildSiteStats(posts) : null;
 ---
 
-<BaseLayout title="我的友链">
+<BaseLayout title="友链">
   <BackButton href="/" label="返回主页" />
-  <HeroBanner title="我的友链" subtitle="一些有趣的人与站点" image="/images/default-cover.svg" compact />
+  <HeroBanner title="友链" subtitle="一些有趣的人与站点" image="/images/default-cover.svg" compact />
   <main class="friends-main container">
     <SidebarStack posts={[]} showClock={false} showStats={false}>
       <ProfileSidebar />
@@ -23,43 +23,63 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
     </SidebarStack>
     <div class="friends-content">
       <ul class="friends-grid" role="list">
-        {FRIENDS.map((friend) => (
-          <li>
-            <a
-              class="friend-card"
-              href={friend.url}
-              target="_blank"
-              rel="noreferrer noopener"
-              aria-label={friend.name}
-            >
-              <img
-                class="friend-avatar"
-                src="/images/avatar.jpg"
-                data-avatar={friend.avatar}
-                alt={friend.name}
-                width="64"
-                height="64"
-                loading="lazy"
-              />
-              <div class="friend-info">
-                <span class="friend-name">{friend.name}</span>
-                <span class="friend-desc">{friend.description}</span>
-                <span class="friend-url">{friend.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
-              </div>
-            </a>
-          </li>
-        ))}
+        {FRIENDS.map((friend) => {
+          const faviconUrl = new URL(friend.url).origin + '/favicon.ico';
+          const initial = friend.name.charAt(0).toUpperCase();
+          return (
+            <li>
+              <a
+                class="friend-card"
+                href={friend.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                aria-label={friend.name}
+              >
+                <img
+                  class="friend-avatar"
+                  src={friend.avatar}
+                  data-fallback-favicon={faviconUrl}
+                  data-fallback-initial={initial}
+                  alt={friend.name}
+                  width="64"
+                  height="64"
+                  loading="lazy"
+                />
+                <div class="friend-info">
+                  <span class="friend-name">{friend.name}</span>
+                  <span class="friend-desc">{friend.description}</span>
+                  <span class="friend-url">{friend.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                </div>
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </div>
   </main>
 
 <script>
-  document.querySelectorAll<HTMLImageElement>('img[data-avatar]').forEach((img) => {
-    const src = img.dataset.avatar;
-    if (!src) return;
-    const probe = new Image();
-    probe.onload = () => { img.src = src; };
-    probe.src = src;
+  document.querySelectorAll<HTMLImageElement>('img[data-fallback-favicon]').forEach((img) => {
+    const faviconUrl = img.dataset.fallbackFavicon!;
+    const initial = img.dataset.fallbackInitial ?? '?';
+
+    function makeSvgFallback() {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"><rect width="56" height="56" rx="28" fill="var(--color-inset,#2a2a3a)"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="24" font-family="system-ui,sans-serif" fill="var(--color-muted,#888)">${initial}</text></svg>`;
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      img.removeEventListener('error', onFaviconError);
+    }
+
+    function onFaviconError() {
+      makeSvgFallback();
+    }
+
+    function onAvatarError() {
+      img.removeEventListener('error', onAvatarError);
+      img.addEventListener('error', onFaviconError);
+      img.src = faviconUrl;
+    }
+
+    img.addEventListener('error', onAvatarError);
   });
 </script>
 </BaseLayout>
