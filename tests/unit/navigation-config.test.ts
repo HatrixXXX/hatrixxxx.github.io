@@ -15,14 +15,14 @@ describe('navigation configuration', () => {
       '首页', '博客文章', '作品橱窗', '关于我', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'
     ]);
     expect(PRIMARY_NAV_ITEMS.map((item) => item.href)).toEqual([
-      '/', '/blog/all/', '/projects/', '/about/', '/about/bookmarks/', '/about/tools/', '/about/gear/',
+      '/', '/blog/', '/projects/', '/about/', '/about/bookmarks/', '/about/tools/', '/about/gear/',
       '/plans/', '/lab/', '/about/friends/', '/guestbook/'
     ]);
     expect(PRIMARY_NAV_ITEMS.filter((item) => 'children' in item).map((item) => item.label))
       .toEqual([]);
     expect(POST_TYPE_LINKS.map((item) => item.label)).toEqual(POST_TYPES);
     expect(BLOG_SUBNAV_LINKS.map((item) => item.label)).toEqual(['全部文章', ...POST_TYPES]);
-    expect(ALL_POSTS_LINK.href).toBe('/blog/all/');
+    expect(ALL_POSTS_LINK.href).toBe('/blog/');
     expect(ABOUT_SECTION_LINKS.map((item) => item.label)).toEqual([
       '爱好',
       '研究',
@@ -50,7 +50,7 @@ describe('navigation configuration', () => {
 
   it('keeps home destinations stable after removing About from the primary navigation', () => {
     expect(HOME_LINKS.about).toMatchObject({ label: '关于我', href: '/about/' });
-    expect(HOME_LINKS.blog.href).toBe('/blog/all/');
+    expect(HOME_LINKS.blog.href).toBe('/blog/');
     expect(HOME_LINKS.projects.href).toBe('/projects/');
     expect(HOME_LINKS.guestbook.href).toBe('/guestbook/');
     expect(HOME_LINKS.bookmarks.href).toBe('/about/bookmarks/');

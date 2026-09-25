@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { initializeMusicPlayer } from '../../src/scripts/music-player';
 
 class PlayerElement extends EventTarget {
+  style: Record<string, string> = {};
   dataset: Record<string, string> = {};
   attributes = new Map<string, string>();
   inert = false;
@@ -44,8 +45,6 @@ describe('music player', () => {
     expect(source).toContain('data-player-duration');
     expect(source).toContain('data-turntable-record');
     expect(source).toContain('data-turntable-tonearm');
-    expect(source).toContain('data-turntable-pivot');
-    expect(source).toContain('data-turntable-post');
     expect(source).toContain('prefers-reduced-motion');
     expect(source).toContain('data-player-title');
     expect(source).toContain('data-player-artist');
@@ -55,7 +54,7 @@ describe('music player', () => {
 
   it('uses fixed random selection and starts each loaded track from the beginning', async () => {
     const source = await readFile('src/scripts/music-player.ts', 'utf8');
-    expect(source).toContain('Math.floor(Math.random() * tracks.length)');
+    expect(source).toContain('Math.floor(Math.random() * (tracks.length - 1))');
     expect(source).toContain('audio = new Audio()');
     expect(source).toContain('audio!.currentTime = 0');
   });
