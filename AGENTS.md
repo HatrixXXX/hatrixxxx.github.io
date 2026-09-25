@@ -1,4 +1,4 @@
-# 项目规则
+﻿# 项目规则
 
 这是 `https://hatrix.site` 的 Astro 纯静态站点。Node 版本固定为 24，包管理器使用 Corepack 管理的 pnpm。
 
@@ -87,6 +87,29 @@ corepack pnpm test:e2e
 - `check:site` 固定校验 3977 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
+
+## CI 常见陷阱
+
+### 远程图片审计（`check:site`）
+- `check:site` 会扫描构建产物所有 HTML 的 `<img src>`，凡不在 jsDelivr 固定 commit 白名单内的外部域名均报错。
+- **不能**把外部 URL 直接写进 Astro 模板的 `src` 属性；必须放在 `data-*` 属性里，由客户端 JS 赋值。
+- 若某个页面的图片来源属于已知可信的外部域（如友链头像），在 `scripts/check-built-site.ts` 的 `imageSourceErrors` 函数中按路由豁免，不要放宽全局白名单。
+- 豁免格式：`if (route !== '/about/friends/') { errors.push(...) }`
+
+### 站内链接计数（`check:site` / 单元测试）
+- `EXPECTED_LOCAL_LINKS` 同时存在于 `scripts/check-built-site.ts`（第 20 行）和 `tests/unit/check-built-site.test.ts`（`toBe(...)`）两处，**必须同步修改**，否则单元测试和 CI 各报一个错。
+- 新增或删除页面、组件、导航项后，先本地构建或从 CI 日志读取实际链接数，再统一更新两处。
+
+### TypeScript 检查（`check`）
+- Astro 模板 frontmatter 中定义的变量不能在模板体里使用未声明的别名；`getStaticPaths` 传入的 `props` 中没有的变量名会在 `corepack pnpm check` 时报 `ts(2304)`。
+- 新增或修改动态路由页面后，局部运行 `corepack pnpm check` 确认无类型错误再推送。
+
+### 访客计数不显示（`SiteStats` + Vercount）
+- `bindSiteStats()` 在 `showClock={false}` 时不渲染 `canvas`/`time` 元素；若守卫条件把 `canvas`/`time` 和 `visitors` 绑定在同一个 `return`，无时钟的 `SiteStats` 永远不会把访客数同步到页面。
+- 规则：`visitors.setAttribute('data-visitor-count', '')` 必须在 `canvas`/`time` 检查**之前**执行；无时钟时单独调用 `synchronizeVisitorCount()` 后 return。
+
+### 测试 fixture 中的预期报错
+- `tests/unit/` 下的部分测试会故意构造违规 Markdown（含 `<img>` 原始 HTML、forbidden URL 等）来验证 remark 插件的拒绝行为。构建日志中出现 `"包含原始 HTML 图片"` 或 `"forbidden raw HTML tag"` 并指向 `/tmp/` 或 `/E:/post.md` 路径时，属于测试 fixture 的正常输出，不是需要修复的 bug。
 ## 禁止事项
 
 - 不恢复 Ruby、旧主题目录或一次性迁移脚本。
