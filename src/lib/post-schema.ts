@@ -10,7 +10,6 @@ export const postSchema = z
     type: z.enum(POST_TYPES),
     series: z.string().optional(),
     seriesOrder: z.number().int().nonnegative().optional(),
-    draft: z.boolean().default(false),
     locked: z.boolean().default(false),
     math: z.boolean().default(false),
     mermaid: z.boolean().default(false),

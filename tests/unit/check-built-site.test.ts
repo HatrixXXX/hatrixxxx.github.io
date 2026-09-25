@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
@@ -13,7 +13,7 @@ import {
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 it('tracks the fullscreen homepage local link inventory', () => {
-  expect(EXPECTED_LOCAL_LINKS).toBe(4467);
+  expect(EXPECTED_LOCAL_LINKS).toBe(4468);
 });
 
 async function writeSiteFile(root: string, relativePath: string, contents = ''): Promise<void> {
@@ -398,7 +398,7 @@ it('aggregates missing post output errors without throwing', async () => {
   });
 });
 
-it('ignores draft source files when checking published post routes', async () => {
+it('requires a generated route for every source post', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
   await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}</html>`);
@@ -414,17 +414,20 @@ it('ignores draft source files when checking published post routes', async () =>
     await writeSiteFile(
       root,
       `.private-content/posts/${slug}.md`,
-      `---\nlegacySlug: ${slug}\ndraft: false\n---\n`
+      `---\nlegacySlug: ${slug}\n---\n`
     );
     await writeSiteFile(root, `dist/posts/${slug}/index.html`, `<html>${secureHead}</html>`);
   }
-  await writeSiteFile(
-    root,
-    '.private-content/posts/draft.md',
-    '---\nlegacySlug: private-draft\ndraft: true\n---\n'
-  );
-
   const result = await inspectProjectBuiltSite(root);
 
   expect(result.errors).toEqual([]);
+
+  await unlink(join(root, 'dist/posts/published-39/index.html'));
+
+  const missingRouteResult = await inspectProjectBuiltSite(root);
+
+  expect(missingRouteResult.errors).toEqual(expect.arrayContaining([
+    expect.stringContaining('Expected 40 generated post routes, found 39.'),
+    expect.stringContaining('/posts/published-39/')
+  ]));
 });

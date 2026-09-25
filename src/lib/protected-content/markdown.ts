@@ -216,7 +216,7 @@ export async function collectProtectedAssets(
   const assets = new Map<string, ProtectedAsset>();
 
   for (const post of posts) {
-    if (post.data.draft || !post.data.locked) continue;
+    if (!post.data.locked) continue;
     for (const asset of (await renderProtectedMarkdown(post, keyBytes)).assets) {
       const existing = assets.get(asset.id);
       if (existing && (existing.sourcePath !== asset.sourcePath || existing.mediaType !== asset.mediaType)) {

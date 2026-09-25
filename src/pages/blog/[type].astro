@@ -9,7 +9,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { sortPosts, type PostEntry } from '@/lib/content';
 
 export async function getStaticPaths() {
-  const posts: PostEntry[] = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
+  const posts: PostEntry[] = await getCollection('posts');
 
   return POST_TYPE_LINKS.map((type) => ({
     params: { type: type.slug },

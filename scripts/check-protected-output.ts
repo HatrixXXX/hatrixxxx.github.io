@@ -123,7 +123,7 @@ async function protectedSources(contentRoot: string, errors: Set<string>): Promi
   const sources: ProtectedSource[] = [];
   for (const sourceFile of sourceFiles) {
     const parsed = matter(await readFile(sourceFile, 'utf8'));
-    if (parsed.data.locked !== true || parsed.data.draft === true) continue;
+    if (parsed.data.locked !== true) continue;
 
     const sourceName = outputPath(contentRoot, sourceFile);
     const references = imageReferences(parsed.content);

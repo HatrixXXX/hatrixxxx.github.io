@@ -24,7 +24,7 @@ function sitemapExcludedRoutes(): Set<string> {
   if (!existsSync(postsRoot)) return routes;
   for (const file of markdownFiles(postsRoot)) {
     const { data } = matter(readFileSync(file, 'utf8'));
-    if (data.locked === true && data.draft !== true && typeof data.legacySlug === 'string') {
+    if (data.locked === true && typeof data.legacySlug === 'string') {
       routes.add(normalizeRoutePath(postPath(data.legacySlug)));
     }
   }

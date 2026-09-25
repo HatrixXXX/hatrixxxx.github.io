@@ -5,7 +5,6 @@ export interface PostData {
   cover: string;
   series?: string;
   seriesOrder?: number;
-  draft: boolean;
   locked: boolean;
   math: boolean;
   mermaid: boolean;

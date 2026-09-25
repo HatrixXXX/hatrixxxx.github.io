@@ -20,7 +20,7 @@ describe('remote image checking', () => {
     const blogImageUrls = sources.urls.filter((url) => url.startsWith(IMAGE_REPOSITORY));
     const unpinned = blogImageUrls.filter((url) => !url.startsWith(IMMUTABLE_IMAGE_PREFIX));
 
-    expect(blogImageUrls).toHaveLength(254);
+    expect(blogImageUrls).toHaveLength(277);
     expect(unpinned).toHaveLength(0);
   });
 

@@ -47,7 +47,7 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
   const searchResponse = await request.get('/search-index.json');
   expect(searchResponse.headers()['content-type']).toMatch(/^application\/json/);
   const search = await searchResponse.json();
-  expect(search).toHaveLength(40);
+  expect(search).toHaveLength(41);
   for (const document of search) {
     expect(document).not.toHaveProperty('category');
     expect(document).not.toHaveProperty('tags');

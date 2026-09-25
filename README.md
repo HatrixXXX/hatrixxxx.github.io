@@ -2,6 +2,8 @@
 
 这是 `https://hatrix.site` 的 Astro 源码。站点采用纯静态输出，文章、索引页、RSS 和站点地图都在构建期生成，发布产物位于 `dist/`。
 
+文档入口见 [docs/README.md](docs/README.md)，包含现行规则和历史设计记录的阅读说明。
+
 ## 开发环境
 
 - Node.js 24，版本记录在 `.node-version`
@@ -35,12 +37,11 @@ pnpm test:e2e
 ## 内容目录
 
 - `.private-content/posts/`：已发布文章。`.private-content/` 是独立的私有 Git 仓库，整个目录由公开仓库忽略
-- `src/drafts/`：不参与构建的草稿
 - `src/content/projects/`：作品集合，目录可以为空
 - `src/data/playlist.ts`：音乐列表
 - `public/`：CNAME、favicon、头像和本地静态资源
 
-私有内容仓库有 41 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。公开仓库另有 2 篇草稿；一次完整构建会生成 68 个 HTML 页面。
+私有内容仓库有 41 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。所有通过校验的文章都会生成页面；一次完整构建会生成 69 个 HTML 页面。
 
 私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
 
@@ -101,14 +102,12 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 ```yaml
 ---
 title: 示例文章
-description: 用一句话说明文章内容
 pubDate: 2026-09-02
 updatedDate: 2026-09-03
 cover: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png
 type: 技术笔记
 series: Astro 实践
 seriesOrder: 0
-draft: false
 locked: false
 math: false
 mermaid: false
@@ -116,13 +115,12 @@ legacySlug: 示例文章
 ---
 ```
 
-`type` 必填，只能是 `技术笔记`、`踩坑记录`、`生活动态`、`好物推荐` 或 `随笔杂谈`，用于生成 `/blog/<type>/` 类型页，不是已删除的旧分类或标签 taxonomy。`updatedDate` 可省略。`series` 和 `seriesOrder` 必须同时填写或同时省略，`seriesOrder` 是非负整数。`draft` 和 `locked` 省略时都按 `false` 处理，建议在文章里明确写出。
+`type` 必填，只能是 `技术笔记`、`踩坑记录`、`生活动态`、`好物推荐` 或 `随笔杂谈`，用于生成 `/blog/<type>/` 类型页，不是已删除的旧分类或标签 taxonomy。`updatedDate` 可省略。`series` 和 `seriesOrder` 必须同时填写或同时省略，`seriesOrder` 是非负整数。`locked` 省略时按 `false` 处理。
 
-| `draft` | `locked` | 结果 |
-| --- | --- | --- |
-| `false` | `false` | 发布公开正文 |
-| `false` | `true` | 发布公开元数据、封面和解锁外壳，正文与正文图片加密 |
-| `true` | `false` 或 `true` | 不生成页面 |
+| `locked` | 结果 |
+| --- | --- |
+| `false` | 发布公开正文 |
+| `true` | 发布公开元数据、封面和解锁外壳，正文与正文图片加密 |
 
 加锁文章的标题、摘要、日期、类型、阅读时间、URL 和 `cover` 都是公开信息。封面可以继续使用带不可变 commit 的 jsDelivr URL。加锁正文图片必须保存在 `.private-content/posts/` 内，并用 Markdown 相对路径引用，例如：
 
@@ -188,9 +186,9 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 254 个去重后的 jsDelivr 图片 URL。现有发布文章全部固定到图床仓库提交 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`，不会随默认分支删改而漂移。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；如果改用新提交，要同时更新 `astro.config.ts` 的精确 `/img/**` 规则和图片 inventory 测试。
+文章共引用 277 个去重后的 jsDelivr 图片 URL。现有发布文章全部固定到图床仓库提交 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`，不会随默认分支删改而漂移。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；如果改用新提交，要同时更新 `astro.config.ts` 的精确 `/img/**` 规则和图片 inventory 测试。
 
-构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。两篇 `src/drafts/` 草稿不参与发布和图片 inventory，因此没有机械改写其中的历史链接。
+构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
 文章列表的 `cover` 由 Astro 的图片管线和 Sharp 生成 WebP、`srcset` 与尺寸信息。正文远程图片通过预检后仍使用 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
 
@@ -218,10 +216,10 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | --- | --- |
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
-| `pnpm check:images` | 254 个去重后的远程图片 URL |
-| `pnpm build` | 图片预检、67 页静态构建与加锁内容泄漏审计 |
+| `pnpm check:images` | 277 个去重后的远程图片 URL |
+| `pnpm build` | 图片预检、69 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 旧文章路由、CNAME、4195 条站内链接和发布体积 |
+| `pnpm check:site` | 旧文章路由、CNAME、4468 条站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，共 185 项；其中 18 张视觉快照在 Windows 生成，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。

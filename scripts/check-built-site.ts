@@ -16,7 +16,7 @@ import {
 import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
-export const EXPECTED_LOCAL_LINKS = 4467;
+export const EXPECTED_LOCAL_LINKS = 4468;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://giscus.app/client.js'
@@ -542,7 +542,6 @@ async function nativeMarkdownImageErrors(root: string, postsDirectory: string): 
   for (const file of await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`)) {
     if (!/\.mdx?$/i.test(file)) continue;
     const { content, data } = matter(await readFile(file, 'utf8'));
-    if (data.draft === true) continue;
     if (typeof data.legacySlug !== 'string') continue;
     let postOutput: string;
     try {
@@ -573,7 +572,6 @@ export async function inspectProjectBuiltSite(
   for (const file of postFiles) {
     if (!/\.mdx?$/i.test(file)) continue;
     const { data } = matter(await readFile(file, 'utf8'));
-    if (data.draft === true) continue;
     if (typeof data.legacySlug === 'string') routes.push(`/posts/${data.legacySlug}/`);
   }
   if (routes.length !== expectedPostCount || new Set(routes).size !== expectedPostCount) {

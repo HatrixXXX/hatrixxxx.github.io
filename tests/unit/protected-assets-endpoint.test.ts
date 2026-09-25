@@ -31,7 +31,7 @@ let imagePath: string;
 let previousContentDir: string | undefined;
 let previousAdminKey: string | undefined;
 
-function fixturePost(id: string, locked = true, draft = false): PostEntry {
+function fixturePost(id: string, locked = true): PostEntry {
   return {
     id,
     collection: 'posts',
@@ -43,7 +43,6 @@ function fixturePost(id: string, locked = true, draft = false): PostEntry {
       pubDate: new Date('2026-09-03'),
       cover: '/cover.svg',
       type: '技术笔记',
-      draft,
       locked,
       math: false,
       mermaid: false,
@@ -76,12 +75,11 @@ afterEach(async () => {
 });
 
 describe('protected asset endpoint', () => {
-  it('emits one opaque static route for each distinct published locked image', async () => {
+  it('emits one opaque static route for each distinct locked image', async () => {
     contentState.posts = [
       fixturePost('locked'),
       fixturePost('duplicate'),
-      fixturePost('public', false),
-      fixturePost('draft', true, true)
+      fixturePost('public', false)
     ];
 
     const paths = await getStaticPaths();

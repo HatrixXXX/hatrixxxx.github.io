@@ -23,7 +23,7 @@ async function writeFixture(markdownBody = `${PRIVATE_BODY}\n\n![private](./priv
   await mkdir(join(distRoot, 'protected-content', 'assets'), { recursive: true });
   await writeFile(
     join(contentRoot, 'posts', 'locked-post.md'),
-    `---\ntitle: Public title\ndescription: Public description\npubDate: 2026-09-03\ncover: /cover.svg\ntype: 技术笔记\ndraft: false\nlocked: true\nlegacySlug: locked-post\n---\n${markdownBody}`,
+    `---\ntitle: Public title\ndescription: Public description\npubDate: 2026-09-03\ncover: /cover.svg\ntype: 技术笔记\nlocked: true\nlegacySlug: locked-post\n---\n${markdownBody}`,
     'utf8'
   );
   await writeFile(join(contentRoot, 'posts', 'private-image.png'), PRIVATE_ASSET);

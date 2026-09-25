@@ -24,7 +24,7 @@ export function publicProtectedRoutes(posts: PostEntry[]): string[] {
   const routes = [
     ...LOCKED_PAGE_PATHS,
     ...posts
-      .filter(({ data }) => data.locked && !data.draft)
+      .filter(({ data }) => data.locked)
       .map(({ data }) => postPath(data.legacySlug))
   ];
 

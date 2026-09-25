@@ -19,7 +19,7 @@ export const prerender = true;
 export async function getStaticPaths() {
   const posts = await getCollection(
     'posts',
-    ({ data }: PostEntry) => data.locked && !data.draft
+    ({ data }: PostEntry) => data.locked
   );
   if (posts.length === 0) return [];
 

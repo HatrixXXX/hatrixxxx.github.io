@@ -30,7 +30,7 @@ interface Props {
 
 const { post, headings, adjacent } = Astro.props;
 const canonicalPath = postPath(post.data.legacySlug);
-const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
+const posts = await getCollection('posts');
 const stats = buildSiteStats(posts);
 const parentTypeLink = POST_TYPE_LINKS.find(({ label }) => label === post.data.type)?.href ?? '/blog/';
 

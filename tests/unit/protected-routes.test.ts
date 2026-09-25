@@ -41,7 +41,7 @@ afterEach(() => {
 
 function fixturePost(
   legacySlug: string,
-  { locked = true, draft = false }: { locked?: boolean; draft?: boolean } = {}
+  { locked = true }: { locked?: boolean } = {}
 ): PostEntry {
   return {
     id: legacySlug,
@@ -52,7 +52,6 @@ function fixturePost(
       pubDate: new Date('2026-09-03'),
       cover: '/cover.svg',
       type: '技术笔记',
-      draft,
       locked,
       math: false,
       mermaid: false,
@@ -66,13 +65,12 @@ describe('protected page routes', () => {
     expect(PROTECTED_VERIFIER_AAD).toBe('verifier:1');
   });
 
-  it('returns normalized unique configured pages and published locked post paths', () => {
+  it('returns normalized unique configured pages and locked post paths', () => {
     configState.lockedPagePaths.splice(0, Infinity, '/about', '/about/', '/posts/private');
     const posts = [
       fixturePost('private'),
       fixturePost('nested/path/'),
-      fixturePost('public', { locked: false }),
-      fixturePost('draft', { draft: true })
+      fixturePost('public', { locked: false })
     ];
 
     expect(publicProtectedRoutes(posts)).toEqual([

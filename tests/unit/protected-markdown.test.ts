@@ -27,7 +27,6 @@ function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntr
       pubDate: new Date('2026-09-03'),
       cover: '/cover.svg',
       type: '技术笔记',
-      draft: false,
       locked: true,
       math: true,
       mermaid: false,
@@ -180,7 +179,7 @@ describe('protected Markdown', () => {
     expect(result.html).toContain('github-dark');
   });
 
-  it('collects assets only from published locked posts and deduplicates them', async () => {
+  it('collects assets only from locked posts and deduplicates them', async () => {
     const body = '![secret](./private-image.png)';
     const locked = fixturePost(body);
     const duplicate = fixturePost(body, { id: 'locked-duplicate' });
@@ -188,13 +187,8 @@ describe('protected Markdown', () => {
       id: 'public-post',
       data: { ...locked.data, locked: false }
     });
-    const draftPost = fixturePost(body, {
-      id: 'draft-post',
-      data: { ...locked.data, draft: true }
-    });
-
     const assets = await collectProtectedAssets(
-      [locked, duplicate, publicPost, draftPost],
+      [locked, duplicate, publicPost],
       keyBytes
     );
 

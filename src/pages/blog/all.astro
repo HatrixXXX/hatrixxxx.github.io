@@ -5,9 +5,9 @@ import PostArchiveList from '@/components/PostArchiveList.astro';
 import PostList from '@/components/PostList.astro';
 import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { buildArchives, sortPosts, type PostEntry } from '@/lib/content';
+import { buildArchives, sortPosts } from '@/lib/content';
 
-const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+const posts = sortPosts(await getCollection('posts'));
 const archives = buildArchives(posts);
 ---
 

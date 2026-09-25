@@ -12,7 +12,6 @@ import { isConfiguredLockedPage } from '@/config/protected-content';
 import { SITE } from '@/config/site';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '@/config/security';
 import { buildSiteStats, formatRunningDurationAt, type BuiltSiteStats } from '@/lib/site-stats';
-import type { PostEntry } from '@/lib/content';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import '@/styles/tokens.css';
@@ -48,7 +47,7 @@ const {
   siteFooterStats
 } = Astro.props;
 
-const posts = await getCollection('posts', ({ data }: PostEntry) => !data.draft);
+const posts = await getCollection('posts');
 const builtSiteStats = posts.length === 0 ? null : buildSiteStats(posts);
 const defaultFooterStats = {
   postCount: builtSiteStats?.postCount ?? 0,

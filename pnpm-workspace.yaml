@@ -1,2 +1,6 @@
 allowBuilds:
   esbuild: true
+
+overrides:
+  # GHSA-r5fr-rjxr-66jc: Chevrotain pins a vulnerable lodash-es version.
+  'lodash-es@<4.18.1': 4.18.1

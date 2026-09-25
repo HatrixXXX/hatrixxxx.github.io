@@ -25,7 +25,6 @@ const post = (id: string, date: string) => ({
     pubDate: new Date(date),
     cover: '/x.svg',
     type: '技术笔记',
-    draft: false,
     locked: false,
     math: false,
     mermaid: false,

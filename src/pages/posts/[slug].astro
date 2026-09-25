@@ -18,7 +18,7 @@ interface Props {
 }
 
 export const getStaticPaths = (async () => {
-  const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+  const posts = sortPosts(await getCollection('posts'));
   return posts.map((post) => ({
     params: { slug: post.data.legacySlug },
     props: { post, adjacent: getAdjacentPosts(posts, post.id) }

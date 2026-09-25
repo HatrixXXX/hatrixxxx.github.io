@@ -40,7 +40,7 @@ describe('content contracts', () => {
         ? { 技术笔记: 2, 踩坑记录: 0, 生活动态: 0, 好物推荐: 0, 随笔杂谈: 0 }
         : { 技术笔记: 38, 踩坑记录: 1, 生活动态: 0, 好物推荐: 2, 随笔杂谈: 0 }
     );
-    expect(lockedPosts).toBe(usesPublicFixtures ? 1 : 1);
+    expect(lockedPosts).toBe(usesPublicFixtures ? 1 : 0);
   });
 
   it('keeps the configured playlist entries valid', () => {
@@ -65,7 +65,13 @@ describe('content contracts', () => {
     const publicPost = postSchema.safeParse(postFixture);
     expect(publicPost.success).toBe(true);
     if (publicPost.success) {
-      expect(publicPost.data.locked).toBe(false);
+      expect(publicPost.data).toEqual({
+        ...postFixture,
+        pubDate: new Date(postFixture.pubDate),
+        locked: false,
+        math: false,
+        mermaid: false
+      });
     }
 
     expect(postSchema.safeParse({ ...postFixture, locked: 'true' }).success).toBe(false);

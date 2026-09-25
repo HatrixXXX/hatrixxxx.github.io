@@ -13,7 +13,7 @@ interface Props {
 }
 
 export const getStaticPaths = (async () => {
-  const posts = sortPosts(await getCollection('posts', ({ data }: PostEntry) => !data.draft));
+  const posts = sortPosts(await getCollection('posts'));
   const total = paginatePosts(posts, 1, 6).total;
 
   return Array.from({ length: total - 1 }, (_, index) => {
