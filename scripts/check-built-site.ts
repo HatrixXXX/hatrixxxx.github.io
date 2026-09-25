@@ -1,4 +1,4 @@
-﻿import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // @ts-expect-error css-tree@3.2.1 does not publish TypeScript declarations.
@@ -17,7 +17,7 @@ import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 // Includes the optimized homepage character image added to the empty character layer.
-export const EXPECTED_LOCAL_LINKS = 3426;
+export const EXPECTED_LOCAL_LINKS = 3375;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://giscus.app/client.js'
@@ -624,3 +624,4 @@ const currentFile = fileURLToPath(import.meta.url);
 if (process.argv[1] && resolve(process.argv[1]) === currentFile) {
   void main();
 }
+
