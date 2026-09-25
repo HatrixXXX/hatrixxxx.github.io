@@ -78,10 +78,10 @@ const rightPanels = {
           <MusicPlayer mode="home" />
         </HomePanel>
         <HomePanel name="friends" {...leftPanels.friends}>
-          <a class="tile small-tile" href={HOME_LINKS.friends.href}><HomeIcon name="friends" /><span>友链</span></a>
+          <a class="tile small-tile" data-astro-prefetch="tap" href={HOME_LINKS.friends.href}><HomeIcon name="friends" /><span>友链</span></a>
         </HomePanel>
         <HomePanel name="guestbook" {...leftPanels.guestbook}>
-          <a class="tile small-tile" href={HOME_LINKS.guestbook.href}><HomeIcon name="guestbook" /><span>留言板</span></a>
+          <a class="tile small-tile" data-astro-prefetch="tap" href={HOME_LINKS.guestbook.href}><HomeIcon name="guestbook" /><span>留言板</span></a>
         </HomePanel>
       </div>
       <div class="home-side home-side--right" data-home-side="right">
@@ -97,30 +97,30 @@ const rightPanels = {
             </div>
           </HomePanel>
           <HomePanel name="blog" {...rightPanels.blog}>
-            <a class="tile blog-tile" data-home-blog href={HOME_LINKS.blog.href}>
+            <a class="tile blog-tile" data-astro-prefetch="tap" data-home-blog href={HOME_LINKS.blog.href}>
               <HomeIcon name="blog" /><span>博客文章</span>
               <svg class="blog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
             </a>
           </HomePanel>
           <HomePanel name="projects" {...rightPanels.projects}>
-            <a class="tile" href={HOME_LINKS.projects.href}><HomeIcon name="projects" /><span>作品橱窗</span></a>
+            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.projects.href}><HomeIcon name="projects" /><span>作品橱窗</span></a>
           </HomePanel>
           <HomePanel name="about" {...rightPanels.about}>
-            <a class="tile" href={HOME_LINKS.about.href}><HomeIcon name="about" /><span>关于我</span></a>
+            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.about.href}><HomeIcon name="about" /><span>关于我</span></a>
           </HomePanel>
           <HomePanel name="recommendations" {...rightPanels.recommendations}>
             <section class="recommendations" aria-labelledby="recommendations-title">
               <h2 id="recommendations-title">工具推荐</h2>
-              <a class="tile bookmark-tile" href={HOME_LINKS.bookmarks.href}><HomeIcon name="bookmark" /><span>书签</span></a>
-              <a class="tile software-tile" href={HOME_LINKS.software.href}><HomeIcon name="software" /><span>软件</span></a>
-              <a class="tile gear-tile" href={HOME_LINKS.gear.href}><HomeIcon name="gear" /><span>装备</span></a>
+              <a class="tile bookmark-tile" data-astro-prefetch="tap" href={HOME_LINKS.bookmarks.href}><HomeIcon name="bookmark" /><span>书签</span></a>
+              <a class="tile software-tile" data-astro-prefetch="tap" href={HOME_LINKS.software.href}><HomeIcon name="software" /><span>软件</span></a>
+              <a class="tile gear-tile" data-astro-prefetch="tap" href={HOME_LINKS.gear.href}><HomeIcon name="gear" /><span>装备</span></a>
             </section>
           </HomePanel>
           <HomePanel name="plans" {...rightPanels.plans}>
-            <a class="tile" href={HOME_LINKS.plans.href}><HomeIcon name="plans" /><span>计划</span></a>
+            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.plans.href}><HomeIcon name="plans" /><span>计划</span></a>
           </HomePanel>
           <HomePanel name="lab" {...rightPanels.lab}>
-            <a class="tile" href={HOME_LINKS.lab.href}><HomeIcon name="lab" /><span>实验场</span></a>
+            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.lab.href}><HomeIcon name="lab" /><span>实验场</span></a>
           </HomePanel>
         </div>
       </div>
@@ -234,6 +234,44 @@ const rightPanels = {
   .home-stage :global([data-music-player][data-display-mode='home']) { --player-ink: #e9e4dc; --player-muted: #c5bacb; --player-accent: #e9b66c; --player-accent-hover: #ffd28c; --player-on-accent: #241c13; --player-track: #655770; --color-inset: #19161f; --color-surface-raised: #2c2735; --color-copper: #b58c65; --color-line: #b8a6c14d; --color-line-strong: #655770; background: #26232ff2; border-color: #b8a6c14d; }
   @media (prefers-reduced-motion: reduce) { .tile, .search-button { transition: none; } }
 </style>
+
+<script is:inline>
+  (function () {
+    var stage = document.querySelector('[data-home-stage]');
+    if (!stage) return;
+    var clock = stage.querySelector('[data-home-clock]');
+    var digits = clock ? Array.from(clock.querySelectorAll('[data-clock-digit]')) : [];
+    var levelBadge = stage.querySelector('[data-home-level]');
+    var levelNumber = stage.querySelector('[data-level-number]');
+    var levelRing = stage.querySelector('[data-level-progress]');
+    if (!clock || !levelBadge || !levelNumber || !levelRing) return;
+    var now = new Date();
+    // 等级计算（北京时间）
+    var beijing = new Date(now.getTime() + 8 * 3600000);
+    var year = beijing.getUTCFullYear();
+    var bm = 6, bd = 29, by = 2002;
+    var todayUTC = Date.UTC(year, beijing.getUTCMonth(), beijing.getUTCDate());
+    var birthdayYear = todayUTC < Date.UTC(year, bm, bd) ? year - 1 : year;
+    var lastBD = Date.UTC(birthdayYear, bm, bd);
+    var nextBD = Date.UTC(birthdayYear + 1, bm, bd);
+    var elapsed = (todayUTC - lastBD) / 86400000;
+    var yearDays = (nextBD - lastBD) / 86400000;
+    var level = birthdayYear - by;
+    var progress = elapsed / yearDays;
+    var percent = Math.round(progress * 10000) / 100;
+    levelNumber.textContent = String(level);
+    levelRing.setAttribute('stroke-dashoffset', String(100 * (1 - progress)));
+    levelBadge.setAttribute('aria-valuenow', String(percent));
+    levelBadge.setAttribute('aria-valuetext', level + ' 岁；年度进度 ' + percent + '%');
+    // 时钟
+    var pad = function(v) { return String(v).padStart(2, '0'); };
+    var text = now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    clock.dateTime = now.toISOString();
+    clock.setAttribute('aria-label', text);
+    var numbers = text.replace(/\D/g, '');
+    digits.forEach(function(d, i) { d.textContent = numbers[i] || ''; });
+  })();
+</script>
 
 <script>
   import '@/scripts/home-dashboard';
