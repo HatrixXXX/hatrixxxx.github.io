@@ -107,12 +107,12 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     border-bottom: 0;
     background: transparent;
     color: var(--color-text);
-    box-shadow: inset 0 -1px rgb(255 255 255 / 8%);
-    font-family: var(--font-body);
+      font-family: var(--font-body);
   }
 
-  /* 有 hero banner 时：header 完全透明，浮在 banner 上，共享同一张背景图 */
-  /* 无 hero banner 时：::before 提供不透明底色 */
+  /* 有 hero banner 时：header 完全透明，浮在 banner 上 */
+  /* 有背景图时：header 使用半透明磨砂背景 */
+  /* 无背景图时：header 使用不透明底色 */
   .site-header::before {
     content: "";
     position: absolute;
@@ -125,6 +125,16 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
 
   :global(html:has([data-hero])) .site-header::before {
     opacity: 0;
+  }
+
+  :global(body[style*="--page-bg-image"]) .site-header::before {
+    background: rgb(23 21 29 / 55%);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  }
+
+  :global(html[data-theme='light'] body[style*="--page-bg-image"]) .site-header::before {
+    background: rgb(240 236 228 / 70%);
   }
 
   .site-header .header-inner,

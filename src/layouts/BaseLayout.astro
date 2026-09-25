@@ -18,6 +18,7 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import ibmPlexMono400Url from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
 import ibmPlexMono700Url from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-700-normal.woff2?url';
+import pageBackgroundSrc from '@/assets/home/liupin-workshop-v6.png';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
 import '@/styles/prose.css';
@@ -61,6 +62,7 @@ const defaultFooterStats = {
 const footerStats = siteFooterStats ?? defaultFooterStats;
 
 const isHome = pageKind === 'home';
+const pageBgStyle = !isHome ? `--page-bg-image: url("${pageBackgroundSrc.src}")` : undefined;
 const isLabPage = Astro.url.pathname === '/lab/';
 const isAboutPage = Astro.url.pathname === '/about' || Astro.url.pathname.startsWith('/about/');
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
@@ -117,7 +119,7 @@ const showSakanaCharacters = isAboutPage;
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
     {image !== '/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
-  <body class={bodyClass}>    <PageLoader />
+  <body class={bodyClass} style={pageBgStyle}>    <PageLoader />
     {!isHome && <SiteHeader />}
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />

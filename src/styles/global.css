@@ -173,3 +173,26 @@ select:disabled,
     transition-duration: 0s !important;
   }
 }
+
+/* ── Non-home page background image ─────────────────────────────── */
+body[style*="--page-bg-image"] {
+  background-color: var(--color-bg);
+  background-image: var(--page-bg-image);
+  background-attachment: fixed;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+body[style*="--page-bg-image"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(23 21 29 / 30%), rgb(23 21 29 / 48%) 45%, rgb(23 21 29 / 38%));
+  pointer-events: none;
+}
+
+html[data-theme='light'] body[style*="--page-bg-image"]::before {
+  background: linear-gradient(90deg, rgb(240 236 228 / 45%), rgb(240 236 228 / 58%) 45%, rgb(240 236 228 / 50%));
+}

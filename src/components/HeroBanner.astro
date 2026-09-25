@@ -2,19 +2,17 @@
 interface Props {
   title: string;
   subtitle?: string;
-  image: string;
+  image?: string;
   compact?: boolean;
 }
 
-const { title, subtitle, image, compact = false } = Astro.props;
-const safeImage = image.replaceAll('"', '%22');
-const backgroundImage = `--hero-image: url("${safeImage}")`;
+const { title, subtitle, compact = false } = Astro.props;
+// background image comes from the page-level --page-bg-image CSS variable
 ---
 
 <section
   data-hero
   class:list={['hero', { 'hero--compact': compact }]}
-  style={backgroundImage}
   aria-labelledby="hero-title"
 >
   <div class="hero-overlay"></div>
@@ -34,12 +32,10 @@ const backgroundImage = `--hero-image: url("${safeImage}")`;
     place-items: center;
     overflow: hidden;
     isolation: isolate;
-    background-color: var(--color-surface);
-    background-image: var(--hero-image);
+    background-color: transparent;
     background-position: center 44%;
     background-size: cover;
     color: var(--hero-text);
-    border-bottom: 1px solid #b58c6566;
   }
 
   .hero--compact {
@@ -60,7 +56,7 @@ const backgroundImage = `--hero-image: url("${safeImage}")`;
     position: absolute;
     z-index: -1;
     inset: 0;
-    background: linear-gradient(90deg, rgb(23 21 29 / 50%), rgb(23 21 29 / 75%) 45%, rgb(23 21 29 / 62%));
+    background: linear-gradient(to bottom, transparent 60%, rgb(23 21 29 / 30%));
   }
 
   .hero-content {
