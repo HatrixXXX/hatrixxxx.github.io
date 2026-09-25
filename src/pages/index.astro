@@ -17,10 +17,10 @@ const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quali
 const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
   identity: { width: 180, height: 180, corners: [[72, 395], [252, 395], [252, 575], [72, 575]] },
-  quote: { width: 595, height: 145, corners: [[10, 696], [604.4, 668], [605.9, 795], [12, 833]] },
-  music: { width: 380, height: 195, corners: [[12, 845], [387, 822], [392, 1003], [15, 1041]] },
-  friends: { width: 208, height: 88, corners: [[399, 822], [606, 806], [607, 893], [401, 911]] },
-  guestbook: { width: 208, height: 80, corners: [[402, 921], [607, 903], [608, 981], [404, 1000]] }
+  quote: { width: 595, height: 110, corners: [[10, 696], [604.4, 668], [605.9, 762], [12, 775]] },
+  music: { width: 380, height: 195, corners: [[12, 785], [387, 768], [392, 948], [15, 976]] },
+  friends: { width: 208, height: 88, corners: [[399, 768], [606, 756], [607, 843], [401, 855]] },
+  guestbook: { width: 208, height: 80, corners: [[402, 865], [607, 851], [608, 929], [404, 944]] }
 } satisfies Record<string, { width: number; height: number; corners: [Point, Point, Point, Point] }>;
 
 // Every right-side card is a rectangle on this ONE plane. Only the parent is projected.
@@ -68,9 +68,6 @@ const rightPanels = {
           <div class="quote-card">
             <button type="button" class="quote-switch" data-home-quote aria-label={`金句：${HOME_QUOTES[0]}。双击切换；键盘按 Enter 或空格切换`} title="双击切换金句">
               <span class="quote-window"><span data-quote-text>{HOME_QUOTES[0]}</span></span>
-            </button>
-            <button class="quote-pause" type="button" data-quote-pause aria-label="暂停金句自动切换" aria-pressed="false">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="pause-mark" d="M8 5v14M16 5v14" /><path class="resume-mark" d="m8 5 11 7-11 7Z" /></svg>
             </button>
           </div>
         </HomePanel>
@@ -195,13 +192,9 @@ const rightPanels = {
   .level-label { width: 84px; margin-top: 9px; padding-top: 6px; border-top: 1px solid #adb5ba80; font-size: 23px; line-height: 1; text-align: center; }
   .level-fallback { margin: 8px -40px 0; font-size: 18px; text-align: center; }
   .quote-card { position: relative; width: 100%; height: 100%; background: #211e29ed; border: 1px solid #b8a6c133; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf0d; }
-  .quote-switch { width: 100%; height: 100%; border: 0; padding: 26px 45px 26px 29px; text-align: left; color: var(--home-ink); background: transparent; cursor: pointer; }
-  .quote-window { display: flex; overflow: hidden; height: 88px; align-items: center; }
-  [data-quote-text] { display: block; font-size: 30px; line-height: 1.65; text-wrap: balance; }
-  .quote-pause { position: absolute; right: 7px; bottom: 6px; width: 44px; height: 44px; border: 0; color: #c4d4dc; background: transparent; cursor: pointer; }
-  .quote-pause svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 2; }
-  .resume-mark, .quote-pause[aria-pressed='true'] .pause-mark { display: none; }
-  .quote-pause[aria-pressed='true'] .resume-mark { display: block; }
+  .quote-switch { width: 100%; height: 100%; border: 0; padding: 20px 20px 20px 24px; text-align: left; color: var(--home-ink); background: transparent; cursor: pointer; }
+  .quote-window { display: flex; overflow: hidden; height: 60px; align-items: center; }
+  [data-quote-text] { display: block; font-size: 22px; line-height: 1.65; text-wrap: balance; }
   .small-tile { padding: 14px 20px 14px 65px; }
   .small-tile span { font-size: 32px; }
   .small-tile :global(svg) { width: 42px; height: 45px; left: 15px; right: auto; opacity: .6; }

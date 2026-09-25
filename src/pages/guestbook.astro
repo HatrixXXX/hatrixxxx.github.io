@@ -9,8 +9,7 @@ import BackButton from '@/components/BackButton.astro';
   <BackButton href="/" label="返回主页" />
   <HeroBanner title="留言板" subtitle="想说什么都可以写在这里" image="/images/default-cover.svg" compact />
   <main class="guestbook-main container">
-    <p>留言由 GitHub Discussions 保存，需要登录 GitHub 后发布。</p>
-    <GiscusComments title="留言" />
+    <GiscusComments />
   </main>
 </BaseLayout>
 
@@ -19,6 +18,4 @@ import BackButton from '@/components/BackButton.astro';
     max-width: 920px;
     padding-block: clamp(2.5rem, 6vw, 5rem);
   }
-
-  p { color: var(--color-muted); font-size: 0.875rem; line-height: 1.7; }
 </style>

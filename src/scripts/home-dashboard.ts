@@ -17,10 +17,8 @@ function initializeHomeDashboard(): void {
   const levelRing = stage.querySelector<SVGCircleElement>('[data-level-progress]')!;
   const quote = stage.querySelector<HTMLButtonElement>('[data-home-quote]')!;
   const quoteText = stage.querySelector<HTMLElement>('[data-quote-text]')!;
-  const pause = stage.querySelector<HTMLButtonElement>('[data-quote-pause]')!;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let quoteIndex = 0;
-  let paused = motion.matches;
   let animation: Animation | undefined;
   let quoteTimer: number | undefined;
   let displayedLevelDay = '';
@@ -51,13 +49,9 @@ function initializeHomeDashboard(): void {
       if (digit.textContent !== numbers[index]) digit.textContent = numbers[index];
     });
   };
-  const syncPause = (): void => {
-    pause.setAttribute('aria-pressed', String(paused));
-    pause.setAttribute('aria-label', paused ? '恢复金句自动切换' : '暂停金句自动切换');
-  };
   const scheduleQuote = (): void => {
     window.clearTimeout(quoteTimer);
-    if (!paused && !document.hidden) quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
+    if (!document.hidden) quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
   };
   const nextQuote = (): void => {
     animation?.cancel();
@@ -75,14 +69,12 @@ function initializeHomeDashboard(): void {
 
   quote.addEventListener('dblclick', nextQuote, { signal });
   quote.addEventListener('click', (event) => { if (event.detail === 0) nextQuote(); }, { signal });
-  pause.addEventListener('click', () => { paused = !paused; syncPause(); scheduleQuote(); }, { signal });
   document.addEventListener('visibilitychange', () => { updateClock(); scheduleQuote(); }, { signal });
   motion.addEventListener('change', () => {
-    if (motion.matches) { animation?.cancel(); paused = true; syncPause(); scheduleQuote(); }
+    if (motion.matches) { animation?.cancel(); scheduleQuote(); }
   }, { signal });
 
   updateClock();
-  syncPause();
   scheduleQuote();
   const clockTimer = window.setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
   cleanup = () => {

@@ -3,4 +3,4 @@ export const HOME_QUOTES = [
   '兽人永不为奴，除非包吃包住'
 ] as const;
 
-export const HOME_QUOTE_INTERVAL = 15_000;
+export const HOME_QUOTE_INTERVAL = 8_000;

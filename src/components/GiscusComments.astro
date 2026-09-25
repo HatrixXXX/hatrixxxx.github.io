@@ -25,7 +25,6 @@ const darkTheme = import.meta.env.DEV
   data-giscus-mapping={mapping}
   data-giscus-dark-theme={darkTheme}
 >
-  <h2>{title}</h2>
   <p class="comments-status" data-giscus-status>评论正在加载…</p>
   <noscript>评论需要 JavaScript。</noscript>
 </section>
@@ -33,15 +32,6 @@ const darkTheme = import.meta.env.DEV
 <style>
   .comments {
     margin-top: 2.5rem;
-    padding-top: 1.75rem;
-    border-top: 1px solid var(--color-line-strong);
-  }
-
-  h2 {
-    margin: 0 0 1rem;
-    color: var(--color-heading);
-    font-size: 1.25rem;
-    font-weight: 650;
   }
 
   .comments-status,

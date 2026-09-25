@@ -11,7 +11,7 @@ function mountGiscus(): void {
     script.dataset.categoryId = section.dataset.giscusCategoryId ?? '';
     script.dataset.mapping = section.dataset.giscusMapping ?? '';
     script.dataset.strict = '0';
-    script.dataset.reactionsEnabled = '1';
+    script.dataset.reactionsEnabled = '0';
     script.dataset.emitMetadata = '0';
     script.dataset.inputPosition = 'top';
     script.dataset.theme = document.documentElement.dataset.theme === 'light'
