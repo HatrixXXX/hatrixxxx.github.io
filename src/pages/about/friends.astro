@@ -1,4 +1,4 @@
----
+﻿---
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
 import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
@@ -37,7 +37,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
               >
                 <img
                   class="friend-avatar"
-                  src={friend.avatar}
+                  src="/images/default-avatar.svg" data-src={friend.avatar}
                   data-fallback-favicon={faviconUrl}
                   data-fallback-initial={initial}
                   alt={friend.name}
@@ -59,17 +59,18 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
   </main>
 
 <script>
-  document.querySelectorAll<HTMLImageElement>('img[data-fallback-favicon]').forEach((img) => {
+  document.querySelectorAll<HTMLImageElement>('img[data-src]').forEach((img) => {
+    const avatarUrl = img.dataset.src!;
     const faviconUrl = img.dataset.fallbackFavicon!;
     const initial = img.dataset.fallbackInitial ?? '?';
 
     function makeSvgFallback() {
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"><rect width="56" height="56" rx="28" fill="var(--color-inset,#2a2a3a)"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="24" font-family="system-ui,sans-serif" fill="var(--color-muted,#888)">${initial}</text></svg>`;
       img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-      img.removeEventListener('error', onFaviconError);
     }
 
     function onFaviconError() {
+      img.removeEventListener('error', onFaviconError);
       makeSvgFallback();
     }
 
@@ -80,6 +81,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
     }
 
     img.addEventListener('error', onAvatarError);
+    img.src = avatarUrl;
   });
 </script>
 </BaseLayout>
