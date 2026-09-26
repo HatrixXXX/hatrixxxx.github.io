@@ -1,0 +1,356 @@
+{
+  "version": "1",
+  "canvas": {
+    "width": 1024,
+    "height": 1536
+  },
+  "notes": "L/R = 角色自身左右。画面左侧抬手 = hand_R。pivot 坐标基于 1024x1536 全画布。v5: waist 系在 hip 而非 spine；leg_device 直接挂在 hip 末尾，z-order 在所有 thigh/coat 之上。",
+  "bones": [
+    {
+      "name": "root",
+      "parent": null,
+      "pivot": {
+        "x": 480,
+        "y": 1355
+      },
+      "type": "anchor",
+      "note": "双脚重心，绝对静止"
+    },
+    {
+      "name": "hip",
+      "parent": "root",
+      "pivot": {
+        "x": 480,
+        "y": 648
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "translateY": {
+          "amp": 7,
+          "period": 5.6,
+          "phase": 0
+        }
+      },
+      "note": "全身浮动锚点，所有部件随此上下"
+    },
+    {
+      "name": "spine",
+      "parent": "hip",
+      "pivot": {
+        "x": 488,
+        "y": 365
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.7,
+          "period": 5.6,
+          "phase": 0
+        }
+      },
+      "note": "上身在腰部 pivot 以腰为轴轻微后仰"
+    },
+    {
+      "name": "neck_base",
+      "parent": "spine",
+      "pivot": {
+        "x": 493,
+        "y": 212
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.3,
+          "period": 7.3,
+          "phase": 0.4
+        }
+      },
+      "note": "颈根，头部旋转原点"
+    },
+    {
+      "name": "head",
+      "parent": "neck_base",
+      "pivot": {
+        "x": 502,
+        "y": 88
+      },
+      "type": "rigid_helmet",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.5,
+          "period": 7.3,
+          "phase": 0.6
+        }
+      },
+      "note": "头盔刚性，跟随颈部旋转"
+    },
+    {
+      "name": "shoulder_R",
+      "parent": "spine",
+      "pivot": {
+        "x": 298,
+        "y": 248
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.4,
+          "period": 7.9,
+          "phase": 0.2
+        }
+      },
+      "note": "右肩关节 (画面左侧)"
+    },
+    {
+      "name": "elbow_R",
+      "parent": "shoulder_R",
+      "pivot": {
+        "x": 248,
+        "y": 360
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.6,
+          "period": 7.9,
+          "phase": 0.5
+        }
+      },
+      "note": "右肘关节"
+    },
+    {
+      "name": "wrist_R",
+      "parent": "elbow_R",
+      "pivot": {
+        "x": 235,
+        "y": 418
+      },
+      "type": "rigid_gauntlet",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.3,
+          "period": 7.9,
+          "phase": 0.8
+        }
+      },
+      "note": "右腕/护具顶，刚性"
+    },
+    {
+      "name": "hand_R",
+      "parent": "wrist_R",
+      "pivot": {
+        "x": 192,
+        "y": 298
+      },
+      "type": "rigid_gauntlet",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.2,
+          "period": 7.9,
+          "phase": 1
+        }
+      },
+      "note": "右手套，刚性金属手套"
+    },
+    {
+      "name": "shoulder_L",
+      "parent": "spine",
+      "pivot": {
+        "x": 622,
+        "y": 255
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.4,
+          "period": 8.3,
+          "phase": 0.3
+        }
+      },
+      "note": "左肩关节 (画面右侧)"
+    },
+    {
+      "name": "elbow_L",
+      "parent": "shoulder_L",
+      "pivot": {
+        "x": 555,
+        "y": 382
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.6,
+          "period": 8.3,
+          "phase": 0.6
+        }
+      },
+      "note": "左肘关节"
+    },
+    {
+      "name": "wrist_L",
+      "parent": "elbow_L",
+      "pivot": {
+        "x": 448,
+        "y": 418
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.3,
+          "period": 8.3,
+          "phase": 0.9
+        }
+      },
+      "note": "左腕"
+    },
+    {
+      "name": "hand_L",
+      "parent": "wrist_L",
+      "pivot": {
+        "x": 330,
+        "y": 368
+      },
+      "type": "rigid",
+      "idleMotion": {
+        "rotateZ": {
+          "amp": 0.2,
+          "period": 8.3,
+          "phase": 1.1
+        }
+      },
+      "note": "左手，金属手套"
+    },
+    {
+      "name": "thigh_R",
+      "parent": "hip",
+      "pivot": {
+        "x": 388,
+        "y": 648
+      },
+      "type": "soft",
+      "idleMotion": null,
+      "note": "右大腿，随 hip 浮动，idle 不独立旋转"
+    },
+    {
+      "name": "knee_R",
+      "parent": "thigh_R",
+      "pivot": {
+        "x": 358,
+        "y": 918
+      },
+      "type": "soft",
+      "idleMotion": null,
+      "note": "右膝"
+    },
+    {
+      "name": "ankle_R",
+      "parent": "knee_R",
+      "pivot": {
+        "x": 302,
+        "y": 1240
+      },
+      "type": "rigid_boot",
+      "idleMotion": null,
+      "note": "右踝/靴口，刚性靴子"
+    },
+    {
+      "name": "thigh_L",
+      "parent": "hip",
+      "pivot": {
+        "x": 558,
+        "y": 648
+      },
+      "type": "soft",
+      "idleMotion": null,
+      "note": "左大腿"
+    },
+    {
+      "name": "knee_L",
+      "parent": "thigh_L",
+      "pivot": {
+        "x": 568,
+        "y": 922
+      },
+      "type": "soft",
+      "idleMotion": null,
+      "note": "左膝"
+    },
+    {
+      "name": "ankle_L",
+      "parent": "knee_L",
+      "pivot": {
+        "x": 600,
+        "y": 1248
+      },
+      "type": "rigid_boot",
+      "idleMotion": null,
+      "note": "左踝/靴口"
+    }
+  ],
+  "layerBinding": {
+    "root": [],
+    "hip": [
+      "coat_back_R",
+      "coat_back_center",
+      "coat_back_L",
+      "coat_front_white",
+      "coat_front_purple",
+      "pants_R",
+      "pants_L",
+      "waist_belt",
+      "waist_device_inner",
+      "waist_device_outer",
+      "cable_waist_connector"
+    ],
+    "spine": [
+      "torso_jacket",
+      "inner_cloth",
+      "harness_chest",
+      "cable_upper"
+    ],
+    "neck_base": [
+      "neck"
+    ],
+    "head": [
+      "head"
+    ],
+    "shoulder_R": [],
+    "elbow_R": [
+      "sleeve_R"
+    ],
+    "wrist_R": [
+      "cuff_R",
+      "gauntlet_R"
+    ],
+    "hand_R": [
+      "hand_R"
+    ],
+    "shoulder_L": [],
+    "elbow_L": [
+      "sleeve_L"
+    ],
+    "wrist_L": [
+      "cuff_L",
+      "forearm_L",
+      "cable_cuff_connector",
+      "cable_main"
+    ],
+    "hand_L": [
+      "hand_L"
+    ],
+    "thigh_R": [],
+    "knee_R": [],
+    "ankle_R": [
+      "foot_R"
+    ],
+    "thigh_L": [],
+    "knee_L": [],
+    "ankle_L": [
+      "foot_L"
+    ],
+    "leg_devices": [
+      "leg_device_R",
+      "leg_device_L"
+    ]
+  }
+}

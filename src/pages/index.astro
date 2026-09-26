@@ -1,13 +1,13 @@
 ---
-import { Image, getImage } from 'astro:assets';
+import { getImage } from 'astro:assets';
 import homeWorkshop from '@/assets/home/liupin-workshop-v6.png';
-import homeCharacter from '@/assets/home/hatrix-character-v5.png';
 import { SITE } from '@/config/site';
 import { HOME_LINKS } from '@/config/navigation';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HomePanel from '@/components/HomePanel.astro';
 import HomeIcon from '@/components/HomeIcon.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
+import CharacterIdle from '@/components/CharacterIdle.astro';
 import { projectPanel, type Point } from '@/lib/home-projection';
 
 const clockTemplate = '0000/00/00 00:00:00';
@@ -40,7 +40,7 @@ const rightPanels = {
   <main data-home-stage aria-labelledby="home-title" class="home-stage">
     <div class="home-canvas" data-home-canvas style={{ '--home-background-image': `url("${homeBackground.src}")` }}>
       <div class="character-space" data-home-character aria-hidden="true">
-        <Image src={homeCharacter} alt="" class="home-character" format="webp" quality={75} width={1640} loading="eager" decoding="async" fetchpriority="high" draggable="false" />
+        <CharacterIdle />
       </div>
       <div class="home-side home-side--left" data-home-side="left">
         <HomePanel name="search" {...leftPanels.search}>
@@ -153,7 +153,6 @@ const rightPanels = {
   .right-plane { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   /* Crop inside the design canvas so portrait letterboxing stays empty. */
   .character-space { position: absolute; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; }
-  .home-character { position: absolute; left: 380px; top: 55px; display: block; width: 714px; height: auto; max-width: none; user-select: none; }
   .home-stage :is(button, a, summary) { -webkit-tap-highlight-color: transparent; }
   .home-stage :is(button, a, summary):focus-visible { outline: 4px solid #f6d28e; outline-offset: -7px; }
   .home-stage ::selection { background: var(--home-accent); color: #172329; }
@@ -261,5 +260,6 @@ const rightPanels = {
 <script>
   import '@/scripts/home-dashboard';
 </script>
+
 
 

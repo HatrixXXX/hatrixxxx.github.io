@@ -1,0 +1,219 @@
+---
+// CharacterIdle.astro — skeleton-driven idle rig v5
+// Key fixes v5:
+//   - waist_belt/devices moved to hip (NOT spine) → no seam at waist
+//   - coat panels sway via translateX only → top edge stays put, no transparency gap
+//   - leg_device placed in hip AFTER thigh bones → always on top of coat, no rotation skew
+//   - spine gets translateY breath component → upper body bobs naturally
+//   - thigh gets small translateY bob; ankle counter-cancel keeps feet grounded
+---
+
+<div class="char-rig-outer" data-char-rig aria-hidden="true">
+  <div class="char-canvas">
+    <div class="bone-wrapper bone-hip" data-bone="hip">
+      <div class="bone-wrapper coat-back-sway">
+        <img class="char-layer" data-part="coat_back_R" src="/character-parts/coat_back_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="coat_back_center" src="/character-parts/coat_back_center.png" alt="" draggable="false" loading="lazy" decoding="async" />
+      </div>
+      <img class="char-layer pants-layer" data-part="pants_R" src="/character-parts/pants_R.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+      <img class="char-layer pants-layer" data-part="pants_L" src="/character-parts/pants_L.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+      <div class="bone-wrapper coat-front-sway">
+        <img class="char-layer" data-part="coat_front_purple" src="/character-parts/coat_front_purple.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+      </div>
+      <div class="bone-wrapper bone-spine" data-bone="spine">
+        <img class="char-layer" data-part="inner_cloth" src="/character-parts/inner_cloth.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+        <img class="char-layer" data-part="torso_jacket" src="/character-parts/torso_jacket.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+        <img class="char-layer" data-part="cable_upper" src="/character-parts/cable_upper.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="harness_chest" src="/character-parts/harness_chest.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <div class="bone-wrapper bone-neck_base" data-bone="neck_base">
+          <img class="char-layer" data-part="neck" src="/character-parts/neck.png" alt="" draggable="false" loading="lazy" decoding="async" />
+          <div class="bone-wrapper bone-head" data-bone="head">
+            <img class="char-layer" data-part="head" src="/character-parts/head.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+          </div><!-- /bone:head -->
+        </div><!-- /bone:neck_base -->
+        <div class="bone-wrapper bone-shoulder_R" data-bone="shoulder_R">
+          <div class="bone-wrapper bone-elbow_R" data-bone="elbow_R">
+            <img class="char-layer" data-part="sleeve_R" src="/character-parts/sleeve_R.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+            <div class="bone-wrapper bone-wrist_R" data-bone="wrist_R">
+              <img class="char-layer" data-part="cuff_R" src="/character-parts/cuff_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="gauntlet_R" src="/character-parts/gauntlet_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              <div class="bone-wrapper bone-hand_R" data-bone="hand_R">
+                <img class="char-layer" data-part="hand_R" src="/character-parts/hand_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              </div><!-- /bone:hand_R -->
+            </div><!-- /bone:wrist_R -->
+          </div><!-- /bone:elbow_R -->
+        </div><!-- /bone:shoulder_R -->
+        <div class="bone-wrapper bone-shoulder_L" data-bone="shoulder_L">
+          <div class="bone-wrapper bone-elbow_L" data-bone="elbow_L">
+            <img class="char-layer" data-part="sleeve_L" src="/character-parts/sleeve_L.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+            <div class="bone-wrapper bone-wrist_L" data-bone="wrist_L">
+              <img class="char-layer" data-part="forearm_L" src="/character-parts/forearm_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="cuff_L" src="/character-parts/cuff_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="cable_cuff_connector" src="/character-parts/cable_cuff_connector.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              <div class="bone-wrapper bone-hand_L" data-bone="hand_L">
+                <img class="char-layer" data-part="hand_L" src="/character-parts/hand_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              </div><!-- /bone:hand_L -->
+            </div><!-- /bone:wrist_L -->
+          </div><!-- /bone:elbow_L -->
+        </div><!-- /bone:shoulder_L -->
+      </div><!-- /bone:spine -->
+      <div class="bone-wrapper bone-thigh_R" data-bone="thigh_R">
+        <div class="bone-wrapper" data-bone="knee_R">
+          <div class="bone-wrapper bone-ankle_R" data-bone="ankle_R">
+          </div><!-- /bone:ankle_R -->
+        </div><!-- /bone:knee_R -->
+      </div><!-- /bone:thigh_R -->
+      <div class="bone-wrapper bone-thigh_L" data-bone="thigh_L">
+        <div class="bone-wrapper" data-bone="knee_L">
+          <div class="bone-wrapper bone-ankle_L" data-bone="ankle_L">
+          </div><!-- /bone:ankle_L -->
+        </div><!-- /bone:knee_L -->
+      </div><!-- /bone:thigh_L -->
+      <img class="char-layer leg-device-layer" data-part="leg_device_R" src="/character-parts/leg_device_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+      <img class="char-layer leg-device-layer" data-part="leg_device_L" src="/character-parts/leg_device_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+      <div class="bone-wrapper coat-front-white-sway">
+        <img class="char-layer" data-part="coat_front_white" src="/character-parts/coat_front_white.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="waist_device_inner" src="/character-parts/waist_device_inner.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="waist_device_outer" src="/character-parts/waist_device_outer.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="cable_waist_connector" src="/character-parts/cable_waist_connector.png" alt="" draggable="false" loading="lazy" decoding="async" />
+      </div>
+      <img class="char-layer waist-layer" data-part="waist_belt" src="/character-parts/waist_belt.png" alt="" draggable="false" loading="lazy" decoding="async" />
+    </div><!-- /bone:hip -->
+    <img class="char-layer foot-layer" data-part="foot_R" src="/character-parts/foot_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+    <img class="char-layer foot-layer" data-part="foot_L" src="/character-parts/foot_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+  </div>
+</div>
+
+<style>
+  .char-rig-outer {
+    position: absolute;
+    left: 380px; top: 55px;
+    width: 714px; height: 1040.1px;
+    pointer-events: none; user-select: none;
+  }
+  .char-canvas {
+    position: relative;
+    width: 1024px; height: 1536px;
+    transform-origin: top left;
+    transform: scale(0.697265625);
+    will-change: transform;
+  }
+  .bone-wrapper {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1024px; height: 1536px;
+  }
+  .bone-hip { translate: var(--par-x,0px) var(--par-y,0px); }
+  .char-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1024px; height: 1536px;
+    display: block;
+  }
+  .leg-device-layer {
+    z-index: 13;
+  }
+  .pants-layer {
+    z-index: 2;
+  }
+  .foot-layer {
+    z-index: 4;
+  }
+
+  /* Keyframes */
+  @keyframes bone-hip {
+    0%,100% { transform: translateY(0px); }
+    45%     { transform: translateY(-4.5px); }
+    50%     { transform: translateY(-5.0px); }
+    55%     { transform: translateY(-4.5px); }
+  }
+  @keyframes bone-spine {
+    0%,100% { transform: translateY(0px) rotate(0deg); }
+    35%     { transform: translateY(-2.5px) rotate(1.60deg); }
+    70%     { transform: translateY(1.5px) rotate(-1.12deg); }
+  }
+  @keyframes bone-neck_base {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(0.70deg); }
+    70%     { transform: rotate(-0.49deg); }
+  }
+  @keyframes bone-head {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(1.00deg); }
+    70%     { transform: rotate(-0.70deg); }
+  }
+
+
+
+
+  @keyframes bone-shoulder_L {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(1.00deg); }
+    70%     { transform: rotate(-0.70deg); }
+  }
+  @keyframes bone-elbow_L {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(1.50deg); }
+    70%     { transform: rotate(-1.05deg); }
+  }
+  @keyframes bone-wrist_L {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(0.70deg); }
+    70%     { transform: rotate(-0.49deg); }
+  }
+  @keyframes bone-hand_L {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(0.40deg); }
+    70%     { transform: rotate(-0.28deg); }
+  }
+  @keyframes bone-thigh_R {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(3.0deg); }
+    70%     { transform: rotate(-2.1deg); }
+  }
+
+  @keyframes bone-thigh_L {
+    0%,100% { transform: rotate(0deg); }
+    35%     { transform: rotate(3.0deg); }
+    70%     { transform: rotate(-2.1deg); }
+  }
+
+  @keyframes coat-back-sway {
+    0%          { transform: rotate(0deg) skewX(0deg); }
+    20%         { transform: rotate(4.5deg) skewX(1.5deg); }
+    50%         { transform: rotate(-3.8deg) skewX(-1.2deg); }
+    78%         { transform: rotate(1.8deg) skewX(0.6deg); }
+    100%        { transform: rotate(0deg) skewX(0deg); }
+  }
+  @keyframes coat-front-sway {
+    0%          { transform: rotate(0deg) skewX(0deg); }
+    25%         { transform: rotate(-4.0deg) skewX(-1.3deg); }
+    55%         { transform: rotate(3.2deg) skewX(1.0deg); }
+    80%         { transform: rotate(-1.5deg) skewX(-0.5deg); }
+    100%        { transform: rotate(0deg) skewX(0deg); }
+  }
+  /* Assignments */
+  .bone-hip { animation: bone-hip 5.6s 0.00s ease-in-out infinite; }
+  .bone-spine { transform-origin: 488px 365px; z-index: 17; animation: bone-spine 5.6s 0.00s ease-in-out infinite; }
+  .bone-neck_base { transform-origin: 493px 212px; animation: bone-neck_base 7.3s 0.40s ease-in-out infinite; }
+  .bone-head { transform-origin: 502px 88px; animation: bone-head 7.3s 0.60s ease-in-out infinite; }
+  .bone-shoulder_L { transform-origin: 622px 255px; animation: bone-shoulder_L 8.3s 0.30s ease-in-out infinite; }
+  .bone-elbow_L { transform-origin: 555px 382px; animation: bone-elbow_L 8.3s 0.60s ease-in-out infinite; }
+  .bone-wrist_L { transform-origin: 448px 418px; animation: bone-wrist_L 8.3s 0.90s ease-in-out infinite; }
+  .bone-hand_L { transform-origin: 330px 368px; animation: bone-hand_L 8.3s 1.10s ease-in-out infinite; }
+  .bone-thigh_R { transform-origin: 388px 648px; animation: bone-thigh_R 8.8s 0.00s ease-in-out infinite; }
+
+  .bone-thigh_L { transform-origin: 558px 648px; animation: bone-thigh_L 8.8s 0.80s ease-in-out infinite; }
+
+  .coat-back-sway  { transform-origin: 512px 618px; z-index: 1; animation: coat-back-sway 10.6s 0.0s ease-in-out infinite; }
+  .coat-front-sway { transform-origin: 512px 625px; z-index: 3; animation: coat-front-sway 9.8s 1.2s ease-in-out infinite; }
+  .coat-front-white-sway { transform-origin: 512px 625px; z-index: 15; animation: coat-front-sway 9.8s 1.2s ease-in-out infinite; }
+  .waist-layer { z-index: 16; }
+  @media (prefers-reduced-motion: reduce) {
+    .bone-wrapper { animation: none !important; }
+  }
+</style>
+
+<script>
+  import '@/scripts/character-idle';
+</script>
