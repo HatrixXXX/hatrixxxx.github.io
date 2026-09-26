@@ -113,8 +113,11 @@ corepack pnpm test:e2e
 ### 测试 fixture 中的预期报错
 - `tests/unit/` 下的部分测试会故意构造违规 Markdown（含 `<img>` 原始 HTML、forbidden URL 等）来验证 remark 插件的拒绝行为。构建日志中出现 `"包含原始 HTML 图片"` 或 `"forbidden raw HTML tag"` 并指向 `/tmp/` 或 `/E:/post.md` 路径时，属于测试 fixture 的正常输出，不是需要修复的 bug。
 
-### 推送前必须先跑单元测试
-- **每次推送前必须先本地执行 `corepack pnpm test:run`，全部通过后才能 `git push`**；不要依赖 CI 来发现单元测试失败。
+### 推送前必须先跑单元测试和站点检查
+- **每次推送前必须按顺序本地执行以下两步，全部通过后才能 `git push`**；不要依赖 CI 来发现失败：
+  1. `corepack pnpm test:run` — 单元测试全部通过
+  2. `corepack pnpm build && corepack pnpm check:site` — 构建产物通过站点链接检查
+- **新增或删除页面、组件、导航项等导致站内链接数量变化时**，`check:site` 会报 `Expected N links, found M`；正确流程：本地跑完 `build && check:site` 后，以日志第一行 `Checked M local links` 的 M 为准，同步更新 `scripts/check-built-site.ts`（第 20 行 `EXPECTED_LOCAL_LINKS`）和 `tests/unit/check-built-site.test.ts`（`toBe(...)`）两处，再重跑 `test:run` 和 `check:site` 确认通过。
 - 修改以下任何一项时，必须同步检查并更新对应测试：
   - `src/config/navigation.ts`（路径、标签变动）→ `tests/unit/navigation-config.test.ts` 中的 href/label 断言。
   - `src/scripts/music-player.ts`（逻辑、DOM 结构变动）→ `tests/unit/music-player.test.ts` 中的 source contains 断言和 fixture。
