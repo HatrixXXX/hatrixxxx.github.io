@@ -1,29 +1,3 @@
-export const POST_TYPES = [
-  '技术笔记',
-  '踩坑记录',
-  '生活动态',
-  '好物推荐',
-  '随笔杂谈'
-] as const;
-
-export type PostType = (typeof POST_TYPES)[number];
-
-export const POST_TYPE_LINKS = [
-  { label: '技术笔记', slug: 'tech-notes', href: '/blog/tech-notes/' },
-  { label: '踩坑记录', slug: 'troubleshooting', href: '/blog/troubleshooting/' },
-  { label: '生活动态', slug: 'life', href: '/blog/life/' },
-  { label: '好物推荐', slug: 'recommendations', href: '/blog/recommendations/' },
-  { label: '随笔杂谈', slug: 'essays', href: '/blog/essays/' }
-] as const satisfies ReadonlyArray<{ label: PostType; slug: string; href: string }>;
-
-export const ALL_POSTS_LINK = {
-  label: '全部文章',
-  slug: 'all',
-  href: '/blog/'
-} as const;
-
-export const BLOG_SUBNAV_LINKS = [ALL_POSTS_LINK, ...POST_TYPE_LINKS] as const;
-
 export const ABOUT_SECTION_LINKS = [
   { label: '爱好', slug: 'hobbies', href: '/about/hobbies/', subtitle: '玩过、迷过、还在喜欢的东西' },
   { label: '研究', slug: 'research', href: '/about/research/', subtitle: '学术方向与在研课题' },

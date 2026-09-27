@@ -42,10 +42,7 @@ function fixturePost(id: string, locked = true): PostEntry {
       description: 'Public description',
       pubDate: new Date('2026-09-03'),
       cover: '/cover.svg',
-      type: '技术笔记',
       locked,
-      math: false,
-      mermaid: false,
       legacySlug: id
     }
   } as PostEntry;

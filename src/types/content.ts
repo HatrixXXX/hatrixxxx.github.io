@@ -3,11 +3,7 @@ export interface PostData {
   pubDate: Date;
   updatedDate?: Date;
   cover: string;
-  series?: string;
-  seriesOrder?: number;
   locked: boolean;
-  math: boolean;
-  mermaid: boolean;
   legacySlug: string;
 }
 

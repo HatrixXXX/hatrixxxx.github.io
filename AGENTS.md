@@ -48,7 +48,7 @@ corepack pnpm test:e2e
 - `.env.local`：本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；文件已忽略，禁止提交、分享或复制到任何内容仓库。
 - `src/content/projects/`：允许为空的作品集合。
 - `src/data/playlist.ts`：允许为空的音乐列表。
-- `src/config/navigation.ts`：主导航、文章类型、关于子页和首页快捷链接的唯一来源。
+- `src/config/navigation.ts`：主导航、关于子页和首页快捷链接的唯一来源。
 - `src/config/site.ts`：域名、作者、社交链接、Giscus 和站点验证信息。
 - `src/pages/`、`src/layouts/`、`src/components/`：路由和页面结构。
 - `scripts/`：图片预检与构建产物检查，不放一次性迁移脚本。
@@ -62,13 +62,12 @@ corepack pnpm test:e2e
 - 已发布文章只在 `.private-content/posts/` 中编辑、提交和 push。禁止把文章、加锁正文图片或其他私密资源复制回公开仓库。文章正文属于用户内容，除非任务明确要求，不改写正文；schema 调整也要保持旧 URL。
 - 所有通过校验的文章都生成页面。`locked` 省略时为 `false`；`locked: true` 只公开 metadata、Hero 和封面，正文与正文图片必须输出密文。
 - 加锁正文图片必须使用 `.private-content/posts/` 内文件的 Markdown 相对路径。禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`；加锁文章的 `cover` 仍是公开资源。
-- 非首页主导航在顶部按视口居中，顺序固定为首页、博客文章、作品橱窗、书签、软件、装备、计划、实验场、友链、留言板。桌面端仅博客文章保留横向二级菜单；宽度小于 `1200px` 时使用同顺序的折叠菜单。关于我保留首页卡片入口。首页博客卡片直接进入 `/blog/`，该页提供“全部文章”和五种文章类型入口，不在首页弹出分类。文章 `type` 只能是 `技术笔记|踩坑记录|生活动态|好物推荐|随笔杂谈`，用于文章类型页，不得作为旧分类或标签 taxonomy 恢复。
-- 页面返回按钮使用固定目标：`/blog/` 下六个列表页返回 `/blog/`，文章详情返回所属类型页；其余页面统一返回 `/`，包括关于子页、归档、旧分页和 404。
-- `series` 与 `seriesOrder` 必须成对出现。
+- 非首页主导航在顶部按视口居中，顺序固定为首页、博客文章、作品橱窗、书签、软件、装备、计划、实验场、友链、留言板；宽度小于 `1200px` 时使用同顺序的折叠菜单。关于我保留首页卡片入口。首页博客卡片直接进入展示全部文章的 `/blog/`，不提供文章类型分类或二级菜单。
+- 页面返回按钮使用固定目标：文章详情返回 `/blog/`；其余页面统一返回 `/`，包括关于子页、归档、旧分页和 404。
 - 作品状态只能是 `idea|active|done|archived`。作品、歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
 - 音乐播放器在首页左下透视卡片中常驻，所有非首页页面默认固定折叠到左侧，只露半张唱片；点击展开，点击卡片空白或收起按钮折叠，播放控件不得误触收起。全站只挂载一个播放器，以 `transition:persist` 保留 DOM 和 Audio；跨客户端导航后按当前路径更新首页/侧边模式，不依赖保留下来的旧 props。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；新增同源图片也要带 `@<commit>`。更换 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。
-- Playwright 当前收集 217 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀；18 张均已更新为留频街全站视觉版本，首页包含 v5 立绘、背景、裁切和年龄等级。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
+- Playwright 当前收集 217 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀；本次已确认并更新博客页的桌面、平板和手机 3 张基线，首页基线包含 v5 立绘、背景、裁切和年龄等级。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
 - 首页使用 `1920×1080` 设计画布并等比缩放。右侧 7 个面板共用一个 `matrix3d` 父平面，子卡片只设置局部位置和尺寸，不单独旋转；组内间距保持固定。超宽屏用纯 CSS 平移左右两组贴近视口边缘，竖屏留上下空白，不改为单列。角色层使用用户明确选定的 `src/assets/home/hatrix-character-v5.png`，与 `output/imagegen/hatrix-character-v5.png` 原图一致，保留该版本的全部人物与外围元素；此前迭代中的元素删减要求不再用于改写这张已选定图片。立绘按前景近景比例裁在画布内；背景为 `src/assets/home/liupin-workshop-v5.png`，按 v5 立绘和人机协作设定重画。人物位于背景之上、入口面板之下，允许与卡片重叠，不拦截输入；不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
 - 首页金句语料在 `src/data/home-quotes.ts`，每 15 秒切换，支持双击、Enter/空格和暂停；减少动态效果时默认暂停自动切换。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。工具推荐仅作标题，快捷链接复用既有关于子页；计划和实验场分别为 `/plans/`、`/lab/`。
 - 首页左侧等级圆环替代可见的 Hatrix 字样。生日为 `2002-07-29`，等级按北京时间的周岁计算，每年 7 月 29 日零点升级；进度为距上次生日的整天数除以两次生日之间的实际天数（365 或 366）。浏览器进入首页、跨日和恢复页面时更新，不使用构建日期；无 JavaScript 时显示未知等级。
@@ -84,7 +83,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 3977 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 3113 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 
@@ -143,8 +142,8 @@ corepack pnpm test:e2e
 - `docs/superpowers/plans/2026-09-02-theme-transition.md`：主题切换动效的实现与验证记录。
 - `docs/superpowers/specs/2026-09-03-remove-taxonomy-design.md`：删除文章分类与标签后的架构约束。
 - `docs/superpowers/plans/2026-09-03-remove-taxonomy.md`：分类与标签删除步骤和验证记录。
-- `docs/superpowers/specs/2026-09-03-navigation-content-hubs-design.md`：主导航、内容类型页、关于子页和留言板设计。
-- `docs/superpowers/plans/2026-09-03-navigation-content-hubs.md`：导航内容中心的实施与验证记录。
+- `docs/superpowers/specs/2026-09-03-navigation-content-hubs-design.md`：已移除文章类型功能的历史导航设计。
+- `docs/superpowers/plans/2026-09-03-navigation-content-hubs.md`：已移除文章类型功能的历史实施记录。
 - `docs/superpowers/specs/2026-09-03-non-home-banner-design.md`：非首页 Banner 高度、文章信息布局和波浪边界。
 - `docs/superpowers/plans/2026-09-03-non-home-banner.md`：非首页 Banner 压缩的测试与实施步骤。
 - `docs/superpowers/specs/2026-09-03-cursor-trail-design.md`：侧栏鼠标尾迹的区域、动画和性能边界。

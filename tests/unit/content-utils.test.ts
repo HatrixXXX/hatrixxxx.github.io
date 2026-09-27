@@ -24,10 +24,7 @@ const post = (id: string, date: string) => ({
     title: id,
     pubDate: new Date(date),
     cover: '/x.svg',
-    type: '技术笔记',
     locked: false,
-    math: false,
-    mermaid: false,
     legacySlug: id
   }
 }) as PostEntry;

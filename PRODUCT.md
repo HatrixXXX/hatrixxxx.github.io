@@ -20,12 +20,12 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 
 站点使用 Astro 生成静态页面，运行环境固定为 Node 24，包管理器为 Corepack 管理的 pnpm。源站为 GitHub Pages，域名由 Cloudflare 提供 DNS 和代理。
 
-读者从首页入口进入博客中心，再按全部文章或文章类型浏览，也可使用搜索、目录、最近文章和归档。文章地址继续采用 `/posts/<legacySlug>/`，Giscus 评论以 pathname 对应文章。
+读者从首页入口进入博客列表，也可使用搜索、目录、最近文章和归档。文章地址继续采用 `/posts/<legacySlug>/`，Giscus 评论以 pathname 对应文章。
 
 ## Capabilities and Constraints
 
 - 保持纯静态输出，不增加服务器、数据库、上传或对象存储。
-- 文章类型为技术笔记、踩坑记录、生活动态、好物推荐、随笔杂谈。类型入口不恢复旧分类或标签体系。
+- 文章不使用分类、标签、类型或系列元数据，博客页直接展示全部文章。
 - 主导航配置由 `src/config/navigation.ts` 维护，站点与社交信息由 `src/config/site.ts` 维护。
 - 加锁文章公开 metadata、Hero 和封面；正文与正文图片必须输出密文。密钥和私有正文不能进入公开源码、文档或构建日志。
 - 作品、歌单、计划和实验场允许为空。空状态如实说明，没有演示项目、虚构歌曲或补出的统计。

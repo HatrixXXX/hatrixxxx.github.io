@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { POST_TYPE_LINKS } from '../../src/config/navigation';
 
-const excludedRoutes = ['/blog/', '/blog/all/', '/projects/', ...POST_TYPE_LINKS.map(({ href }) => href)];
+const excludedRoutes = ['/blog/', '/blog/all/', '/projects/'];
 
 const alphaPixels = (
   canvas: HTMLCanvasElement,

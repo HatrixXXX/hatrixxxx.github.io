@@ -26,10 +26,7 @@ function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntr
       description: 'Public description',
       pubDate: new Date('2026-09-03'),
       cover: '/cover.svg',
-      type: '技术笔记',
       locked: true,
-      math: true,
-      mermaid: false,
       legacySlug: 'locked-post'
     },
     ...overrides

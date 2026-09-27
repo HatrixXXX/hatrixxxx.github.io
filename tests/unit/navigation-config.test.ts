@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ABOUT_SECTION_LINKS,
-  ALL_POSTS_LINK,
-  BLOG_SUBNAV_LINKS,
   HOME_LINKS,
-  POST_TYPE_LINKS,
-  POST_TYPES,
   PRIMARY_NAV_ITEMS
 } from '../../src/config/navigation';
 
@@ -20,9 +16,6 @@ describe('navigation configuration', () => {
     ]);
     expect(PRIMARY_NAV_ITEMS.filter((item) => 'children' in item).map((item) => item.label))
       .toEqual([]);
-    expect(POST_TYPE_LINKS.map((item) => item.label)).toEqual(POST_TYPES);
-    expect(BLOG_SUBNAV_LINKS.map((item) => item.label)).toEqual(['全部文章', ...POST_TYPES]);
-    expect(ALL_POSTS_LINK.href).toBe('/blog/');
     expect(ABOUT_SECTION_LINKS.map((item) => item.label)).toEqual([
       '爱好',
       '研究',
@@ -37,7 +30,7 @@ describe('navigation configuration', () => {
   });
 
   it('uses unique paths inside each navigation group while reusing existing about destinations', () => {
-    for (const links of [PRIMARY_NAV_ITEMS, BLOG_SUBNAV_LINKS, ABOUT_SECTION_LINKS]) {
+    for (const links of [PRIMARY_NAV_ITEMS, ABOUT_SECTION_LINKS]) {
       const hrefs = links.map((item) => item.href);
       expect(new Set(hrefs).size).toBe(hrefs.length);
       expect(hrefs.every((href) => href.startsWith('/') && href.endsWith('/'))).toBe(true);
