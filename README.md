@@ -41,7 +41,7 @@ pnpm test:e2e
 - `src/data/playlist.ts`：音乐列表
 - `public/`：CNAME、favicon、头像和本地静态资源
 
-私有内容仓库有 41 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。所有通过校验的文章都会生成页面；一次完整构建会生成 66 个页面。
+私有内容仓库有 42 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。所有通过校验的文章都会生成页面；一次完整构建会生成 67 个页面。
 
 私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
 
@@ -103,7 +103,7 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 
 ## 新增文章
 
-在 `.private-content/posts/` 新建 Markdown 或 MDX 文件。文件名不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
+在 `.private-content/posts/` 新建 Markdown 或 MDX 文件。文件名只写标题，不加日期前缀；它不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
 
 ```yaml
 ---
@@ -116,7 +116,7 @@ legacySlug: 示例文章
 ---
 ```
 
-`updatedDate` 可省略，`locked` 省略时按 `false` 处理。数学公式与 Mermaid 图表由文章内容自动触发，不需要额外的 frontmatter 开关。
+`updatedDate` 和 `cover` 可省略，`locked` 省略时按 `false` 处理。未填写 `cover` 时，文章列表和社交元信息使用默认封面。数学公式与 Mermaid 图表由文章内容自动触发，不需要额外的 frontmatter 开关。
 
 | `locked` | 结果 |
 | --- | --- |
@@ -220,7 +220,7 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:images` | 277 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、66 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 旧文章路由、CNAME、3113 条站内链接和发布体积 |
+| `pnpm check:site` | 旧文章路由、CNAME、3168 条站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 217 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
@@ -291,4 +291,4 @@ Three.js、Babylon.js 等 3D 依赖不能进入公共布局或普通页面的首
 
 全站颜色、字体、图标、图片外框和交互反馈沿用首页工坊与 v5 立绘的旧白、石墨、灰紫和铜色关系。页面布局保持原样，普通 Hero 复用工坊背景，正文采用 17px / 1.85 排版。完整规则见 [DESIGN.md](DESIGN.md)。本轮未增加依赖或生成新的位图。
 
-326 项单元测试、Astro 检查、构建、图片预检、保护审计和 3113 条站内引用检查通过。项目保留 18 张视觉基线；本次复验了博客页的桌面、平板和手机基线，未运行完整端到端套件。
+327 项单元测试、Astro 检查、构建、图片预检、保护审计和 3168 条站内引用检查通过。项目保留 18 张视觉基线；本次复验了博客页的桌面、平板和手机基线，未运行完整端到端套件。

@@ -21,7 +21,7 @@ describe('content contracts', () => {
     const usesPublicFixtures = root === resolve('tests/fixtures/private-content/posts');
     let lockedPosts = 0;
 
-    expect(files).toHaveLength(usesPublicFixtures ? 2 : 41);
+    expect(files).toHaveLength(usesPublicFixtures ? 2 : 42);
     for (const file of files) {
       const { data } = matter(await readFile(join(root, file), 'utf8'));
       if (data.locked === true) lockedPosts += 1;
@@ -68,5 +68,12 @@ describe('content contracts', () => {
     }
 
     expect(postSchema.safeParse({ ...postFixture, locked: 'true' }).success).toBe(false);
+  });
+
+  it('accepts an omitted cover while rejecting an empty cover', () => {
+    const { cover: _cover, ...postWithoutCover } = postFixture;
+
+    expect(postSchema.safeParse(postWithoutCover).success).toBe(true);
+    expect(postSchema.safeParse({ ...postFixture, cover: '' }).success).toBe(false);
   });
 });
