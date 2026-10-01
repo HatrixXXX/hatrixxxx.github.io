@@ -5,8 +5,10 @@ import playwrightConfig from '../../playwright.config';
 import { siteMarkdownConfig } from '../../src/config/markdown';
 import remarkContentSecurity from '../../src/plugins/remark-content-security';
 
-const PINNED_IMAGE_PATH =
-  '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**';
+const PINNED_IMAGE_PATHS = [
+  '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**',
+  '/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/**'
+];
 
 function workflowJob(workflow: string, name: string): string {
   const start = workflow.indexOf(`\n  ${name}:`);
@@ -69,14 +71,14 @@ describe('Astro project tooling', () => {
     expect(tsconfig.include).toContain('scripts/**/*.ts');
   });
 
-  it('allows only the pinned image repository path', () => {
-    expect(astroConfig.image?.remotePatterns).toEqual([
-      {
+  it('allows only pinned image repository paths', () => {
+    expect(astroConfig.image?.remotePatterns).toEqual(
+      PINNED_IMAGE_PATHS.map((pathname) => ({
         protocol: 'https',
         hostname: 'cdn.jsdelivr.net',
-        pathname: PINNED_IMAGE_PATH
-      }
-    ]);
+        pathname
+      }))
+    );
   });
 
   it('prebundles lazy browser dependencies before the dev server accepts requests', () => {
@@ -136,7 +138,7 @@ describe('Astro project tooling', () => {
     expect(readme).not.toContain('`src/content/posts/`：已发布文章');
     expect(readme).not.toContain('在 `src/content/posts/` 新建');
 
-    expect(agents).toContain('`.private-content/posts/`：42 篇已发布文章');
+    expect(agents).toContain('`.private-content/posts/`：43 篇已发布文章');
     expect(agents).toContain('`.private-content/` 是独立的私有 Git 仓库');
     expect(agents).toContain('公开仓库不跟踪文章 Markdown');
     expect(agents).not.toContain('`src/content/posts/`：42 篇已发布文章');

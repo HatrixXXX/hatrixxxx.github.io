@@ -6,6 +6,8 @@ import remarkContentSecurity from '../../src/plugins/remark-content-security';
 
 const PINNED_IMAGE =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png';
+const NEW_PINNED_IMAGE =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/example.png';
 const BACKSLASH_REMOTE_IMAGE = String.raw`https:\\evil.example\\tracker.png`;
 const RELATIVE_BACKSLASH_REMOTE_IMAGE = String.raw`\\evil.example\tracker.png`;
 const ROOTED_BACKSLASH_REMOTE_IMAGE = String.raw`/\\evil.example\tracker.png`;
@@ -227,7 +229,9 @@ describe('published content security', () => {
     expect(transform([
       { type: 'code', value: '<script>alert(1)</script>' },
       { type: 'image', url: PINNED_IMAGE },
-      { type: 'html', value: `<img src="${PINNED_IMAGE}" alt="diagram">` }
+      { type: 'html', value: `<img src="${PINNED_IMAGE}" alt="diagram">` },
+      { type: 'image', url: NEW_PINNED_IMAGE },
+      { type: 'html', value: `<img src="${NEW_PINNED_IMAGE}" alt="new diagram">` }
     ])).not.toThrow();
   });
 });

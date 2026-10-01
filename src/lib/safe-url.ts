@@ -1,8 +1,13 @@
 export const SITE_ORIGIN = 'https://hatrix.site';
 export const IMMUTABLE_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
+const NEW_IMMUTABLE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/';
 
-const IMMUTABLE_IMAGE_BASE = new URL(IMMUTABLE_IMAGE_PREFIX);
+const IMMUTABLE_IMAGE_BASES = [
+  new URL(IMMUTABLE_IMAGE_PREFIX),
+  new URL(NEW_IMMUTABLE_IMAGE_PREFIX)
+];
 const DANGEROUS_DATA_MEDIA_TYPES = new Set([
   'text/html',
   'application/xhtml+xml',
@@ -44,12 +49,13 @@ export function dangerousBrowserUrlKind(
 }
 
 export function isApprovedRemoteImageUrl(url: URL): boolean {
-  return (
-    url.protocol === IMMUTABLE_IMAGE_BASE.protocol &&
-    url.username === '' &&
-    url.password === '' &&
-    url.host === IMMUTABLE_IMAGE_BASE.host &&
-    url.pathname.startsWith(IMMUTABLE_IMAGE_BASE.pathname)
+  return IMMUTABLE_IMAGE_BASES.some(
+    (base) =>
+      url.protocol === base.protocol &&
+      url.username === '' &&
+      url.password === '' &&
+      url.host === base.host &&
+      url.pathname.startsWith(base.pathname)
   );
 }
 

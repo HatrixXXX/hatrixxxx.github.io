@@ -17,7 +17,7 @@ import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 // Includes the optimized homepage character image added to the empty character layer.
-export const EXPECTED_LOCAL_LINKS = 3168;
+export const EXPECTED_LOCAL_LINKS = 3272;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://giscus.app/client.js'
@@ -609,7 +609,7 @@ async function main(): Promise<void> {
   const fixtureMode = process.argv.includes('--fixtures');
   const result = await inspectProjectBuiltSite(process.cwd(), {
     expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
-    expectedPostCount: fixtureMode ? 2 : 42,
+    expectedPostCount: fixtureMode ? 2 : 43,
     sourceContentRoot: contentRoot()
   });
 

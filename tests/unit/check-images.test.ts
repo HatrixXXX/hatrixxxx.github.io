@@ -7,6 +7,10 @@ import remarkImageStatus from '../../src/plugins/remark-image-status';
 const IMAGE_REPOSITORY = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image';
 const IMAGE_REPOSITORY_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
 const IMMUTABLE_IMAGE_PREFIX = `${IMAGE_REPOSITORY}@${IMAGE_REPOSITORY_REF}/`;
+const PINNED_IMAGE_PREFIXES = [
+  IMMUTABLE_IMAGE_PREFIX,
+  `${IMAGE_REPOSITORY}@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/`
+];
 const USES_PUBLIC_FIXTURES = contentRoot() === resolve('tests/fixtures/private-content');
 
 afterEach(() => {
@@ -15,12 +19,14 @@ afterEach(() => {
 });
 
 describe('remote image checking', () => {
-  it.skipIf(USES_PUBLIC_FIXTURES)('pins the complete published image inventory to the immutable repository commit', async () => {
+  it.skipIf(USES_PUBLIC_FIXTURES)('pins the complete published image inventory to immutable repository commits', async () => {
     const sources = await collectImageSources(contentRoot('posts'));
     const blogImageUrls = sources.urls.filter((url) => url.startsWith(IMAGE_REPOSITORY));
-    const unpinned = blogImageUrls.filter((url) => !url.startsWith(IMMUTABLE_IMAGE_PREFIX));
+    const unpinned = blogImageUrls.filter(
+      (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(prefix))
+    );
 
-    expect(blogImageUrls).toHaveLength(277);
+    expect(blogImageUrls).toHaveLength(280);
     expect(unpinned).toHaveLength(0);
   });
 
