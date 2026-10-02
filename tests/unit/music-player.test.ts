@@ -55,7 +55,6 @@ describe('music player', () => {
     expect(source).toContain('data-player-title');
     expect(source).toContain('data-player-artist');
     expect(source).toContain("data-layout-state={mode === 'home' ? 'pending' : 'ready'}");
-    expect(source).toMatch(/\.music-player\[data-display-mode='home'\]\[data-layout-state='pending'\]\s*\{\s*visibility: hidden;\s*transition: none;/);
     expect(source).not.toContain('data-player-mode');
     expect(source).not.toContain('mode-button');
   });
@@ -71,6 +70,12 @@ describe('music player', () => {
     const { root } = playerFixture('/about/');
     expect(initializeMusicPlayer([], root)).toBeUndefined();
     expect(Audio).not.toHaveBeenCalled();
+  });
+
+  it('hides pending players before their persisted display mode changes', async () => {
+    const source = await readFile('src/components/MusicPlayer.astro', 'utf8');
+    expect(source.match(/\.music-player\[data-layout-state='pending'\]\s*\{\s*visibility: hidden;\s*transition: none;/)).not.toBeNull();
+    expect(source).not.toContain(".music-player[data-display-mode='home'][data-layout-state='pending']");
   });
 
   it('hides the home player until the final panel geometry is committed', () => {
