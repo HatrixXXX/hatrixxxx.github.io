@@ -32,9 +32,9 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   await page.locator('a[data-home-blog]').click();
   await page.waitForURL('**/blog/');
   await expect(page.locator('[data-post-coverflow]')).toBeVisible();
-  await expect(page.locator('[data-post-coverflow] [data-post-card]')).toHaveCount(8);
+  await expect(page.locator('[data-post-coverflow] [data-post-card]')).toHaveCount(11);
   await expect(page.locator('[data-blog-view-toggle], [data-blog-archive-view]')).toHaveCount(0);
-  await page.getByRole('link', { name: '线性代数数学基础', exact: true }).focus();
+  await page.getByRole('link', { name: 'Infra-线性代数', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('article[data-post]')).toBeVisible();
   const commentsText = await page.locator('[data-giscus-comments]').evaluate(
@@ -53,8 +53,8 @@ for (const route of ['/archives/', '/projects/']) {
 }
 
 test('article remains directly readable without JavaScript', async ({ page }) => {
-  const response = await page.goto('/posts/线性代数数学基础/');
+  const response = await page.goto('/posts/Infra-线性代数/');
   expect(response?.status()).toBe(200);
-  await expect(page.locator('article[data-post] h1')).toContainText('线性代数数学基础');
+  await expect(page.locator('article[data-post] h1')).toContainText('Infra-线性代数');
   await expect(page.locator('article[data-post] .prose')).toBeVisible();
 });

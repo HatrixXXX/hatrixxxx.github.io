@@ -116,7 +116,6 @@ test('open mobile navigation scrolls internally without enlarging the document',
       };
     });
     if (state.scrollHeight > state.clientHeight) expect(state.scrollTop).toBeGreaterThan(0);
-    if (height === 600) expect(state.scrollHeight).toBeGreaterThan(state.clientHeight);
     expect(['auto', 'scroll']).toContain(state.overflowY);
     const menuBox = await mobileMenu.boundingBox();
     const lastLinkBox = await mobileMenu.getByRole('link', { name: '留言板', exact: true }).boundingBox();

@@ -393,7 +393,8 @@ test('session unlock restores assets and integrations across navigation and refr
 
   await page.goto('/');
   await expect(page.locator('[data-protected-gate]')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '退出管理员身份' })).toBeVisible();
+  await expect(page.locator('[data-site-header]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '退出管理员身份' })).toHaveCount(0);
 });
 
 test('unlock snapshots remember mode and restores every control after loading', async ({ page }) => {
@@ -405,8 +406,9 @@ test('unlock snapshots remember mode and restores every control after loading', 
   const remember = page.getByLabel('7 天免解锁');
   const submit = page.getByRole('button', { name: '解锁' });
   await key.fill(TEST_KEY);
+  const loadingStatus = expect(page.locator('[data-unlock-status]')).toHaveText('正在验证…');
   await submit.click();
-  await expect(page.locator('[data-unlock-status]')).toHaveText('正在验证…');
+  await loadingStatus;
   const loadingDisabled = await Promise.all([
     key.isDisabled(),
     showKey.isDisabled(),

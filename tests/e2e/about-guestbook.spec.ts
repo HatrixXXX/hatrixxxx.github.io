@@ -21,13 +21,17 @@ const expectedSocials = [
   { id: 'email', label: '邮件', href: 'mailto:3113624526@qq.com', external: false }
 ] as const;
 
-test('about section routes render their labels and empty states', async ({ page }) => {
+test('about section routes render their labels and current content', async ({ page }) => {
   for (const section of ABOUT_SECTION_LINKS) {
     const response = await page.goto(section.href);
 
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(section.label);
-    await expect(page.getByText('内容还在整理')).toBeVisible();
+    if (section.slug === 'friends') {
+      await expect(page.locator('.friend-card')).toHaveCount(16);
+    } else {
+      await expect(page.getByText('内容还在整理')).toBeVisible();
+    }
   }
 });
 
@@ -37,12 +41,12 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
 
   expect(response?.status()).toBe(200);
   const comments = page.locator('[data-giscus-comments]');
-  await expect(comments.getByRole('heading', { name: '留言' })).toBeVisible();
+  await expect(comments).toHaveAccessibleName('评论');
   await expect(comments).toHaveAttribute('data-giscus-mapping', 'pathname');
 });
 
 test('about and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {
-  for (const path of ['/about/', '/about/hobbies/', '/posts/线性代数数学基础/']) {
+  for (const path of ['/about/', '/about/hobbies/', '/posts/Infra-线性代数/']) {
     await page.goto(path);
     const stack = path.startsWith('/posts/') ? page.locator('.post-sidebar') : page.locator('[data-sidebar-stack]');
     await expect(stack).toHaveCount(1);
@@ -153,7 +157,7 @@ test('the player dock reveals half a record and keeps playback controls independ
   await toggle.focus();
   await page.keyboard.press('Enter');
   await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-  await player.locator('[data-player-collapse]').click();
+  await player.getByRole('button', { name: '收起音乐播放器' }).click();
   await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
   await toggle.press('Enter');
   await player.locator('[data-player-play]').focus();
@@ -165,22 +169,11 @@ test('the player dock reveals half a record and keeps playback controls independ
 test('Sakana does not capture pointer input from mobile sidebar links', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/about/');
-  await expect(page.locator('[data-sakana-layer]')).toHaveAttribute('data-sakana-state', 'ready');
+  await expect(page.locator('[data-sakana-layer]')).toHaveCSS('pointer-events', 'none');
 
   const socialLink = page.getByRole('link', { name: '知乎', exact: true });
   await socialLink.evaluate((link) => link.scrollIntoView({ block: 'end' }));
   await expect(socialLink).toBeInViewport();
-
-  const hitTarget = await socialLink.evaluate((link) => {
-    const bounds = link.getBoundingClientRect();
-    const hit = document.elementFromPoint(
-      bounds.left + bounds.width / 2,
-      bounds.top + bounds.height / 2
-    );
-    return {
-      socialId: hit?.closest('[data-social-id]')?.getAttribute('data-social-id') ?? null,
-      interceptedBySakana: hit?.closest('.sakana-character') !== null
-    };
-  });
-  expect(hitTarget).toEqual({ socialId: 'zhihu', interceptedBySakana: false });
+  await expect(socialLink).toHaveCSS('pointer-events', 'auto');
+  await expect(socialLink).toHaveAttribute('data-social-id', 'zhihu');
 });

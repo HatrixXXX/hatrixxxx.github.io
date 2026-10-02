@@ -2,22 +2,6 @@ import { expect, test } from '@playwright/test';
 
 test.use({ timezoneId: 'Asia/Shanghai' });
 
-test('site statistics and dot clock stay live across Shanghai midnight', async ({ page }) => {
-  await page.clock.install({ time: new Date('2026-09-04T15:59:59.000Z') });
-  await page.goto('/about/');
-
-  const clock = page.locator('[data-clock-text]');
-  await expect(clock).toHaveClass(/visually-hidden/);
-  const runningDays = page.locator('[data-running-days]');
-  const beforeDays = Number(await runningDays.textContent());
-  await expect(clock).toHaveText('23:59:59');
-
-  await page.clock.fastForward(1_000);
-
-  await expect(clock).toHaveText('00:00:00');
-  await expect(runningDays).toHaveText(String(beforeDays + 1));
-});
-
 test('site statistics synchronize the persistent visitor source after client navigation', async ({
   page
 }) => {
@@ -30,7 +14,7 @@ test('site statistics synchronize the persistent visitor source after client nav
   await page.locator('[data-visitor-count-source]').evaluate((source) => {
     source.textContent = '1,234';
   });
-  await page.getByRole('link', { name: '关于我', exact: true }).click();
+  await page.getByRole('link', { name: '友链', exact: true }).click();
 
   const visitors = page.locator('[data-site-stats] [data-visitor-count]');
   await expect(visitors).toHaveText('1,234');
@@ -43,56 +27,6 @@ test('site statistics synchronize the persistent visitor source after client nav
   });
   await expect(visitors).toHaveText('2,345');
   expect(vercountRequests).toEqual([]);
-});
-
-test('dot clock skips particles for reduced motion', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.clock.install({ time: new Date('2026-09-04T12:00:00.000Z') });
-  await page.goto('/about/');
-
-  const clock = page.locator('[data-clock-text]');
-  const canvas = page.locator('[data-dot-clock]');
-  const before = await clock.textContent();
-  await page.clock.fastForward(1_000);
-
-  await expect(clock).not.toHaveText(before ?? '');
-  await expect(canvas).not.toHaveAttribute('data-clock-particles', 'active');
-});
-
-test('dot clock clears stale particles and resynchronizes after visibility returns', async ({
-  page
-}) => {
-  await page.addInitScript(() => {
-    let hidden = false;
-    Object.defineProperties(document, {
-      hidden: { configurable: true, get: () => hidden },
-      visibilityState: { configurable: true, get: () => (hidden ? 'hidden' : 'visible') }
-    });
-    (window as Window & { setTestDocumentHidden?: (value: boolean) => void })
-      .setTestDocumentHidden = (value) => {
-        hidden = value;
-        document.dispatchEvent(new Event('visibilitychange'));
-      };
-  });
-  await page.clock.install({ time: new Date('2026-09-04T12:00:00.000Z') });
-  await page.goto('/about/');
-
-  const canvas = page.locator('[data-dot-clock]');
-  await page.clock.fastForward(1_000);
-  await expect(canvas).toHaveAttribute('data-clock-particles', 'active');
-
-  await page.evaluate(() => {
-    (window as Window & { setTestDocumentHidden?: (value: boolean) => void })
-      .setTestDocumentHidden?.(true);
-  });
-  await page.clock.fastForward(5_000);
-  await page.evaluate(() => {
-    (window as Window & { setTestDocumentHidden?: (value: boolean) => void })
-      .setTestDocumentHidden?.(false);
-  });
-
-  await expect(page.locator('[data-clock-text]')).toHaveText('20:00:06');
-  await expect(canvas).not.toHaveAttribute('data-clock-particles', 'active');
 });
 
 test('search loads its index once, limits results and closes with Escape', async ({ page }) => {
@@ -169,7 +103,7 @@ test('search results show a highlighted body excerpt and carry the query to the 
 });
 
 test('post pages locate and temporarily highlight the searched paragraph', async ({ page }) => {
-  await page.goto('/posts/计算机组成结构/?q=矩阵');
+  await page.goto('/posts/计算机体系结构与 STM32/?q=矩阵');
 
   const hit = page.locator('.prose [data-search-hit]');
   await expect(hit).toContainText('矩阵存储结构');
@@ -428,7 +362,7 @@ test('PhotoSwipe is requested only when an article image is activated', async ({
     }
   });
 
-  await page.goto('/posts/线性代数数学基础/');
+  await page.goto('/posts/Infra-线性代数/');
   expect(lightboxRequests).toEqual([]);
   await page.locator('article img').first().click();
   await expect(page.locator('.pswp')).toBeVisible();
@@ -436,7 +370,7 @@ test('PhotoSwipe is requested only when an article image is activated', async ({
 });
 
 test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
-  await page.goto('/posts/线性代数数学基础/');
+  await page.goto('/posts/Infra-线性代数/');
   const image = page.locator('article img').first();
   await image.focus();
   await expect(image).toBeFocused();

@@ -492,7 +492,7 @@ test('pagination and legacy post paths stay available', async ({ page }) => {
   expect((await page.request.get('/page/1/')).status()).toBe(404);
   expect((await page.request.get('/page/2/')).status()).toBe(200);
   await page.goto('/page/2/');
-  await expect(page.locator('article[data-post-card]')).toHaveCount(2);
+  await expect(page.locator('article[data-post-card]')).toHaveCount(5);
   expect((await page.request.get('/page/3/')).status()).toBe(404);
   await page.goto('/blog/');
   const mergedFpgaLink = page.locator('a[href="/posts/Xilinx FPGA开发/"]').first();

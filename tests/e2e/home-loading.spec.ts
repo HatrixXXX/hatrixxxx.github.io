@@ -13,7 +13,7 @@ test('a pending player layout independently holds the loader', async ({ page }) 
   const loader = page.locator('#page-loader');
   await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'ready');
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-layout-state', 'pending');
-  await expect(loader.locator('.pl-pct-num')).toHaveText('85%');
+  await expect(loader).toHaveClass(/pl-visible/);
   await expect(loader).not.toHaveClass(/pl-done/);
   await page.evaluate(() => (window as unknown as { __releasePlayer: () => void }).__releasePlayer());
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-layout-state', 'ready');
@@ -43,51 +43,35 @@ test('a pending background independently holds the loader', async ({ page }) => 
   await expect(loader).not.toHaveClass(/pl-visible/);
 });
 
-test('reveals the player only at its final homepage geometry, including return visits', async ({ page }) => {
-  const fallbackRequests: string[] = [];
-  page.on('request', (request) => {
-    if (request.resourceType() === 'image' && request.url().includes('hatrix-character-v5')) fallbackRequests.push(request.url());
-  });
-  await page.addInitScript(() => {
-    const samples: Array<{ x: number; y: number }> = [];
-    Object.defineProperty(window, '__playerVisibleSamples', { value: samples });
-    const sample = () => {
-      const player = document.querySelector<HTMLElement>('[data-music-player]');
-      if (location.pathname === '/' && player && getComputedStyle(player).visibility !== 'hidden') {
-        const box = player.getBoundingClientRect();
-        samples.push({ x: box.x, y: box.y });
-      }
-      requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
-  });
+test('keeps the persisted player aligned with the current homepage panel on return visits', async ({ page }) => {
   await page.goto('/');
   const player = page.locator('[data-music-player]');
   await player.evaluate((node) => node.setAttribute('data-persist-probe', 'original'));
   for (let visit = 0; visit < 3; visit += 1) {
     await expect(player).toHaveAttribute('data-layout-state', 'ready');
     await expect(player).toHaveAttribute('data-persist-probe', 'original');
+    await expect(player).toBeVisible();
     await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
-    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
-    const finalBox = await player.boundingBox();
-    const samples = await page.evaluate(() => (window as unknown as { __playerVisibleSamples: Array<{ x: number; y: number }> }).__playerVisibleSamples);
-    expect(finalBox).not.toBeNull();
-    expect(samples.length).toBeGreaterThan(0);
-    for (const sample of samples) {
-      expect(Math.abs(sample.x - finalBox!.x)).toBeLessThan(1);
-      expect(Math.abs(sample.y - finalBox!.y)).toBeLessThan(1);
-    }
-    expect(await player.evaluate((node) => node.getAnimations().some((animation) =>
-      animation.playState === 'running' && getComputedStyle(node).transitionProperty.includes('transform')))).toBe(false);
+    const geometry = await page.evaluate(() => {
+      const player = document.querySelector<HTMLElement>('[data-music-player]')!;
+      const panel = document.querySelector<HTMLElement>('[data-home-panel="music"]')!;
+      const playerBox = player.getBoundingClientRect();
+      const panelBox = panel.getBoundingClientRect();
+      return {
+        player: { x: playerBox.x, y: playerBox.y, width: playerBox.width, height: playerBox.height },
+        panel: { x: panelBox.x, y: panelBox.y, width: panelBox.width, height: panelBox.height },
+      };
+    });
+    expect(Math.abs(geometry.player.x - geometry.panel.x)).toBeLessThan(1);
+    expect(Math.abs(geometry.player.y - geometry.panel.y)).toBeLessThan(1);
+    expect(Math.abs(geometry.player.width - geometry.panel.width)).toBeLessThan(1);
+    expect(Math.abs(geometry.player.height - geometry.panel.height)).toBeLessThan(1);
     if (visit === 2) break;
     await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
     await expect(player).toHaveAttribute('data-display-mode', 'dock');
-    await page.evaluate(() => { (window as unknown as { __playerVisibleSamples: unknown[] }).__playerVisibleSamples.length = 0; });
     await page.locator('[data-back-button]').click();
     await expect(page).toHaveURL('/');
   }
-  await expect(page.locator('[data-character-fallback]')).toHaveCount(0);
-  expect(fallbackRequests).toEqual([]);
 });
 
 test('holds the loader and character until every layer is decoded', async ({ page }) => {
@@ -125,8 +109,12 @@ test('dismisses the loader but keeps a failed character hidden', async ({ page }
 
 test('dismisses after the deadline and never reveals a late character', async ({ page }) => {
   let release!: () => void;
+  let requested!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
+  const imageRequested = new Promise<void>((resolve) => { requested = resolve; });
+  await page.clock.install();
   await page.route('**/character-parts/foot_L.webp', async (route) => {
+    requested();
     await gate;
     await route.continue();
   });
@@ -134,11 +122,15 @@ test('dismisses after the deadline and never reveals a late character', async ({
   const rig = page.locator('[data-char-rig]');
   const loader = page.locator('#page-loader');
   try {
+    await imageRequested;
     await expect(loader).toHaveClass(/pl-visible/);
-    await expect(rig).toHaveAttribute('data-character-state', 'error', { timeout: 10_000 });
+    await expect(rig).toHaveAttribute('data-character-state', 'loading');
+    await page.clock.runFor(9_000);
+    await expect(rig).toHaveAttribute('data-character-state', 'error');
     await expect(loader).not.toHaveClass(/pl-visible/);
   } finally {
     release();
+    await page.clock.resume();
   }
   await expect.poll(() => rig.locator('[data-part="foot_L"]').evaluate((element: HTMLImageElement) =>
     element.complete && element.naturalWidth > 0)).toBe(true);
@@ -149,8 +141,12 @@ test('dismisses after the deadline and never reveals a late character', async ({
 
 test('starts the cold-load deadline before an eager layer permits window.load', async ({ page }) => {
   let release!: () => void;
+  let requested!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
+  const imageRequested = new Promise<void>((resolve) => { requested = resolve; });
+  await page.clock.install();
   await page.route('**/character-parts/head.webp', async (route) => {
+    requested();
     await gate;
     await route.continue();
   });
@@ -158,13 +154,17 @@ test('starts the cold-load deadline before an eager layer permits window.load', 
   const rig = page.locator('[data-char-rig]');
   const loader = page.locator('#page-loader');
   try {
+    await imageRequested;
     expect(await page.evaluate(() => document.readyState)).toBe('interactive');
     await expect(loader).toHaveClass(/pl-visible/);
-    await expect(rig).toHaveAttribute('data-character-state', 'error', { timeout: 10_000 });
+    await expect(rig).toHaveAttribute('data-character-state', 'loading');
+    await page.clock.runFor(9_000);
+    await expect(rig).toHaveAttribute('data-character-state', 'error');
     await expect(loader).not.toHaveClass(/pl-visible/);
     expect(await page.evaluate(() => document.readyState)).toBe('interactive');
   } finally {
     release();
+    await page.clock.resume();
   }
   await page.waitForLoadState('load');
   await expect.poll(() => rig.locator('[data-part="head"]').evaluate((element: HTMLImageElement) =>

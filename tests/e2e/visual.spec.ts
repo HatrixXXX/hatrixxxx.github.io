@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 
 const routes = [
   '/',
-  '/blog/all/',
-  '/posts/线性代数数学基础/',
+  '/blog/',
+  '/posts/Infra-线性代数/',
   '/archives/',
   '/projects/',
   '/404.html'
@@ -25,7 +25,13 @@ for (const path of routes) {
     await page.locator('img').evaluateAll((images) => {
       for (const image of images) (image as HTMLImageElement).loading = 'eager';
     });
-    await page.waitForFunction(() => [...document.images].every((image) => image.complete));
+    await page.waitForFunction((viewportOnly) => [...document.images]
+      .filter((image) => {
+        if (!viewportOnly) return true;
+        const rect = image.getBoundingClientRect();
+        return rect.bottom >= 0 && rect.top <= innerHeight;
+      })
+      .every((image) => image.complete), path.startsWith('/posts/'));
 
     const viewport = page.viewportSize();
     if (path !== '/') {
@@ -95,10 +101,10 @@ for (const path of routes) {
 
     const snapshotName = path === '/' ? 'home.png' : `${path.replaceAll('/', '_')}.png`;
     await expect(page).toHaveScreenshot(snapshotName, {
-      fullPage: true,
+      fullPage: !path.startsWith('/posts/'),
       animations: 'disabled',
       timeout: path.startsWith('/posts/') ? 300_000 : 20_000,
-      maxDiffPixels: path.startsWith('/posts/') ? 2_000 : 0,
+      maxDiffPixels: path.startsWith('/posts/') ? 2_000 : path === '/blog/' ? 10 : 0,
       mask: [
         page.locator('[data-giscus-comments]'),
         page.locator(

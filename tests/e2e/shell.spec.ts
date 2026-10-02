@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('inner pages share the brandless centered navigation', async ({ page }) => {
-  for (const path of ['/blog/', '/projects/', '/about/', '/posts/线性代数数学基础/']) {
+  for (const path of ['/blog/', '/projects/', '/about/', '/posts/Infra-线性代数/']) {
     await page.goto(path);
     await expect(page.locator('header[data-site-header] .brand')).toHaveCount(0);
     const controls = page.locator('[data-header-controls]');
@@ -41,17 +41,19 @@ test('the shared search action uses a visible 20px magnifying-glass SVG', async 
     button: [44, 44],
     icon: [20, 20],
     fill: 'none',
-    stroke: 'rgb(238, 238, 238)',
+    stroke: 'rgb(50, 45, 56)',
     linecap: 'round'
   });
 });
 
-test('standard shell renders the compact legal footer', async ({ page }) => {
+test('only post pages render the compact legal footer', async ({ page }) => {
   await page.goto('/projects/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();
   await expect(page.locator('[data-hero]')).toBeVisible();
   await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
+  await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
 
+  await page.goto('/posts/Infra-线性代数/');
   const footer = page.locator('footer[data-site-footer]');
   await expect(footer).toHaveCount(1);
   await expect(footer).toContainText(`© 2025–${new Date().getFullYear()} Hatrix`);

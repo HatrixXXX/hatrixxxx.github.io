@@ -21,7 +21,7 @@ describe('content contracts', () => {
     const usesPublicFixtures = root === resolve('tests/fixtures/private-content/posts');
     let lockedPosts = 0;
 
-    expect(files).toHaveLength(usesPublicFixtures ? 2 : 8);
+    expect(files).toHaveLength(usesPublicFixtures ? 2 : 11);
     for (const file of files) {
       const { data } = matter(await readFile(join(root, file), 'utf8'));
       if (data.locked === true) lockedPosts += 1;

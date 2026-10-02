@@ -34,31 +34,30 @@ test('home keyboard navigation reaches the spatial controls at every viewport', 
   await blog.focus();
   await expect(blog).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/blog/all/');
+  await expect(page).toHaveURL('/blog/');
 });
 
-test('decorative motion stops when reduced motion is requested', async ({ page }) => {
+test('about decorations remain inert when reduced motion is requested', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
   await page.goto('/about/');
   const sakanaLayer = page.locator('[data-sakana-layer]');
-  await expect(sakanaLayer).toHaveAttribute('data-sakana-state', 'ready');
-  await expect(sakanaLayer).toHaveAttribute('data-sakana-motion', 'reduced');
+  await expect(sakanaLayer).toHaveAttribute('aria-hidden', 'true');
   await expect(sakanaLayer.locator('a, button, input, [tabindex]')).toHaveCount(0);
 
-  const characters = sakanaLayer.locator('.sakana-character');
-  await expect(characters).toHaveCount(2);
-  const before = await characters.evaluateAll((elements) =>
+  const decorations = sakanaLayer.locator('[data-sakana-anchor]');
+  await expect(decorations).toHaveCount(2);
+  const before = await decorations.evaluateAll((elements) =>
     elements.map((element) => ({
       pointerEvents: getComputedStyle(element).pointerEvents,
-      transform: element.getAttribute('style')
+      transform: getComputedStyle(element).transform
     }))
   );
   await page.waitForTimeout(250);
-  const after = await characters.evaluateAll((elements) =>
+  const after = await decorations.evaluateAll((elements) =>
     elements.map((element) => ({
       pointerEvents: getComputedStyle(element).pointerEvents,
-      transform: element.getAttribute('style')
+      transform: getComputedStyle(element).transform
     }))
   );
   expect(before.every(({ pointerEvents }) => pointerEvents === 'none')).toBe(true);
@@ -68,7 +67,7 @@ test('decorative motion stops when reduced motion is requested', async ({ page }
 test('desktop and mobile navigation and table of contents match their viewport', async ({
   page
 }, testInfo) => {
-  await page.goto('/posts/线性代数数学基础/');
+  await page.goto('/posts/Infra-线性代数/');
   const isMobile = testInfo.project.name === 'mobile-390';
   const hasCollapsedNavigation = testInfo.project.name !== 'desktop-1440';
 

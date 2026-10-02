@@ -10,29 +10,26 @@ test('home stage fills the viewport without a wave divider', async ({ page }) =>
   await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
 });
 
-test('non-home pages use the blog category header and omit article cover banners without a wave divider', async ({ page }) => {
+test('the blog index uses a compact hero while article pages omit cover banners and wave dividers', async ({ page }) => {
   for (const viewport of [
     { width: 1440, height: 900, bannerHeight: 240 },
     { width: 390, height: 844, bannerHeight: 200 }
   ]) {
     await page.setViewportSize(viewport);
-    for (const route of ['/blog/all/', '/posts/线性代数数学基础/']) {
-      await page.goto(route);
-      if (route.startsWith('/posts/')) await expect(page.locator('.post-hero')).toHaveCount(0);
-      else {
-        const hero = page.locator('[data-hero]');
-        await expect(hero).toBeVisible();
-        expect((await hero.boundingBox())?.height).toBe(viewport.bannerHeight);
-        const imageWidth = await hero.evaluate(async (element) => {
-          const background = getComputedStyle(element).backgroundImage;
-          const image = new Image();
-          image.src = background.slice(5, -2);
-          await image.decode();
-          return image.naturalWidth;
-        });
-        expect(imageWidth).toBeGreaterThan(0);
-      }
-      await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
-    }
+
+    await page.goto('/blog/');
+    const hero = page.locator('[data-hero]');
+    await expect(hero).toBeVisible();
+    await expect(hero.getByRole('heading', { level: 1 })).toHaveText('博客文章');
+    const heroBox = await hero.boundingBox();
+    expect(heroBox).not.toBeNull();
+    expect(Math.round(heroBox!.y + heroBox!.height)).toBe(viewport.bannerHeight);
+    await expect(page.locator('body')).not.toHaveCSS('background-image', 'none');
+    await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
+
+    await page.goto('/posts/Infra-线性代数/');
+    await expect(page.locator('[data-hero], .post-hero')).toHaveCount(0);
+    await expect(page.locator('.post-intro h1')).toHaveText('Infra-线性代数');
+    await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
   }
 });
