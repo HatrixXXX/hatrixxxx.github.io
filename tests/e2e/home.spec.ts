@@ -1,7 +1,47 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const firstQuote = '轻松即单纯，速成即精准';
 const secondQuote = '兽人永不为奴，除非包吃包住';
+
+async function installQuoteProbe(page: Page) {
+  await page.clock.install();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+  await page.addInitScript(() => {
+    const timers = new Set<number>();
+    const motionListeners = new Set<EventListenerOrEventListenerObject>();
+    const probe = { timers, motionListeners, animations: 0 };
+    Object.defineProperty(window, '__quoteProbe', { value: probe });
+    const schedule = window.setTimeout.bind(window);
+    const cancel = window.clearTimeout.bind(window);
+    window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
+      if (delay !== 15_000 || typeof handler !== 'function') return schedule(handler, delay, ...args);
+      const id = schedule(() => { timers.delete(id); handler(...args); }, delay);
+      timers.add(id);
+      return id;
+    }) as typeof window.setTimeout;
+    window.clearTimeout = (id) => { if (typeof id === 'number') timers.delete(id); cancel(id); };
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (...args) {
+      if (this.matches('[data-quote-text]')) probe.animations += 1;
+      return animate.apply(this, args);
+    };
+    const listen = MediaQueryList.prototype.addEventListener;
+    MediaQueryList.prototype.addEventListener = function (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) {
+      if (this.media === '(prefers-reduced-motion: reduce)' && type === 'change' && listener) {
+        motionListeners.add(listener);
+        if (typeof options === 'object') options.signal?.addEventListener('abort', () => motionListeners.delete(listener), { once: true });
+      }
+      listen.call(this, type, listener, options);
+    };
+  });
+}
+
+async function quoteProbe(page: Page) {
+  return page.evaluate(() => {
+    const state = (window as unknown as { __quoteProbe: { timers: Set<number>; motionListeners: Set<unknown>; animations: number } }).__quoteProbe;
+    return { timers: state.timers.size, motionListeners: state.motionListeners.size, animations: state.animations };
+  });
+}
 
 test('Hatrix is a flat transparent label beside the level ring', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -283,54 +323,93 @@ test('home search opens the shared search interface and restores focus', async (
   await expect(search).toBeFocused();
 });
 
-test('home quote scrolls on double click and supports keyboard switching', async ({ page }) => {
+test('home quote is a non-interactive live region without manual switching', async ({ page }) => {
+  await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
   const text = page.locator('[data-quote-text]');
   await expect(text).toHaveText(firstQuote);
-  await quote.dblclick();
-  await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === 'running'))).toBe(true);
-  await expect(text).toHaveText(secondQuote);
-  await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
+  expect.soft(await quote.evaluate((node) => node.tagName)).not.toBe('BUTTON');
+  await expect.soft(page.locator('[data-quote-pause]')).toHaveCount(0, { timeout: 200 });
+  await expect.soft(quote).toHaveAttribute('role', 'status', { timeout: 200 });
+  await expect.soft(quote).toHaveAttribute('aria-live', 'polite', { timeout: 200 });
+  await expect.soft(quote).toHaveAttribute('aria-atomic', 'true', { timeout: 200 });
+  expect.soft(await quote.evaluate((node) => (node as HTMLElement).tabIndex)).toBe(-1);
+  await quote.dispatchEvent('dblclick');
+  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
   await quote.focus();
+  await expect.soft(quote).not.toBeFocused({ timeout: 200 });
   await page.keyboard.press('Enter');
-  await expect(text).toHaveText(firstQuote);
-  await expect(quote).toBeFocused();
+  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
   await page.keyboard.press('Space');
-  await expect(text).toHaveText(secondQuote);
-  await expect(quote).toBeFocused();
+  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
+  await page.clock.runFor(14_999);
+  await expect(text).toHaveText(firstQuote);
 });
 
 test('home quote advances automatically after fifteen seconds', async ({ page }) => {
-  await page.clock.install();
+  await installQuoteProbe(page);
   await page.goto('/');
   const text = page.locator('[data-quote-text]');
   await expect(text).toHaveText(firstQuote);
-  const pause = page.locator('[data-quote-pause]');
-  await pause.click();
-  await expect(pause).toHaveAttribute('aria-pressed', 'true');
-  await page.clock.runFor(15_100);
-  await expect(text).toHaveText(firstQuote);
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
-  await pause.click();
-  await expect(pause).toHaveAttribute('aria-pressed', 'false');
+  expect((await quoteProbe(page)).timers).toBe(1);
   await page.clock.runFor(14_999);
   await expect(text).toHaveText(firstQuote);
-  await page.clock.runFor(101);
+  await page.clock.runFor(1);
   await expect(text).toHaveText(secondQuote);
+  expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 1 });
 });
 
 test('home reduced motion changes quotes without animated scrolling', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.clock.install();
+  await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
-  await expect(page.locator('[data-quote-pause]')).toHaveAttribute('aria-pressed', 'true');
-  await page.clock.runFor(15_100);
+  await page.clock.runFor(14_999);
   await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
-  await quote.dblclick();
+  await page.clock.runFor(1);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
   expect(await quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
+  expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 0 });
+});
+
+test('home quote and player share their surface and the friend card radius', async ({ page }) => {
+  await page.goto('/');
+  const surfaces = await page.evaluate(() => {
+    const expected = document.createElement('div');
+    expected.style.backgroundColor = '#26232ff2';
+    document.body.append(expected);
+    const expectedBackground = getComputedStyle(expected).backgroundColor;
+    expected.remove();
+    const quote = getComputedStyle(document.querySelector('.quote-card')!);
+    const player = getComputedStyle(document.querySelector('[data-music-player]')!);
+    const friend = getComputedStyle(document.querySelector('[data-home-panel="friends"] .tile')!);
+    return { expectedBackground, background: quote.backgroundColor, playerBackground: player.backgroundColor, border: quote.borderColor, playerBorder: player.borderColor, quoteRadius: quote.borderRadius, friendRadius: friend.borderRadius };
+  });
+  expect.soft(surfaces.background).toBe(surfaces.expectedBackground);
+  expect.soft(surfaces.background).toBe(surfaces.playerBackground);
+  expect.soft(surfaces.border).toBe(surfaces.playerBorder);
+  expect.soft(surfaces.quoteRadius).toBe('3px');
+  expect(surfaces.friendRadius).toBe('3px');
+});
+
+test('enabling reduced motion cancels quote animation and preserves the next deadline', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await installQuoteProbe(page);
+  await page.goto('/');
+  const quote = page.locator('[data-home-quote]');
+  await page.clock.runFor(15_000);
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+  expect(await quote.evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === 'running'))).toBe(true);
+  await page.clock.runFor(100);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
+  expect((await quoteProbe(page)).timers).toBe(1);
+  await page.clock.runFor(14_899);
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+  await page.clock.runFor(1);
+  await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
+  expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 1 });
 });
 
 test('home clock exposes the complete local date and updates every second', async ({ page }) => {
@@ -374,7 +453,7 @@ test('home links open their independent pages', async ({ page }) => {
 
 test('returning home reinitializes quotes and the clock once', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.clock.install();
+  await installQuoteProbe(page);
   await page.goto('/');
   await page.locator('[data-music-player]').evaluate((player) => player.setAttribute('data-home-persist-probe', 'same-node'));
   for (let visit = 0; visit < 2; visit += 1) {
@@ -390,10 +469,10 @@ test('returning home reinitializes quotes and the clock once', async ({ page }) 
     await expect(page.locator('[data-music-player]')).toHaveAttribute('data-home-persist-probe', 'same-node');
     await expect(page.locator('[data-music-player]')).toHaveAttribute('data-display-mode', 'home');
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
-    await page.locator('[data-home-quote]').dblclick();
-    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
     const previousTime = await page.locator('[data-home-clock]').getAttribute('aria-label');
-    await page.clock.runFor(1_100);
+    await page.clock.runFor(15_000);
+    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+    expect((await quoteProbe(page)).timers).toBe(1);
     await expect(page.locator('[data-home-clock]')).not.toHaveAttribute('aria-label', previousTime!);
   }
 });
@@ -421,49 +500,23 @@ test('ordinary paginated pages omit the site footer', async ({ page }) => {
 
 test('normal-motion return visits keep one automatic quote timer and one listener', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.clock.install();
+  await installQuoteProbe(page);
   await page.goto('/');
-  await page.evaluate(() => {
-    const timers = new Set<number>();
-    const probe = { timers, animations: 0 };
-    Object.defineProperty(window, '__quoteProbe', { value: probe });
-    const schedule = window.setTimeout.bind(window);
-    const cancel = window.clearTimeout.bind(window);
-    window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
-      if (delay !== 15_000 || typeof handler !== 'function') return schedule(handler, delay, ...args);
-      const id = schedule(() => { timers.delete(id); handler(...args); }, delay);
-      timers.add(id);
-      return id;
-    }) as typeof window.setTimeout;
-    window.clearTimeout = (id) => { if (typeof id === 'number') timers.delete(id); cancel(id); };
-    const animate = Element.prototype.animate;
-    Element.prototype.animate = function (...args) {
-      if (this.matches('[data-quote-text]')) probe.animations += 1;
-      return animate.apply(this, args);
-    };
-  });
-  const probe = () => page.evaluate(() => {
-    const state = (window as unknown as { __quoteProbe: { timers: Set<number>; animations: number } }).__quoteProbe;
-    return { timers: state.timers.size, animations: state.animations };
-  });
+  const probe = () => quoteProbe(page);
+  const listenerCount = (await probe()).motionListeners;
   for (let visit = 0; visit < 2; visit += 1) {
     await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
     await expect(page).toHaveURL('/plans/');
     expect((await probe()).timers).toBe(0);
     await page.locator('[data-back-button]').click();
     await expect(page).toHaveURL('/');
-    await expect(page.locator('[data-quote-pause]')).toHaveAttribute('aria-pressed', 'false');
     expect((await probe()).timers).toBe(1);
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+    expect((await probe()).motionListeners).toBe(listenerCount);
     const before = (await probe()).animations;
-    await page.locator('[data-home-quote]').dispatchEvent('dblclick');
-    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
-    expect(await probe()).toEqual({ timers: 1, animations: before + 1 });
     await page.clock.runFor(14_999);
-    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
-    await page.clock.runFor(1);
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
-    expect(await probe()).toEqual({ timers: 1, animations: before + 2 });
-    await page.clock.resume();
+    await page.clock.runFor(1);
+    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+    expect(await probe()).toEqual({ timers: 1, motionListeners: listenerCount, animations: before + 1 });
   }
 });

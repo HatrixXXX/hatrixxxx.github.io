@@ -71,12 +71,9 @@ const rightPanels = {
         </HomePanel>
         <HomePanel name="quote" {...leftPanels.quote}>
           <div class="quote-card">
-            <button type="button" class="quote-switch" data-home-quote aria-label={`金句：${HOME_QUOTES[0]}。双击切换；键盘按 Enter 或空格切换`} title="双击切换金句">
-              <span class="quote-window"><span data-quote-text>{HOME_QUOTES[0]}</span></span>
-            </button>
-            <button class="quote-pause" type="button" data-quote-pause aria-label="暂停金句自动切换" aria-pressed="false">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="pause-mark" d="M8 5v14M16 5v14" /><path class="resume-mark" d="m8 5 11 7-11 7Z" /></svg>
-            </button>
+            <div class="quote-window" data-home-quote role="status" aria-live="polite" aria-atomic="true">
+              <span data-quote-text>{HOME_QUOTES[0]}</span>
+            </div>
           </div>
         </HomePanel>
           <MusicPlayer mode="home" />
@@ -144,6 +141,7 @@ const rightPanels = {
     --home-ink: #e9e4dc;
     --home-accent: #c8a16f;
     --home-icon: #c8c0d0;
+    --home-panel-radius: 3px;
     position: fixed; inset: 0; overflow: hidden;
     background: var(--home-paper); color: var(--home-ink);
     font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
@@ -177,7 +175,7 @@ const rightPanels = {
     position: relative; display: flex; width: 100%; height: 100%; align-items: center;
     border: 1px solid #b8a6c14d; padding: 24px 32px;
     background: var(--home-surface); color: var(--home-ink);
-    border-radius: 3px;
+    border-radius: var(--home-panel-radius);
     background-image: linear-gradient(155deg, #f5e0c10a, transparent 48%);
     box-shadow: inset 0 1px #f8e7cf12, inset 0 -1px #0b081833;
     text-decoration: none; cursor: pointer; overflow: hidden;
@@ -201,14 +199,9 @@ const rightPanels = {
   .level-fallback { margin: 8px -40px 0; font-size: 18px; text-align: center; }
   .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; background: transparent; }
   .identity-name h1 { margin: 0; color: var(--home-ink); font: 500 64px/1 'IBM Plex Mono', monospace; letter-spacing: -.035em; }
-  .quote-card { position: relative; width: 100%; height: 100%; background: #211e29ed; border: 1px solid #b8a6c133; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf0d; }
-  .quote-switch { width: 100%; height: 100%; border: 0; padding: 20px 54px 20px 24px; text-align: left; color: var(--home-ink); background: transparent; cursor: pointer; }
-  .quote-window { display: flex; overflow: hidden; height: 60px; align-items: center; }
+  .quote-card { position: relative; width: 100%; height: 100%; background: #26232ff2; border: 1px solid #b8a6c14d; border-radius: var(--home-panel-radius); box-shadow: inset 0 1px #f8e7cf0d; }
+  .quote-window { display: flex; overflow: hidden; width: 100%; height: 100%; align-items: center; padding: 20px 24px; }
   [data-quote-text] { display: block; font-size: 22px; line-height: 1.65; text-wrap: balance; }
-  .quote-pause { position: absolute; right: 7px; bottom: 6px; width: 44px; height: 44px; border: 0; background: transparent; color: #c4d4dc; cursor: pointer; }
-  .quote-pause svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 2; }
-  .resume-mark, .quote-pause[aria-pressed='true'] .pause-mark { display: none; }
-  .quote-pause[aria-pressed='true'] .resume-mark { display: block; }
   .small-tile { padding: 14px 20px 14px 65px; }
   .small-tile span { font-size: 32px; }
   .small-tile :global(svg) { width: 42px; height: 45px; left: 15px; right: auto; opacity: .6; }

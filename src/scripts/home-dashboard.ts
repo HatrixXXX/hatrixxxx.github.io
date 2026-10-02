@@ -15,12 +15,10 @@ function initializeHomeDashboard(): void {
   const levelBadge = stage.querySelector<HTMLElement>('[data-home-level]')!;
   const levelNumber = stage.querySelector<HTMLElement>('[data-level-number]')!;
   const levelRing = stage.querySelector<SVGCircleElement>('[data-level-progress]')!;
-  const quote = stage.querySelector<HTMLButtonElement>('[data-home-quote]')!;
-  const quoteText = stage.querySelector<HTMLElement>('[data-quote-text]')!;
-  const pause = stage.querySelector<HTMLButtonElement>('[data-quote-pause]')!;
+  const quote = stage.querySelector<HTMLElement>('[data-home-quote]')!;
+  const quoteText = quote.querySelector<HTMLElement>('[data-quote-text]')!;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let quoteIndex = 0;
-  let paused = motion.matches;
   let animation: Animation | undefined;
   let quoteTimer: number | undefined;
   let displayedLevelDay = '';
@@ -52,19 +50,14 @@ function initializeHomeDashboard(): void {
     });
   };
 
-  const syncPause = (): void => {
-    pause.setAttribute('aria-pressed', String(paused));
-    pause.setAttribute('aria-label', paused ? '恢复金句自动切换' : '暂停金句自动切换');
-  };
   const scheduleQuote = (): void => {
     window.clearTimeout(quoteTimer);
-    if (!paused && !document.hidden) quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
+    if (!document.hidden) quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
   };
   const nextQuote = (): void => {
     animation?.cancel();
     quoteIndex = (quoteIndex + 1) % HOME_QUOTES.length;
     quoteText.textContent = HOME_QUOTES[quoteIndex];
-    quote.setAttribute('aria-label', `金句：${HOME_QUOTES[quoteIndex]}。双击切换；键盘按 Enter 或空格切换`);
     if (!motion.matches) {
       animation = quoteText.animate([
         { transform: 'translateY(100%)', opacity: 0 },
@@ -74,13 +67,6 @@ function initializeHomeDashboard(): void {
     scheduleQuote();
   };
 
-  quote.addEventListener('dblclick', nextQuote, { signal });
-  quote.addEventListener('click', (event) => { if (event.detail === 0) nextQuote(); }, { signal });
-  pause.addEventListener('click', () => {
-    paused = !paused;
-    syncPause();
-    scheduleQuote();
-  }, { signal });
   document.addEventListener('visibilitychange', () => {
     updateClock();
     scheduleQuote();
@@ -88,12 +74,8 @@ function initializeHomeDashboard(): void {
   motion.addEventListener('change', () => {
     if (!motion.matches) return;
     animation?.cancel();
-    paused = true;
-    syncPause();
-    scheduleQuote();
   }, { signal });
 
-  syncPause();
   scheduleQuote();
   updateClock();
   const clockTimer = window.setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
