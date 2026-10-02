@@ -184,7 +184,7 @@ components:
 
 现有普通 Hero 的高度为桌面和平板 240px，宽度不超过 768px 时为 200px。文章详情保持当前纯标题与正文结构，不新增题图横幅。没有波浪分隔。搜索框最大宽度 760px，窗口不超过 600px 时使用更靠上的位置；分页在 520px 以下允许页码换行。
 
-首页继续使用固定的 1920×1080 画布并等比缩放。人物左上坐标为 `(320, 40)`、宽 820px；右侧七个面板共用一个 `matrix3d` 父平面。超宽屏平移左右两组，竖屏保留上下空白。首页不滚动，不渲染普通导航或页脚；内容页不继承首页的透视布局。
+首页继续使用固定的 1920×1080 画布并等比缩放。人物左上坐标为 `(380, 55)`、宽 714px，分块立绘与无脚本回退图使用相同位置和宽度；右侧七个面板共用一个 `matrix3d` 父平面。超宽屏平移左右两组，竖屏保留上下空白。首页不滚动，不渲染普通导航或页脚；内容页不继承首页的透视布局。
 
 间距表只收录现有组件内边距，未定义新的全站间距比例。文章卡片内容与外层卡片分开处理：上方 `card-post.padding` 描述内容区，题图仍贴合卡片边缘。
 
@@ -234,13 +234,15 @@ components:
 
 ### Homepage, imagery and persistent player
 
-首页 v5 立绘位于背景之上、入口面板之下，可与面板重叠且不拦截输入。金句按现有 15 秒周期切换，支持双击、Enter/空格和暂停；时钟显示本地真实时间。播放器在首页常驻，其他页面折叠到左侧，展开与收起不改变播放控件语义。
+首页 v5 立绘位于背景之上、入口面板之下，可与面板重叠且不拦截输入。等级圆环保留，Hatrix 名称位于其右侧，名称面板与圆环至少相隔 12 个设计像素。金句位于播放器上方，每 15 秒切换；双击、Enter/空格可立即切换并重新计时，暂停或页面隐藏时停止计时，减少动态效果时默认暂停。金句下缘与友链上缘保留至少 6 个设计像素的间距。时钟显示本地真实时间。播放器在首页完成透视布局后显示，其他页面折叠到左侧，通过客户端导航保留同一个 DOM 和 Audio。
 
 | 素材 | 页面使用路径 | 原图或提示词记录 |
 | --- | --- | --- |
-| v5 立绘 | `src/assets/home/hatrix-character-v5.png` | 本机原图备份 `output/imagegen/hatrix-character-v5.png`（不提交）；提示词 `output/imagegen/hatrix-character-v5.prompt.txt` |
-| v5 工坊背景 | `src/assets/home/liupin-workshop-v5.png` | 提示词 `output/imagegen/liupin-workshop-v5.prompt.txt` |
+| v5 立绘分块 | `public/character-parts/*.webp`，坐标和尺寸见 `src/data/character-parts.ts` | 分块源 PNG 位于 `src/assets/home/character-parts-source/`；`src/assets/home/hatrix-character-v5.png` 是合成和视觉核对基准 |
+| v6 工坊背景 | `src/assets/home/liupin-workshop-v6.png` | 当前首页使用的工坊背景；保留 v5 人物合成基准 |
 | 默认封面 | `public/images/default-cover.svg` | 本仓库原创 SVG，抽象计算基板结构 |
+
+无 JavaScript 时由 `<noscript>` 显示 v5 原图生成的静态 WebP，位置为 `(380, 55)`、宽 714 个设计像素；正常运行时只加载分块人物。回退内容不内嵌样式，样式仍由组件输出。
 
 素材路径是来源记录，不授权重新生成或修改已选定 PNG 的像素、元数据与哈希。普通 Hero 复用工坊背景的裁切，真实文章封面与正文图片保持原内容。本轮材质由 CSS/SVG 完成，没有新增生图或图标依赖。
 

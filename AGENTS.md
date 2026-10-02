@@ -73,10 +73,10 @@ corepack pnpm test:e2e
 - 作品状态只能是 `idea|active|done|archived`。作品、歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
 - 音乐播放器在首页左下透视卡片中常驻，所有非首页页面默认固定折叠到左侧，只露半张唱片；点击展开，点击卡片空白或收起按钮折叠，播放控件不得误触收起。全站只挂载一个播放器，以 `transition:persist` 保留 DOM 和 Audio；跨客户端导航后按当前路径更新首页/侧边模式，不依赖保留下来的旧 props。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；当前允许 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增同源图片也要带 `@<commit>`；增加 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。
-- Playwright 当前收集 217 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀；本次已确认并更新博客页的桌面、平板和手机 3 张基线，首页基线包含 v5 立绘、背景、裁切和年龄等级。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
-- 首页使用 `1920×1080` 设计画布并等比缩放。右侧 7 个面板共用一个 `matrix3d` 父平面，子卡片只设置局部位置和尺寸，不单独旋转；组内间距保持固定。超宽屏用纯 CSS 平移左右两组贴近视口边缘，竖屏留上下空白，不改为单列。角色层使用用户明确选定的 `src/assets/home/hatrix-character-v5.png`，与 `output/imagegen/hatrix-character-v5.png` 原图一致，保留该版本的全部人物与外围元素；此前迭代中的元素删减要求不再用于改写这张已选定图片。立绘按前景近景比例裁在画布内；背景为 `src/assets/home/liupin-workshop-v5.png`，按 v5 立绘和人机协作设定重画。人物位于背景之上、入口面板之下，允许与卡片重叠，不拦截输入；不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
+- Playwright 当前收集 209 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀。首页基线覆盖桌面、平板和手机，包含 v5 分块立绘、v6 背景、年龄等级、Hatrix 名称和左下金句。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
+- 首页使用 `1920×1080` 设计画布并等比缩放。右侧 7 个面板共用一个 `matrix3d` 父平面，子卡片只设置局部位置和尺寸，不单独旋转；组内间距保持固定。超宽屏用纯 CSS 平移左右两组贴近视口边缘，竖屏留上下空白，不改为单列。角色层运行时使用 `public/character-parts/*.webp` 裁边 WebP，分块源 PNG 位于 `src/assets/home/character-parts-source/`。用户明确选定的原始 v5 PNG `src/assets/home/hatrix-character-v5.png` 仍是合成和视觉核对基准，与 `output/imagegen/hatrix-character-v5.png` 原图一致，保留该版本的全部人物与外围元素；此前迭代中的元素删减要求不再用于改写这张已选定图片。立绘按前景近景比例裁在画布内；背景为 `src/assets/home/liupin-workshop-v6.png`，按 v5 立绘和人机协作设定重画。人物位于背景之上、入口面板之下，允许与卡片重叠，不拦截输入；不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
 - 首页金句语料在 `src/data/home-quotes.ts`，每 15 秒切换，支持双击、Enter/空格和暂停；减少动态效果时默认暂停自动切换。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。工具推荐仅作标题，快捷链接复用既有关于子页；计划和实验场分别为 `/plans/`、`/lab/`。
-- 首页左侧等级圆环替代可见的 Hatrix 字样。生日为 `2002-07-29`，等级按北京时间的周岁计算，每年 7 月 29 日零点升级；进度为距上次生日的整天数除以两次生日之间的实际天数（365 或 366）。浏览器进入首页、跨日和恢复页面时更新，不使用构建日期；无 JavaScript 时显示未知等级。
+- 首页左侧等级圆环保留，Hatrix 名称位于其右侧。生日为 `2002-07-29`，等级按北京时间的周岁计算，每年 7 月 29 日零点升级；进度为距上次生日的整天数除以两次生日之间的实际天数（365 或 366）。浏览器进入首页、跨日和恢复页面时更新，不使用构建日期；无 JavaScript 时显示未知等级。
 - 现有非首页普通 Hero 高度为桌面和平板 `240px`，宽度不超过 `768px` 时为 `200px`；文章详情保持标题和元信息开头，不恢复题图横幅；全站不渲染波浪分隔。
 - 当前仅文章页启用页脚及站点统计，普通布局默认不显示页脚；页脚版权区显示版权与“保留所有权利”，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
 - `SidebarStack` 承载作者资料，统计按页面配置显示；当前关于页及子页只显示作者资料，文章侧栏显示目录和最近文章。播放器独立于侧栏。Vercount 只在生产环境加载固定脚本 `https://events.vercount.one/js`；开发和测试不得请求该服务，加载失败时访客数保持 `—`。
@@ -89,7 +89,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 3272 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 3273 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 

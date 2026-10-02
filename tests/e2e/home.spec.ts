@@ -3,6 +3,27 @@ import { expect, test } from '@playwright/test';
 const firstQuote = '轻松即单纯，速成即精准';
 const secondQuote = '兽人永不为奴，除非包吃包住';
 
+test('quote clears the friends panel across its entire projected bottom edge', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  const gap = await page.evaluate(() => {
+    const corners = (name: string) => {
+      const panel = document.querySelector<HTMLElement>(`[data-home-panel="${name}"]`)!;
+      const matrix = new DOMMatrix(getComputedStyle(panel).transform);
+      return [[0, 0], [panel.offsetWidth, 0], [panel.offsetWidth, panel.offsetHeight], [0, panel.offsetHeight]].map(([x, y]) => {
+        const point = new DOMPoint(x, y).matrixTransform(matrix);
+        return { x: point.x / point.w, y: point.y / point.w };
+      });
+    };
+    const quote = corners('quote');
+    const friends = corners('friends');
+    const yAt = (a: { x: number; y: number }, b: { x: number; y: number }, x: number) => a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
+    return Math.min(...[friends[0].x, quote[2].x].map((x) => yAt(friends[0], friends[1], x) - yAt(quote[3], quote[2], x)));
+  });
+  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(await page.locator('[data-quote-text]').evaluate((node) => node.scrollHeight <= node.parentElement!.clientHeight)).toBe(true);
+});
+
 test('home presents the spatial panels and a permanent music player', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-home-stage]')).toBeVisible();
@@ -152,11 +173,11 @@ test('home keeps panel proportions and positions across effective viewport sizes
 test('home blog panel navigates directly to the blog hub by keyboard', async ({ page }) => {
   await page.goto('/');
   const blog = page.locator('a[data-home-blog]');
-  await expect(blog).toHaveAttribute('href', '/blog/all/');
+  await expect(blog).toHaveAttribute('href', '/blog/');
   await expect(page.locator('[data-home-panel="blog"] details, [data-home-panel="blog"] nav')).toHaveCount(0);
   await blog.focus();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/blog/all/');
+  await expect(page).toHaveURL('/blog/');
   await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
 });
 test('home search opens the shared search interface and restores focus', async ({ page }) => {
@@ -289,18 +310,68 @@ test('pagination and legacy post paths stay available', async ({ page }) => {
   expect((await page.request.get('/page/1/')).status()).toBe(404);
   expect((await page.request.get('/page/2/')).status()).toBe(200);
   await page.goto('/page/7/');
-  await expect(page.locator('article[data-post-card]')).toHaveCount(4);
-  await page.goto('/page/3/');
+  await expect(page.locator('article[data-post-card]')).toHaveCount(6);
+  await page.goto('/page/8/');
+  await expect(page.locator('article[data-post-card]')).toHaveCount(1);
+  await page.goto('/blog/');
   const spacedSlugLink = page.locator('a[href="/posts/FPGA开发(1)Vivado+Vitis 使用/"]').first();
-  await expect(spacedSlugLink).toBeVisible();
+  await expect(spacedSlugLink).toHaveCount(1);
   const resolvedPath = await spacedSlugLink.evaluate((link) => new URL((link as HTMLAnchorElement).href).pathname);
   expect(resolvedPath).toBe(encodeURI('/posts/FPGA开发(1)Vivado+Vitis 使用/'));
+  expect((await page.request.get(resolvedPath)).status()).toBe(200);
 });
 
-test('site footer stays compact on paginated pages', async ({ page }) => {
+test('ordinary paginated pages omit the site footer', async ({ page }) => {
   await page.goto('/page/2/');
   const footer = page.locator('footer[data-site-footer]');
-  await expect(footer).toBeVisible();
-  await expect(footer.locator('section, img, li')).toHaveCount(0);
-  expect((await footer.boundingBox())?.height).toBeLessThan(64);
+  await expect(footer).toHaveCount(0);
+});
+
+test('normal-motion return visits keep one automatic quote timer and one listener', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.clock.install();
+  await page.goto('/');
+  await page.evaluate(() => {
+    const timers = new Set<number>();
+    const probe = { timers, animations: 0 };
+    Object.defineProperty(window, '__quoteProbe', { value: probe });
+    const schedule = window.setTimeout.bind(window);
+    const cancel = window.clearTimeout.bind(window);
+    window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
+      if (delay !== 15_000 || typeof handler !== 'function') return schedule(handler, delay, ...args);
+      const id = schedule(() => { timers.delete(id); handler(...args); }, delay);
+      timers.add(id);
+      return id;
+    }) as typeof window.setTimeout;
+    window.clearTimeout = (id) => { if (typeof id === 'number') timers.delete(id); cancel(id); };
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (...args) {
+      if (this.matches('[data-quote-text]')) probe.animations += 1;
+      return animate.apply(this, args);
+    };
+  });
+  const probe = () => page.evaluate(() => {
+    const state = (window as unknown as { __quoteProbe: { timers: Set<number>; animations: number } }).__quoteProbe;
+    return { timers: state.timers.size, animations: state.animations };
+  });
+  for (let visit = 0; visit < 2; visit += 1) {
+    await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
+    await expect(page).toHaveURL('/plans/');
+    expect((await probe()).timers).toBe(0);
+    await page.locator('[data-back-button]').click();
+    await expect(page).toHaveURL('/');
+    await expect(page.locator('[data-quote-pause]')).toHaveAttribute('aria-pressed', 'false');
+    expect((await probe()).timers).toBe(1);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+    const before = (await probe()).animations;
+    await page.locator('[data-home-quote]').dispatchEvent('dblclick');
+    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+    expect(await probe()).toEqual({ timers: 1, animations: before + 1 });
+    await page.clock.runFor(14_999);
+    await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+    await page.clock.runFor(1);
+    await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
+    expect(await probe()).toEqual({ timers: 1, animations: before + 2 });
+    await page.clock.resume();
+  }
 });

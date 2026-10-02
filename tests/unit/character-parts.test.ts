@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import sharp from 'sharp';
 
 const manifestPath = 'src/data/character-parts.ts';
 
@@ -26,6 +27,9 @@ describe('character part assets', () => {
     expect(decodedBytes).toBeLessThanOrEqual(22 * 1024 * 1024);
     for (const part of parts) {
       expect(existsSync(`public${part.src}`)).toBe(true);
+      const metadata = await sharp(`public${part.src}`).metadata();
+      expect(metadata.format).toBe('webp');
+      expect([metadata.width, metadata.height]).toEqual([part.width, part.height]);
       expect(part.x).toBeGreaterThanOrEqual(0);
       expect(part.y).toBeGreaterThanOrEqual(0);
       expect(part.width).toBeGreaterThan(0);

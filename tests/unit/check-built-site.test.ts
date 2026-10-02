@@ -13,7 +13,7 @@ import {
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 it('tracks the current content and local link inventories', async () => {
-  expect(EXPECTED_LOCAL_LINKS).toBe(3272);
+  expect(EXPECTED_LOCAL_LINKS).toBe(3273);
   expect(await readFile('scripts/check-built-site.ts', 'utf8')).toContain(
     'expectedPostCount: fixtureMode ? 2 : 43'
   );

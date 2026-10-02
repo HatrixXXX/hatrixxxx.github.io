@@ -1,4 +1,6 @@
 ---
+import { Image } from 'astro:assets';
+import characterReference from '@/assets/home/hatrix-character-v5.png';
 import { CHARACTER_PARTS, type CharacterPartName } from '@/data/character-parts';
 
 const part = (name: CharacterPartName) => {
@@ -96,9 +98,17 @@ const part = (name: CharacterPartName) => {
   </div>
 </div>
 
-<noscript><style is:global>[data-char-rig] { visibility: visible !important; }</style></noscript>
+<noscript>
+  <Image class="char-static-fallback" data-character-fallback src={characterReference} width={714} format="webp" alt="" aria-hidden="true" draggable="false" loading="eager" />
+</noscript>
 
 <style>
+  .char-static-fallback {
+    position: absolute;
+    left: 380px; top: 55px;
+    width: 714px; height: auto; max-width: none;
+    pointer-events: none; user-select: none;
+  }
   .char-rig-outer {
     visibility: hidden;
     position: absolute;
