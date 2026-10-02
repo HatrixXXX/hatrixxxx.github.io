@@ -3,6 +3,7 @@ import { getImage } from 'astro:assets';
 import homeWorkshop from '@/assets/home/liupin-workshop-v6.png';
 import { SITE } from '@/config/site';
 import { HOME_LINKS } from '@/config/navigation';
+import { HOME_QUOTES } from '@/data/home-quotes';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HomePanel from '@/components/HomePanel.astro';
 import HomeIcon from '@/components/HomeIcon.astro';
@@ -16,6 +17,8 @@ const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quali
 const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
   identity: { width: 180, height: 180, corners: [[72, 395], [252, 395], [252, 575], [72, 575]] },
+  identityName: { width: 300, height: 112, corners: [[264, 420], [558, 408], [560, 516], [266, 532]] },
+  quote: { width: 595, height: 110, corners: [[10, 696], [604.4, 668], [605.9, 762], [12, 775]] },
   music: { width: 380, height: 195, corners: [[12, 785], [387, 768], [392, 948], [15, 976]] },
   friends: { width: 208, height: 88, corners: [[399, 768], [606, 756], [607, 843], [401, 855]] },
   guestbook: { width: 208, height: 80, corners: [[402, 865], [607, 851], [608, 929], [404, 944]] }
@@ -49,7 +52,6 @@ const rightPanels = {
           </button>
         </HomePanel>
         <HomePanel name="identity" {...leftPanels.identity}>
-          <h1 id="home-title" class="visually-hidden" data-home-title>Hatrix</h1>
           <div class="level-badge" data-home-level role="meter" aria-label="等级年度进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="启用 JavaScript 后显示等级">
             <svg class="level-ring" viewBox="0 0 180 180" aria-hidden="true">
               <circle class="level-track" cx="90" cy="90" r="84" />
@@ -61,6 +63,19 @@ const rightPanels = {
             </div>
           </div>
           <noscript><p class="level-fallback">启用 JavaScript 后显示等级</p></noscript>
+        </HomePanel>
+        <HomePanel name="identity-name" {...leftPanels.identityName}>
+          <div class="identity-name"><h1 id="home-title" data-home-title>Hatrix</h1></div>
+        </HomePanel>
+        <HomePanel name="quote" {...leftPanels.quote}>
+          <div class="quote-card">
+            <button type="button" class="quote-switch" data-home-quote aria-label={`金句：${HOME_QUOTES[0]}。双击切换；键盘按 Enter 或空格切换`} title="双击切换金句">
+              <span class="quote-window"><span data-quote-text>{HOME_QUOTES[0]}</span></span>
+            </button>
+            <button class="quote-pause" type="button" data-quote-pause aria-label="暂停金句自动切换" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="pause-mark" d="M8 5v14M16 5v14" /><path class="resume-mark" d="m8 5 11 7-11 7Z" /></svg>
+            </button>
+          </div>
         </HomePanel>
           <MusicPlayer mode="home" />
         <HomePanel name="music" {...leftPanels.music}>
@@ -182,10 +197,16 @@ const rightPanels = {
   .level-number { font-size: 66px; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
   .level-label { width: 84px; margin-top: 9px; padding-top: 6px; border-top: 1px solid #adb5ba80; font-size: 23px; line-height: 1; text-align: center; }
   .level-fallback { margin: 8px -40px 0; font-size: 18px; text-align: center; }
+  .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; border: 1px solid #b8a6c133; border-radius: 3px; background: #211e29d9; box-shadow: inset 0 1px #f8e7cf0d; }
+  .identity-name h1 { margin: 0; color: var(--home-ink); font: 500 64px/1 'IBM Plex Mono', monospace; letter-spacing: -.035em; }
   .quote-card { position: relative; width: 100%; height: 100%; background: #211e29ed; border: 1px solid #b8a6c133; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf0d; }
-  .quote-switch { width: 100%; height: 100%; border: 0; padding: 20px 20px 20px 24px; text-align: left; color: var(--home-ink); background: transparent; cursor: pointer; }
+  .quote-switch { width: 100%; height: 100%; border: 0; padding: 20px 54px 20px 24px; text-align: left; color: var(--home-ink); background: transparent; cursor: pointer; }
   .quote-window { display: flex; overflow: hidden; height: 60px; align-items: center; }
   [data-quote-text] { display: block; font-size: 22px; line-height: 1.65; text-wrap: balance; }
+  .quote-pause { position: absolute; right: 7px; bottom: 6px; width: 44px; height: 44px; border: 0; background: transparent; color: #c4d4dc; cursor: pointer; }
+  .quote-pause svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .resume-mark, .quote-pause[aria-pressed='true'] .pause-mark { display: none; }
+  .quote-pause[aria-pressed='true'] .resume-mark { display: block; }
   .small-tile { padding: 14px 20px 14px 65px; }
   .small-tile span { font-size: 32px; }
   .small-tile :global(svg) { width: 42px; height: 45px; left: 15px; right: auto; opacity: .6; }

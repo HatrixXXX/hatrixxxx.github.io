@@ -7,6 +7,11 @@ test('home presents the spatial panels and a permanent music player', async ({ p
   await page.goto('/');
   await expect(page.locator('[data-home-stage]')).toBeVisible();
   await expect(page.locator('[data-home-title]')).toHaveText('Hatrix');
+  await expect(page.locator('[data-home-title]')).toBeVisible();
+  await expect(page.locator('[data-home-panel="identity-name"]')).toBeVisible();
+  await expect(page.locator('[data-home-panel="quote"]')).toBeVisible();
+  await expect(page.locator('[data-home-stage] h1')).toHaveCount(1);
+  expect((await page.locator('[data-home-title]').boundingBox())?.width).toBeGreaterThan(100);
   await expect(page.locator('[data-open-search]')).toHaveCount(1);
   await expect(page.locator('[data-music-player]')).toBeVisible();
   await expect(page.locator('[data-home-panel="recommendations"]')).toContainText('工具推荐');
@@ -177,6 +182,10 @@ test('home quote scrolls on double click and supports keyboard switching', async
   await quote.focus();
   await page.keyboard.press('Enter');
   await expect(text).toHaveText(firstQuote);
+  await expect(quote).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(text).toHaveText(secondQuote);
+  await expect(quote).toBeFocused();
 });
 
 test('home quote advances automatically after fifteen seconds', async ({ page }) => {
@@ -189,9 +198,12 @@ test('home quote advances automatically after fifteen seconds', async ({ page })
   await expect(pause).toHaveAttribute('aria-pressed', 'true');
   await page.clock.runFor(15_100);
   await expect(text).toHaveText(firstQuote);
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
   await pause.click();
   await expect(pause).toHaveAttribute('aria-pressed', 'false');
-  await page.clock.runFor(15_100);
+  await page.clock.runFor(14_999);
+  await expect(text).toHaveText(firstQuote);
+  await page.clock.runFor(101);
   await expect(text).toHaveText(secondQuote);
 });
 
@@ -200,6 +212,7 @@ test('home reduced motion changes quotes without animated scrolling', async ({ p
   await page.clock.install();
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
+  await expect(page.locator('[data-quote-pause]')).toHaveAttribute('aria-pressed', 'true');
   await page.clock.runFor(15_100);
   await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
   await quote.dblclick();
