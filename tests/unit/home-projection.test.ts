@@ -5,8 +5,8 @@ describe('home panel perspective', () => {
   it('projects an arbitrary rectangle through the existing player plane', () => {
     const corners = projectRectOnPanelPlane(380, 195,
       [[12, 785], [387, 768], [392, 948], [15, 976]],
-      { x: 0, y: -126, width: 625, height: 110 });
-    const expected = [[10.08, 662.82], [603.13, 646.90], [606.51, 743.87], [11.76, 769.43]];
+      { x: 0, y: -122, width: 625, height: 110 });
+    const expected = [[10.14163, 666.68361], [603.25482, 650.41978], [606.63642, 747.40897], [11.81658, 773.32227]];
     corners.forEach((corner, index) => {
       corner.forEach((coordinate, axis) => {
         expect(Math.abs(coordinate - expected[index][axis])).toBeLessThan(0.05);

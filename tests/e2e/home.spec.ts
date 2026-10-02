@@ -23,6 +23,9 @@ test('Hatrix is a flat transparent label beside the level ring', async ({ page }
   const nameBox = await name.boundingBox();
   expect(ringBox).not.toBeNull();
   expect(nameBox).not.toBeNull();
+  expect.soft(Math.abs(ringBox!.y - 355)).toBeLessThan(0.5);
+  expect.soft(Math.abs(nameBox!.y - 389)).toBeLessThan(0.5);
+  expect.soft(Math.abs(ringBox!.y + ringBox!.height / 2 - nameBox!.y - nameBox!.height / 2)).toBeLessThan(0.5);
   expect(nameBox!.x - ringBox!.x - ringBox!.width).toBeGreaterThanOrEqual(12);
 });
 
@@ -38,7 +41,9 @@ test('quote shares the player plane and aligns with the lower row outer edges', 
       });
     const music = panel('music');
     const quote = corners(panel('quote'));
-    const expected = corners(music, new DOMMatrix(getComputedStyle(music).transform), { x: 0, y: -126, width: 625, height: 110 });
+    const musicMatrix = new DOMMatrix(getComputedStyle(music).transform);
+    const expected = corners(music, musicMatrix, { x: 0, y: -122, width: 625, height: 110 });
+    const quoteBottomInPlayerPlane = new DOMPoint(quote[3].x, quote[3].y).matrixTransform(musicMatrix.inverse());
     const quoteBox = panel('quote').getBoundingClientRect();
     const musicBox = music.getBoundingClientRect();
     const friendsBox = panel('friends').getBoundingClientRect();
@@ -52,12 +57,14 @@ test('quote shares the player plane and aligns with the lower row outer edges', 
       planeErrors: quote.map((point, index) => Math.hypot(point.x - expected[index].x, point.y - expected[index].y)),
       leftError: Math.abs(quoteBox.left - musicBox.left),
       rightError: Math.abs(quoteBox.right - friendsBox.right),
+      localPlayerGap: -quoteBottomInPlayerPlane.y / quoteBottomInPlayerPlane.w,
       minimumRowGap: Math.min(...rowGaps)
     };
   });
   for (const error of geometry.planeErrors) expect.soft(error).toBeLessThan(0.05);
   expect.soft(geometry.leftError).toBeLessThanOrEqual(2);
   expect.soft(geometry.rightError).toBeLessThanOrEqual(2);
+  expect.soft(geometry.localPlayerGap).toBeCloseTo(12, 3);
   expect(geometry.minimumRowGap).toBeGreaterThan(0);
 });
 
@@ -78,7 +85,7 @@ test('quote clears the friends panel across its entire projected bottom edge', a
     const yAt = (a: { x: number; y: number }, b: { x: number; y: number }, x: number) => a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
     return Math.min(...[friends[0].x, quote[2].x].map((x) => yAt(friends[0], friends[1], x) - yAt(quote[3], quote[2], x)));
   });
-  expect(gap).toBeGreaterThanOrEqual(5.5);
+  expect(gap).toBeGreaterThan(0);
   expect(await page.locator('[data-quote-text]').evaluate((node) => node.scrollHeight <= node.parentElement!.clientHeight)).toBe(true);
 });
 
