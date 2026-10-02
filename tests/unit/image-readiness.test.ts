@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { waitForImages, type ReadinessImage } from '../../src/lib/image-readiness';
+
+// Resolve the Astro alias to the real module without mocking readiness behavior.
+vi.mock('@/lib/image-readiness', async () => import('../../src/lib/image-readiness'));
 
 class FakeImage extends EventTarget {
   complete = false;
@@ -130,11 +132,54 @@ describe('image readiness', () => {
     image.dispatchEvent(new Event('load'));
     expect(image.decode).not.toHaveBeenCalled();
   });
+});
 
-  it('preserves an error already set by the page-loader deadline', () => {
-    const script = readFileSync(new URL('../../src/scripts/character-idle.ts', import.meta.url), 'utf8');
-    expect(script).toContain("if (signal.aborted || rig.dataset.characterState === 'error') return;");
-    expect(script.indexOf("rig.dataset.characterState === 'error'"))
-      .toBeLessThan(script.indexOf('rig.dataset.characterState = state;'));
+describe('character preparation terminal errors', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  async function preparationFixture(state: string, image: FakeImage) {
+    const documentTarget = new EventTarget();
+    const dispatch = vi.spyOn(documentTarget, 'dispatchEvent');
+    vi.stubGlobal('document', documentTarget);
+    vi.stubGlobal('window', new EventTarget());
+    const { prepareCharacter } = await import('../../src/scripts/character-idle');
+    const rig = {
+      dataset: { characterState: state },
+      querySelectorAll: vi.fn(() => [image]),
+    };
+    return { prepareCharacter, rig, dispatch };
+  }
+
+  it('keeps an error present before preparation without restarting image readiness', async () => {
+    const image = new FakeImage();
+    image.complete = true;
+    image.naturalWidth = 100;
+    const { prepareCharacter, rig, dispatch } = await preparationFixture('error', image);
+
+    await prepareCharacter(rig as unknown as HTMLElement, new AbortController().signal);
+
+    expect(rig.dataset.characterState).toBe('error');
+    expect(rig.querySelectorAll).not.toHaveBeenCalled();
+    expect(image.decode).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('keeps an error assigned while image decoding is pending', async () => {
+    const image = new FakeImage();
+    image.complete = true;
+    image.naturalWidth = 100;
+    let finishDecode!: () => void;
+    image.decode.mockImplementation(() => new Promise<void>((resolve) => { finishDecode = resolve; }));
+    const { prepareCharacter, rig, dispatch } = await preparationFixture('loading', image);
+    const pending = prepareCharacter(rig as unknown as HTMLElement, new AbortController().signal);
+    await Promise.resolve();
+    expect(image.decode).toHaveBeenCalledOnce();
+
+    rig.dataset.characterState = 'error';
+    finishDecode();
+    await pending;
+
+    expect(rig.dataset.characterState).toBe('error');
+    expect(dispatch).not.toHaveBeenCalled();
   });
 });

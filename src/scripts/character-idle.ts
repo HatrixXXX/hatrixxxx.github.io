@@ -48,7 +48,8 @@ function isMobile(): boolean {
   return window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768;
 }
 
-async function prepareCharacter(rig: HTMLElement, signal: AbortSignal): Promise<void> {
+export async function prepareCharacter(rig: HTMLElement, signal: AbortSignal): Promise<void> {
+  if (rig.dataset.characterState === 'error') return;
   rig.dataset.characterState = 'loading';
   const images = [...rig.querySelectorAll<HTMLImageElement>('img')] as ReadinessImage[];
   const state = await waitForImages(images, 8_000, signal);
