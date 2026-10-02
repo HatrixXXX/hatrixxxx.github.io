@@ -17,6 +17,7 @@ const cover = currentTrack?.cover;
   data-music-player
   data-empty={String(isEmpty)}
   data-display-mode={mode}
+  data-layout-state={mode === 'home' ? 'pending' : 'ready'}
   data-ui-state={mode === 'home' ? 'expanded' : 'collapsed'}
   transition:persist="music-player"
 >
@@ -153,6 +154,11 @@ const cover = currentTrack?.cover;
     position: absolute;
     width: 380px;
     height: 195px;
+  }
+
+  .music-player[data-display-mode='home'][data-layout-state='pending'] {
+    visibility: hidden;
+    transition: none;
   }
 
   /* ── inner: two-column grid ──────────────────────── */

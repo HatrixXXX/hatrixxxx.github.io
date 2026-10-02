@@ -52,6 +52,32 @@ function setExpanded(player: HTMLElement, expanded: boolean): void {
   toggle?.setAttribute('aria-label', nextState ? '收起音乐播放器' : '展开音乐播放器');
 }
 
+export function synchronizeMusicPlayerLayout(
+  player: HTMLElement,
+  root: Document,
+  pathname: string | undefined,
+): void {
+  const mode = pathname ? (pathname === '/' ? 'home' : 'dock') : player.dataset.displayMode ?? 'dock';
+  player.dataset.displayMode = mode;
+  if (mode === 'home') {
+    player.dataset.layoutState = 'pending';
+    const panel = root.querySelector<HTMLElement>('[data-home-panel="music"]');
+    if (!panel) return;
+    player.style.left = panel.style.left || '0px';
+    player.style.top = panel.style.top || '0px';
+    player.style.transform = panel.style.transform || '';
+    player.style.transformOrigin = '0 0';
+    void player.offsetWidth;
+  } else {
+    player.style.left = '';
+    player.style.top = '';
+    player.style.transform = '';
+    player.style.transformOrigin = '';
+  }
+  player.dataset.layoutState = 'ready';
+  root.dispatchEvent?.(new CustomEvent('hatrix:player-layout-ready'));
+}
+
 export function initializeMusicPlayer(
   tracks: readonly Track[] = playlist,
   root: Document = document,
@@ -70,23 +96,7 @@ export function initializeMusicPlayer(
   }
   if (pathname) player.dataset.playerPath = pathname;
 
-  // When transition:persist moves the player to the home-side layer,
-  // sync its position and transform to match the HomePanel[data-home-panel="music"].
-  if (mode === 'home') {
-    const panel = root.querySelector<HTMLElement>('[data-home-panel="music"]');
-    if (panel) {
-      const ps = panel.style;
-      player.style.left = ps.left || '0px';
-      player.style.top = ps.top || '0px';
-      player.style.transform = ps.transform || '';
-      player.style.transformOrigin = '0 0';
-    }
-  } else {
-    player.style.left = '';
-    player.style.top = '';
-    player.style.transform = '';
-    player.style.transformOrigin = '';
-  }
+  synchronizeMusicPlayerLayout(player, root, pathname);
 
   if (player.dataset.bound === 'true') {
     return audio;
@@ -259,6 +269,12 @@ export function initializeMusicPlayer(
 }
 
 if (typeof document !== 'undefined') {
+  document.addEventListener('astro:before-preparation', (raw) => {
+    const to = (raw as unknown as { to?: URL }).to;
+    if (to?.pathname === '/') {
+      document.querySelector<HTMLElement>('[data-music-player]')?.setAttribute('data-layout-state', 'pending');
+    }
+  });
   document.addEventListener('astro:page-load', () => {
     void initializeMusicPlayer();
   });
