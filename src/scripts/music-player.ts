@@ -269,14 +269,20 @@ export function initializeMusicPlayer(
 }
 
 if (typeof document !== 'undefined') {
-  document.addEventListener('astro:before-preparation', (raw) => {
+  document.addEventListener('astro:before-swap', (raw) => {
     const to = (raw as unknown as { to?: URL }).to;
     if (to?.pathname === '/') {
       document.querySelector<HTMLElement>('[data-music-player]')?.setAttribute('data-layout-state', 'pending');
     }
   });
+  document.addEventListener('astro:after-swap', () => {
+    void initializeMusicPlayer();
+  });
   document.addEventListener('astro:page-load', () => {
     void initializeMusicPlayer();
+  });
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) void initializeMusicPlayer();
   });
   initializeMusicPlayer();
 }

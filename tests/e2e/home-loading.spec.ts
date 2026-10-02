@@ -23,18 +23,8 @@ test('a pending player layout independently holds the loader', async ({ page }) 
 test('a pending background independently holds the loader', async ({ page }) => {
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
-  // Astro emits the initial page-load after window.load. Give the background
-  // a cold URL at that event so the real readiness probe can remain pending
-  // independently of the initial document's load event and character decoder.
-  await page.addInitScript(() => {
-    document.addEventListener('astro:page-load', () => {
-      const canvas = document.querySelector<HTMLElement>('[data-home-canvas]')!;
-      const value = canvas.style.getPropertyValue('--home-background-image');
-      canvas.style.setProperty('--home-background-image', value.replace('f=webp', 'f=webp&readiness-probe=1'));
-    }, { once: true });
-  });
   let requested = false;
-  await page.route('**/*readiness-probe=1', async (route) => {
+  await page.route((url) => url.pathname.startsWith('/_image') && url.href.includes('liupin-workshop'), async (route) => {
     requested = true;
     await gate;
     await route.continue();
@@ -155,6 +145,93 @@ test('dismisses after the deadline and never reveals a late character', async ({
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
   await expect(rig).toHaveAttribute('data-character-state', 'error');
   await expect(rig).toBeHidden();
+});
+
+test('starts the cold-load deadline before an eager layer permits window.load', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/character-parts/head.webp', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const rig = page.locator('[data-char-rig]');
+  const loader = page.locator('#page-loader');
+  try {
+    expect(await page.evaluate(() => document.readyState)).toBe('interactive');
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(rig).toHaveAttribute('data-character-state', 'error', { timeout: 10_000 });
+    await expect(loader).not.toHaveClass(/pl-visible/);
+    expect(await page.evaluate(() => document.readyState)).toBe('interactive');
+  } finally {
+    release();
+  }
+  await page.waitForLoadState('load');
+  await expect.poll(() => rig.locator('[data-part="head"]').evaluate((element: HTMLImageElement) =>
+    element.complete && element.naturalWidth > 0)).toBe(true);
+  await expect(rig).toHaveAttribute('data-character-state', 'error');
+  await expect(rig).toBeHidden();
+  await expect(loader).not.toHaveClass(/pl-visible/);
+});
+
+test('a canceled return-home navigation keeps the dock player ready and usable', async ({ page }) => {
+  await page.addInitScript(() => {
+    const instances: HTMLAudioElement[] = [];
+    Object.defineProperty(window, '__playerAudioInstances', { value: instances });
+    window.Audio = new Proxy(window.Audio, {
+      construct(target, args) {
+        const instance = Reflect.construct(target, args) as HTMLAudioElement;
+        instances.push(instance);
+        return instance;
+      },
+    });
+  });
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
+  await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
+  await expect(page).toHaveURL('/plans/');
+  const player = page.locator('[data-music-player]');
+  await player.evaluate((node) => node.setAttribute('data-persist-probe', 'original'));
+  let release!: () => void;
+  let requested!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const homeRequested = new Promise<void>((resolve) => { requested = resolve; });
+  await page.route(/\/$/, async (route) => {
+    requested();
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.locator('[data-back-button]').dispatchEvent('click');
+    await homeRequested;
+    await page.evaluate(() => {
+      const anchor = document.createElement('a');
+      anchor.href = '#canceled-return';
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+    });
+    await expect(page).toHaveURL('/plans/#canceled-return');
+    await expect(player).toHaveAttribute('data-layout-state', 'ready');
+    await expect(player).toHaveAttribute('data-display-mode', 'dock');
+    await expect(player).toBeVisible();
+    await player.locator('[data-player-toggle]').click();
+    await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+    await player.locator('[data-player-toggle]').click();
+    await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
+  } finally {
+    release();
+  }
+  await page.unrouteAll({ behavior: 'wait' });
+  await expect(page).toHaveURL('/plans/#canceled-return');
+  await expect(player).toHaveAttribute('data-layout-state', 'ready');
+  await expect(player).toHaveAttribute('data-display-mode', 'dock');
+  await expect(player).toHaveAttribute('data-persist-probe', 'original');
+  await expect(player).toHaveCount(1);
+  await player.locator('[data-player-toggle]').click();
+  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+  expect(await page.evaluate(() =>
+    (window as unknown as { __playerAudioInstances: HTMLAudioElement[] }).__playerAudioInstances.length)).toBe(1);
 });
 
 for (const outcome of ['ready', 'deadline'] as const) {

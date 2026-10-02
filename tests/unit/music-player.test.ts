@@ -169,17 +169,52 @@ describe('music player', () => {
     expect(Audio).not.toHaveBeenCalled();
   });
 
-  it('marks the persisted player pending before navigation back home', async () => {
-    const { root, player } = playerFixture('/about/');
+  it('only hides a confirmed home swap and restores its layout before page-load', async () => {
+    const { root, player, panel, location } = playerFixture('/about/');
     player.dataset.bound = 'true';
+    panel.style.left = '12px';
+    panel.style.top = '785px';
     vi.stubGlobal('document', root);
+    vi.stubGlobal('window', root.defaultView);
     vi.resetModules();
     await import('../../src/scripts/music-player');
 
-    root.dispatchEvent(Object.assign(new Event('astro:before-preparation'), { to: new URL('https://hatrix.site/blog/') }));
-    expect(player.attributes.get('data-layout-state')).toBeUndefined();
     root.dispatchEvent(Object.assign(new Event('astro:before-preparation'), { to: new URL('https://hatrix.site/') }));
+    expect(player.attributes.get('data-layout-state')).toBeUndefined();
+    expect(player.dataset.layoutState).toBe('ready');
+    root.dispatchEvent(Object.assign(new Event('astro:before-swap'), { to: new URL('https://hatrix.site/blog/') }));
+    expect(player.attributes.get('data-layout-state')).toBeUndefined();
+    root.dispatchEvent(Object.assign(new Event('astro:before-swap'), { to: new URL('https://hatrix.site/') }));
     expect(player.attributes.get('data-layout-state')).toBe('pending');
+
+    location.pathname = '/';
+    root.dispatchEvent(new Event('astro:after-swap'));
+    expect(player.dataset.displayMode).toBe('home');
+    expect(player.dataset.layoutState).toBe('ready');
+    expect(player.style.left).toBe(panel.style.left);
+    expect(player.style.top).toBe(panel.style.top);
+    root.dispatchEvent(new Event('astro:page-load'));
+    expect(player.dataset.layoutState).toBe('ready');
+    expect(Audio).not.toHaveBeenCalled();
+  });
+
+  it('restores the current-path player layout on persisted pageshow', async () => {
+    const { root, player } = playerFixture('/about/');
+    player.dataset.bound = 'true';
+    vi.stubGlobal('document', root);
+    vi.stubGlobal('window', root.defaultView);
+    vi.resetModules();
+    await import('../../src/scripts/music-player');
+    player.dataset.layoutState = 'pending';
+    player.dataset.displayMode = 'home';
+    player.style.left = '12px';
+
+    root.defaultView!.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+
+    expect(player.dataset.layoutState).toBe('ready');
+    expect(player.dataset.displayMode).toBe('dock');
+    expect(player.style.left).toBe('');
+    expect(Audio).not.toHaveBeenCalled();
   });
 
   it('retains the same Audio instance and track position across home and dock navigation', () => {

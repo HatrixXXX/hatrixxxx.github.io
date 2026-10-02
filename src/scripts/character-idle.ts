@@ -43,6 +43,13 @@ const DEBUG_JOINTS = [
 
 type CleanupFn = () => void;
 let activeCleanup: CleanupFn | null = null;
+let activeRig: HTMLElement | null = null;
+
+function cleanupCharacterIdle(): void {
+  activeCleanup?.();
+  activeCleanup = null;
+  activeRig = null;
+}
 
 function isMobile(): boolean {
   return window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768;
@@ -61,14 +68,14 @@ export async function prepareCharacter(rig: HTMLElement, signal: AbortSignal): P
 }
 
 function initCharacterIdle(): void {
-  activeCleanup?.();
-  activeCleanup = null;
-
   const rig = document.querySelector<HTMLElement>('[data-char-rig]');
+  if (rig && rig === activeRig) return;
+  cleanupCharacterIdle();
   if (!rig) return;
 
   const canvas = rig.querySelector<HTMLElement>('.char-canvas');
   if (!canvas) return;
+  activeRig = rig;
 
   const allGroups = Array.from(rig.querySelectorAll<HTMLElement>('.char-group'));
   const cleanupFns: CleanupFn[] = [];
@@ -204,6 +211,11 @@ function initCharacterIdle(): void {
 }
 
 document.addEventListener('astro:page-load', initCharacterIdle);
-document.addEventListener('astro:before-swap', () => { activeCleanup?.(); activeCleanup = null; });
-window.addEventListener('pagehide', () => { activeCleanup?.(); activeCleanup = null; });
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCharacterIdle, { once: true });
+} else {
+  initCharacterIdle();
+}
+document.addEventListener('astro:before-swap', cleanupCharacterIdle);
+window.addEventListener('pagehide', cleanupCharacterIdle);
 window.addEventListener('pageshow', (event) => { if (event.persisted) initCharacterIdle(); });

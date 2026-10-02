@@ -135,10 +135,52 @@ describe('image readiness', () => {
 });
 
 describe('character preparation terminal errors', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('keeps the DOM-ready character wait and deadline on the later page-load', async () => {
+    vi.useFakeTimers();
+    const image = new FakeImage();
+    image.complete = true;
+    image.naturalWidth = 100;
+    image.decode.mockImplementation(() => new Promise<void>(() => {}));
+    const rig = {
+      dataset: { characterState: 'loading' },
+      querySelector: () => ({}),
+      querySelectorAll: (selector: string) => selector === 'img' ? [image] : [],
+    };
+    const documentTarget = Object.assign(new EventTarget(), {
+      readyState: 'loading',
+      querySelector: () => rig,
+    });
+    const windowTarget = Object.assign(new EventTarget(), {
+      matchMedia: () => ({ matches: true }),
+      location: { search: '' },
+    });
+    vi.stubGlobal('document', documentTarget);
+    vi.stubGlobal('window', windowTarget);
+    vi.stubGlobal('IntersectionObserver', class {
+      observe() {}
+      disconnect() {}
+    });
+    vi.resetModules();
+    await import('../../src/scripts/character-idle');
+
+    documentTarget.dispatchEvent(new Event('DOMContentLoaded'));
+    await vi.advanceTimersByTimeAsync(4_000);
+    documentTarget.dispatchEvent(new Event('astro:page-load'));
+    await vi.advanceTimersByTimeAsync(4_000);
+
+    expect(image.decode).toHaveBeenCalledOnce();
+    expect(rig.dataset.characterState).toBe('error');
+    windowTarget.dispatchEvent(new Event('pagehide'));
+    expect(vi.getTimerCount()).toBe(0);
+  });
 
   async function preparationFixture(state: string, image: FakeImage) {
-    const documentTarget = new EventTarget();
+    const documentTarget = Object.assign(new EventTarget(), { readyState: 'loading' });
     const dispatch = vi.spyOn(documentTarget, 'dispatchEvent');
     vi.stubGlobal('document', documentTarget);
     vi.stubGlobal('window', new EventTarget());

@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import sharp from 'sharp';
 
@@ -28,14 +28,6 @@ function alphaBounds(data: Buffer, width: number, height: number): Bounds {
 }
 
 async function main(): Promise<void> {
-  await mkdir(outputRoot, { recursive: true });
-  const existing = await readdir(outputRoot);
-  await Promise.all(
-    existing
-      .filter((file) => /\.(?:png|webp)$/i.test(file))
-      .map((file) => rm(join(outputRoot, file))),
-  );
-
   const files = (await readdir(sourceRoot)).filter((file) => file.endsWith('.png')).sort();
   if (files.length !== 29) throw new Error(`Expected 29 source PNGs, found ${files.length}`);
 
@@ -48,16 +40,30 @@ async function main(): Promise<void> {
     }
     const bounds = alphaBounds(data, info.width, info.height);
     const name = basename(file, '.png');
-    const output = join(outputRoot, `${name}.webp`);
-    await sharp(input)
-      .extract({ left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height })
-      .webp({ lossless: true, effort: 6 })
-      .toFile(output);
     parts[name] = { src: `/character-parts/${name}.webp`, ...bounds };
   }
 
   const source = `export interface CharacterPart {\n  src: string;\n  x: number;\n  y: number;\n  width: number;\n  height: number;\n}\n\nexport const CHARACTER_CANVAS = { width: 1024, height: 1536 } as const;\n\nexport const CHARACTER_PARTS = ${JSON.stringify(parts, null, 2)} as const satisfies Record<string, CharacterPart>;\n\nexport type CharacterPartName = keyof typeof CHARACTER_PARTS;\n`;
-  await writeFile(manifestPath, source, 'utf8');
+  const stagingRoot = await mkdtemp(join(root, '.character-parts-'));
+  try {
+    for (const file of files) {
+      const name = basename(file, '.png');
+      const bounds = parts[name]!;
+      await sharp(join(sourceRoot, file))
+        .extract({ left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height })
+        .webp({ lossless: true, effort: 6 })
+        .toFile(join(stagingRoot, `${name}.webp`));
+    }
+    await writeFile(join(stagingRoot, 'character-parts.ts'), source, 'utf8');
+
+    await mkdir(outputRoot, { recursive: true });
+    for (const name of Object.keys(parts)) {
+      await rename(join(stagingRoot, `${name}.webp`), join(outputRoot, `${name}.webp`));
+    }
+    await rename(join(stagingRoot, 'character-parts.ts'), manifestPath);
+  } finally {
+    await rm(stagingRoot, { recursive: true, force: true });
+  }
 }
 
 void main();

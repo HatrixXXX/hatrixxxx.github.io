@@ -25,7 +25,7 @@
  *   astro:page-load → showLoader() + 快速跑满 → complete()
  *
  * 硬导航首页:
- *   astro:page-load → showLoader() + fakeProgress(85%) → waitHomeDone() → complete()
+ *   DOMContentLoaded → showLoader() + fakeProgress(85%) → waitHomeDone() → complete()
  *
  * 异常情况
  * --------
@@ -226,6 +226,7 @@ function waitHomeDone(s: State): void {
 // ── 跨事件状态 ────────────────────────────────────────────────────────────────
 
 let pending: State | null = null;
+let initialHomeBootstrapped = false;
 
 /** 清理悬空的 pending（页面重新可见时调用） */
 function drainPending(): void {
@@ -250,12 +251,15 @@ document.addEventListener('astro:before-preparation', (raw) => {
   pending = s;
 });
 
-document.addEventListener('astro:before-swap', () => cancelHomeWait?.());
+document.addEventListener('astro:before-swap', () => {
+  initialHomeBootstrapped = false;
+  cancelHomeWait?.();
+});
 window.addEventListener('pagehide', () => cancelHomeWait?.(true));
 
 // ── page-load：页面激活 ──────────────────────────────────────────────────────
 
-document.addEventListener('astro:page-load', () => {
+function onPageLoad(): void {
   const path   = location.pathname;
   const isHome = document.documentElement.dataset.pageKind === 'home';
 
@@ -282,6 +286,25 @@ document.addEventListener('astro:page-load', () => {
     fakeProgress(s, 100, 500);
     window.setTimeout(() => complete(s), 550);
   }
+}
+
+function bootstrapInitialHome(): void {
+  if (document.documentElement.dataset.pageKind !== 'home') return;
+  initialHomeBootstrapped = true;
+  onPageLoad();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapInitialHome, { once: true });
+} else {
+  bootstrapInitialHome();
+}
+document.addEventListener('astro:page-load', () => {
+  if (initialHomeBootstrapped) {
+    initialHomeBootstrapped = false;
+    return;
+  }
+  onPageLoad();
 });
 
 // ── 防止 pending 泄漏：页面重新可见时清理 ───────────────────────────────────
