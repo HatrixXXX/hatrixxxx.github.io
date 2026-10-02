@@ -13,9 +13,9 @@ import {
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 it('tracks the current content and local link inventories', async () => {
-  expect(EXPECTED_LOCAL_LINKS).toBe(3273);
+  expect(EXPECTED_LOCAL_LINKS).toBe(1392);
   expect(await readFile('scripts/check-built-site.ts', 'utf8')).toContain(
-    'expectedPostCount: fixtureMode ? 2 : 43'
+    'expectedPostCount: fixtureMode ? 2 : 13'
   );
 });
 
@@ -412,7 +412,7 @@ it('requires a generated route for every source post', async () => {
   await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
   await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
 
-  for (let index = 0; index < 40; index += 1) {
+  for (let index = 0; index < 13; index += 1) {
     const slug = `published-${index}`;
     await writeSiteFile(
       root,
@@ -425,13 +425,13 @@ it('requires a generated route for every source post', async () => {
 
   expect(result.errors).toEqual([]);
 
-  await unlink(join(root, 'dist/posts/published-39/index.html'));
+  await unlink(join(root, 'dist/posts/published-12/index.html'));
 
   const missingRouteResult = await inspectProjectBuiltSite(root);
 
   expect(missingRouteResult.errors).toEqual(expect.arrayContaining([
-    expect.stringContaining('Expected 40 generated post routes, found 39.'),
-    expect.stringContaining('/posts/published-39/')
+    expect.stringContaining('Expected 13 generated post routes, found 12.'),
+    expect.stringContaining('/posts/published-12/')
   ]));
 });
 

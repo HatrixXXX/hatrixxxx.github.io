@@ -58,13 +58,13 @@ test('blog navigation and the home entry target the blog index', async ({ page }
   await page.waitForURL('**/blog/all/');
   await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
 });
-test('all legacy slugs resolve, including the spaced slug clicked from pagination', async ({
+test('all legacy slugs resolve and the merged FPGA route stays available', async ({
   page,
   request
 }) => {
   test.setTimeout(120_000);
   const slugs = await legacySlugs();
-  expect(slugs).toHaveLength(41);
+  expect(slugs).toHaveLength(13);
 
   const responses: Array<{ slug: string; response: APIResponse }> = [];
   for (let offset = 0; offset < slugs.length; offset += 4) {
@@ -79,19 +79,19 @@ test('all legacy slugs resolve, including the spaced slug clicked from paginatio
     expect(response.status(), slug).toBe(200);
   }
 
-  await page.goto('/page/3/');
-  const spacedSlugLink = page
-    .locator('a[href="/posts/FPGA开发(1)Vivado+Vitis 使用/"]')
+  await page.goto('/blog/');
+  const mergedFpgaLink = page
+    .locator('a[href="/posts/FPGA开发(0)基本概念/"]')
     .first();
-  await spacedSlugLink.click();
+  await mergedFpgaLink.click();
   await expect(page).toHaveURL(
-    new RegExp(`${encodeURI('/posts/FPGA开发(1)Vivado+Vitis 使用/').replace(/[+()]/g, '\\$&')}$`)
+    new RegExp(`${encodeURI('/posts/FPGA开发(0)基本概念/').replace(/[+()]/g, '\\$&')}$`)
   );
-  await expect(page.locator('article[data-post] h1')).toContainText('Vivado + Vitis');
+  await expect(page.locator('article[data-post] h1')).toContainText('FPGA开发(0)基本概念');
 });
 
 test('Mermaid loader renders targets on astro page-load', async ({ page }) => {
-  await page.goto('/posts/FPGA开发(3)AXI协议/');
+  await page.goto('/posts/FPGA开发(0)基本概念/');
   await expect(page.locator('.language-mermaid')).toHaveCount(0);
 
   await page.locator('.prose').evaluate((prose) => {

@@ -23,7 +23,7 @@ for (const route of generatedRoutes) {
 
 test('content index pages reflect migrated data', async ({ page, request }) => {
   await page.goto('/archives/');
-  await expect(page.locator('[data-archive-total]')).toHaveText('41');
+  await expect(page.locator('[data-archive-total]')).toHaveText('13');
 
   for (const route of ['/categories/', '/tags/']) {
     expect((await request.get(route)).status()).toBe(404);
@@ -36,13 +36,13 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
   await expect(page.locator('main').getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', /HatrixXXX/);
 
   const rss = await (await request.get('/rss.xml')).text();
-  expect((rss.match(/<item>/g) ?? []).length).toBe(41);
+  expect((rss.match(/<item>/g) ?? []).length).toBe(13);
   expect(rss).not.toContain('<content:encoded');
 
   const searchResponse = await request.get('/search-index.json');
   expect(searchResponse.headers()['content-type']).toMatch(/^application\/json/);
   const search = await searchResponse.json();
-  expect(search).toHaveLength(41);
+  expect(search).toHaveLength(13);
   for (const document of search) {
     expect(document).not.toHaveProperty('category');
     expect(document).not.toHaveProperty('tags');

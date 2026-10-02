@@ -26,7 +26,7 @@ describe('remote image checking', () => {
       (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(prefix))
     );
 
-    expect(blogImageUrls).toHaveLength(280);
+    expect(blogImageUrls).toHaveLength(152);
     expect(unpinned).toHaveLength(0);
   });
 

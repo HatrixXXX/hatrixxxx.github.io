@@ -485,15 +485,16 @@ test('returning home reinitializes quotes and the clock once', async ({ page }) 
 test('pagination and legacy post paths stay available', async ({ page }) => {
   expect((await page.request.get('/page/1/')).status()).toBe(404);
   expect((await page.request.get('/page/2/')).status()).toBe(200);
-  await page.goto('/page/7/');
+  await page.goto('/page/2/');
   await expect(page.locator('article[data-post-card]')).toHaveCount(6);
-  await page.goto('/page/8/');
+  await page.goto('/page/3/');
   await expect(page.locator('article[data-post-card]')).toHaveCount(1);
+  expect((await page.request.get('/page/4/')).status()).toBe(404);
   await page.goto('/blog/');
-  const spacedSlugLink = page.locator('a[href="/posts/FPGA开发(1)Vivado+Vitis 使用/"]').first();
-  await expect(spacedSlugLink).toHaveCount(1);
-  const resolvedPath = await spacedSlugLink.evaluate((link) => new URL((link as HTMLAnchorElement).href).pathname);
-  expect(resolvedPath).toBe(encodeURI('/posts/FPGA开发(1)Vivado+Vitis 使用/'));
+  const mergedFpgaLink = page.locator('a[href="/posts/FPGA开发(0)基本概念/"]').first();
+  await expect(mergedFpgaLink).toHaveCount(1);
+  const resolvedPath = await mergedFpgaLink.evaluate((link) => new URL((link as HTMLAnchorElement).href).pathname);
+  expect(resolvedPath).toBe(encodeURI('/posts/FPGA开发(0)基本概念/'));
   expect((await page.request.get(resolvedPath)).status()).toBe(200);
 });
 
