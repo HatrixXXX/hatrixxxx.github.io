@@ -18,9 +18,9 @@ async function legacySlugs(): Promise<string[]> {
 }
 
 test('legacy post route renders enhanced article content', async ({ page }) => {
-  const response = await page.goto('/posts/本科数学大杂烩/');
+  const response = await page.goto('/posts/线性代数数学基础/');
   expect(response?.status()).toBe(200);
-  await expect(page.locator('article[data-post] h1')).toContainText('本科数学');
+  await expect(page.locator('article[data-post] h1')).toContainText('线性代数');
   await expect(page.locator('.katex').first()).toBeVisible();
 
   const firstTocLink = page.locator('[data-table-of-contents] a').first();
@@ -30,7 +30,7 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     'href',
-    new URL('/posts/本科数学大杂烩/', 'https://hatrix.site').href
+    new URL('/posts/线性代数数学基础/', 'https://hatrix.site').href
   );
   const giscus = page.locator('script[src="https://giscus.app/client.js"]');
   await expect(giscus).toHaveAttribute('data-repo', 'hatrixxxx/hatrixxxx.github.io');
@@ -64,7 +64,7 @@ test('all legacy slugs resolve and the merged FPGA route stays available', async
 }) => {
   test.setTimeout(120_000);
   const slugs = await legacySlugs();
-  expect(slugs).toHaveLength(13);
+  expect(slugs).toHaveLength(8);
 
   const responses: Array<{ slug: string; response: APIResponse }> = [];
   for (let offset = 0; offset < slugs.length; offset += 4) {
@@ -81,17 +81,17 @@ test('all legacy slugs resolve and the merged FPGA route stays available', async
 
   await page.goto('/blog/');
   const mergedFpgaLink = page
-    .locator('a[href="/posts/FPGA开发(0)基本概念/"]')
+    .locator('a[href="/posts/Xilinx FPGA开发/"]')
     .first();
   await mergedFpgaLink.click();
   await expect(page).toHaveURL(
-    new RegExp(`${encodeURI('/posts/FPGA开发(0)基本概念/').replace(/[+()]/g, '\\$&')}$`)
+    new RegExp(`${encodeURI('/posts/Xilinx FPGA开发/').replace(/[+()]/g, '\\$&')}$`)
   );
-  await expect(page.locator('article[data-post] h1')).toContainText('FPGA开发(0)基本概念');
+  await expect(page.locator('article[data-post] h1')).toContainText('Xilinx FPGA开发');
 });
 
 test('Mermaid loader renders targets on astro page-load', async ({ page }) => {
-  await page.goto('/posts/FPGA开发(0)基本概念/');
+  await page.goto('/posts/Xilinx FPGA开发/');
   await expect(page.locator('.language-mermaid')).toHaveCount(0);
 
   await page.locator('.prose').evaluate((prose) => {
@@ -109,7 +109,7 @@ test('Mermaid loader renders targets on astro page-load', async ({ page }) => {
 
 test('post layout has no mobile horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
   const sizes = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
     client: document.documentElement.clientWidth
@@ -119,7 +119,7 @@ test('post layout has no mobile horizontal overflow', async ({ page }) => {
 
 test('post layout places the sidebar, article and TOC in responsive reading order', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
 
   const desktopStack = await page.locator('.post-sidebar').boundingBox();
   const desktopPost = await page.locator('.post-column').boundingBox();
@@ -151,7 +151,7 @@ test('post layout places the sidebar, article and TOC in responsive reading orde
 
 test('sidebar stickiness is limited to desktop viewports tall enough for the full stack', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 760 });
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
 
   const stack = page.locator('.post-sidebar');
   await expect(stack).toHaveCSS('position', 'sticky');
@@ -205,7 +205,7 @@ test('Giscus uses the site dark theme and remounts once after client navigation'
     })
   );
 
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
   await expect(page.locator('[data-giscus-status]')).toBeHidden();
   const script = page.locator('script[src="https://giscus.app/client.js"]');
   await expect(script).toHaveCount(1);
@@ -239,7 +239,7 @@ test('Giscus uses the site dark theme and remounts once after client navigation'
 
 test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
 
   const desktopToc = page.locator('[data-toc-desktop]');
   const mobileToc = page.locator('details[data-toc-mobile]');
@@ -260,7 +260,7 @@ test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ 
 
 test('Giscus failure degrades comments without hiding the article', async ({ page }) => {
   await page.route('https://giscus.app/client.js', (route) => route.abort());
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
   await expect(page.locator('[data-giscus-status]')).toHaveText(
     '评论暂时无法加载，正文内容不受影响'
   );

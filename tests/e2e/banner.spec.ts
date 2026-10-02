@@ -16,7 +16,7 @@ test('non-home pages use the blog category header and omit article cover banners
     { width: 390, height: 844, bannerHeight: 200 }
   ]) {
     await page.setViewportSize(viewport);
-    for (const route of ['/blog/all/', '/posts/本科数学大杂烩/']) {
+    for (const route of ['/blog/all/', '/posts/线性代数数学基础/']) {
       await page.goto(route);
       if (route.startsWith('/posts/')) await expect(page.locator('.post-hero')).toHaveCount(0);
       else {

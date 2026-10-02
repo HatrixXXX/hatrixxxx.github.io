@@ -26,7 +26,7 @@ describe('remote image checking', () => {
       (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(prefix))
     );
 
-    expect(blogImageUrls).toHaveLength(152);
+    expect(blogImageUrls).toHaveLength(95);
     expect(unpinned).toHaveLength(0);
   });
 
@@ -54,14 +54,6 @@ describe('remote image checking', () => {
     const url = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/servlet%20(1).png';
 
     expect(extractImageUrls(`![](<${url}>)`)).toEqual([url]);
-  });
-
-  it.skipIf(USES_PUBLIC_FIXTURES)('includes the transformed cover from the real post source', async () => {
-    const transformedCover = `${IMMUTABLE_IMAGE_PREFIX}img/994.jpg!list1x.v2`;
-    const sources = await collectImageSources(contentRoot('posts'));
-
-    expect(sources.coverUrls.has(transformedCover)).toBe(true);
-    expect(sources.urls).toContain(transformedCover);
   });
 
   it('marks an unavailable transformed cover as a build-blocking cover failure', async () => {

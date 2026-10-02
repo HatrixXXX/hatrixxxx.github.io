@@ -13,8 +13,8 @@ import { projectPanel, projectRectOnPanelPlane, type Point } from '@/lib/home-pr
 
 const clockTemplate = '0000/00/00 00:00:00';
 const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quality: 65 });
-const lowerLeftPlane = { width: 208, height: 88, corners: [[399, 768], [606, 756], [607, 843], [401, 855]] } as const;
-// The left cards retain their subtle inward projection and tighter local gaps.
+const lowerLeftPlane = { width: 208, height: 88, corners: [[399, 768], [606, 756], [606, 844], [399, 856]] } as const;
+// The four lower-left cards share one affine plane with vertical sides and parallel top/bottom edges.
 const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
   identity: { width: 180, height: 180, corners: [[72, 355], [252, 355], [252, 535], [72, 535]] },

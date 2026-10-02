@@ -5,28 +5,30 @@ describe('home panel perspective', () => {
   it.each([
     {
       name: 'quote', rect: { x: -392, y: -114, width: 600, height: 110 },
-      expected: [[3.03235, 676.69026], [604.69004, 642.03334], [605.95432, 752.02541], [7.95288, 786.68447]]
+      expected: [[8.88462, 676.61538], [606, 642], [606, 752], [8.88462, 786.61538]]
     },
     {
       name: 'music', rect: { x: -392, y: 0, width: 380, height: 172 },
-      expected: [[8.13068, 790.65909], [387.04924, 768.69280], [391.05280, 937.95820], [15.70261, 959.92314]]
+      expected: [[8.88462, 790.61538], [387.05769, 768.69231], [387.05769, 940.69231], [8.88462, 962.61538]]
     },
     {
       name: 'friends', rect: { x: 0, y: 0, width: 208, height: 88 },
-      expected: [[399, 768], [606, 756], [607, 843], [401, 855]]
+      expected: [[399, 768], [606, 756], [606, 844], [399, 856]]
     },
     {
       name: 'guestbook', rect: { x: 0, y: 92, width: 208, height: 80 },
-      expected: [[401.09045, 858.93459], [607.04523, 846.93460], [607.94559, 925.26595], [402.89116, 937.26544]]
+      expected: [[399, 860], [606, 848], [606, 928], [399, 940]]
     }
-  ] as const)('projects $name through the unchanged friends plane', ({ rect, expected }) => {
+  ] as const)('projects $name through the shared affine lower-left plane', ({ rect, expected }) => {
     const corners = projectRectOnPanelPlane(208, 88,
-      [[399, 768], [606, 756], [607, 843], [401, 855]], rect);
+      [[399, 768], [606, 756], [606, 844], [399, 856]], rect);
     corners.forEach((corner, index) => {
       corner.forEach((coordinate, axis) => {
         expect(Math.abs(coordinate - expected[index][axis])).toBeLessThan(0.05);
       });
     });
+    expect(corners[0][0]).toBeCloseTo(corners[3][0], 5);
+    expect(corners[1][0]).toBeCloseTo(corners[2][0], 5);
   });
 
   it.each([

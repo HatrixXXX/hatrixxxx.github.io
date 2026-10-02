@@ -69,7 +69,7 @@ test('Hatrix is a flat transparent label beside the level ring', async ({ page }
   expect(nameBox!.x - ringBox!.x - ringBox!.width).toBeGreaterThanOrEqual(12);
 });
 
-test('lower stack shares the unchanged friends plane with exact local gaps and extents', async ({ page }) => {
+test('lower stack shares one vertical-sided parallelogram plane with exact gaps and extents', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
   const geometry = await page.evaluate(() => {
@@ -97,10 +97,10 @@ test('lower stack shares the unchanged friends plane with exact local gaps and e
     };
   });
   const expectedCorners = {
-    quote: [[3.03235, 676.69026], [604.69004, 642.03334], [605.95432, 752.02541], [7.95288, 786.68447]],
-    music: [[8.13068, 790.65909], [387.04924, 768.69280], [391.05280, 937.95820], [15.70261, 959.92314]],
-    friends: [[399, 768], [606, 756], [607, 843], [401, 855]],
-    guestbook: [[401.09045, 858.93459], [607.04523, 846.93460], [607.94559, 925.26595], [402.89116, 937.26544]]
+    quote: [[8.88462, 676.61538], [606, 642], [606, 752], [8.88462, 786.61538]],
+    music: [[8.88462, 790.61538], [387.05769, 768.69231], [387.05769, 940.69231], [8.88462, 962.61538]],
+    friends: [[399, 768], [606, 756], [606, 844], [399, 856]],
+    guestbook: [[399, 860], [606, 848], [606, 928], [399, 940]]
   };
   for (const [name, expected] of Object.entries(expectedCorners)) {
     geometry.projected[name].forEach((point, index) => {
@@ -109,6 +109,12 @@ test('lower stack shares the unchanged friends plane with exact local gaps and e
     });
   }
   const { quote, music, friends, guestbook } = geometry.local;
+  for (const projected of Object.values(geometry.projected)) {
+    expect.soft(projected[0].x).toBeCloseTo(projected[3].x, 2);
+    expect.soft(projected[1].x).toBeCloseTo(projected[2].x, 2);
+    expect.soft(projected[1].x - projected[0].x).toBeCloseTo(projected[2].x - projected[3].x, 2);
+    expect.soft(projected[1].y - projected[0].y).toBeCloseTo(projected[2].y - projected[3].y, 2);
+  }
   // Computed matrix3d values are serialized to limited precision by Chromium.
   for (const edge of [0, 1]) {
     expect.soft(music[edge].y - quote[edge + 2].y).toBeCloseTo(4, 2);
@@ -486,15 +492,13 @@ test('pagination and legacy post paths stay available', async ({ page }) => {
   expect((await page.request.get('/page/1/')).status()).toBe(404);
   expect((await page.request.get('/page/2/')).status()).toBe(200);
   await page.goto('/page/2/');
-  await expect(page.locator('article[data-post-card]')).toHaveCount(6);
-  await page.goto('/page/3/');
-  await expect(page.locator('article[data-post-card]')).toHaveCount(1);
-  expect((await page.request.get('/page/4/')).status()).toBe(404);
+  await expect(page.locator('article[data-post-card]')).toHaveCount(2);
+  expect((await page.request.get('/page/3/')).status()).toBe(404);
   await page.goto('/blog/');
-  const mergedFpgaLink = page.locator('a[href="/posts/FPGA开发(0)基本概念/"]').first();
+  const mergedFpgaLink = page.locator('a[href="/posts/Xilinx FPGA开发/"]').first();
   await expect(mergedFpgaLink).toHaveCount(1);
   const resolvedPath = await mergedFpgaLink.evaluate((link) => new URL((link as HTMLAnchorElement).href).pathname);
-  expect(resolvedPath).toBe(encodeURI('/posts/FPGA开发(0)基本概念/'));
+  expect(resolvedPath).toBe(encodeURI('/posts/Xilinx FPGA开发/'));
   expect((await page.request.get(resolvedPath)).status()).toBe(200);
 });
 

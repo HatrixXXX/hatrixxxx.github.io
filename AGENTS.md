@@ -50,7 +50,7 @@ corepack pnpm test:e2e
 
 ## 目录边界
 
-- `.private-content/posts/`：13 篇已发布文章，文件名只保留标题，不加日期前缀；公开路径由 `legacySlug` 生成。`.private-content/` 是独立的私有 Git 仓库；公开仓库不跟踪文章 Markdown。
+- `.private-content/posts/`：8 篇已发布文章，文件名只保留标题，不加日期前缀；公开路径由 `legacySlug` 生成。`.private-content/` 是独立的私有 Git 仓库；公开仓库不跟踪文章 Markdown。
 - `.env.local`：本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；文件已忽略，禁止提交、分享或复制到任何内容仓库。
 - `src/content/projects/`：允许为空的作品集合。
 - `src/data/playlist.ts`：允许为空的音乐列表。
@@ -75,7 +75,7 @@ corepack pnpm test:e2e
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；当前允许 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增同源图片也要带 `@<commit>`；增加 ref 时，同时更新 `astro.config.ts` 的精确 `/img/**` remote pattern 和 inventory 测试。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。
 - Playwright 当前收集 215 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀。首页基线覆盖桌面、平板和手机，包含 v5 分块立绘、v6 背景、年龄等级、Hatrix 名称和左下金句。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
 - 首页使用 `1920×1080` 设计画布并等比缩放。右侧 7 个面板共用一个 `matrix3d` 父平面，子卡片只设置局部位置和尺寸，不单独旋转；组内间距保持固定。超宽屏用纯 CSS 平移左右两组贴近视口边缘，竖屏留上下空白，不改为单列。角色层运行时使用 `public/character-parts/*.webp` 裁边 WebP，分块源 PNG 位于 `src/assets/home/character-parts-source/`。用户明确选定的原始 v5 PNG `src/assets/home/hatrix-character-v5.png` 仍是合成和视觉核对基准，与 `output/imagegen/hatrix-character-v5.png` 原图一致，保留该版本的全部人物与外围元素；此前迭代中的元素删减要求不再用于改写这张已选定图片。立绘按前景近景比例裁在画布内；背景为 `src/assets/home/liupin-workshop-v6.png`，按 v5 立绘和人机协作设定重画。人物位于背景之上、入口面板之下，允许与卡片重叠，不拦截输入；不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
-- 首页金句语料在 `src/data/home-quotes.ts`，每句以中文句号结尾，每 3 秒自动切换，正常动效为 420ms 竖向滚动和透明度变化；不提供手动切换或暂停控制；减少动态效果时仍每 3 秒换字，只取消动画。金句、播放器、友链和留言板共用原友链的投影平面；金句与下排、友链与留言板各隔 4 个设计像素，两列隔 12 个设计像素，播放器与留言板底边同在局部 y=172。首页播放器高 172px，侧边模式仍为 170px。金句使用不可交互的 live region，底色和边框与首页播放器一致；金句和友链共用 `--home-panel-radius: 3px`。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。工具推荐仅作标题，快捷链接复用既有关于子页；计划和实验场分别为 `/plans/`、`/lab/`。
+- 首页金句语料在 `src/data/home-quotes.ts`，每句以中文句号结尾，每 3 秒自动切换，正常动效为 420ms 竖向滚动和透明度变化；不提供手动切换或暂停控制；减少动态效果时仍每 3 秒换字，只取消动画。金句、播放器、友链和留言板共用一个仿射平面，均为上下边平行、左右边竖直的 2D 平行四边形；金句与下排、友链与留言板各隔 4 个设计像素，两列隔 12 个设计像素，播放器与留言板底边同在局部 y=172。首页播放器高 172px，侧边模式仍为 170px。金句使用不可交互的 live region，底色和边框与首页播放器一致；金句和友链共用 `--home-panel-radius: 3px`。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。工具推荐仅作标题，快捷链接复用既有关于子页；计划和实验场分别为 `/plans/`、`/lab/`。
 - 首页左侧等级圆环保留，Hatrix 名称位于其右侧。生日为 `2002-07-29`，等级按北京时间的周岁计算，每年 7 月 29 日零点升级；进度为距上次生日的整天数除以两次生日之间的实际天数（365 或 366）。浏览器进入首页、跨日和恢复页面时更新，不使用构建日期；无 JavaScript 时显示未知等级。
 - 现有非首页普通 Hero 高度为桌面和平板 `240px`，宽度不超过 `768px` 时为 `200px`；文章详情保持标题和元信息开头，不恢复题图横幅；全站不渲染波浪分隔。
 - 当前仅文章页启用页脚及站点统计，普通布局默认不显示页脚；页脚版权区显示版权与“保留所有权利”，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
@@ -89,7 +89,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 1392 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 1100 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 

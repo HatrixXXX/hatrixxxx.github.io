@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('inner pages share the brandless centered navigation', async ({ page }) => {
-  for (const path of ['/blog/', '/projects/', '/about/', '/posts/本科数学大杂烩/']) {
+  for (const path of ['/blog/', '/projects/', '/about/', '/posts/线性代数数学基础/']) {
     await page.goto(path);
     await expect(page.locator('header[data-site-header] .brand')).toHaveCount(0);
     const controls = page.locator('[data-header-controls]');

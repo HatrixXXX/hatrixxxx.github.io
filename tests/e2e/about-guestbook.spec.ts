@@ -42,7 +42,7 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
 });
 
 test('about and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {
-  for (const path of ['/about/', '/about/hobbies/', '/posts/本科数学大杂烩/']) {
+  for (const path of ['/about/', '/about/hobbies/', '/posts/线性代数数学基础/']) {
     await page.goto(path);
     const stack = path.startsWith('/posts/') ? page.locator('.post-sidebar') : page.locator('[data-sidebar-stack]');
     await expect(stack).toHaveCount(1);

@@ -428,7 +428,7 @@ test('PhotoSwipe is requested only when an article image is activated', async ({
     }
   });
 
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
   expect(lightboxRequests).toEqual([]);
   await page.locator('article img').first().click();
   await expect(page.locator('.pswp')).toBeVisible();
@@ -436,7 +436,7 @@ test('PhotoSwipe is requested only when an article image is activated', async ({
 });
 
 test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
   const image = page.locator('article img').first();
   await image.focus();
   await expect(image).toBeFocused();

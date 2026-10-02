@@ -8,7 +8,7 @@ for (const { route, href, label } of [
     ...Array.from({ length: 6 }, (_, index) => `/page/${index + 2}/`)
   ].map((route) => ({ route, href: '/', label: '返回主页' })),
   { route: '/blog/all/', href: '/', label: '返回主页' },
-  { route: '/posts/本科数学大杂烩/', href: '/blog/', label: '返回博客文章' }
+  { route: '/posts/线性代数数学基础/', href: '/blog/', label: '返回博客文章' }
 ]) {
   test(`${route} exposes a consistent back destination`, async ({ page }) => {
     await page.goto(route);

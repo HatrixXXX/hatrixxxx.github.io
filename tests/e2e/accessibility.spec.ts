@@ -68,7 +68,7 @@ test('decorative motion stops when reduced motion is requested', async ({ page }
 test('desktop and mobile navigation and table of contents match their viewport', async ({
   page
 }, testInfo) => {
-  await page.goto('/posts/本科数学大杂烩/');
+  await page.goto('/posts/线性代数数学基础/');
   const isMobile = testInfo.project.name === 'mobile-390';
   const hasCollapsedNavigation = testInfo.project.name !== 'desktop-1440';
 
