@@ -13,7 +13,11 @@ for (const path of routes) {
   test(`${path} has stable responsive structure`, async ({ page }) => {
     test.setTimeout(path.startsWith('/posts/') ? 360_000 : 60_000);
     await page.route('https://giscus.app/**', (route) => route.abort());
-    if (path === '/') await page.emulateMedia({ reducedMotion: 'reduce' });
+    if (path === '/') {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.clock.install({ time: new Date('2026-10-02T00:00:00Z') });
+      await page.clock.pauseAt(new Date('2026-10-02T00:00:01Z'));
+    }
     await page.goto(path);
     // Sakana is limited to About routes; none of these representative routes use it.
     await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
