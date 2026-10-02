@@ -5,8 +5,30 @@ describe('home panel perspective', () => {
   it('projects an arbitrary rectangle through the existing player plane', () => {
     const corners = projectRectOnPanelPlane(380, 195,
       [[12, 785], [387, 768], [392, 948], [15, 976]],
-      { x: 0, y: -122, width: 625, height: 110 });
-    const expected = [[10.14163, 666.68361], [603.25482, 650.41978], [606.63642, 747.40897], [11.81658, 773.32227]];
+      { x: 0, y: -114, width: 625, height: 110 });
+    const expected = [[10.26305, 674.41448], [603.50004, 657.45311], [606.88318, 754.48643], [11.93884, 781.10645]];
+    corners.forEach((corner, index) => {
+      corner.forEach((coordinate, axis) => {
+        expect(Math.abs(coordinate - expected[index][axis])).toBeLessThan(0.05);
+      });
+    });
+  });
+
+  it.each([
+    {
+      width: 380, height: 195,
+      plane: [[12, 785], [387, 768], [392, 948], [15, 976]],
+      rect: { x: 0, y: 0, width: 380, height: 184 },
+      expected: [[12, 785], [387, 768], [391.71641, 937.79070], [14.82979, 965.16324]]
+    },
+    {
+      width: 208, height: 88,
+      plane: [[399, 768], [606, 756], [607, 843], [401, 855]],
+      rect: { x: 0, y: 92, width: 208, height: 80 },
+      expected: [[401.09045, 858.93459], [607.04523, 846.93460], [607.94559, 925.26595], [402.89116, 937.26544]]
+    }
+  ] as const)('projects the lower-stack rectangle at $rect.height design pixels', ({ width, height, plane, rect, expected }) => {
+    const corners = projectRectOnPanelPlane(width, height, plane, rect);
     corners.forEach((corner, index) => {
       corner.forEach((coordinate, axis) => {
         expect(Math.abs(coordinate - expected[index][axis])).toBeLessThan(0.05);

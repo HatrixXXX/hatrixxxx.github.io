@@ -29,7 +29,7 @@ test('Hatrix is a flat transparent label beside the level ring', async ({ page }
   expect(nameBox!.x - ringBox!.x - ringBox!.width).toBeGreaterThanOrEqual(12);
 });
 
-test('quote shares the player plane and aligns with the lower row outer edges', async ({ page }) => {
+test('lower stack shares two planes with 4px gaps and aligned bottom edges', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
   const geometry = await page.evaluate(() => {
@@ -42,29 +42,56 @@ test('quote shares the player plane and aligns with the lower row outer edges', 
     const music = panel('music');
     const quote = corners(panel('quote'));
     const musicMatrix = new DOMMatrix(getComputedStyle(music).transform);
-    const expected = corners(music, musicMatrix, { x: 0, y: -122, width: 625, height: 110 });
+    const expected = corners(music, musicMatrix, { x: 0, y: -114, width: 625, height: 110 });
     const quoteBottomInPlayerPlane = new DOMPoint(quote[3].x, quote[3].y).matrixTransform(musicMatrix.inverse());
+    const friends = panel('friends');
+    const friendsMatrix = new DOMMatrix(getComputedStyle(friends).transform);
+    const guestbook = corners(panel('guestbook'));
+    const expectedGuestbook = corners(friends, friendsMatrix, { x: 0, y: 92, width: 208, height: 80 });
+    const guestbookTopInFriendPlane = new DOMPoint(guestbook[0].x, guestbook[0].y).matrixTransform(friendsMatrix.inverse());
+    const musicCorners = corners(music);
+    const friendCorners = corners(friends);
     const quoteBox = panel('quote').getBoundingClientRect();
     const musicBox = music.getBoundingClientRect();
     const friendsBox = panel('friends').getBoundingClientRect();
     const yAt = (a: { x: number; y: number }, b: { x: number; y: number }, x: number) => a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
-    const rowGaps = [corners(music), corners(panel('friends'))].flatMap((row) => {
+    const rowGaps = [musicCorners, friendCorners].flatMap((row) => {
       const left = Math.max(quote[3].x, row[0].x);
       const right = Math.min(quote[2].x, row[1].x);
       return [left, right].map((x) => yAt(row[0], row[1], x) - yAt(quote[3], quote[2], x));
     });
+    const friendGuestbookGaps = [guestbook[0].x, friendCorners[2].x].map((x) => yAt(guestbook[0], guestbook[1], x) - yAt(friendCorners[3], friendCorners[2], x));
+    const seamX = (musicCorners[2].x + guestbook[3].x) / 2;
+    const ringBox = panel('identity').getBoundingClientRect();
+    const nameBox = panel('identity-name').getBoundingClientRect();
     return {
       planeErrors: quote.map((point, index) => Math.hypot(point.x - expected[index].x, point.y - expected[index].y)),
+      guestbookPlaneErrors: guestbook.map((point, index) => Math.hypot(point.x - expectedGuestbook[index].x, point.y - expectedGuestbook[index].y)),
       leftError: Math.abs(quoteBox.left - musicBox.left),
       rightError: Math.abs(quoteBox.right - friendsBox.right),
       localPlayerGap: -quoteBottomInPlayerPlane.y / quoteBottomInPlayerPlane.w,
-      minimumRowGap: Math.min(...rowGaps)
+      localFriendGap: guestbookTopInFriendPlane.y / guestbookTopInFriendPlane.w - friends.offsetHeight,
+      minimumRowGap: Math.min(...rowGaps),
+      minimumFriendGuestbookGap: Math.min(...friendGuestbookGaps),
+      musicPanelHeight: music.offsetHeight,
+      musicCssHeight: getComputedStyle(document.querySelector<HTMLElement>('[data-music-player]')!).height,
+      bottomAlignmentError: Math.abs(yAt(musicCorners[3], musicCorners[2], seamX) - yAt(guestbook[3], guestbook[2], seamX)),
+      ring: { x: ringBox.x, y: ringBox.y, width: ringBox.width, height: ringBox.height },
+      name: { x: nameBox.x, y: nameBox.y, width: nameBox.width, height: nameBox.height }
     };
   });
   for (const error of geometry.planeErrors) expect.soft(error).toBeLessThan(0.05);
+  for (const error of geometry.guestbookPlaneErrors) expect.soft(error).toBeLessThan(0.05);
   expect.soft(geometry.leftError).toBeLessThanOrEqual(2);
   expect.soft(geometry.rightError).toBeLessThanOrEqual(2);
-  expect.soft(geometry.localPlayerGap).toBeCloseTo(12, 3);
+  expect.soft(geometry.localPlayerGap).toBeCloseTo(4, 3);
+  expect.soft(geometry.localFriendGap).toBeCloseTo(4, 3);
+  expect.soft(geometry.musicPanelHeight).toBe(184);
+  expect.soft(geometry.musicCssHeight).toBe('184px');
+  expect.soft(geometry.bottomAlignmentError).toBeLessThanOrEqual(1);
+  expect.soft(geometry.ring).toEqual({ x: 72, y: 355, width: 180, height: 180 });
+  expect.soft(geometry.name).toEqual({ x: 264, y: 389, width: 300, height: 112 });
+  expect.soft(geometry.minimumFriendGuestbookGap).toBeGreaterThan(0);
   expect(geometry.minimumRowGap).toBeGreaterThan(0);
 });
 
