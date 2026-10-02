@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { projectPanel } from '../../src/lib/home-projection';
+import { projectPanel, projectRectOnPanelPlane } from '../../src/lib/home-projection';
 
 describe('home panel perspective', () => {
+  it('projects an arbitrary rectangle through the existing player plane', () => {
+    const corners = projectRectOnPanelPlane(380, 195,
+      [[12, 785], [387, 768], [392, 948], [15, 976]],
+      { x: 0, y: -126, width: 625, height: 110 });
+    const expected = [[10.08, 662.82], [603.13, 646.90], [606.51, 743.87], [11.76, 769.43]];
+    corners.forEach((corner, index) => {
+      corner.forEach((coordinate, axis) => {
+        expect(Math.abs(coordinate - expected[index][axis])).toBeLessThan(0.05);
+      });
+    });
+  });
+
   it.each([
     [[1072, 171], [1910, 98], [1910, 400], [1070, 417]],
     [[31, 693], [641, 649], [646, 801], [33, 829]]

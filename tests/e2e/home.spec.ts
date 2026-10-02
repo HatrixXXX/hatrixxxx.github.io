@@ -3,6 +3,64 @@ import { expect, test } from '@playwright/test';
 const firstQuote = '轻松即单纯，速成即精准';
 const secondQuote = '兽人永不为奴，除非包吃包住';
 
+test('Hatrix is a flat transparent label beside the level ring', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  const name = page.locator('[data-home-panel="identity-name"]');
+  expect.soft(await name.evaluate((node) => getComputedStyle(node).transform)).toBe('none');
+  const surface = await name.locator('.identity-name').evaluate((node) => {
+    const style = getComputedStyle(node);
+    return {
+      background: style.backgroundColor,
+      borders: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
+      shadow: style.boxShadow
+    };
+  });
+  expect.soft(surface.background).toBe('rgba(0, 0, 0, 0)');
+  expect.soft(surface.borders).toEqual(['0px', '0px', '0px', '0px']);
+  expect.soft(surface.shadow).toBe('none');
+  const ringBox = await page.locator('[data-home-panel="identity"]').boundingBox();
+  const nameBox = await name.boundingBox();
+  expect(ringBox).not.toBeNull();
+  expect(nameBox).not.toBeNull();
+  expect(nameBox!.x - ringBox!.x - ringBox!.width).toBeGreaterThanOrEqual(12);
+});
+
+test('quote shares the player plane and aligns with the lower row outer edges', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  const geometry = await page.evaluate(() => {
+    const panel = (name: string) => document.querySelector<HTMLElement>(`[data-home-panel="${name}"]`)!;
+    const corners = (element: HTMLElement, matrix = new DOMMatrix(getComputedStyle(element).transform), rect = { x: 0, y: 0, width: element.offsetWidth, height: element.offsetHeight }) =>
+      [[rect.x, rect.y], [rect.x + rect.width, rect.y], [rect.x + rect.width, rect.y + rect.height], [rect.x, rect.y + rect.height]].map(([x, y]) => {
+        const point = new DOMPoint(x, y).matrixTransform(matrix);
+        return { x: point.x / point.w, y: point.y / point.w };
+      });
+    const music = panel('music');
+    const quote = corners(panel('quote'));
+    const expected = corners(music, new DOMMatrix(getComputedStyle(music).transform), { x: 0, y: -126, width: 625, height: 110 });
+    const quoteBox = panel('quote').getBoundingClientRect();
+    const musicBox = music.getBoundingClientRect();
+    const friendsBox = panel('friends').getBoundingClientRect();
+    const yAt = (a: { x: number; y: number }, b: { x: number; y: number }, x: number) => a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
+    const rowGaps = [corners(music), corners(panel('friends'))].flatMap((row) => {
+      const left = Math.max(quote[3].x, row[0].x);
+      const right = Math.min(quote[2].x, row[1].x);
+      return [left, right].map((x) => yAt(row[0], row[1], x) - yAt(quote[3], quote[2], x));
+    });
+    return {
+      planeErrors: quote.map((point, index) => Math.hypot(point.x - expected[index].x, point.y - expected[index].y)),
+      leftError: Math.abs(quoteBox.left - musicBox.left),
+      rightError: Math.abs(quoteBox.right - friendsBox.right),
+      minimumRowGap: Math.min(...rowGaps)
+    };
+  });
+  for (const error of geometry.planeErrors) expect.soft(error).toBeLessThan(0.05);
+  expect.soft(geometry.leftError).toBeLessThanOrEqual(2);
+  expect.soft(geometry.rightError).toBeLessThanOrEqual(2);
+  expect(geometry.minimumRowGap).toBeGreaterThan(0);
+});
+
 test('quote clears the friends panel across its entire projected bottom edge', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');

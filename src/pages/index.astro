@@ -9,20 +9,21 @@ import HomePanel from '@/components/HomePanel.astro';
 import HomeIcon from '@/components/HomeIcon.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
 import CharacterIdle from '@/components/CharacterIdle.astro';
-import { projectPanel, type Point } from '@/lib/home-projection';
+import { projectPanel, projectRectOnPanelPlane, type Point } from '@/lib/home-projection';
 
 const clockTemplate = '0000/00/00 00:00:00';
 const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quality: 65 });
+const musicPanel = { width: 380, height: 195, corners: [[12, 785], [387, 768], [392, 948], [15, 976]] } as const;
 // The left cards retain their subtle inward projection and tighter local gaps.
 const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
   identity: { width: 180, height: 180, corners: [[72, 395], [252, 395], [252, 575], [72, 575]] },
-  identityName: { width: 300, height: 112, corners: [[264, 420], [558, 408], [560, 516], [266, 532]] },
-  quote: { width: 595, height: 110, corners: [[10, 684], [604.4, 656], [605.9, 750], [12, 763]] },
-  music: { width: 380, height: 195, corners: [[12, 785], [387, 768], [392, 948], [15, 976]] },
+  identityName: { x: 264, y: 429, width: 300, height: 112 },
+  quote: { width: 625, height: 110, corners: projectRectOnPanelPlane(musicPanel.width, musicPanel.height, musicPanel.corners, { x: 0, y: -126, width: 625, height: 110 }) },
+  music: musicPanel,
   friends: { width: 208, height: 88, corners: [[399, 768], [606, 756], [607, 843], [401, 855]] },
   guestbook: { width: 208, height: 80, corners: [[402, 865], [607, 851], [608, 929], [404, 944]] }
-} satisfies Record<string, { width: number; height: number; corners: [Point, Point, Point, Point] }>;
+} satisfies Record<string, { width: number; height: number; corners?: readonly Point[]; x?: number; y?: number }>;
 
 // Every right-side card is a rectangle on this ONE plane. Only the parent is projected.
 const rightPlane = { width: 930, height: 952, corners: [[970, 120], [1910, 8], [1910, 1068], [970, 958]] } as const;
@@ -197,7 +198,7 @@ const rightPanels = {
   .level-number { font-size: 66px; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
   .level-label { width: 84px; margin-top: 9px; padding-top: 6px; border-top: 1px solid #adb5ba80; font-size: 23px; line-height: 1; text-align: center; }
   .level-fallback { margin: 8px -40px 0; font-size: 18px; text-align: center; }
-  .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; border: 1px solid #b8a6c133; border-radius: 3px; background: #211e29d9; box-shadow: inset 0 1px #f8e7cf0d; }
+  .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; background: transparent; }
   .identity-name h1 { margin: 0; color: var(--home-ink); font: 500 64px/1 'IBM Plex Mono', monospace; letter-spacing: -.035em; }
   .quote-card { position: relative; width: 100%; height: 100%; background: #211e29ed; border: 1px solid #b8a6c133; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf0d; }
   .quote-switch { width: 100%; height: 100%; border: 0; padding: 20px 54px 20px 24px; text-align: left; color: var(--home-ink); background: transparent; cursor: pointer; }

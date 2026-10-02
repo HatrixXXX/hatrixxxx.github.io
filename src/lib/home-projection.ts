@@ -1,5 +1,12 @@
 export type Point = readonly [number, number];
 
+export interface PlaneRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** Map the rectangle to TL, TR, BR, BL reference corners, including perspective. */
 export function projectPanel(width: number, height: number, corners: readonly Point[]): number[] {
   const [a, b, c, d] = corners;
@@ -17,5 +24,27 @@ export function projectPanel(width: number, height: number, corners: readonly Po
     (d[0] - a[0] + h * d[0]) / height, (d[1] - a[1] + h * d[1]) / height, 0, h / height,
     0, 0, 1, 0,
     a[0], a[1], 0, 1
+  ];
+}
+
+function transformPoint(matrix: readonly number[], [x, y]: Point): Point {
+  const projectedX = matrix[0] * x + matrix[4] * y + matrix[12];
+  const projectedY = matrix[1] * x + matrix[5] * y + matrix[13];
+  const projectedW = matrix[3] * x + matrix[7] * y + matrix[15];
+  return [projectedX / projectedW, projectedY / projectedW];
+}
+
+export function projectRectOnPanelPlane(
+  panelWidth: number,
+  panelHeight: number,
+  panelCorners: readonly Point[],
+  rect: PlaneRect,
+): [Point, Point, Point, Point] {
+  const matrix = projectPanel(panelWidth, panelHeight, panelCorners);
+  return [
+    transformPoint(matrix, [rect.x, rect.y]),
+    transformPoint(matrix, [rect.x + rect.width, rect.y]),
+    transformPoint(matrix, [rect.x + rect.width, rect.y + rect.height]),
+    transformPoint(matrix, [rect.x, rect.y + rect.height]),
   ];
 }
