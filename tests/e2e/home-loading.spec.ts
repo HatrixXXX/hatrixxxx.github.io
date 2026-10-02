@@ -102,3 +102,42 @@ for (const outcome of ['ready', 'deadline'] as const) {
     await expect(loader).not.toHaveClass(/pl-visible/);
   });
 }
+
+for (const departure of ['pagehide', 'external', 'non-html'] as const) {
+  test(`${departure} clears a canceled home loader before page recovery`, async ({ page }) => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    await page.clock.install();
+    await page.route('**/character-parts/foot_L.webp', async (route) => {
+      await gate;
+      await route.continue();
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const loader = page.locator('#page-loader');
+    try {
+      await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'loading');
+      await expect(loader).toHaveClass(/pl-visible/);
+      await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 100);
+      await page.evaluate((kind) => {
+        if (kind === 'pagehide') {
+          window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+        } else {
+          const to = new URL(kind === 'external' ? 'https://example.com/' : '/rss.xml', location.href);
+          document.dispatchEvent(Object.assign(new Event('astro:before-preparation'), { to }));
+        }
+      }, departure);
+      await expect(loader).not.toHaveClass(/pl-visible|pl-done/);
+      await expect(loader.locator(':scope > *')).toHaveCount(0);
+      await page.evaluate(() => {
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await page.clock.runFor(9_000);
+      await expect(loader).not.toHaveClass(/pl-visible|pl-done/);
+      await expect(loader.locator(':scope > *')).toHaveCount(0);
+    } finally {
+      release();
+      await page.clock.resume();
+    }
+  });
+}

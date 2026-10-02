@@ -150,7 +150,7 @@ function complete(s: State): void {
 
 // ── 首页：等背景图、立绘终态和播放器布局就绪 ─────────────────────────────────
 
-let cancelHomeWait: (() => void) | null = null;
+let cancelHomeWait: ((resetOverlay?: boolean) => void) | null = null;
 
 function waitForState(
   element: HTMLElement | null,
@@ -188,12 +188,17 @@ function waitHomeDone(s: State): void {
   const player = document.querySelector<HTMLElement>('[data-music-player]');
   const controller = new AbortController();
   let settled = false;
-  const dispose = () => {
+  const dispose = (resetOverlay = false) => {
     if (settled) return;
     settled = true;
     window.clearTimeout(guard);
     controller.abort();
     cancelAnimationFrame(s.raf);
+    if (resetOverlay) {
+      s.finished = true;
+      s.el.classList.remove('pl-visible', 'pl-done');
+      s.el.innerHTML = '';
+    }
     if (cancelHomeWait === dispose) cancelHomeWait = null;
   };
   const finish = () => {
@@ -234,10 +239,11 @@ function drainPending(): void {
 // ── before-preparation：VT 导航开始 ─────────────────────────────────────────
 
 document.addEventListener('astro:before-preparation', (raw) => {
-  const supersedesHomeWait = cancelHomeWait !== null;
-  cancelHomeWait?.();
   const to = (raw as unknown as { to?: URL }).to;
-  if (!to || !isSameOriginPage(to) || (!supersedesHomeWait && hasVisited(to.pathname))) return;
+  const replacesOverlay = !!to && isSameOriginPage(to);
+  const supersedesHomeWait = cancelHomeWait !== null;
+  cancelHomeWait?.(!replacesOverlay);
+  if (!to || !replacesOverlay || (!supersedesHomeWait && hasVisited(to.pathname))) return;
   const s = showLoader();
   if (!s) return;
   fakeProgress(s, 80);
@@ -245,7 +251,7 @@ document.addEventListener('astro:before-preparation', (raw) => {
 });
 
 document.addEventListener('astro:before-swap', () => cancelHomeWait?.());
-window.addEventListener('pagehide', () => cancelHomeWait?.());
+window.addEventListener('pagehide', () => cancelHomeWait?.(true));
 
 // ── page-load：页面激活 ──────────────────────────────────────────────────────
 
