@@ -13,17 +13,16 @@ import { projectPanel, projectRectOnPanelPlane, type Point } from '@/lib/home-pr
 
 const clockTemplate = '0000/00/00 00:00:00';
 const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quality: 65 });
-const lowerLeftPlane = { width: 380, height: 195, corners: [[12, 785], [387, 768], [392, 948], [15, 976]] } as const;
-const friendPlane = { width: 208, height: 88, corners: [[399, 768], [606, 756], [607, 843], [401, 855]] } as const;
+const lowerLeftPlane = { width: 208, height: 88, corners: [[399, 768], [606, 756], [607, 843], [401, 855]] } as const;
 // The left cards retain their subtle inward projection and tighter local gaps.
 const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
   identity: { width: 180, height: 180, corners: [[72, 355], [252, 355], [252, 535], [72, 535]] },
   identityName: { x: 264, y: 389, width: 300, height: 112 },
-  quote: { width: 625, height: 110, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: 0, y: -114, width: 625, height: 110 }) },
-  music: { width: 380, height: 184, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: 0, y: 0, width: 380, height: 184 }) },
-  friends: friendPlane,
-  guestbook: { width: 208, height: 80, corners: projectRectOnPanelPlane(friendPlane.width, friendPlane.height, friendPlane.corners, { x: 0, y: 92, width: 208, height: 80 }) }
+  quote: { width: 600, height: 110, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: -392, y: -114, width: 600, height: 110 }) },
+  music: { width: 380, height: 172, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: -392, y: 0, width: 380, height: 172 }) },
+  friends: { width: 208, height: 88, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: 0, y: 0, width: 208, height: 88 }) },
+  guestbook: { width: 208, height: 80, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: 0, y: 92, width: 208, height: 80 }) }
 } satisfies Record<string, { width: number; height: number; corners?: readonly Point[]; x?: number; y?: number }>;
 
 // Every right-side card is a rectangle on this ONE plane. Only the parent is projected.

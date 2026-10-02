@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const firstQuote = '轻松即单纯，速成即精准';
-const secondQuote = '兽人永不为奴，除非包吃包住';
+const firstQuote = '轻松即单纯，速成即精准。';
+const secondQuote = '兽人永不为奴，除非包吃包住。';
 
 async function installQuoteProbe(page: Page) {
   await page.clock.install();
@@ -14,7 +14,7 @@ async function installQuoteProbe(page: Page) {
     const schedule = window.setTimeout.bind(window);
     const cancel = window.clearTimeout.bind(window);
     window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
-      if (delay !== 15_000 || typeof handler !== 'function') return schedule(handler, delay, ...args);
+      if (delay !== 3_000 || typeof handler !== 'function') return schedule(handler, delay, ...args);
       const id = schedule(() => { timers.delete(id); handler(...args); }, delay);
       timers.add(id);
       return id;
@@ -69,7 +69,7 @@ test('Hatrix is a flat transparent label beside the level ring', async ({ page }
   expect(nameBox!.x - ringBox!.x - ringBox!.width).toBeGreaterThanOrEqual(12);
 });
 
-test('lower stack shares two planes with 4px gaps and aligned bottom edges', async ({ page }) => {
+test('lower stack shares the unchanged friends plane with exact local gaps and extents', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
   const geometry = await page.evaluate(() => {
@@ -79,60 +79,55 @@ test('lower stack shares two planes with 4px gaps and aligned bottom edges', asy
         const point = new DOMPoint(x, y).matrixTransform(matrix);
         return { x: point.x / point.w, y: point.y / point.w };
       });
-    const music = panel('music');
-    const quote = corners(panel('quote'));
-    const musicMatrix = new DOMMatrix(getComputedStyle(music).transform);
-    const expected = corners(music, musicMatrix, { x: 0, y: -114, width: 625, height: 110 });
-    const quoteBottomInPlayerPlane = new DOMPoint(quote[3].x, quote[3].y).matrixTransform(musicMatrix.inverse());
     const friends = panel('friends');
-    const friendsMatrix = new DOMMatrix(getComputedStyle(friends).transform);
-    const guestbook = corners(panel('guestbook'));
-    const expectedGuestbook = corners(friends, friendsMatrix, { x: 0, y: 92, width: 208, height: 80 });
-    const guestbookTopInFriendPlane = new DOMPoint(guestbook[0].x, guestbook[0].y).matrixTransform(friendsMatrix.inverse());
-    const musicCorners = corners(music);
-    const friendCorners = corners(friends);
-    const quoteBox = panel('quote').getBoundingClientRect();
-    const musicBox = music.getBoundingClientRect();
-    const friendsBox = panel('friends').getBoundingClientRect();
-    const yAt = (a: { x: number; y: number }, b: { x: number; y: number }, x: number) => a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
-    const rowGaps = [musicCorners, friendCorners].flatMap((row) => {
-      const left = Math.max(quote[3].x, row[0].x);
-      const right = Math.min(quote[2].x, row[1].x);
-      return [left, right].map((x) => yAt(row[0], row[1], x) - yAt(quote[3], quote[2], x));
-    });
-    const friendGuestbookGaps = [guestbook[0].x, friendCorners[2].x].map((x) => yAt(guestbook[0], guestbook[1], x) - yAt(friendCorners[3], friendCorners[2], x));
-    const seamX = (musicCorners[2].x + guestbook[3].x) / 2;
+    const inverse = new DOMMatrix(getComputedStyle(friends).transform).inverse();
+    const projected = Object.fromEntries(['quote', 'music', 'friends', 'guestbook'].map((name) => [name, corners(panel(name))]));
+    const local = Object.fromEntries(Object.entries(projected).map(([name, points]) => [name, points.map(({ x, y }) => {
+      const point = new DOMPoint(x, y).matrixTransform(inverse);
+      return { x: point.x / point.w, y: point.y / point.w };
+    })]));
     const ringBox = panel('identity').getBoundingClientRect();
     const nameBox = panel('identity-name').getBoundingClientRect();
     return {
-      planeErrors: quote.map((point, index) => Math.hypot(point.x - expected[index].x, point.y - expected[index].y)),
-      guestbookPlaneErrors: guestbook.map((point, index) => Math.hypot(point.x - expectedGuestbook[index].x, point.y - expectedGuestbook[index].y)),
-      leftError: Math.abs(quoteBox.left - musicBox.left),
-      rightError: Math.abs(quoteBox.right - friendsBox.right),
-      localPlayerGap: -quoteBottomInPlayerPlane.y / quoteBottomInPlayerPlane.w,
-      localFriendGap: guestbookTopInFriendPlane.y / guestbookTopInFriendPlane.w - friends.offsetHeight,
-      minimumRowGap: Math.min(...rowGaps),
-      minimumFriendGuestbookGap: Math.min(...friendGuestbookGaps),
-      musicPanelHeight: music.offsetHeight,
+      projected, local,
+      musicPanelHeight: panel('music').offsetHeight,
       musicCssHeight: getComputedStyle(document.querySelector<HTMLElement>('[data-music-player]')!).height,
-      bottomAlignmentError: Math.abs(yAt(musicCorners[3], musicCorners[2], seamX) - yAt(guestbook[3], guestbook[2], seamX)),
       ring: { x: ringBox.x, y: ringBox.y, width: ringBox.width, height: ringBox.height },
       name: { x: nameBox.x, y: nameBox.y, width: nameBox.width, height: nameBox.height }
     };
   });
-  for (const error of geometry.planeErrors) expect.soft(error).toBeLessThan(0.05);
-  for (const error of geometry.guestbookPlaneErrors) expect.soft(error).toBeLessThan(0.05);
-  expect.soft(geometry.leftError).toBeLessThanOrEqual(2);
-  expect.soft(geometry.rightError).toBeLessThanOrEqual(2);
-  expect.soft(geometry.localPlayerGap).toBeCloseTo(4, 3);
-  expect.soft(geometry.localFriendGap).toBeCloseTo(4, 3);
-  expect.soft(geometry.musicPanelHeight).toBe(184);
-  expect.soft(geometry.musicCssHeight).toBe('184px');
-  expect.soft(geometry.bottomAlignmentError).toBeLessThanOrEqual(1);
+  const expectedCorners = {
+    quote: [[3.03235, 676.69026], [604.69004, 642.03334], [605.95432, 752.02541], [7.95288, 786.68447]],
+    music: [[8.13068, 790.65909], [387.04924, 768.69280], [391.05280, 937.95820], [15.70261, 959.92314]],
+    friends: [[399, 768], [606, 756], [607, 843], [401, 855]],
+    guestbook: [[401.09045, 858.93459], [607.04523, 846.93460], [607.94559, 925.26595], [402.89116, 937.26544]]
+  };
+  for (const [name, expected] of Object.entries(expectedCorners)) {
+    geometry.projected[name].forEach((point, index) => {
+      expect.soft(Math.abs(point.x - expected[index][0]), `${name} corner ${index} x`).toBeLessThan(0.05);
+      expect.soft(Math.abs(point.y - expected[index][1]), `${name} corner ${index} y`).toBeLessThan(0.05);
+    });
+  }
+  const { quote, music, friends, guestbook } = geometry.local;
+  // Computed matrix3d values are serialized to limited precision by Chromium.
+  for (const edge of [0, 1]) {
+    expect.soft(music[edge].y - quote[edge + 2].y).toBeCloseTo(4, 2);
+    expect.soft(friends[edge].y - quote[edge + 2].y).toBeCloseTo(4, 2);
+    expect.soft(guestbook[edge].y - friends[edge + 2].y).toBeCloseTo(4, 2);
+  }
+  for (const bottom of [2, 3]) {
+    expect.soft(music[bottom].y).toBeCloseTo(172, 2);
+    expect.soft(guestbook[bottom].y).toBeCloseTo(172, 2);
+  }
+  expect.soft(friends[0].x - music[1].x).toBeCloseTo(12, 2);
+  for (const points of [quote, [...music, ...friends, ...guestbook]]) {
+    expect.soft(Math.min(...points.map(({ x }) => x))).toBeCloseTo(-392, 2);
+    expect.soft(Math.max(...points.map(({ x }) => x))).toBeCloseTo(208, 2);
+  }
+  expect.soft(geometry.musicPanelHeight).toBe(172);
+  expect.soft(geometry.musicCssHeight).toBe('172px');
   expect.soft(geometry.ring).toEqual({ x: 72, y: 355, width: 180, height: 180 });
   expect.soft(geometry.name).toEqual({ x: 264, y: 389, width: 300, height: 112 });
-  expect.soft(geometry.minimumFriendGuestbookGap).toBeGreaterThan(0);
-  expect(geometry.minimumRowGap).toBeGreaterThan(0);
 });
 
 test('quote clears the friends panel across its entire projected bottom edge', async ({ page }) => {
@@ -343,21 +338,31 @@ test('home quote is a non-interactive live region without manual switching', asy
   await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
   await page.keyboard.press('Space');
   await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
-  await page.clock.runFor(14_999);
+  await page.clock.runFor(2_999);
   await expect(text).toHaveText(firstQuote);
 });
 
-test('home quote advances automatically after fifteen seconds', async ({ page }) => {
+test('home quote advances automatically after three seconds with running vertical animation', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await installQuoteProbe(page);
   await page.goto('/');
   const text = page.locator('[data-quote-text]');
-  await expect(text).toHaveText(firstQuote);
-  expect((await quoteProbe(page)).timers).toBe(1);
-  await page.clock.runFor(14_999);
-  await expect(text).toHaveText(firstQuote);
+  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
+  expect.soft((await quoteProbe(page)).timers).toBe(1);
+  await page.clock.runFor(2_999);
+  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
   await page.clock.runFor(1);
   await expect(text).toHaveText(secondQuote);
   expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 1 });
+  const animation = await text.evaluate((node) => {
+    const running = node.getAnimations().find((animation) => animation.playState === 'running');
+    const effect = running?.effect as KeyframeEffect | undefined;
+    return { duration: effect?.getTiming().duration, frames: effect?.getKeyframes().map(({ transform, opacity }) => ({ transform, opacity })) };
+  });
+  expect(animation).toEqual({ duration: 420, frames: [
+    { transform: 'translateY(100%)', opacity: '0' },
+    { transform: 'translateY(0px)', opacity: '1' }
+  ] });
 });
 
 test('home reduced motion changes quotes without animated scrolling', async ({ page }) => {
@@ -365,8 +370,8 @@ test('home reduced motion changes quotes without animated scrolling', async ({ p
   await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
-  await page.clock.runFor(14_999);
-  await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
+  await page.clock.runFor(2_999);
+  await expect.soft(page.locator('[data-quote-text]')).toHaveText(firstQuote, { timeout: 200 });
   await page.clock.runFor(1);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
   expect(await quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
@@ -398,14 +403,14 @@ test('enabling reduced motion cancels quote animation and preserves the next dea
   await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
-  await page.clock.runFor(15_000);
+  await page.clock.runFor(3_000);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
   expect(await quote.evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === 'running'))).toBe(true);
   await page.clock.runFor(100);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
   expect((await quoteProbe(page)).timers).toBe(1);
-  await page.clock.runFor(14_899);
+  await page.clock.runFor(2_899);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
   await page.clock.runFor(1);
   await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
@@ -470,7 +475,7 @@ test('returning home reinitializes quotes and the clock once', async ({ page }) 
     await expect(page.locator('[data-music-player]')).toHaveAttribute('data-display-mode', 'home');
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
     const previousTime = await page.locator('[data-home-clock]').getAttribute('aria-label');
-    await page.clock.runFor(15_000);
+    await page.clock.runFor(3_000);
     await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
     expect((await quoteProbe(page)).timers).toBe(1);
     await expect(page.locator('[data-home-clock]')).not.toHaveAttribute('aria-label', previousTime!);
@@ -513,7 +518,7 @@ test('normal-motion return visits keep one automatic quote timer and one listene
     expect((await probe()).timers).toBe(1);
     expect((await probe()).motionListeners).toBe(listenerCount);
     const before = (await probe()).animations;
-    await page.clock.runFor(14_999);
+    await page.clock.runFor(2_999);
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
     await page.clock.runFor(1);
     await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);

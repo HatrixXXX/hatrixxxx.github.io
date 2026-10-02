@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const firstQuote = '轻松即单纯，速成即精准';
+const firstQuote = '轻松即单纯，速成即精准。';
 
 test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
 
