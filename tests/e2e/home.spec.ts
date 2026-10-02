@@ -20,7 +20,7 @@ test('quote clears the friends panel across its entire projected bottom edge', a
     const yAt = (a: { x: number; y: number }, b: { x: number; y: number }, x: number) => a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
     return Math.min(...[friends[0].x, quote[2].x].map((x) => yAt(friends[0], friends[1], x) - yAt(quote[3], quote[2], x)));
   });
-  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(gap).toBeGreaterThanOrEqual(5.5);
   expect(await page.locator('[data-quote-text]').evaluate((node) => node.scrollHeight <= node.parentElement!.clientHeight)).toBe(true);
 });
 
