@@ -1,4 +1,16 @@
 ---
+import { CHARACTER_PARTS, type CharacterPartName } from '@/data/character-parts';
+
+const part = (name: CharacterPartName) => {
+  const value = CHARACTER_PARTS[name];
+  return {
+    src: value.src,
+    width: value.width,
+    height: value.height,
+    style: `left:${value.x}px;top:${value.y}px;width:${value.width}px;height:${value.height}px`,
+  };
+};
+
 // CharacterIdle.astro — skeleton-driven idle rig v5
 // Key fixes v5:
 //   - waist_belt/devices moved to hip (NOT spine) → no seam at waist
@@ -8,50 +20,50 @@
 //   - thigh gets small translateY bob; ankle counter-cancel keeps feet grounded
 ---
 
-<div class="char-rig-outer" data-char-rig aria-hidden="true">
+<div class="char-rig-outer" data-char-rig data-character-state="loading" aria-hidden="true">
   <div class="char-canvas">
     <div class="bone-wrapper bone-hip" data-bone="hip">
       <div class="bone-wrapper coat-back-sway">
-        <img class="char-layer" data-part="coat_back_R" src="/character-parts/coat_back_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
-        <img class="char-layer" data-part="coat_back_center" src="/character-parts/coat_back_center.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="coat_back_R" {...part('coat_back_R')} alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="coat_back_center" {...part('coat_back_center')} alt="" draggable="false" loading="lazy" decoding="async" />
       </div>
-      <img class="char-layer pants-layer" data-part="pants_R" src="/character-parts/pants_R.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
-      <img class="char-layer pants-layer" data-part="pants_L" src="/character-parts/pants_L.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+      <img class="char-layer pants-layer" data-part="pants_R" {...part('pants_R')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+      <img class="char-layer pants-layer" data-part="pants_L" {...part('pants_L')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
       <div class="bone-wrapper coat-front-sway">
-        <img class="char-layer" data-part="coat_front_purple" src="/character-parts/coat_front_purple.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+        <img class="char-layer" data-part="coat_front_purple" {...part('coat_front_purple')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
       </div>
       <div class="bone-wrapper bone-spine" data-bone="spine">
-        <img class="char-layer" data-part="inner_cloth" src="/character-parts/inner_cloth.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
-        <img class="char-layer" data-part="torso_jacket" src="/character-parts/torso_jacket.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
-        <img class="char-layer" data-part="cable_upper" src="/character-parts/cable_upper.png" alt="" draggable="false" loading="lazy" decoding="async" />
-        <img class="char-layer" data-part="harness_chest" src="/character-parts/harness_chest.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="inner_cloth" {...part('inner_cloth')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+        <img class="char-layer" data-part="torso_jacket" {...part('torso_jacket')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+        <img class="char-layer" data-part="cable_upper" {...part('cable_upper')} alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="harness_chest" {...part('harness_chest')} alt="" draggable="false" loading="lazy" decoding="async" />
         <div class="bone-wrapper bone-neck_base" data-bone="neck_base">
-          <img class="char-layer" data-part="neck" src="/character-parts/neck.png" alt="" draggable="false" loading="lazy" decoding="async" />
+          <img class="char-layer" data-part="neck" {...part('neck')} alt="" draggable="false" loading="lazy" decoding="async" />
           <div class="bone-wrapper bone-head" data-bone="head">
-            <img class="char-layer" data-part="head" src="/character-parts/head.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+            <img class="char-layer" data-part="head" {...part('head')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
           </div><!-- /bone:head -->
         </div><!-- /bone:neck_base -->
         <div class="bone-wrapper bone-shoulder_R" data-bone="shoulder_R">
           <div class="bone-wrapper bone-elbow_R" data-bone="elbow_R">
-            <img class="char-layer" data-part="sleeve_R" src="/character-parts/sleeve_R.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+            <img class="char-layer" data-part="sleeve_R" {...part('sleeve_R')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
             <div class="bone-wrapper bone-wrist_R" data-bone="wrist_R">
-              <img class="char-layer" data-part="cuff_R" src="/character-parts/cuff_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
-              <img class="char-layer" data-part="gauntlet_R" src="/character-parts/gauntlet_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="cuff_R" {...part('cuff_R')} alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="gauntlet_R" {...part('gauntlet_R')} alt="" draggable="false" loading="lazy" decoding="async" />
               <div class="bone-wrapper bone-hand_R" data-bone="hand_R">
-                <img class="char-layer" data-part="hand_R" src="/character-parts/hand_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
+                <img class="char-layer" data-part="hand_R" {...part('hand_R')} alt="" draggable="false" loading="lazy" decoding="async" />
               </div><!-- /bone:hand_R -->
             </div><!-- /bone:wrist_R -->
           </div><!-- /bone:elbow_R -->
         </div><!-- /bone:shoulder_R -->
         <div class="bone-wrapper bone-shoulder_L" data-bone="shoulder_L">
           <div class="bone-wrapper bone-elbow_L" data-bone="elbow_L">
-            <img class="char-layer" data-part="sleeve_L" src="/character-parts/sleeve_L.png" alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
+            <img class="char-layer" data-part="sleeve_L" {...part('sleeve_L')} alt="" draggable="false" loading="eager" decoding="async" fetchpriority="high" />
             <div class="bone-wrapper bone-wrist_L" data-bone="wrist_L">
-              <img class="char-layer" data-part="forearm_L" src="/character-parts/forearm_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
-              <img class="char-layer" data-part="cuff_L" src="/character-parts/cuff_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
-              <img class="char-layer" data-part="cable_cuff_connector" src="/character-parts/cable_cuff_connector.png" alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="forearm_L" {...part('forearm_L')} alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="cuff_L" {...part('cuff_L')} alt="" draggable="false" loading="lazy" decoding="async" />
+              <img class="char-layer" data-part="cable_cuff_connector" {...part('cable_cuff_connector')} alt="" draggable="false" loading="lazy" decoding="async" />
               <div class="bone-wrapper bone-hand_L" data-bone="hand_L">
-                <img class="char-layer" data-part="hand_L" src="/character-parts/hand_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+                <img class="char-layer" data-part="hand_L" {...part('hand_L')} alt="" draggable="false" loading="lazy" decoding="async" />
               </div><!-- /bone:hand_L -->
             </div><!-- /bone:wrist_L -->
           </div><!-- /bone:elbow_L -->
@@ -69,27 +81,34 @@
           </div><!-- /bone:ankle_L -->
         </div><!-- /bone:knee_L -->
       </div><!-- /bone:thigh_L -->
-      <img class="char-layer leg-device-layer" data-part="leg_device_R" src="/character-parts/leg_device_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
-      <img class="char-layer leg-device-layer" data-part="leg_device_L" src="/character-parts/leg_device_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+      <img class="char-layer leg-device-layer" data-part="leg_device_R" {...part('leg_device_R')} alt="" draggable="false" loading="lazy" decoding="async" />
+      <img class="char-layer leg-device-layer" data-part="leg_device_L" {...part('leg_device_L')} alt="" draggable="false" loading="lazy" decoding="async" />
       <div class="bone-wrapper coat-front-white-sway">
-        <img class="char-layer" data-part="coat_front_white" src="/character-parts/coat_front_white.png" alt="" draggable="false" loading="lazy" decoding="async" />
-        <img class="char-layer" data-part="waist_device_inner" src="/character-parts/waist_device_inner.png" alt="" draggable="false" loading="lazy" decoding="async" />
-        <img class="char-layer" data-part="waist_device_outer" src="/character-parts/waist_device_outer.png" alt="" draggable="false" loading="lazy" decoding="async" />
-        <img class="char-layer" data-part="cable_waist_connector" src="/character-parts/cable_waist_connector.png" alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="coat_front_white" {...part('coat_front_white')} alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="waist_device_inner" {...part('waist_device_inner')} alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="waist_device_outer" {...part('waist_device_outer')} alt="" draggable="false" loading="lazy" decoding="async" />
+        <img class="char-layer" data-part="cable_waist_connector" {...part('cable_waist_connector')} alt="" draggable="false" loading="lazy" decoding="async" />
       </div>
-      <img class="char-layer waist-layer" data-part="waist_belt" src="/character-parts/waist_belt.png" alt="" draggable="false" loading="lazy" decoding="async" />
+      <img class="char-layer waist-layer" data-part="waist_belt" {...part('waist_belt')} alt="" draggable="false" loading="lazy" decoding="async" />
     </div><!-- /bone:hip -->
-    <img class="char-layer foot-layer" data-part="foot_R" src="/character-parts/foot_R.png" alt="" draggable="false" loading="lazy" decoding="async" />
-    <img class="char-layer foot-layer" data-part="foot_L" src="/character-parts/foot_L.png" alt="" draggable="false" loading="lazy" decoding="async" />
+    <img class="char-layer foot-layer" data-part="foot_R" {...part('foot_R')} alt="" draggable="false" loading="lazy" decoding="async" />
+    <img class="char-layer foot-layer" data-part="foot_L" {...part('foot_L')} alt="" draggable="false" loading="lazy" decoding="async" />
   </div>
 </div>
 
+<noscript><style is:global>[data-char-rig] { visibility: visible !important; }</style></noscript>
+
 <style>
   .char-rig-outer {
+    visibility: hidden;
     position: absolute;
     left: 380px; top: 55px;
     width: 714px; height: 1040.1px;
     pointer-events: none; user-select: none;
+  }
+  .char-rig-outer[data-character-state='ready'] { visibility: visible; }
+  .char-rig-outer:not([data-character-state='ready']) .bone-wrapper {
+    animation-play-state: paused;
   }
   .char-canvas {
     position: relative;
@@ -106,9 +125,8 @@
   .bone-hip { translate: var(--par-x,0px) var(--par-y,0px); }
   .char-layer {
     position: absolute;
-    top: 0; left: 0;
-    width: 1024px; height: 1536px;
     display: block;
+    max-width: none;
   }
   .leg-device-layer {
     z-index: 13;

@@ -6,6 +6,8 @@
  *  - ?characterMeshDebug=1 overlay
  */
 
+import { waitForImages, type ReadinessImage } from '@/lib/image-readiness';
+
 const PARALLAX_X_MAX = 2.5;
 const PARALLAX_Y_MAX = 1.5;
 const PARALLAX_SMOOTH = 0.06;
@@ -46,6 +48,17 @@ function isMobile(): boolean {
   return window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768;
 }
 
+async function prepareCharacter(rig: HTMLElement, signal: AbortSignal): Promise<void> {
+  rig.dataset.characterState = 'loading';
+  const images = [...rig.querySelectorAll<HTMLImageElement>('img')] as ReadinessImage[];
+  const state = await waitForImages(images, 8_000, signal);
+  if (signal.aborted || rig.dataset.characterState === 'error') return;
+  rig.dataset.characterState = state;
+  document.dispatchEvent(new CustomEvent('hatrix:character-state', {
+    detail: { state },
+  }));
+}
+
 function initCharacterIdle(): void {
   activeCleanup?.();
   activeCleanup = null;
@@ -62,6 +75,7 @@ function initCharacterIdle(): void {
   const controller = new AbortController();
   const { signal } = controller;
   cleanupFns.push(() => controller.abort());
+  void prepareCharacter(rig, signal);
 
   function pauseAnimations(): void {
     allGroups.forEach((el) => { el.style.animationPlayState = 'paused'; });
