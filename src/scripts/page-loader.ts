@@ -148,46 +148,63 @@ function complete(s: State): void {
   window.setTimeout(cleanup, 700); // transitionend 兜底
 }
 
-// ── 首页：等背景图 + 立绘都就绪 ──────────────────────────────────────────────
+// ── 首页：等背景图、立绘终态和播放器布局就绪 ─────────────────────────────────
+
+function waitForState(
+  element: HTMLElement | null,
+  key: string,
+  terminal: readonly string[],
+  eventName: string,
+  signal: AbortSignal,
+): Promise<void> {
+  if (!element || terminal.includes(element.dataset[key] ?? '')) return Promise.resolve();
+  return new Promise((resolve) => {
+    const finish = () => {
+      if (!terminal.includes(element.dataset[key] ?? '')) return;
+      resolve();
+    };
+    document.addEventListener(eventName, finish, { signal });
+  });
+}
+
+function waitForBackground(): Promise<void> {
+  const canvas = document.querySelector<HTMLElement>('[data-home-canvas]');
+  const value = canvas?.style.getPropertyValue('--home-background-image') ?? '';
+  const src = value.replace(/^url\(["']?/, '').replace(/["']?\)$/, '').trim();
+  if (!src) return Promise.resolve();
+  return new Promise((resolve) => {
+    const probe = new Image();
+    probe.onload = probe.onerror = () => resolve();
+    probe.src = src;
+    if (probe.complete) resolve();
+  });
+}
 
 function waitHomeDone(s: State): void {
-  let imgDone = false;
-  let bgDone  = false;
-  const guard = window.setTimeout(() => complete(s), 8_000);
-
-  const tryComplete = (): void => {
-    if (imgDone && bgDone) { window.clearTimeout(guard); complete(s); }
+  const rig = document.querySelector<HTMLElement>('[data-char-rig]');
+  const player = document.querySelector<HTMLElement>('[data-music-player]');
+  const controller = new AbortController();
+  let settled = false;
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    window.clearTimeout(guard);
+    controller.abort();
+    complete(s);
   };
+  const guard = window.setTimeout(() => {
+    if (rig?.dataset.characterState === 'loading') {
+      rig.dataset.characterState = 'error';
+      document.dispatchEvent(new CustomEvent('hatrix:character-state', { detail: { state: 'error' } }));
+    }
+    finish();
+  }, 8_000);
 
-  // ── 立绘 img ──
-  const img = document.querySelector<HTMLImageElement>('[data-home-character] img');
-  const onImgDone = (): void => { imgDone = true; tryComplete(); };
-  if (!img || (img.complete && img.naturalWidth > 0)) {
-    imgDone = true;
-  } else {
-    img.addEventListener('load',  onImgDone, { once: true });
-    img.addEventListener('error', onImgDone, { once: true });
-  }
-
-  // ── 背景图（CSS background-image via CSS var on [data-home-canvas]） ──
-  const canvas = document.querySelector<HTMLElement>('[data-home-canvas]');
-  const bgUrl  = canvas
-    ? (canvas.style.getPropertyValue('--home-background-image') || '')
-        .replace(/^url\(["']?/, '').replace(/["']?\)$/, '').trim()
-    : '';
-
-  if (!bgUrl) {
-    bgDone = true;
-  } else {
-    const probe = new Image();
-    probe.onload  = (): void => { bgDone = true; tryComplete(); };
-    probe.onerror = (): void => { bgDone = true; tryComplete(); };
-    probe.src = bgUrl;
-    if (probe.complete) { bgDone = true; }
-  }
-
-  // 两个条件都满足才 complete（处理已缓存的情况）
-  tryComplete();
+  void Promise.all([
+    waitForBackground(),
+    waitForState(rig, 'characterState', ['ready', 'error'], 'hatrix:character-state', controller.signal),
+    waitForState(player, 'layoutState', ['ready'], 'hatrix:player-layout-ready', controller.signal),
+  ]).then(finish);
 }
 
 // ── 跨事件状态 ────────────────────────────────────────────────────────────────
