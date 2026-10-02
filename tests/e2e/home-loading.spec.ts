@@ -56,3 +56,49 @@ test('dismisses after the deadline and never reveals a late character', async ({
   await expect(rig).toHaveAttribute('data-character-state', 'error');
   await expect(rig).toBeHidden();
 });
+
+for (const outcome of ['ready', 'deadline'] as const) {
+  test(`a superseded home ${outcome} cannot dismiss the next navigation loader`, async ({ page }) => {
+    let releaseCharacter!: () => void;
+    let releaseNavigation!: () => void;
+    let navigationRequested!: () => void;
+    const characterGate = new Promise<void>((resolve) => { releaseCharacter = resolve; });
+    const navigationGate = new Promise<void>((resolve) => { releaseNavigation = resolve; });
+    const requested = new Promise<void>((resolve) => { navigationRequested = resolve; });
+    await page.clock.install();
+    await page.route('**/character-parts/foot_L.webp', async (route) => {
+      await characterGate;
+      await route.continue();
+    });
+    await page.route('**/blog/', async (route) => {
+      navigationRequested();
+      await navigationGate;
+      await route.continue();
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const loader = page.locator('#page-loader');
+    try {
+      await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'loading');
+      await expect(loader).toHaveClass(/pl-visible/);
+      await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 100);
+      await page.locator('[data-home-blog]').dispatchEvent('click');
+      await requested;
+      if (outcome === 'ready') {
+        releaseCharacter();
+        await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'ready');
+        await page.clock.runFor(2_500);
+      } else {
+        await page.clock.runFor(9_000);
+      }
+      await expect(loader).toHaveClass(/pl-visible/);
+      await expect(loader).not.toHaveClass(/pl-done/);
+      await expect(loader.locator('.pl-pct-num')).toHaveText('80%');
+    } finally {
+      releaseCharacter();
+      releaseNavigation();
+      await page.clock.resume();
+    }
+    await expect(page).toHaveURL(/\/blog\/$/);
+    await expect(loader).not.toHaveClass(/pl-visible/);
+  });
+}

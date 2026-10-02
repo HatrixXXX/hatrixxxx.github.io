@@ -150,6 +150,8 @@ function complete(s: State): void {
 
 // ── 首页：等背景图、立绘终态和播放器布局就绪 ─────────────────────────────────
 
+let cancelHomeWait: (() => void) | null = null;
+
 function waitForState(
   element: HTMLElement | null,
   key: string,
@@ -181,24 +183,33 @@ function waitForBackground(): Promise<void> {
 }
 
 function waitHomeDone(s: State): void {
+  cancelHomeWait?.();
   const rig = document.querySelector<HTMLElement>('[data-char-rig]');
   const player = document.querySelector<HTMLElement>('[data-music-player]');
   const controller = new AbortController();
   let settled = false;
-  const finish = () => {
+  const dispose = () => {
     if (settled) return;
     settled = true;
     window.clearTimeout(guard);
     controller.abort();
+    cancelAnimationFrame(s.raf);
+    if (cancelHomeWait === dispose) cancelHomeWait = null;
+  };
+  const finish = () => {
+    if (settled) return;
+    dispose();
     complete(s);
   };
   const guard = window.setTimeout(() => {
+    if (settled) return;
     if (rig?.dataset.characterState === 'loading') {
       rig.dataset.characterState = 'error';
       document.dispatchEvent(new CustomEvent('hatrix:character-state', { detail: { state: 'error' } }));
     }
     finish();
   }, 8_000);
+  cancelHomeWait = dispose;
 
   void Promise.all([
     waitForBackground(),
@@ -223,13 +234,18 @@ function drainPending(): void {
 // ── before-preparation：VT 导航开始 ─────────────────────────────────────────
 
 document.addEventListener('astro:before-preparation', (raw) => {
+  const supersedesHomeWait = cancelHomeWait !== null;
+  cancelHomeWait?.();
   const to = (raw as unknown as { to?: URL }).to;
-  if (!to || !isSameOriginPage(to) || hasVisited(to.pathname)) return;
+  if (!to || !isSameOriginPage(to) || (!supersedesHomeWait && hasVisited(to.pathname))) return;
   const s = showLoader();
   if (!s) return;
   fakeProgress(s, 80);
   pending = s;
 });
+
+document.addEventListener('astro:before-swap', () => cancelHomeWait?.());
+window.addEventListener('pagehide', () => cancelHomeWait?.());
 
 // ── page-load：页面激活 ──────────────────────────────────────────────────────
 
