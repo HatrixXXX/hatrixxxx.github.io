@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "check:images": "cross-env NODE_USE_ENV_PROXY=1 tsx scripts/check-images.ts",
     "check:site": "tsx scripts/check-built-site.ts",
-    "check:protected": "tsx scripts/check-protected-output.ts"
+    "check:protected": "tsx scripts/check-protected-output.ts",
+    "optimize:character": "tsx scripts/optimize-character-parts.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
