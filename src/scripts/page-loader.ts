@@ -3,8 +3,8 @@
  *
  * 架构说明
  * --------
- * PageLoader.astro 输出一个空 <div id="page-loader" transition:persist>，
- * CSS 默认 display:none，本脚本通过 pl-visible class 控制显示。
+ * PageLoader.astro 输出完整遮罩内容。首页首次硬导航由 head 内联脚本在首帧前
+ * 标记 data-initial-page-loader，本脚本接管后改用 pl-visible class 控制显示。
  *
  * 触发规则
  * --------
@@ -25,7 +25,8 @@
  *   astro:page-load → showLoader() + 快速跑满 → complete()
  *
  * 硬导航首页:
- *   DOMContentLoaded → showLoader() + fakeProgress(85%) → waitHomeDone() → complete()
+ *   head 同步标记 → 首帧显示 0% → DOMContentLoaded 接管并跑到 85%
+ *   → waitHomeDone() → complete()
  *
  * 异常情况
  * --------
@@ -35,6 +36,7 @@
  */
 
 const VISITED_KEY = 'hatrix-visited-pages';
+const HOME_DEADLINE_MS = 8_000;
 
 // ── 访问记录 ──────────────────────────────────────────────────────────────────
 
@@ -129,6 +131,7 @@ function showLoader(): State | null {
   if (!el) return null;
   el.innerHTML = INNER_HTML;
   el.classList.add('pl-visible');
+  delete document.documentElement.dataset.initialPageLoader;
   const s = buildState(el);
   applyPct(s, 0);
   return s;
@@ -141,6 +144,8 @@ function complete(s: State): void {
   applyPct(s, 100);
   s.el.classList.add('pl-done');
   const cleanup = (): void => {
+    delete document.documentElement.dataset.initialPageLoader;
+    delete document.documentElement.dataset.initialPageLoaderStartedAt;
     s.el.classList.remove('pl-visible', 'pl-done');
     s.el.innerHTML = '';
   };
@@ -182,6 +187,13 @@ function waitForBackground(): Promise<void> {
   });
 }
 
+function getRemainingHomeDeadline(): number {
+  const startedAt = Number(document.documentElement.dataset.initialPageLoaderStartedAt);
+  if (!Number.isFinite(startedAt)) return HOME_DEADLINE_MS;
+  const elapsed = Math.max(0, Date.now() - startedAt);
+  return Math.max(0, Math.min(HOME_DEADLINE_MS, HOME_DEADLINE_MS - elapsed));
+}
+
 function waitHomeDone(s: State): void {
   cancelHomeWait?.();
   const rig = document.querySelector<HTMLElement>('[data-char-rig]');
@@ -196,6 +208,8 @@ function waitHomeDone(s: State): void {
     cancelAnimationFrame(s.raf);
     if (resetOverlay) {
       s.finished = true;
+      delete document.documentElement.dataset.initialPageLoader;
+      delete document.documentElement.dataset.initialPageLoaderStartedAt;
       s.el.classList.remove('pl-visible', 'pl-done');
       s.el.innerHTML = '';
     }
@@ -213,7 +227,7 @@ function waitHomeDone(s: State): void {
       document.dispatchEvent(new CustomEvent('hatrix:character-state', { detail: { state: 'error' } }));
     }
     finish();
-  }, 8_000);
+  }, getRemainingHomeDeadline());
   cancelHomeWait = dispose;
 
   void Promise.all([
@@ -269,6 +283,15 @@ function onPageLoad(): void {
     pending = null;
     markVisited(path);
     if (isHome) { waitHomeDone(s); } else { complete(s); }
+    return;
+  }
+
+  // 首帧遮罩已独立超时，说明客户端模块加载过慢或刚从失败中恢复。
+  // 此时保留降级后的可见页面，不能再把遮罩盖回去。
+  if (document.documentElement.dataset.initialPageLoader === 'expired') {
+    delete document.documentElement.dataset.initialPageLoader;
+    delete document.documentElement.dataset.initialPageLoaderStartedAt;
+    markVisited(path);
     return;
   }
 

@@ -1,12 +1,18 @@
 import { expect, test, type Page } from '@playwright/test';
+import { HOME_QUOTES, HOME_QUOTE_INTERVAL } from '../../src/data/home-quotes';
 
 const firstQuote = '轻松即单纯，速成即精准。';
 const secondQuote = '兽人永不为奴，除非包吃包住。';
+const thirdQuote = '纵有疾风起，人生不言弃。';
+const firstQuoteSource = '— Hatrix';
+const secondQuoteSource = '— 网络';
+const lastQuote = '我曾以为自己的人生是一场悲剧，现在我才明白，它是一出喜剧。';
 
-async function installQuoteProbe(page: Page) {
+async function installQuoteProbe(page: Page, randomValue = 0) {
   await page.clock.install();
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
-  await page.addInitScript(() => {
+  await page.addInitScript(({ fixedRandom, quoteInterval }) => {
+    Math.random = () => fixedRandom;
     const timers = new Set<number>();
     const motionListeners = new Set<EventListenerOrEventListenerObject>();
     const probe = { timers, motionListeners, animations: 0 };
@@ -14,7 +20,7 @@ async function installQuoteProbe(page: Page) {
     const schedule = window.setTimeout.bind(window);
     const cancel = window.clearTimeout.bind(window);
     window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
-      if (delay !== 3_000 || typeof handler !== 'function') return schedule(handler, delay, ...args);
+      if (delay !== quoteInterval || typeof handler !== 'function') return schedule(handler, delay, ...args);
       const id = schedule(() => { timers.delete(id); handler(...args); }, delay);
       timers.add(id);
       return id;
@@ -33,7 +39,7 @@ async function installQuoteProbe(page: Page) {
       }
       listen.call(this, type, listener, options);
     };
-  });
+  }, { fixedRandom: randomValue, quoteInterval: HOME_QUOTE_INTERVAL });
 }
 
 async function quoteProbe(page: Page) {
@@ -329,7 +335,9 @@ test('home quote is a non-interactive live region without manual switching', asy
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
   const text = page.locator('[data-quote-text]');
+  const source = page.locator('[data-quote-source]');
   await expect(text).toHaveText(firstQuote);
+  await expect(source).toHaveText(firstQuoteSource);
   expect.soft(await quote.evaluate((node) => node.tagName)).not.toBe('BUTTON');
   await expect.soft(page.locator('[data-quote-pause]')).toHaveCount(0, { timeout: 200 });
   await expect.soft(quote).toHaveAttribute('role', 'status', { timeout: 200 });
@@ -344,21 +352,102 @@ test('home quote is a non-interactive live region without manual switching', asy
   await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
   await page.keyboard.press('Space');
   await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
-  await page.clock.runFor(2_999);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL - 1);
   await expect(text).toHaveText(firstQuote);
 });
 
-test('home quote advances automatically after three seconds with running vertical animation', async ({ page }) => {
+test('home quote keeps the sentence above its bottom-right source', async ({ page }) => {
+  await page.goto('/');
+  const positions = await page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>('.quote-card')!.getBoundingClientRect();
+    const text = document.querySelector<HTMLElement>('[data-quote-text]')!.getBoundingClientRect();
+    const source = document.querySelector<HTMLElement>('[data-quote-source]')!.getBoundingClientRect();
+    return {
+      cardCenterY: card.top + card.height / 2,
+      textCenterY: text.top + text.height / 2,
+      sourceCenterX: source.left + source.width / 2,
+      sourceTop: source.top,
+      sourceBottom: source.bottom,
+      cardCenterX: card.left + card.width / 2,
+      cardBottom: card.bottom,
+    };
+  });
+  expect(positions.textCenterY).toBeLessThan(positions.cardCenterY);
+  expect(positions.sourceTop).toBeGreaterThan(positions.textCenterY);
+  expect(positions.sourceCenterX).toBeGreaterThan(positions.cardCenterX);
+  expect(positions.sourceBottom).toBeLessThan(positions.cardBottom);
+
+  const longContent = await page.evaluate(() => {
+    const textNode = document.querySelector<HTMLElement>('[data-quote-text]')!;
+    const textWindow = document.querySelector<HTMLElement>('[data-quote-text-window]')!;
+    const sourceNode = document.querySelector<HTMLElement>('[data-quote-source]')!;
+    textNode.textContent = '即使金句变成两行内容，也要与右下角的出处保持清楚分隔，不发生重叠。';
+    sourceNode.textContent = `— ${'很长的出处'.repeat(20)}`;
+    const windowNode = document.querySelector<HTMLElement>('.quote-window')!;
+    return {
+      contentWidth: windowNode.clientWidth,
+      textBottom: textWindow.offsetTop + textNode.offsetTop + textNode.offsetHeight,
+      sourceLeft: sourceNode.offsetLeft,
+      sourceTop: sourceNode.offsetTop,
+      sourceRight: sourceNode.offsetLeft + sourceNode.offsetWidth,
+    };
+  });
+  expect(longContent.textBottom).toBeLessThanOrEqual(longContent.sourceTop);
+  expect(longContent.sourceLeft).toBeGreaterThanOrEqual(0);
+  expect(longContent.sourceRight).toBeLessThanOrEqual(longContent.contentWidth);
+});
+
+test('long home quotes shrink to stay on one line', async ({ page }) => {
+  const target = HOME_QUOTES.reduce((longest, quote) =>
+    [...quote.text].length > [...longest.text].length ? quote : longest);
+  const targetIndex = HOME_QUOTES.indexOf(target);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installQuoteProbe(page, (targetIndex - 1) / (HOME_QUOTES.length - 1));
+  await page.goto('/');
+  await expect.poll(async () => (await quoteProbe(page)).timers).toBe(1);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL);
+  const text = page.locator('[data-quote-text]');
+  await expect(text).toHaveText(target.text);
+  const layout = await text.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      clientHeight: element.clientHeight,
+      clientWidth: element.clientWidth,
+      fontSize: Number.parseFloat(style.fontSize),
+      lineHeight: Number.parseFloat(style.lineHeight),
+      scrollWidth: element.scrollWidth,
+      whiteSpace: style.whiteSpace,
+    };
+  });
+  expect(layout.whiteSpace).toBe('nowrap');
+  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
+  expect(layout.clientHeight).toBeLessThanOrEqual(layout.lineHeight + 1);
+  expect(layout.fontSize).toBeLessThan(22);
+});
+
+test('home quote advances automatically after six seconds with running vertical animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await installQuoteProbe(page);
   await page.goto('/');
   const text = page.locator('[data-quote-text]');
   await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
   expect.soft((await quoteProbe(page)).timers).toBe(1);
-  await page.clock.runFor(2_999);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL - 1);
   await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
   await page.clock.runFor(1);
   await expect(text).toHaveText(secondQuote);
+  await expect(page.locator('[data-quote-source]')).toHaveText(secondQuoteSource);
+  const clipWindow = page.locator('[data-quote-text-window]');
+  await expect(clipWindow).toHaveCSS('overflow', 'hidden');
+  const clipBoundary = await page.evaluate(() => {
+    const clip = document.querySelector<HTMLElement>('[data-quote-text-window]')!;
+    const source = document.querySelector<HTMLElement>('[data-quote-source]')!;
+    return {
+      clipBottom: clip.offsetTop + clip.offsetHeight,
+      sourceTop: source.offsetTop,
+    };
+  });
+  expect(clipBoundary.clipBottom).toBeLessThanOrEqual(clipBoundary.sourceTop);
   expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 1 });
   const animation = await text.evaluate((node) => {
     const running = node.getAnimations().find((animation) => animation.playState === 'running');
@@ -371,12 +460,92 @@ test('home quote advances automatically after three seconds with running vertica
   ] });
 });
 
+test('home quote switches randomly without immediately repeating itself', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installQuoteProbe(page, 0.999_999);
+  await page.goto('/');
+  const text = page.locator('[data-quote-text]');
+  const source = page.locator('[data-quote-source]');
+  await expect(text).toHaveText(firstQuote);
+  await expect.poll(async () => (await quoteProbe(page)).timers).toBe(1);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL);
+  await expect(text).toHaveText(lastQuote);
+  await expect(source).toHaveText('— 小丑');
+  await page.clock.runFor(HOME_QUOTE_INTERVAL);
+  await expect(text).toHaveText(secondQuote);
+  await expect(source).toHaveText(secondQuoteSource);
+});
+
+test('home quote completes each shuffled round before starting the next one', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installQuoteProbe(page);
+  await page.goto('/');
+  await expect.poll(async () => (await quoteProbe(page)).timers).toBe(1);
+  await page.evaluate(() => {
+    const text = document.querySelector<HTMLElement>('[data-quote-text]')!;
+    const history = [text.textContent ?? ''];
+    const layout = {
+      minFontSize: Number.parseFloat(getComputedStyle(text).fontSize),
+      overflowing: text.scrollWidth > text.clientWidth,
+    };
+    new MutationObserver(() => {
+      history.push(text.textContent ?? '');
+      layout.minFontSize = Math.min(layout.minFontSize, Number.parseFloat(getComputedStyle(text).fontSize));
+      layout.overflowing ||= text.scrollWidth > text.clientWidth;
+    }).observe(text, { childList: true });
+    Object.defineProperty(window, '__quoteHistory', { value: history });
+    Object.defineProperty(window, '__quoteLayout', { value: layout });
+  });
+
+  await page.clock.runFor(HOME_QUOTE_INTERVAL * (HOME_QUOTES.length - 1));
+  const firstRound = await page.evaluate(() =>
+    [...(window as unknown as { __quoteHistory: string[] }).__quoteHistory]);
+  expect(firstRound).toHaveLength(HOME_QUOTES.length);
+  expect(new Set(firstRound)).toEqual(new Set(HOME_QUOTES.map(({ text }) => text)));
+
+  await page.clock.runFor(HOME_QUOTE_INTERVAL * HOME_QUOTES.length);
+  const history = await page.evaluate(() =>
+    [...(window as unknown as { __quoteHistory: string[] }).__quoteHistory]);
+  const secondRound = history.slice(HOME_QUOTES.length);
+  expect(secondRound).toHaveLength(HOME_QUOTES.length);
+  expect(new Set(secondRound)).toEqual(new Set(HOME_QUOTES.map(({ text }) => text)));
+  expect(secondRound[0]).not.toBe(firstRound.at(-1));
+  const layout = await page.evaluate(() =>
+    (window as unknown as { __quoteLayout: { minFontSize: number; overflowing: boolean } }).__quoteLayout);
+  expect(layout.overflowing).toBe(false);
+  expect(layout.minFontSize).toBeGreaterThanOrEqual(14);
+});
+
+test('bfcache recovery starts a complete round from the quote already in the DOM', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installQuoteProbe(page);
+  await page.goto('/');
+  await expect.poll(async () => (await quoteProbe(page)).timers).toBe(1);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL);
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    const text = document.querySelector<HTMLElement>('[data-quote-text]')!;
+    const history = [text.textContent ?? ''];
+    new MutationObserver(() => { history.push(text.textContent ?? ''); })
+      .observe(text, { childList: true });
+    Object.defineProperty(window, '__bfcacheQuoteHistory', { value: history });
+  });
+  await expect.poll(async () => (await quoteProbe(page)).timers).toBe(1);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL * (HOME_QUOTES.length - 1));
+  const round = await page.evaluate(() =>
+    [...(window as unknown as { __bfcacheQuoteHistory: string[] }).__bfcacheQuoteHistory]);
+  expect(round).toHaveLength(HOME_QUOTES.length);
+  expect(new Set(round)).toEqual(new Set(HOME_QUOTES.map(({ text }) => text)));
+});
+
 test('home reduced motion changes quotes without animated scrolling', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
-  await page.clock.runFor(2_999);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL - 1);
   await expect.soft(page.locator('[data-quote-text]')).toHaveText(firstQuote, { timeout: 200 });
   await page.clock.runFor(1);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
@@ -409,17 +578,17 @@ test('enabling reduced motion cancels quote animation and preserves the next dea
   await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
-  await page.clock.runFor(3_000);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
   expect(await quote.evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === 'running'))).toBe(true);
   await page.clock.runFor(100);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
   expect((await quoteProbe(page)).timers).toBe(1);
-  await page.clock.runFor(2_899);
+  await page.clock.runFor(HOME_QUOTE_INTERVAL - 101);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
   await page.clock.runFor(1);
-  await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
+  await expect(page.locator('[data-quote-text]')).toHaveText(thirdQuote);
   expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 1 });
 });
 
@@ -481,7 +650,7 @@ test('returning home reinitializes quotes and the clock once', async ({ page }) 
     await expect(page.locator('[data-music-player]')).toHaveAttribute('data-display-mode', 'home');
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
     const previousTime = await page.locator('[data-home-clock]').getAttribute('aria-label');
-    await page.clock.runFor(3_000);
+    await page.clock.runFor(HOME_QUOTE_INTERVAL);
     await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
     expect((await quoteProbe(page)).timers).toBe(1);
     await expect(page.locator('[data-home-clock]')).not.toHaveAttribute('aria-label', previousTime!);
@@ -523,7 +692,7 @@ test('normal-motion return visits keep one automatic quote timer and one listene
     expect((await probe()).timers).toBe(1);
     expect((await probe()).motionListeners).toBe(listenerCount);
     const before = (await probe()).animations;
-    await page.clock.runFor(2_999);
+    await page.clock.runFor(HOME_QUOTE_INTERVAL - 1);
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
     await page.clock.runFor(1);
     await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);

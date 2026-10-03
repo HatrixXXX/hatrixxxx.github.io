@@ -1,5 +1,73 @@
 import { expect, test } from '@playwright/test';
 
+test('covers the homepage before client modules can run', async ({ page }) => {
+  let releaseScripts!: () => void;
+  const scriptsGate = new Promise<void>((resolve) => { releaseScripts = resolve; });
+  await page.clock.install();
+  await page.route('**/*', async (route) => {
+    if (route.request().resourceType() !== 'script') {
+      await route.continue();
+      return;
+    }
+    await scriptsGate;
+    await route.continue();
+  });
+
+  await page.goto('/', { waitUntil: 'commit' });
+  const loader = page.locator('#page-loader');
+  try {
+    await expect(page.locator('[data-home-stage]')).toBeAttached();
+    await expect(loader).toBeVisible();
+    await expect(loader.locator('.pl-pct-num')).toHaveText('0%');
+    await page.clock.runFor(7_000);
+    await expect(loader).toBeVisible();
+    await page.clock.runFor(1_100);
+    await expect(loader).toBeHidden();
+  } finally {
+    releaseScripts();
+    await page.clock.resume();
+  }
+
+  await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'ready');
+  await expect(page.locator('[data-music-player]')).toHaveAttribute('data-layout-state', 'ready');
+  await expect(loader).not.toHaveClass(/pl-visible/);
+});
+
+test('keeps the cold-load deadline when client modules start late', async ({ page }) => {
+  let releaseScripts!: () => void;
+  let releaseCharacter!: () => void;
+  const scriptsGate = new Promise<void>((resolve) => { releaseScripts = resolve; });
+  const characterGate = new Promise<void>((resolve) => { releaseCharacter = resolve; });
+  await page.clock.install();
+  await page.route('**/*', async (route) => {
+    if (route.request().resourceType() === 'script') {
+      await scriptsGate;
+    } else if (route.request().url().includes('/character-parts/foot_L.webp')) {
+      await characterGate;
+    }
+    await route.continue();
+  });
+
+  await page.goto('/', { waitUntil: 'commit' });
+  const loader = page.locator('#page-loader');
+  const rig = page.locator('[data-char-rig]');
+  try {
+    await expect(page.locator('[data-home-stage]')).toBeAttached();
+    await page.clock.runFor(7_500);
+    await expect(loader).toBeVisible();
+    releaseScripts();
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(rig).toHaveAttribute('data-character-state', 'loading');
+    await page.clock.runFor(1_500);
+    await expect(rig).toHaveAttribute('data-character-state', 'error');
+    await expect(loader).not.toHaveClass(/pl-visible/);
+  } finally {
+    releaseScripts();
+    releaseCharacter();
+    await page.clock.resume();
+  }
+});
+
 test('a pending player layout independently holds the loader', async ({ page }) => {
   await page.addInitScript(() => {
     const query = document.querySelector.bind(document);

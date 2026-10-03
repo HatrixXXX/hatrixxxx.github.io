@@ -1,13 +1,31 @@
 ---
 ---
-<div id="page-loader" aria-hidden="true" transition:persist="page-loader"></div>
+<div id="page-loader" aria-hidden="true" transition:persist="page-loader">
+  <div class="pl-ring-wrap">
+    <svg class="pl-svg" viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="pl-track" cx="100" cy="100" r="80"></circle>
+      <circle class="pl-arc pl-arc--halo" cx="100" cy="100" r="80" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"></circle>
+      <circle class="pl-arc pl-arc--tube" cx="100" cy="100" r="80" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"></circle>
+      <circle class="pl-arc pl-arc--body" cx="100" cy="100" r="80" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"></circle>
+    </svg>
+    <div class="pl-pct" aria-hidden="true">
+      <span class="pl-pct-num">0%</span>
+    </div>
+  </div>
+  <div class="pl-label" aria-label="加载中">
+    <span class="pl-text pl-text--halo" aria-hidden="true">LOADING</span>
+    <span class="pl-text pl-text--tube" aria-hidden="true">LOADING</span>
+    <span class="pl-text pl-text--core" aria-hidden="true">LOADING</span>
+  </div>
+</div>
 
 <style is:global>
   /* 隐藏态：display:none，不占位不拦截事件 */
   #page-loader { display: none; }
 
   /* 显示态 */
-  #page-loader.pl-visible {
+  #page-loader.pl-visible,
+  :root[data-initial-page-loader='visible'] #page-loader {
     position: fixed;
     inset: 0;
     z-index: 9999;
@@ -20,7 +38,8 @@
     opacity: 1;
     transition: opacity 0.5s cubic-bezier(.4, 0, .2, 1);
   }
-  :root[data-theme='light'] #page-loader.pl-visible { background: #f0ece4; }
+  :root[data-theme='light'] #page-loader.pl-visible,
+  :root[data-theme='light'][data-initial-page-loader='visible'] #page-loader { background: #f0ece4; }
 
   /* 淡出态 */
   #page-loader.pl-visible.pl-done {
@@ -159,6 +178,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     #page-loader .pl-text { animation: none; }
-    #page-loader.pl-visible { transition-duration: 0.1s; }
+    #page-loader.pl-visible,
+    :root[data-initial-page-loader='visible'] #page-loader { transition-duration: 0.1s; }
   }
 </style>

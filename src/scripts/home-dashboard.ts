@@ -1,7 +1,22 @@
 import { getHomeLevel } from '@/lib/home-level';
+import { shuffleQuoteOrder } from '@/lib/quote-order';
 import { HOME_QUOTES, HOME_QUOTE_INTERVAL } from '@/data/home-quotes';
 
 let cleanup: (() => void) | undefined;
+const QUOTE_MAX_FONT_SIZE = 22;
+const QUOTE_MIN_FONT_SIZE = 14;
+
+function fitQuoteText(element: HTMLElement): void {
+  element.style.fontSize = `${QUOTE_MAX_FONT_SIZE}px`;
+  const availableWidth = element.clientWidth;
+  const requiredWidth = element.scrollWidth;
+  if (availableWidth === 0 || requiredWidth <= availableWidth) return;
+  const fittedSize = Math.max(
+    QUOTE_MIN_FONT_SIZE,
+    QUOTE_MAX_FONT_SIZE * (availableWidth - 2) / requiredWidth,
+  );
+  element.style.fontSize = `${fittedSize.toFixed(2)}px`;
+}
 
 function initializeHomeDashboard(): void {
   cleanup?.();
@@ -17,8 +32,18 @@ function initializeHomeDashboard(): void {
   const levelRing = stage.querySelector<SVGCircleElement>('[data-level-progress]')!;
   const quote = stage.querySelector<HTMLElement>('[data-home-quote]')!;
   const quoteText = quote.querySelector<HTMLElement>('[data-quote-text]')!;
+  const quoteSource = quote.querySelector<HTMLElement>('[data-quote-source]')!;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  let quoteIndex = 0;
+  const allQuoteIndices = Array.from({ length: HOME_QUOTES.length }, (_, index) => index);
+  let quoteIndex = HOME_QUOTES.findIndex(({ text, source }) =>
+    quoteText.textContent === text && quoteSource.textContent === `— ${source}`);
+  if (quoteIndex < 0) {
+    quoteIndex = 0;
+    quoteText.textContent = HOME_QUOTES[0].text;
+    quoteSource.textContent = `— ${HOME_QUOTES[0].source}`;
+  }
+  fitQuoteText(quoteText);
+  let quoteOrder = shuffleQuoteOrder(allQuoteIndices.filter((index) => index !== quoteIndex));
   let animation: Animation | undefined;
   let quoteTimer: number | undefined;
   let displayedLevelDay = '';
@@ -52,12 +77,20 @@ function initializeHomeDashboard(): void {
 
   const scheduleQuote = (): void => {
     window.clearTimeout(quoteTimer);
-    if (!document.hidden) quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
+    if (HOME_QUOTES.length > 1 && !document.hidden) {
+      quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
+    }
   };
   const nextQuote = (): void => {
     animation?.cancel();
-    quoteIndex = (quoteIndex + 1) % HOME_QUOTES.length;
-    quoteText.textContent = HOME_QUOTES[quoteIndex];
+    if (quoteOrder.length === 0) {
+      quoteOrder = shuffleQuoteOrder(allQuoteIndices, quoteIndex);
+    }
+    quoteIndex = quoteOrder.shift() ?? quoteIndex;
+    const next = HOME_QUOTES[quoteIndex];
+    quoteText.textContent = next.text;
+    quoteSource.textContent = `— ${next.source}`;
+    fitQuoteText(quoteText);
     if (!motion.matches) {
       animation = quoteText.animate([
         { transform: 'translateY(100%)', opacity: 0 },

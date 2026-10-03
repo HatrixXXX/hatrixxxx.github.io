@@ -91,6 +91,25 @@ const showSakanaCharacters = isAboutPage;
         document.documentElement.dataset.theme = theme;
       })();
     </script>
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        if (root.dataset.pageKind !== 'home') return;
+        let visited = false;
+        try {
+          const paths = JSON.parse(sessionStorage.getItem('hatrix-visited-pages') ?? '[]');
+          visited = Array.isArray(paths) && paths.includes(location.pathname);
+        } catch { /* Treat unreadable storage as a cold visit. */ }
+        if (visited) return;
+        root.dataset.initialPageLoaderStartedAt = String(Date.now());
+        root.dataset.initialPageLoader = 'visible';
+        window.setTimeout(() => {
+          if (root.dataset.initialPageLoader === 'visible') {
+            root.dataset.initialPageLoader = 'expired';
+          }
+        }, 8_000);
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />

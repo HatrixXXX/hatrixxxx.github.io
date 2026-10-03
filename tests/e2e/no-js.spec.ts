@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const firstQuote = '轻松即单纯，速成即精准。';
+const firstQuoteSource = '— Hatrix';
 
 test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
 
@@ -9,6 +10,7 @@ test('home shows restored identity, quote, and character without JavaScript', as
   await expect(page.locator('[data-home-title]')).toBeVisible();
   await expect(page.locator('[data-home-panel="identity-name"]')).toBeVisible();
   await expect(page.locator('[data-home-panel="quote"]')).toContainText(firstQuote);
+  await expect(page.locator('[data-quote-source]')).toHaveText(firstQuoteSource);
   const fallback = page.locator('[data-character-fallback]');
   await expect(fallback).toBeVisible();
   await expect(page.locator('[data-char-rig]')).toBeHidden();

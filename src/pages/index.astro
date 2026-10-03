@@ -71,7 +71,10 @@ const rightPanels = {
         <HomePanel name="quote" {...leftPanels.quote}>
           <div class="quote-card">
             <div class="quote-window" data-home-quote role="status" aria-live="polite" aria-atomic="true">
-              <span data-quote-text>{HOME_QUOTES[0]}</span>
+              <span class="quote-text-window" data-quote-text-window>
+                <span data-quote-text>{HOME_QUOTES[0].text}</span>
+              </span>
+              <span data-quote-source>— {HOME_QUOTES[0].source}</span>
             </div>
           </div>
         </HomePanel>
@@ -199,8 +202,10 @@ const rightPanels = {
   .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; background: transparent; }
   .identity-name h1 { margin: 0; color: var(--home-ink); font: 500 64px/1 'IBM Plex Mono', monospace; letter-spacing: -.035em; }
   .quote-card { position: relative; width: 100%; height: 100%; background: #26232ff2; border: 1px solid #b8a6c14d; border-radius: var(--home-panel-radius); box-shadow: inset 0 1px #f8e7cf0d; }
-  .quote-window { display: flex; overflow: hidden; width: 100%; height: 100%; align-items: center; padding: 20px 24px; }
-  [data-quote-text] { display: block; font-size: 22px; line-height: 1.65; text-wrap: balance; }
+  .quote-window { display: grid; overflow: hidden; width: 100%; height: 100%; grid-template-rows: minmax(0, 1fr) auto; padding: 8px 24px; }
+  .quote-text-window { display: flex; overflow: hidden; min-width: 0; width: 100%; height: 100%; align-items: center; }
+  [data-quote-text] { display: block; overflow: hidden; min-width: 0; width: 100%; font-size: 22px; line-height: 1.65; white-space: nowrap; }
+  [data-quote-source] { overflow: hidden; min-width: 0; max-width: 100%; align-self: end; justify-self: end; color: #c5bacb; font-size: 15px; line-height: 1.2; letter-spacing: .02em; text-overflow: ellipsis; white-space: nowrap; }
   .small-tile { padding: 14px 20px 14px 65px; }
   .small-tile span { font-size: 32px; }
   .small-tile :global(svg) { width: 42px; height: 45px; left: 15px; right: auto; opacity: .6; }
