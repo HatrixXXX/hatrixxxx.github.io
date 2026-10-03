@@ -39,6 +39,15 @@ describe('Astro project tooling', () => {
     expect(packageJson.scripts['check:protected']).toBe('tsx scripts/check-protected-output.ts');
   });
 
+  it('scopes the unfixable static-build cache advisory exception', () => {
+    const workspace = readFileSync('pnpm-workspace.yaml', 'utf8').replaceAll('\r\n', '\n');
+
+    expect(workspace).toContain('audit:\n  ignore:\n    - GHSA-ch52-4w7c-c8xp');
+    expect(workspace).toContain('http-cache-semantics has no patched release');
+    expect(workspace).toContain('Remove this exception when Astro resolves to a patched release');
+    expect(workspace).not.toContain('ignore-unfixable');
+  });
+
   it('does not retain the removed commitlint hook', () => {
     expect(existsSync('.husky/commit-msg')).toBe(false);
   });

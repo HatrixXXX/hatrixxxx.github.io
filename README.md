@@ -244,6 +244,8 @@ Cloudflare 没有启用 HSTS preload、Bot Fight Mode、全站验证码、全站
 
 Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留凭据，手动部署只能使用 `master`。升级 Action 时同时更新版本注释和项目配置测试。
 
+生产依赖审计只忽略 `GHSA-ch52-4w7c-c8xp`。该公告影响共享 HTTP 缓存，当前没有修复版本；本站只在 Astro 静态构建阶段引入相关包，部署产物不包含共享缓存服务。Astro 解析到修复版本后应删除此项豁免。不得改用 `--ignore-unfixable` 或降低审计等级。
+
 ## 部署
 
 `.github/workflows/pages-deploy.yml` 支持四种入口：

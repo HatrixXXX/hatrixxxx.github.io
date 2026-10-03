@@ -95,6 +95,10 @@ corepack pnpm test:e2e
 
 ## CI 常见陷阱
 
+### 生产依赖审计
+- `pnpm-workspace.yaml` 只忽略 `GHSA-ch52-4w7c-c8xp`。该公告影响共享 HTTP 缓存，当前没有修复版本；本站只在 Astro 静态构建阶段引入相关包，Pages 产物不运行共享缓存服务。
+- Astro 解析到修复版 `http-cache-semantics` 后删除此项豁免。不得改用 `--ignore-unfixable`、降低审计等级或增加无关 GHSA。
+
 ### 远程图片审计（`check:site`）
 - `check:site` 会扫描构建产物所有 HTML 的 `<img src>`，凡不在 jsDelivr 固定 commit 白名单内的外部域名均报错。
 - **不能**把外部 URL 直接写进 Astro 模板的 `src` 属性；必须放在 `data-*` 属性里，由客户端 JS 赋值。

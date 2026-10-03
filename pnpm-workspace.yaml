@@ -1,6 +1,13 @@
 allowBuilds:
   esbuild: true
 
+# GHSA-ch52-4w7c-c8xp: http-cache-semantics has no patched release and is only
+# pulled in by Astro's static build toolchain; no shared HTTP cache is deployed.
+# Remove this exception when Astro resolves to a patched release.
+audit:
+  ignore:
+    - GHSA-ch52-4w7c-c8xp
+
 overrides:
   # GHSA-r5fr-rjxr-66jc: Chevrotain pins a vulnerable lodash-es version.
   'lodash-es@<4.18.1': 4.18.1
