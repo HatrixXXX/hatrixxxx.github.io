@@ -6,7 +6,7 @@ const secondQuote = '兽人永不为奴，除非包吃包住。';
 const thirdQuote = '纵有疾风起，人生不言弃。';
 const firstQuoteSource = '— Hatrix';
 const secondQuoteSource = '— 网络';
-const lastQuote = '我曾以为自己的人生是一场悲剧，现在我才明白，它是一出喜剧。';
+const lastQuote = HOME_QUOTES.at(-1)!;
 
 async function installQuoteProbe(page: Page, randomValue = 0) {
   await page.clock.install();
@@ -469,8 +469,8 @@ test('home quote switches randomly without immediately repeating itself', async 
   await expect(text).toHaveText(firstQuote);
   await expect.poll(async () => (await quoteProbe(page)).timers).toBe(1);
   await page.clock.runFor(HOME_QUOTE_INTERVAL);
-  await expect(text).toHaveText(lastQuote);
-  await expect(source).toHaveText('— 小丑');
+  await expect(text).toHaveText(lastQuote.text);
+  await expect(source).toHaveText(`— ${lastQuote.source}`);
   await page.clock.runFor(HOME_QUOTE_INTERVAL);
   await expect(text).toHaveText(secondQuote);
   await expect(source).toHaveText(secondQuoteSource);

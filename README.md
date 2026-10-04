@@ -222,7 +222,7 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:images` | 155 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、31 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章路由、CNAME、1250 条站内链接和发布体积 |
+| `pnpm check:site` | 文章路由、CNAME、1251 条站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 198 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。

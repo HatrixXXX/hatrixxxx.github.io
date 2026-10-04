@@ -101,6 +101,12 @@ export const FRIENDS: FriendLink[] = [
     url: 'https://wyqz.top/',
     avatar: 'https://wyqz.top/medias/logo.png',
     description: '个人技术博客'
+  },
+  {
+    name: 'KraHsu',
+    url: 'https://blog.krahsu.top/',
+    avatar: 'https://blog.krahsu.top/favicon.svg',
+    description: 'KraHsu 的个人博客'
   }
 ];
 

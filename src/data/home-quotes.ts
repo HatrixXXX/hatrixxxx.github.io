@@ -80,7 +80,8 @@ export const HOME_QUOTES = [
   { text: '我们怀念的不是那个冠军，而是那个曾为一件事拼过命的自己，和当时陪在身边的人。', source: '灌篮高手' },
   { text: '一旦遇见过某个人，就不会真正忘记，只是一时想不起来。', source: '千与千寻' },
   { text: '愿原力与你同在。', source: '星球大战' },
-  { text: '我曾以为自己的人生是一场悲剧，现在我才明白，它是一出喜剧。', source: '小丑' }
+  { text: '我曾以为自己的人生是一场悲剧，现在我才明白，它是一出喜剧。', source: '小丑' },
+  { text: '如果你手里只有一把锤子，那么一切看起来都像钉子。', source: '巴鲁克' }
 ] as const;
 
 export const HOME_QUOTE_INTERVAL = 6_000;

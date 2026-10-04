@@ -28,7 +28,11 @@ test('about section routes render their labels and current content', async ({ pa
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(section.label);
     if (section.slug === 'friends') {
-      await expect(page.locator('.friend-card')).toHaveCount(16);
+      await expect(page.locator('.friend-card')).toHaveCount(17);
+      await expect(page.getByRole('link', { name: 'KraHsu' })).toHaveAttribute(
+        'href',
+        'https://blog.krahsu.top/'
+      );
     } else {
       await expect(page.getByText('内容还在整理')).toBeVisible();
     }
