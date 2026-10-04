@@ -1,15 +1,13 @@
 ---
 import GiscusComments from '@/components/GiscusComments.astro';
-import HeroBanner from '@/components/HeroBanner.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import BackButton from '@/components/BackButton.astro';
 ---
 
-<BaseLayout title="留言板">
+<BaseLayout title="留言板" pageSubtitle="想说什么都可以写在这里" bodyClass="guestbook-page plain-page">
   <BackButton href="/" label="返回主页" />
-  <HeroBanner title="留言板" subtitle="想说什么都可以写在这里" image="/images/default-cover.svg" compact />
   <main class="guestbook-main container">
-    <GiscusComments />
+    <GiscusComments themeMode="dark" />
   </main>
 </BaseLayout>
 

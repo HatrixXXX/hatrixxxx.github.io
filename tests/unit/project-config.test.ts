@@ -203,11 +203,13 @@ describe('Astro project tooling', () => {
     expect(playwrightConfig.snapshotPathTemplate).not.toContain('platform');
   });
 
-  it('ships an opaque Giscus dark theme matching the site canvas', () => {
+  it('ships a stable opaque Giscus dark theme for the guestbook', () => {
+    expect(existsSync('src/styles/giscus-light.css')).toBe(false);
     const theme = readFileSync('src/styles/giscus-dark.css', 'utf8');
-
     expect(theme).toContain('background: #17151d;');
     expect(theme).toContain('--color-canvas-default: #17151d;');
+    expect(theme).toContain('--color-canvas-inset: #19161f;');
+    expect(theme).toContain('--color-canvas-subtle: #211e29;');
     expect(theme).not.toContain('@import');
   });
 

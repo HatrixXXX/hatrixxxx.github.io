@@ -8,10 +8,10 @@ import {
 describe('navigation configuration', () => {
   it('defines the requested primary and secondary navigation labels', () => {
     expect(PRIMARY_NAV_ITEMS.map((item) => item.label)).toEqual([
-      '首页', '博客文章', '作品橱窗', '关于我', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'
+      '首页', '博客文章', '作品橱窗', '关于我', '书签', '工具箱', '装备铺', '计划', '实验场', '友链', '留言板'
     ]);
     expect(PRIMARY_NAV_ITEMS.map((item) => item.href)).toEqual([
-      '/', '/blog/', '/projects/', '/about/', '/about/bookmarks/', '/about/tools/', '/about/gear/',
+      '/', '/blog/', '/projects/', '/about/', '/about/bookmarks/', '/about/software/', '/about/gear/',
       '/plans/', '/lab/', '/about/friends/', '/guestbook/'
     ]);
     expect(PRIMARY_NAV_ITEMS.filter((item) => 'children' in item).map((item) => item.label))
@@ -22,8 +22,8 @@ describe('navigation configuration', () => {
       '阅读',
       '游戏',
       '相簿',
-      '装备',
-      '工具',
+      '装备铺',
+      '工具箱',
       '书签',
       '友链'
     ]);
@@ -35,7 +35,7 @@ describe('navigation configuration', () => {
       expect(new Set(hrefs).size).toBe(hrefs.length);
       expect(hrefs.every((href) => href.startsWith('/') && href.endsWith('/'))).toBe(true);
     }
-    for (const href of ['/about/bookmarks/', '/about/tools/', '/about/gear/', '/about/friends/']) {
+    for (const href of ['/about/bookmarks/', '/about/software/', '/about/gear/', '/about/friends/']) {
       expect(PRIMARY_NAV_ITEMS.some((item) => item.href === href)).toBe(true);
       expect(ABOUT_SECTION_LINKS.some((item) => item.href === href)).toBe(true);
     }
@@ -47,7 +47,15 @@ describe('navigation configuration', () => {
     expect(HOME_LINKS.projects.href).toBe('/projects/');
     expect(HOME_LINKS.guestbook.href).toBe('/guestbook/');
     expect(HOME_LINKS.bookmarks.href).toBe('/about/bookmarks/');
-    expect(HOME_LINKS.software.href).toBe('/about/tools/');
+    expect(HOME_LINKS.software.href).toBe('/about/software/');
+    expect(ABOUT_SECTION_LINKS.find((item) => item.slug === 'software')).toMatchObject({
+      label: '工具箱',
+      subtitle: '常用软件与网页小工具'
+    });
+    expect(ABOUT_SECTION_LINKS.find((item) => item.slug === 'gear')).toMatchObject({
+      label: '装备铺',
+      subtitle: '日常使用的硬件与外设'
+    });
     expect(HOME_LINKS.gear.href).toBe('/about/gear/');
     expect(HOME_LINKS.friends.href).toBe('/about/friends/');
   });

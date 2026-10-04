@@ -1,24 +1,17 @@
 ---
-import ProfileSidebar from '@/components/ProfileSidebar.astro';
-import HeroBanner from '@/components/HeroBanner.astro';
-import SidebarStack from '@/components/SidebarStack.astro';
 import BackButton from '@/components/BackButton.astro';
 import { SITE } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="关于我">
+<BaseLayout title="关于我" pageSubtitle="写代码、搞研究、偶尔发呆" bodyClass="plain-page">
   <BackButton href="/" label="返回主页" />
-  <HeroBanner title="关于我" subtitle="写代码、搞研究、偶尔发呆" image="/images/default-cover.svg" compact />
   <main class="about-main container">
     <article>
       <h1>{SITE.author.name}</h1>
       <p>{SITE.description}</p>
       <p>这里记录技术研发、学习笔记与作品进展。</p>
     </article>
-    <SidebarStack posts={[]} showClock={false} showStats={false}>
-      <ProfileSidebar />
-    </SidebarStack>
   </main>
 </BaseLayout>
 
@@ -27,9 +20,4 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   article { min-width: 0; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: clamp(1.5rem, 5vw, 3rem); background: var(--surface-sheen), var(--color-surface); box-shadow: var(--shadow-inset), var(--shadow-panel); }
   h1 { margin: 0; color: var(--color-heading); font-weight: 650; }
   p { color: var(--color-text); }
-  @media (min-width: 1025px) {
-    .about-main { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr); }
-    article { grid-column: 2; grid-row: 1; }
-    .about-main :global([data-sidebar-stack]) { grid-column: 1; grid-row: 1; }
-  }
 </style>

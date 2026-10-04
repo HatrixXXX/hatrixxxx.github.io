@@ -49,7 +49,7 @@ test('the shared search action uses a visible 20px magnifying-glass SVG', async 
 test('only post pages render the compact legal footer', async ({ page }) => {
   await page.goto('/projects/');
   await expect(page.locator('header[data-site-header]')).toBeVisible();
-  await expect(page.locator('[data-hero]')).toBeVisible();
+  await expect(page.locator('[data-hero]')).toHaveCount(0);
   await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
   await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
 

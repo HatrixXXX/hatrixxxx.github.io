@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '关于我', '书签', '软件', '装备', '计划', '实验场', '友链', '留言板'];
+const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '关于我', '书签', '工具箱', '装备铺', '计划', '实验场', '友链', '留言板'];
 const DESKTOP_WIDTHS = [1200, 1440, 1920, 2560];
 
 const contrastRatio = (foreground: string, background: string) => {
@@ -78,7 +78,7 @@ test('narrow viewports center controls and retain all ten destinations in the mo
     const mobileMenu = page.locator('[data-mobile-menu]');
     await expect(mobileMenu).toBeVisible();
     await expect(mobileMenu.locator(':scope > ul > li > a')).toHaveText(EXPECTED_PRIMARY_LINKS);
-    await expect(mobileMenu.getByRole('link', { name: '装备', exact: true })).toHaveAttribute('href', '/about/gear/');
+    await expect(mobileMenu.getByRole('link', { name: '装备铺', exact: true })).toHaveAttribute('href', '/about/gear/');
     const homeLink = mobileMenu.getByRole('link', { name: '首页', exact: true });
     expect(await homeLink.evaluate((link) => {
       const box = link.getBoundingClientRect();

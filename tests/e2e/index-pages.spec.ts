@@ -9,7 +9,7 @@ const generatedRoutes = [
   '/about/games/',
   '/about/albums/',
   '/about/gear/',
-  '/about/tools/',
+  '/about/software/',
   '/about/bookmarks/',
   '/about/friends/',
   '/guestbook/'
@@ -20,6 +20,10 @@ for (const route of generatedRoutes) {
     expect((await request.get(route)).status()).toBe(200);
   });
 }
+
+test('/about/tools/ is replaced by the software route', async ({ request }) => {
+  expect((await request.get('/about/tools/')).status()).toBe(404);
+});
 
 test('content index pages reflect migrated data', async ({ page, request }) => {
   await page.goto('/archives/');
@@ -32,7 +36,7 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
   await page.goto('/projects/');
   await expect(page.getByText('作品内容还没添加')).toBeVisible();
 
-  await page.goto('/about/');
+  await page.goto('/about/hobbies/');
   await expect(page.locator('main').getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', /HatrixXXX/);
 
   const rss = await (await request.get('/rss.xml')).text();

@@ -404,7 +404,7 @@ test('music player persists across about navigation without recreating its audio
   await expect(player.getByRole('slider', { name: '播放进度' })).toHaveValue('0');
 
   await player.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
-  await page.locator('.desktop-nav').getByRole('link', { name: '装备', exact: true }).click();
+  await page.locator('.desktop-nav').getByRole('link', { name: '装备铺', exact: true }).click();
   await expect(page).toHaveURL(/\/about\/gear\/$/);
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-persist-probe', 'same-node');
   const audioSources = await page.evaluate(

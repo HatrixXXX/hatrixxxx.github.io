@@ -14,9 +14,11 @@ function mountGiscus(): void {
     script.dataset.reactionsEnabled = '0';
     script.dataset.emitMetadata = '0';
     script.dataset.inputPosition = 'top';
-    script.dataset.theme = document.documentElement.dataset.theme === 'light'
-      ? 'light'
-      : section.dataset.giscusDarkTheme;
+    script.dataset.theme = section.dataset.giscusThemeMode === 'dark'
+      ? section.dataset.giscusDarkTheme ?? 'dark'
+      : document.documentElement.dataset.theme === 'light'
+        ? 'light'
+        : section.dataset.giscusDarkTheme ?? 'dark';
     script.dataset.lang = 'zh-CN';
     script.crossOrigin = 'anonymous';
     script.async = true;

@@ -1,6 +1,5 @@
 ---
 import { getCollection } from 'astro:content';
-import HeroBanner from '@/components/HeroBanner.astro';
 import PostList from '@/components/PostList.astro';
 import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -9,9 +8,8 @@ import { sortPosts } from '@/lib/content';
 const posts = sortPosts(await getCollection('posts'));
 ---
 
-<BaseLayout title="博客文章">
+<BaseLayout title="博客文章" pageSubtitle="想到啥写啥，慢慢看不着急" bodyClass="plain-page">
   <BackButton href="/" label="返回主页" />
-  <HeroBanner title="博客文章" subtitle="想到啥写啥，慢慢看不着急" image="/images/default-cover.svg" compact />
   <main class="blog-main">
     <PostList posts={posts} />
   </main>

@@ -5,10 +5,11 @@ import darkThemePath from '@/styles/giscus-dark.css?url';
 
 interface Props {
   title?: string;
+  themeMode?: 'auto' | 'dark';
 }
 
 const { repo, repoId, category, categoryId, mapping } = SITE.giscus;
-const { title = '评论' } = Astro.props;
+const { title = '评论', themeMode = 'auto' } = Astro.props;
 const darkTheme = import.meta.env.DEV
   ? `data:text/css;charset=utf-8,${encodeURIComponent(darkThemeCss)}`
   : new URL(darkThemePath, SITE.url).href;
@@ -23,6 +24,7 @@ const darkTheme = import.meta.env.DEV
   data-giscus-category={category}
   data-giscus-category-id={categoryId}
   data-giscus-mapping={mapping}
+  data-giscus-theme-mode={themeMode}
   data-giscus-dark-theme={darkTheme}
 >
   <p class="comments-status" data-giscus-status>评论正在加载…</p>

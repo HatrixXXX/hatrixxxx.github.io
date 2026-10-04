@@ -27,6 +27,7 @@ import '@/styles/protected-content.css';
 interface Props {
   title: string;
   description?: string;
+  pageSubtitle?: string;
   image?: string;
   bodyClass?: string;
   canonicalPath?: string;
@@ -43,6 +44,7 @@ interface Props {
 const {
   title,
   description = SITE.description,
+  pageSubtitle,
   image = '/images/default-cover.svg',
   bodyClass,
   canonicalPath,
@@ -138,8 +140,13 @@ const showSakanaCharacters = isAboutPage;
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
     {image !== '/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
-  <body class={bodyClass} style={pageBgStyle}>    <PageLoader />
+  <body class:list={[bodyClass, { 'has-page-subtitle': Boolean(pageSubtitle) }]} style={pageBgStyle}>    <PageLoader />
     {!isHome && <SiteHeader />}
+    {!isHome && pageSubtitle && (
+      <div class="page-subtitle container" data-page-subtitle>
+        <p>{pageSubtitle}</p>
+      </div>
+    )}
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
     </ProtectedContent>

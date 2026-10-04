@@ -21,36 +21,66 @@ const expectedSocials = [
   { id: 'email', label: '邮件', href: 'mailto:3113624526@qq.com', external: false }
 ] as const;
 
-test('about section routes render their labels and current content', async ({ page }) => {
+test('about section routes keep their document titles without title banners', async ({ page }) => {
   for (const section of ABOUT_SECTION_LINKS) {
     const response = await page.goto(section.href);
 
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(section.label);
+    await expect(page).toHaveTitle(new RegExp(`^${section.label} \\|`));
+    await expect(page.locator('[data-hero]')).toHaveCount(0);
     if (section.slug === 'friends') {
       await expect(page.locator('.friend-card')).toHaveCount(17);
       await expect(page.getByRole('link', { name: 'KraHsu' })).toHaveAttribute(
         'href',
         'https://blog.krahsu.top/'
       );
-    } else {
+    } else if (section.slug !== 'software') {
       await expect(page.getByText('内容还在整理')).toBeVisible();
     }
   }
 });
 
+test('friend sidebar cards wrap their content with the declared bottom padding', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/about/friends/');
+
+  const bottomSpacing = await page.locator('[data-profile-card], [data-site-stats]').evaluateAll((cards) =>
+    cards.map((card) => {
+      const lastChild = card.lastElementChild as HTMLElement;
+      const cardRect = card.getBoundingClientRect();
+      const childRect = lastChild.getBoundingClientRect();
+      const style = getComputedStyle(card);
+      return {
+        actual: cardRect.bottom - childRect.bottom - Number.parseFloat(style.borderBottomWidth),
+        expected: Number.parseFloat(style.paddingBottom)
+      };
+    })
+  );
+
+  expect(bottomSpacing).toHaveLength(2);
+  for (const spacing of bottomSpacing) {
+    expect(Math.abs(spacing.actual - spacing.expected)).toBeLessThan(2);
+  }
+});
+
 test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.route('https://giscus.app/**', (route) => route.abort());
   const response = await page.goto('/guestbook/');
 
   expect(response?.status()).toBe(200);
+  await expect(page.locator('body')).toHaveClass(/guestbook-page/);
   const comments = page.locator('[data-giscus-comments]');
   await expect(comments).toHaveAccessibleName('评论');
   await expect(comments).toHaveAttribute('data-giscus-mapping', 'pathname');
+  await expect(comments).toHaveAttribute('data-giscus-theme-mode', 'dark');
+  const overlay = await page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
+  expect(overlay).toContain('rgba(23, 21, 29');
+  await expect(page.getByRole('link', { name: '首页', exact: true })).toHaveCSS('color', 'rgb(233, 228, 220)');
 });
 
-test('about and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {
-  for (const path of ['/about/', '/about/hobbies/', '/posts/Infra-线性代数/']) {
+test('profile and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {
+  for (const path of ['/about/hobbies/', '/posts/Infra-线性代数/']) {
     await page.goto(path);
     const stack = path.startsWith('/posts/') ? page.locator('.post-sidebar') : page.locator('[data-sidebar-stack]');
     await expect(stack).toHaveCount(1);
@@ -77,8 +107,24 @@ test('about and article routes retain their contextual sidebar with one separate
   }
 });
 
+test('selected about routes omit the profile sidebar and let content use the full container', async ({ page }) => {
+  for (const path of ['/about/', '/about/bookmarks/', '/about/software/', '/about/gear/']) {
+    await page.goto(path);
+    await expect(page.locator('[data-sidebar-stack], [data-profile-card]')).toHaveCount(0);
+    const main = page.locator('main.container');
+    const content = path === '/about/software/'
+      ? main
+      : main.locator(':scope > article, :scope > .about-content');
+    const [mainBox, contentBox] = await Promise.all([main.boundingBox(), content.boundingBox()]);
+    expect(mainBox).not.toBeNull();
+    expect(contentBox).not.toBeNull();
+    expect(contentBox!.x).toBeCloseTo(mainBox!.x, 1);
+    expect(contentBox!.width).toBeCloseTo(mainBox!.width, 1);
+  }
+});
+
 test('about sidebar exposes the requested profile and social links without statistics', async ({ page }) => {
-  await page.goto('/about/');
+  await page.goto('/about/hobbies/');
   const profile = page.locator('[data-profile-card]');
   await expect(profile.getByRole('heading', { name: 'Hatrixの窝' })).toBeVisible();
   await expect(profile.getByText('轻松即单纯，速成即精准')).toBeVisible();
@@ -135,6 +181,8 @@ test('contextual sidebar cards remain readable in the light theme', async ({ pag
   await page.goto('/about/');
 
   await expect(page.locator('.about-main article > h1')).toHaveCSS('color', 'rgb(50, 45, 56)');
+  await expect(page.locator('[data-profile-card]')).toHaveCount(0);
+  await page.goto('/about/hobbies/');
   await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(50, 45, 56)');
   await expect(page.locator('[data-profile-card]').getByText('轻松即单纯，速成即精准')).toHaveCSS('color', 'rgb(101, 90, 107)');
   await expect(page.locator('[data-site-stats]')).toHaveCount(0);
@@ -172,7 +220,7 @@ test('the player dock reveals half a record and keeps playback controls independ
 
 test('Sakana does not capture pointer input from mobile sidebar links', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/about/');
+  await page.goto('/about/hobbies/');
   await expect(page.locator('[data-sakana-layer]')).toHaveCSS('pointer-events', 'none');
 
   const socialLink = page.getByRole('link', { name: '知乎', exact: true });

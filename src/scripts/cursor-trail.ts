@@ -180,16 +180,11 @@ function syncCanvas(): void {
 
 function pointerRegion(event: PointerEvent): TrailRegion {
   if (document.querySelector('.pswp--open')) return null;
-  const horizontal = document.querySelector<HTMLElement>('[data-content-boundary]');
-  const vertical = document.querySelector<HTMLElement>('main, [data-cursor-trail-region]');
-  if (!horizontal || !vertical) return null;
-  const horizontalBounds = horizontal.getBoundingClientRect();
-  const verticalBounds = vertical.getBoundingClientRect();
   return classifyTrailRegion(event.clientX, event.clientY, {
-    left: horizontalBounds.left,
-    right: horizontalBounds.right,
-    top: verticalBounds.top,
-    bottom: verticalBounds.bottom
+    left: 0,
+    right: innerWidth,
+    top: 0,
+    bottom: innerHeight
   });
 }
 

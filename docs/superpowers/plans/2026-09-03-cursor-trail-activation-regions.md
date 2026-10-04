@@ -1,6 +1,6 @@
 # Cursor Trail Activation Regions Implementation Plan
 
-> 历史说明：本文的区域判定仍然有效，但“切区时替换单例状态、只保留旧像素”的实现已由 `2026-09-04-cursor-trail-multi-session.md` 取代。当前运行时为每次进出和换区保留独立会话。
+> 历史说明：本文记录的正文高度门控与左右分区已于 2026-10-04 移除。当前实验场在整个视口内连续响应，只有指针真正离开页面时才结束会话；多会话收敛逻辑仍由 `2026-09-04-cursor-trail-multi-session.md` 延续。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

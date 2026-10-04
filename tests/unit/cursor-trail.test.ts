@@ -56,16 +56,16 @@ describe('cursor trail physics', () => {
     expect(advanceTrailFrameClock(resumed.lastFrame, 1_027).shouldRender).toBe(false);
   });
 
-  it('classifies only the vertical content gutters as trail regions', () => {
-    const bounds = { left: 130, right: 1310, top: 200, bottom: 800 };
+  it('keeps the trail active across the page and ends it outside the viewport', () => {
+    const bounds = { left: 0, right: 1440, top: 0, bottom: 900 };
 
-    expect(classifyTrailRegion(129, 200, bounds)).toBe('left');
-    expect(classifyTrailRegion(1311, 800, bounds)).toBe('right');
-    expect(classifyTrailRegion(130, 400, bounds)).toBeNull();
-    expect(classifyTrailRegion(720, 400, bounds)).toBeNull();
-    expect(classifyTrailRegion(1310, 400, bounds)).toBeNull();
-    expect(classifyTrailRegion(129, 199, bounds)).toBeNull();
-    expect(classifyTrailRegion(1311, 801, bounds)).toBeNull();
+    expect(classifyTrailRegion(0, 0, bounds)).toBe('page');
+    expect(classifyTrailRegion(720, 450, bounds)).toBe('page');
+    expect(classifyTrailRegion(1440, 900, bounds)).toBe('page');
+    expect(classifyTrailRegion(-1, 450, bounds)).toBeNull();
+    expect(classifyTrailRegion(1441, 450, bounds)).toBeNull();
+    expect(classifyTrailRegion(720, -1, bounds)).toBeNull();
+    expect(classifyTrailRegion(720, 901, bounds)).toBeNull();
   });
 
   it('only includes the lab route', () => {

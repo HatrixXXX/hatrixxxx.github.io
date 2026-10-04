@@ -174,7 +174,7 @@ test('home presents the spatial panels and a permanent music player', async ({ p
   expect((await page.locator('[data-home-title]').boundingBox())?.width).toBeGreaterThan(100);
   await expect(page.locator('[data-open-search]')).toHaveCount(1);
   await expect(page.locator('[data-music-player]')).toBeVisible();
-  await expect(page.locator('[data-home-panel="recommendations"]')).toContainText('工具推荐');
+  await expect(page.locator('[data-home-panel="recommendations"]')).toContainText('效率提升');
   await expect(page.locator('[data-home-panel="recommendations"] a')).toHaveCount(3);
   await expect(page.locator('header[data-site-header], footer[data-site-footer]')).toHaveCount(0);
   await expect(page.locator('[data-sakana-layer], [data-cursor-trail], [data-sidebar-stack]')).toHaveCount(0);
@@ -217,10 +217,10 @@ test('home recommendations use a full-height bookmark and the bottom row is full
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
   const group = page.locator('[data-home-panel="recommendations"] section');
-  await expect(group).toHaveAccessibleName('工具推荐');
+  await expect(group).toHaveAccessibleName('效率提升');
   const arrangement = await group.evaluate((section) => {
     const bookmark = section.querySelector<HTMLAnchorElement>('a[href="/about/bookmarks/"]')!;
-    const software = section.querySelector<HTMLAnchorElement>('a[href="/about/tools/"]')!;
+    const software = section.querySelector<HTMLAnchorElement>('a[href="/about/software/"]')!;
     const gear = section.querySelector<HTMLAnchorElement>('a[href="/about/gear/"]')!;
     const heading = section.querySelector<HTMLElement>('h2')!;
     return {
@@ -317,7 +317,9 @@ test('home blog panel navigates directly to the blog hub by keyboard', async ({ 
   await blog.focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/blog/');
-  await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
+  await expect(page).toHaveTitle(/^博客文章 \|/);
+  await expect(page.locator('[data-hero]')).toHaveCount(0);
+  await expect(page.locator('main')).toBeVisible();
 });
 test('home search opens the shared search interface and restores focus', async ({ page }) => {
   await page.goto('/');
@@ -613,8 +615,8 @@ test('home links open their independent pages', async ({ page }) => {
     ['作品橱窗', '/projects/'],
     ['关于我', '/about/'],
     ['书签', '/about/bookmarks/'],
-    ['软件', '/about/tools/'],
-    ['装备', '/about/gear/'],
+    ['工具箱', '/about/software/'],
+    ['装备铺', '/about/gear/'],
     ['友链', '/about/friends/'],
     ['留言板', '/guestbook/'],
     ['计划', '/plans/'],

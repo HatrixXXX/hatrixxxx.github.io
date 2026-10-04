@@ -1,7 +1,6 @@
 ---
 import EmptyState from '@/components/EmptyState.astro';
 import ProfileSidebar from '@/components/ProfileSidebar.astro';
-import HeroBanner from '@/components/HeroBanner.astro';
 import SidebarStack from '@/components/SidebarStack.astro';
 import BackButton from '@/components/BackButton.astro';
 import { ABOUT_SECTION_LINKS } from '@/config/navigation';
@@ -15,18 +14,20 @@ export function getStaticPaths() {
 }
 
 const { section } = Astro.props;
+const showProfileSidebar = !['bookmarks', 'software', 'gear'].includes(section.slug);
 ---
 
-<BaseLayout title={section.label}>
+<BaseLayout title={section.label} pageSubtitle={section.subtitle} bodyClass="plain-page">
   <BackButton href="/" label="返回主页" />
-  <HeroBanner title={section.label} subtitle={section.subtitle} image="/images/default-cover.svg" compact />
-  <main class="about-section container">
+  <main class:list={['about-section', 'container', { 'about-section--with-sidebar': showProfileSidebar }]}>
     <div class="about-content">
       <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
     </div>
-    <SidebarStack posts={[]} showClock={false} showStats={false}>
-      <ProfileSidebar />
-    </SidebarStack>
+    {showProfileSidebar && (
+      <SidebarStack posts={[]} showClock={false} showStats={false}>
+        <ProfileSidebar />
+      </SidebarStack>
+    )}
   </main>
 </BaseLayout>
 
@@ -34,8 +35,8 @@ const { section } = Astro.props;
   .about-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3rem); align-items: start; padding-block: clamp(2.5rem, 6vw, 5rem); }
   .about-content { min-width: 0; }
   @media (min-width: 1025px) {
-    .about-section { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr); }
-    .about-content { grid-column: 2; grid-row: 1; }
-    .about-section :global([data-sidebar-stack]) { grid-column: 1; grid-row: 1; }
+    .about-section--with-sidebar { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr); }
+    .about-section--with-sidebar .about-content { grid-column: 2; grid-row: 1; }
+    .about-section--with-sidebar :global([data-sidebar-stack]) { grid-column: 1; grid-row: 1; }
   }
 </style>

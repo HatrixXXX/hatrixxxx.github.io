@@ -216,9 +216,9 @@ test('Giscus uses the site dark theme and remounts once after client navigation'
   await expect(page.locator('[data-giscus-status]')).toBeHidden();
   const script = page.locator('script[src="https://giscus.app/client.js"]');
   await expect(script).toHaveCount(1);
-  await expect(script).toHaveAttribute('data-theme', 'light');
   const darkTheme = await page.locator('[data-giscus-comments]').getAttribute('data-giscus-dark-theme');
   expect(darkTheme).toMatch(/^data:text\/css/);
+  await expect(script).toHaveAttribute('data-theme', 'light');
   const giscusFrame = page.locator('iframe.giscus-frame');
   await expect(giscusFrame).toHaveCount(1);
   const frameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
@@ -242,6 +242,21 @@ test('Giscus uses the site dark theme and remounts once after client navigation'
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(remountedFrameHtml).toHaveAttribute('data-theme', 'light');
   await expect(remountedFrameHtml).toHaveAttribute('data-message-count', '1');
+
+  await page.goto('/guestbook/');
+  const guestbookComments = page.locator('[data-giscus-comments]');
+  const guestbookDarkTheme = await guestbookComments.getAttribute('data-giscus-dark-theme');
+  await expect(guestbookComments).toHaveAttribute('data-giscus-theme-mode', 'dark');
+  const guestbookScript = guestbookComments.locator('script[src="https://giscus.app/client.js"]');
+  await expect(guestbookScript).toHaveAttribute('data-theme', guestbookDarkTheme!);
+  const guestbookFrameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
+
+  await page.getByRole('button', { name: '切换主题' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(guestbookFrameHtml).toHaveAttribute('data-theme', guestbookDarkTheme!);
+  await page.getByRole('button', { name: '切换主题' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(guestbookFrameHtml).toHaveAttribute('data-theme', guestbookDarkTheme!);
 });
 
 test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ page }) => {

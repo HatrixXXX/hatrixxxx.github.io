@@ -107,7 +107,7 @@ export function advanceTrailHue(state: TrailHueState): number {
   return TRAIL_SETTINGS.hueOffset + Math.sin(state.phase) * TRAIL_SETTINGS.hueAmplitude;
 }
 
-export type TrailRegion = 'left' | 'right' | null;
+export type TrailRegion = 'page' | null;
 
 export type TrailRegionBounds = {
   left: number;
@@ -121,10 +121,13 @@ export function classifyTrailRegion(
   clientY: number,
   bounds: TrailRegionBounds,
 ): TrailRegion {
-  if (clientY < bounds.top || clientY > bounds.bottom) return null;
-  if (clientX < bounds.left) return 'left';
-  if (clientX > bounds.right) return 'right';
-  return null;
+  if (
+    clientX < bounds.left
+    || clientX > bounds.right
+    || clientY < bounds.top
+    || clientY > bounds.bottom
+  ) return null;
+  return 'page';
 }
 
 export function isCursorTrailExcludedPathname(pathname: string): boolean {

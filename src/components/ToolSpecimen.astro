@@ -1,0 +1,433 @@
+---
+import ToolGlyph from '@/components/ToolGlyph.astro';
+import type { SoftwareTool } from '@/data/software-tools';
+
+interface Props {
+  tool: SoftwareTool;
+}
+
+const { tool } = Astro.props;
+---
+
+<a
+  class:list={['tool-specimen', `tool-specimen--${tool.tone}`, `tool-specimen--${tool.kind}`]}
+  href={tool.href}
+  target="_blank"
+  rel="noreferrer"
+  aria-label={`${tool.name}：${tool.description}（在新标签页打开）`}
+  data-tool-specimen
+  data-tool-kind={tool.kind}
+>
+  <span class="tool-purpose" data-tool-purpose>
+    <strong>{tool.name}</strong>
+    <span>{tool.description}</span>
+  </span>
+
+  <span class="tool-vessel" aria-hidden="true">
+    <span class="tool-cap">
+      <span></span>
+    </span>
+    <span class="tool-jar">
+      <span class="tool-glass-shine"></span>
+      <span class="tool-icon"><ToolGlyph name={tool.icon} /></span>
+      <span class="tool-light"></span>
+    </span>
+  </span>
+
+  <span class="tool-base">
+    <span class="tool-base-light" aria-hidden="true"></span>
+    <span class="tool-name">{tool.name}</span>
+    <svg class="tool-external" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M6 3H3v10h10v-3M8 3h5v5M13 3 7 9" />
+    </svg>
+  </span>
+</a>
+
+<style>
+  .tool-specimen {
+    --tool-light: #84d4c6;
+    --tool-light-rgb: 132 212 198;
+    --tool-vessel-width: 56px;
+    --tool-vessel-height: 72px;
+    --tool-cap-width: 28px;
+    --tool-cap-height: 10px;
+    --tool-jar-top: 8px;
+    --tool-icon-size: 30px;
+    --tool-shine-width: 6px;
+    --tool-shine-height: 36px;
+    --tool-shine-top: 12px;
+    --tool-shine-left: 7px;
+    --tool-shine-after-right: -35px;
+    --tool-shine-after-bottom: -10px;
+    --tool-light-width: 32px;
+    --tool-light-height: 10px;
+    --tool-light-bottom: 6px;
+    --tool-base-width: 82px;
+    --tool-base-height: 28px;
+    --tool-name-size: 0.62rem;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: 108px 42px;
+    justify-items: center;
+    min-width: 0;
+    color: #f5f0e8;
+    text-decoration: none;
+    isolation: isolate;
+  }
+
+  .tool-specimen--software {
+    --tool-vessel-width: 84px;
+    --tool-vessel-height: 108px;
+    --tool-cap-width: 42px;
+    --tool-cap-height: 15px;
+    --tool-jar-top: 12px;
+    --tool-icon-size: 45px;
+    --tool-shine-width: 9px;
+    --tool-shine-height: 54px;
+    --tool-shine-top: 18px;
+    --tool-shine-left: 11px;
+    --tool-shine-after-right: -52px;
+    --tool-shine-after-bottom: -15px;
+    --tool-light-width: 48px;
+    --tool-light-height: 15px;
+    --tool-light-bottom: 9px;
+    --tool-base-width: 123px;
+    --tool-base-height: 42px;
+    --tool-name-size: 0.7rem;
+  }
+
+  .tool-specimen--amber {
+    --tool-light: #f3bb62;
+    --tool-light-rgb: 243 187 98;
+  }
+
+  .tool-specimen--violet {
+    --tool-light: #bba7e6;
+    --tool-light-rgb: 187 167 230;
+  }
+
+  .tool-specimen--green {
+    --tool-light: #87c89a;
+    --tool-light-rgb: 135 200 154;
+  }
+
+  .tool-purpose {
+    position: absolute;
+    z-index: 5;
+    bottom: calc(var(--tool-base-height) + var(--tool-vessel-height) + 8px);
+    width: min(160px, calc(100% - 6px));
+    padding: 0.48rem 0.58rem 0.52rem;
+    border: 1px solid rgb(181 140 101 / 42%);
+    border-radius: 5px;
+    background: linear-gradient(155deg, rgb(48 43 56 / 98%), rgb(25 22 31 / 98%));
+    box-shadow: 0 8px 18px rgb(8 7 12 / 34%), inset 0 1px rgb(255 255 255 / 5%);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 180ms var(--ease-out), transform 220ms var(--ease-out);
+    pointer-events: none;
+    text-align: left;
+  }
+
+  .tool-purpose::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -5px;
+    width: 8px;
+    height: 8px;
+    border-right: 1px solid rgb(181 140 101 / 42%);
+    border-bottom: 1px solid rgb(181 140 101 / 42%);
+    background: #19161f;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  .tool-purpose strong,
+  .tool-purpose span {
+    display: block;
+  }
+
+  .tool-purpose strong {
+    color: #f5f0e8;
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+
+  .tool-purpose span {
+    margin-top: 0.18rem;
+    color: #c7bdcc;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .tool-vessel {
+    position: relative;
+    grid-row: 1;
+    align-self: end;
+    width: var(--tool-vessel-width);
+    height: var(--tool-vessel-height);
+    transform-origin: 50% 100%;
+    transition: transform 220ms var(--ease-out), filter 220ms var(--ease-out);
+    filter: drop-shadow(0 12px 10px rgb(5 5 10 / 28%));
+  }
+
+  .tool-cap {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    left: 50%;
+    width: var(--tool-cap-width);
+    height: var(--tool-cap-height);
+    border: 1px solid #85684f;
+    border-radius: 5px 5px 3px 3px;
+    background: linear-gradient(180deg, #5b4636 0 22%, #2a2220 24% 72%, #171417 74%);
+    box-shadow: 0 4px 8px rgb(7 5 8 / 35%), inset 0 1px rgb(255 218 163 / 18%);
+    transform: translateX(-50%);
+  }
+
+  .tool-cap::before,
+  .tool-cap::after,
+  .tool-cap span {
+    content: '';
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    width: 1px;
+    background: rgb(224 184 126 / 18%);
+  }
+
+  .tool-cap::before { left: 25%; }
+  .tool-cap::after { right: 25%; }
+  .tool-cap span { left: 50%; }
+
+  .tool-jar {
+    position: absolute;
+    inset: var(--tool-jar-top) 0 0;
+    overflow: hidden;
+    border: 1px solid rgb(211 233 235 / 52%);
+    border-bottom-color: rgb(151 181 184 / 36%);
+    border-radius: 40% 40% 18% 18% / 28% 28% 14% 14%;
+    background:
+      linear-gradient(100deg, rgb(255 255 255 / 11%), transparent 20% 72%, rgb(184 232 235 / 8%)),
+      linear-gradient(180deg, rgb(176 220 222 / 8%), rgb(30 46 51 / 17%));
+    box-shadow:
+      inset 7px 0 12px rgb(255 255 255 / 5%),
+      inset -8px -5px 14px rgb(6 16 22 / 14%),
+      inset 0 -3px 6px rgb(198 230 229 / 14%);
+    backdrop-filter: blur(1.5px) saturate(1.15);
+  }
+
+  .tool-glass-shine {
+    position: absolute;
+    top: var(--tool-shine-top);
+    left: var(--tool-shine-left);
+    width: var(--tool-shine-width);
+    height: var(--tool-shine-height);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgb(255 255 255 / 52%), rgb(255 255 255 / 4%));
+    opacity: 0.62;
+    transform: rotate(5deg);
+  }
+
+  .tool-glass-shine::after {
+    content: '';
+    position: absolute;
+    right: var(--tool-shine-after-right);
+    bottom: var(--tool-shine-after-bottom);
+    width: var(--tool-light-width);
+    height: var(--tool-light-height);
+    border-radius: 50%;
+    background: rgb(213 244 242 / 13%);
+    transform: rotate(-8deg);
+  }
+
+  .tool-icon {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    width: var(--tool-icon-size);
+    height: var(--tool-icon-size);
+    color: var(--tool-light);
+    filter: drop-shadow(0 0 8px rgb(var(--tool-light-rgb) / 34%));
+    transform: translate(-50%, -52%);
+  }
+
+  .tool-light {
+    position: absolute;
+    left: 50%;
+    bottom: var(--tool-light-bottom);
+    width: var(--tool-light-width);
+    height: var(--tool-light-height);
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgb(var(--tool-light-rgb) / 38%), transparent 72%);
+    filter: blur(2px);
+    transform: translateX(-50%);
+  }
+
+  .tool-base {
+    position: relative;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 6px minmax(0, 1fr) 11px;
+    align-items: center;
+    gap: 0.28rem;
+    width: min(var(--tool-base-width), calc(100% - 4px));
+    min-height: var(--tool-base-height);
+    padding: 0.32rem 0.4rem;
+    border: 1px solid #5d4b43;
+    border-top-color: #977252;
+    border-radius: 4px 4px 7px 7px;
+    background:
+      linear-gradient(180deg, rgb(255 231 191 / 8%), transparent 28%),
+      linear-gradient(110deg, #30292b, #19171d 58%, #262127);
+    box-shadow: 0 10px 18px rgb(5 4 8 / 30%), inset 0 -2px rgb(0 0 0 / 20%);
+  }
+
+  .tool-base::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 9px;
+    right: 9px;
+    height: 5px;
+    border: 1px solid #806247;
+    border-radius: 3px 3px 1px 1px;
+    background: #32272a;
+  }
+
+  .tool-base-light {
+    width: 6px;
+    height: 6px;
+    border: 1px solid rgb(var(--tool-light-rgb) / 55%);
+    border-radius: 50%;
+    background: rgb(var(--tool-light-rgb) / 78%);
+    box-shadow: 0 0 7px rgb(var(--tool-light-rgb) / 52%);
+  }
+
+  .tool-name {
+    overflow: hidden;
+    color: #eee7dc;
+    font-size: var(--tool-name-size);
+    font-weight: 650;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tool-external {
+    width: 10px;
+    height: 10px;
+    fill: none;
+    stroke: #b9b0c2;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .tool-specimen:hover,
+  .tool-specimen:focus-visible {
+    z-index: 4;
+  }
+
+  .tool-specimen:hover .tool-purpose,
+  .tool-specimen:focus-visible .tool-purpose {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .tool-specimen:hover .tool-vessel,
+  .tool-specimen:focus-visible .tool-vessel {
+    transform: translateY(-4px);
+    filter: drop-shadow(0 17px 14px rgb(5 5 10 / 34%));
+  }
+
+  .tool-specimen:focus-visible {
+    border-radius: 6px;
+    outline: 3px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 620px), (hover: none) {
+    .tool-specimen {
+      grid-template-rows: 108px 42px auto;
+      align-content: end;
+      min-height: 206px;
+    }
+
+    .tool-purpose {
+      position: relative;
+      z-index: auto;
+      bottom: auto;
+      grid-row: 3;
+      align-self: start;
+      width: min(116px, calc(100% - 4px));
+      min-height: 52px;
+      padding: 0.5rem 0.35rem 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      opacity: 1;
+      transform: none;
+      text-align: center;
+    }
+
+    .tool-purpose::after,
+    .tool-purpose strong {
+      display: none;
+    }
+
+    .tool-purpose span {
+      margin: 0;
+      color: var(--color-muted);
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+
+    .tool-vessel {
+      grid-row: 1;
+      width: var(--tool-vessel-width);
+      height: var(--tool-vessel-height);
+    }
+
+    .tool-base {
+      grid-row: 2;
+      min-height: var(--tool-base-height);
+    }
+
+    .tool-name {
+      display: -webkit-box;
+      overflow: hidden;
+      font-size: var(--tool-name-size);
+      line-height: 1.25;
+      text-overflow: clip;
+      white-space: normal;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .tool-specimen:hover .tool-vessel,
+    .tool-specimen:focus-visible .tool-vessel {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tool-purpose,
+    .tool-vessel {
+      transition: none;
+    }
+
+    .tool-purpose,
+    .tool-specimen:hover .tool-purpose,
+    .tool-specimen:focus-visible .tool-purpose {
+      transform: none;
+    }
+
+    .tool-specimen:hover .tool-vessel,
+    .tool-specimen:focus-visible .tool-vessel {
+      transform: none;
+    }
+  }
+</style>

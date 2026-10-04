@@ -102,20 +102,25 @@ test('the cursor trail uses a high-DPR backing store', async ({ browser }) => {
   }
 });
 
-test('content movement stays transparent while gutter movement draws', async ({ page }) => {
+test('movement across the lab viewport draws until the pointer leaves the page', async ({ page }) => {
   await page.goto(LAB_ROUTE);
   const canvas = page.locator('[data-cursor-trail]');
   const geometry = await trailGeometry(page);
 
+  await page.mouse.move(geometry.contentX, 12);
+  await page.mouse.move(geometry.contentX + 36, 36);
+  await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+
+  await canvas.evaluate((element) => {
+    const target = element as HTMLCanvasElement;
+    target.getContext('2d')?.clearRect(0, 0, target.width, target.height);
+  });
   await page.mouse.move(geometry.contentX, geometry.y - 40);
   await page.mouse.move(geometry.contentX, geometry.y + 40);
-  await waitForAnimationFrames(page);
-  expect(await canvas.evaluate(alphaPixels)).toBe(0);
-
-  for (let step = 0; step < 6; step += 1) {
-    await page.mouse.move(geometry.gutterX, geometry.y - 70 + step * 28);
-  }
   await expect.poll(() => canvas.evaluate(alphaPixels)).toBeGreaterThan(0);
+
+  await page.evaluate(() => window.dispatchEvent(new PointerEvent('pointerleave')));
+  await expect(canvas).toHaveAttribute('data-cursor-trail-state', /fading|idle/);
 });
 
 test('reduced motion prevents the trail from drawing', async ({ page }) => {

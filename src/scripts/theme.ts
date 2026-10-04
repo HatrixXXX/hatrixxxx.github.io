@@ -12,17 +12,19 @@ function currentTheme(): Theme {
 }
 
 function updateGiscusTheme(theme: Theme): void {
-  const darkTheme = document.querySelector<HTMLElement>(
-    '[data-giscus-dark-theme]'
-  )?.dataset.giscusDarkTheme;
-  const giscusTheme = theme === 'dark'
-    ? darkTheme ?? 'dark'
-    : 'light';
-  document.querySelectorAll<HTMLIFrameElement>('iframe.giscus-frame').forEach((iframe) => {
-    iframe.contentWindow?.postMessage(
-      { giscus: { setConfig: { theme: giscusTheme } } },
-      'https://giscus.app'
-    );
+  document.querySelectorAll<HTMLElement>('[data-giscus-comments]').forEach((section) => {
+    const darkTheme = section.dataset.giscusDarkTheme;
+    const giscusTheme = section.dataset.giscusThemeMode === 'dark'
+      ? darkTheme ?? 'dark'
+      : theme === 'dark'
+        ? darkTheme ?? 'dark'
+        : 'light';
+    section.querySelectorAll<HTMLIFrameElement>('iframe.giscus-frame').forEach((iframe) => {
+      iframe.contentWindow?.postMessage(
+        { giscus: { setConfig: { theme: giscusTheme } } },
+        'https://giscus.app'
+      );
+    });
   });
 }
 

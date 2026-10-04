@@ -1,0 +1,41 @@
+---
+import type { ToolIconName } from '@/data/software-tools';
+
+interface Props {
+  name: ToolIconName;
+}
+
+const { name } = Astro.props;
+
+const paths: Record<ToolIconName, string> = {
+  transfer: 'M12 17h25m-8-8 8 8-8 8M36 31H11m8-8-8 8 8 8',
+  translate: 'M11 13h16M19 9v4c0 9-3 15-9 20m5-13c3 6 7 10 13 13m1-3 4-11 4 11m-6-5h12',
+  cutout: 'M12 10h24v28H12zM18 31c1-5 3-8 6-8s5 3 6 8M24 22a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z',
+  code: 'm18 14-10 10 10 10m12-20 10 10-10 10M27 10l-6 28',
+  book: 'M9 10h12c3 0 5 2 5 5v25c0-3-2-5-5-5H9zm30 0H27v30c0-3 2-5 5-5h7zM13 17h8m-8 6h8m10-6h4m-4 6h4',
+  search: 'M21 9a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm9 21 9 9M15 20h12m-12 5h8',
+  network: 'M24 8v10M12 38l9-13m15 13-9-13M24 18a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM8 38a4 4 0 1 0 8 0 4 4 0 0 0-8 0Zm24 0a4 4 0 1 0 8 0 4 4 0 0 0-8 0ZM20 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0Z',
+  palette: 'M24 8a16 16 0 0 0 0 32h3a4 4 0 0 0 0 0-8h-2a3 3 0 0 1-3-3c0-2 2-3 4-3h2c4 0 6-3 6-7C40 13 33 8 24 8ZM15 21h.1M20 15h.1M29 15h.1M35 21h.1',
+  chart: 'M10 37V11m0 26h29M16 31l7-8 6 4 8-11M16 31h.1M23 23h.1M29 27h.1M37 16h.1',
+  utility: 'M14 10v9m-4-5h9m15 15v9m-5-5h10M13 34l5-5m11-11 6-6M10 38l9-9m10-11 9-9M19 18l11 11',
+  capture: 'M10 17v-6h6m16 0h6v6m0 14v6h-6m-16 0h-6v-6M17 19h14v10H17z',
+  archive: 'M10 12h28v8H10zm3 8h22v18H13zm7 6h8'
+};
+---
+
+<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+  <path d={paths[name]} />
+</svg>
+
+<style>
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>
