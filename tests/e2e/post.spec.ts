@@ -69,7 +69,7 @@ test('all legacy slugs resolve and the merged FPGA route stays available', async
 }) => {
   test.setTimeout(120_000);
   const slugs = await legacySlugs();
-  expect(slugs).toHaveLength(11);
+  expect(slugs).toHaveLength(16);
 
   const responses: Array<{ slug: string; response: APIResponse }> = [];
   for (let offset = 0; offset < slugs.length; offset += 4) {

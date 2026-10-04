@@ -12,7 +12,7 @@ test('blog index lists every published post in date order', async ({ page, reque
   const cards = coverflow.locator('article[data-post-card]');
   await expect(coverflow).toHaveAttribute('tabindex', '0');
   await expect(coverflow).toHaveAccessibleName('文章列表');
-  await expect(cards).toHaveCount(11);
+  await expect(cards).toHaveCount(16);
   await expect(cards.first().locator('h2')).toHaveText('Infra-GEMM优化');
   await expect(cards.first()).toHaveAttribute('data-active', 'true');
   await expect(coverflow.locator('[data-post-card][data-active="true"]')).toHaveCount(1);
@@ -20,7 +20,7 @@ test('blog index lists every published post in date order', async ({ page, reque
   const dates = await cards.locator('time').evaluateAll((times) =>
     times.map((time) => Date.parse(time.getAttribute('datetime') ?? ''))
   );
-  expect(dates).toHaveLength(11);
+  expect(dates).toHaveLength(16);
   expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     await page.evaluate(() => document.documentElement.clientWidth)
