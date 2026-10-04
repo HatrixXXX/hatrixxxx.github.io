@@ -5,11 +5,6 @@ import playwrightConfig from '../../playwright.config';
 import { siteMarkdownConfig } from '../../src/config/markdown';
 import remarkContentSecurity from '../../src/plugins/remark-content-security';
 
-const PINNED_IMAGE_PATHS = [
-  '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**',
-  '/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/**'
-];
-
 function workflowJob(workflow: string, name: string): string {
   const start = workflow.indexOf(`\n  ${name}:`);
   expect(start, `workflow job ${name}`).toBeGreaterThanOrEqual(0);
@@ -80,14 +75,33 @@ describe('Astro project tooling', () => {
     expect(tsconfig.include).toContain('scripts/**/*.ts');
   });
 
-  it('allows only pinned image repository paths', () => {
-    expect(astroConfig.image?.remotePatterns).toEqual(
-      PINNED_IMAGE_PATHS.map((pathname) => ({
+  it('allows pinned jsDelivr images and only their exact GitHub Raw redirects', () => {
+    expect(astroConfig.image?.remotePatterns).toEqual([
+      {
         protocol: 'https',
         hostname: 'cdn.jsdelivr.net',
-        pathname
-      }))
-    );
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/**'
+      }
+    ]);
   });
 
   it('prebundles lazy browser dependencies before the dev server accepts requests', () => {

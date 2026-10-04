@@ -187,7 +187,7 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 155 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 的精确 `/img/**` 规则和图片 inventory 测试。
+文章共引用 181 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
@@ -219,10 +219,10 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | --- | --- |
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
-| `pnpm check:images` | 155 个去重后的远程图片 URL |
+| `pnpm check:images` | 181 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、31 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章路由、CNAME、1528 条站内链接和发布体积 |
+| `pnpm check:site` | 文章路由、CNAME、1536 条站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 204 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。合并前仍应在 Windows 本地运行 `pnpm test:e2e`。
