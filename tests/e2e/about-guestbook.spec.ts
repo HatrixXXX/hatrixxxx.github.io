@@ -21,6 +21,18 @@ const expectedSocials = [
   { id: 'email', label: '邮件', href: 'mailto:3113624526@qq.com', external: false }
 ] as const;
 
+const compactContentSurfaces = [
+  { path: '/about/', selector: '.about-main > article' },
+  { path: '/about/bookmarks/', selector: '.empty-state' },
+  { path: '/about/software/', selector: '[data-tool-deck]' },
+  { path: '/about/gear/', selector: '.empty-state' },
+  { path: '/plans/', selector: '.empty-state' },
+  { path: '/lab/', selector: '.empty-state' },
+  { path: '/about/friends/', selector: '[data-profile-card]' },
+  { path: '/about/friends/', selector: '.friend-card' },
+  { path: '/guestbook/', selector: '[data-guestbook-shell]' }
+] as const;
+
 test('about section routes keep their document titles without title banners', async ({ page }) => {
   for (const section of ABOUT_SECTION_LINKS) {
     const response = await page.goto(section.href);
@@ -63,6 +75,25 @@ test('friend sidebar cards wrap their content with the declared bottom padding',
   }
 });
 
+test('primary content surfaces align with the project cabinet below desktop navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/projects/');
+
+  const projectCabinetTop = await page.locator('.project-cabinet').evaluate((element) => {
+    const mainTop = element.getBoundingClientRect().top;
+    const cabinetTop = Number.parseFloat(getComputedStyle(element, '::before').top);
+    return mainTop + cabinetTop;
+  });
+
+  for (const surface of compactContentSurfaces) {
+    await page.goto(surface.path);
+    const surfaceBox = await page.locator(surface.selector).first().boundingBox();
+
+    expect(surfaceBox, `${surface.path} ${surface.selector}`).not.toBeNull();
+    expect(Math.abs(surfaceBox!.y - projectCabinetTop), `${surface.path} ${surface.selector}`).toBeLessThan(2);
+  }
+});
+
 test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.route('https://giscus.app/**', (route) => route.abort());
@@ -72,6 +103,7 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
   await expect(page.locator('body')).toHaveClass(/guestbook-page/);
   const shell = page.locator('[data-guestbook-shell]');
   await expect(shell).toBeVisible();
+  await expect(shell.getByText('GitHub Discussions', { exact: true })).toHaveCount(0);
   await expect(shell.getByRole('heading', { name: '留言板' })).toBeVisible();
   const shellMaterial = await shell.evaluate((element) => {
     const style = getComputedStyle(element);

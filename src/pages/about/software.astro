@@ -1,109 +1,31 @@
 ---
 import BackButton from '@/components/BackButton.astro';
 import ToolModule from '@/components/ToolModule.astro';
-import { SOFTWARE_TOOLS, type ToolKind } from '@/data/software-tools';
+import { SOFTWARE_TOOLS } from '@/data/software-tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const description = '收录常用软件、在线工具和工作中会反复打开的站点。';
-const toolGroups: ReadonlyArray<{
-  kind: ToolKind;
-  title: string;
-  description: string;
-}> = [
-  {
-    kind: 'software',
-    title: '本地软件',
-    description: '安装在电脑上的常用工具。'
-  },
-  {
-    kind: 'link',
-    title: '在线网站',
-    description: '打开浏览器即可使用的服务。'
-  }
-];
-
-const softwareCount = SOFTWARE_TOOLS.filter((tool) => tool.kind === 'software').length;
-const linkCount = SOFTWARE_TOOLS.length - softwareCount;
+const initialTool = SOFTWARE_TOOLS[0]!;
 ---
 
-<BaseLayout title="工具箱" description={description} bodyClass="software-page plain-page">
+<BaseLayout title="工具箱" description={description} bodyClass="software-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" />
 
-  <main class="toolbox-main container" aria-labelledby="toolbox-title" data-toolbox>
-    <section class="tool-deck" data-tool-deck>
-      <header class="tool-deck__header">
-        <div class="tool-deck__intro">
-          <h1 id="toolbox-title">工具箱</h1>
-          <p>{description}</p>
-        </div>
-
-        <dl class="tool-deck__counts" aria-label="工具数量">
-          <div>
-            <dt>全部</dt>
-            <dd>{String(SOFTWARE_TOOLS.length).padStart(2, '0')}</dd>
-          </div>
-          <div>
-            <dt>软件</dt>
-            <dd>{String(softwareCount).padStart(2, '0')}</dd>
-          </div>
-          <div>
-            <dt>网站</dt>
-            <dd>{String(linkCount).padStart(2, '0')}</dd>
-          </div>
-        </dl>
-      </header>
-
-      <div class="tool-deck__workspace">
-        <div class="tool-arrays">
-          {toolGroups.map((group) => {
-            const tools = SOFTWARE_TOOLS.filter((tool) => tool.kind === group.kind);
-            return (
-              <section class="tool-group" data-tool-group={group.kind} aria-labelledby={`tool-group-${group.kind}`}>
-                <header class="tool-group__header">
-                  <div>
-                    <h2 id={`tool-group-${group.kind}`}>{group.title}</h2>
-                    <p>{group.description}</p>
-                  </div>
-                  <span aria-label={`${tools.length} 项`}>{String(tools.length).padStart(2, '0')}</span>
-                </header>
-
-                <div class="tool-grid" data-tool-grid>
-                  {tools.map((tool) => {
-                    const index = SOFTWARE_TOOLS.indexOf(tool) + 1;
-                    return (
-                      <ToolModule
-                        tool={tool}
-                        index={index}
-                        total={SOFTWARE_TOOLS.length}
-                      />
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-
-        <aside class="tool-readout" data-tool-readout data-tone="cyan" aria-hidden="true">
-          <div class="tool-readout__rail">
-            <span class="tool-readout__light"></span>
-            <span data-tool-readout-kind>工具读取台</span>
-            <span data-tool-readout-index>-- / {String(SOFTWARE_TOOLS.length).padStart(2, '0')}</span>
-          </div>
-          <div class="tool-readout__screen">
-            <span class="tool-readout__reticle" aria-hidden="true"></span>
-            <strong data-tool-readout-name>选择一个工具模块</strong>
-            <p data-tool-readout-description>悬停或使用键盘聚焦模块，即可在这里读取用途。</p>
-          </div>
-          <p class="tool-readout__hint">点击模块将在新标签页打开</p>
-        </aside>
+  <main class="toolbox-main container" aria-label="工具箱" data-toolbox>
+    <section class="toolbox-shell" data-tool-deck>
+      <div class="tool-grid" data-tool-grid aria-label="工具和网站">
+        {SOFTWARE_TOOLS.map((tool) => <ToolModule tool={tool} />)}
       </div>
 
-      <footer class="tool-deck__footer" aria-hidden="true">
-        <span></span>
-        <span>HATRIX · TOOL ARRAY</span>
-        <span></span>
-      </footer>
+      <aside class="tool-readout" data-tool-readout role="status" aria-live="polite" aria-atomic="true">
+        <div class="tool-readout__screen">
+          <span class="tool-readout__corners" aria-hidden="true"></span>
+          <div class="tool-readout__content">
+            <strong data-tool-readout-name>{initialTool.name}</strong>
+            <p data-tool-readout-description>{initialTool.description}</p>
+          </div>
+        </div>
+      </aside>
     </section>
   </main>
 </BaseLayout>
@@ -117,466 +39,252 @@ const linkCount = SOFTWARE_TOOLS.length - softwareCount;
     padding-bottom: clamp(5rem, 8vw, 7rem);
   }
 
-  .tool-deck {
-    position: relative;
-    isolation: isolate;
-    overflow: visible;
+  .toolbox-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.56fr);
+    align-items: start;
+    gap: clamp(1rem, 2.4vw, 1.75rem);
+  }
+
+  .tool-grid,
+  .tool-readout {
     border: 1px solid var(--color-line-strong);
-    border-radius: 10px;
-    background:
-      linear-gradient(145deg, rgb(245 224 193 / 4%), transparent 34%),
-      rgb(30 27 37 / 94%);
-    box-shadow:
-      0 26px 52px rgb(7 5 10 / 34%),
-      inset 0 1px rgb(255 255 255 / 6%);
-  }
-
-  .tool-deck::before,
-  .tool-deck::after {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    pointer-events: none;
-  }
-
-  .tool-deck::before {
-    right: -7px;
-    bottom: -12px;
-    left: 12px;
-    height: 18px;
-    border: 1px solid #5b463e;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #4c3a34, #20191d 62%);
-    box-shadow: 0 18px 28px rgb(5 4 8 / 32%);
-  }
-
-  .tool-deck::after {
-    top: 1rem;
-    right: 1rem;
-    width: 4.5rem;
-    height: 2px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, transparent, var(--color-copper));
-    opacity: 0.55;
-  }
-
-  .tool-deck__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-    padding: clamp(1.15rem, 2.5vw, 1.7rem) clamp(1.1rem, 3vw, 2rem);
-    border-bottom: 1px solid var(--color-line);
-  }
-
-  .tool-deck__intro {
-    min-width: 0;
-  }
-
-  .tool-deck__intro h1 {
-    margin: 0;
-    color: var(--color-heading);
-    font-size: clamp(1.45rem, 2.4vw, 2rem);
-    font-weight: 650;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-  }
-
-  .tool-deck__intro p {
-    max-width: 56ch;
-    margin: 0.45rem 0 0;
-    color: var(--color-muted);
-    font-size: 0.92rem;
-    line-height: 1.6;
-  }
-
-  .tool-deck__counts {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(3.4rem, 1fr));
-    flex: 0 0 auto;
-    margin: 0;
-    border: 1px solid var(--color-line);
-    border-radius: 6px;
-    background: rgb(15 13 19 / 40%);
-    box-shadow: inset 0 1px 6px rgb(0 0 0 / 22%);
-  }
-
-  .tool-deck__counts div {
-    display: grid;
-    justify-items: center;
-    gap: 0.12rem;
-    padding: 0.54rem 0.72rem 0.48rem;
-  }
-
-  .tool-deck__counts div + div {
-    border-left: 1px solid var(--color-line);
-  }
-
-  .tool-deck__counts dt {
-    color: var(--color-muted);
-    font-size: 0.68rem;
-    line-height: 1.2;
-  }
-
-  .tool-deck__counts dd {
-    margin: 0;
-    color: var(--color-accent);
-    font-family: var(--font-data);
-    font-size: 0.92rem;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-  }
-
-  .tool-deck__workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(230px, 270px);
-    gap: clamp(1rem, 2.2vw, 1.75rem);
-    padding: clamp(1rem, 2.5vw, 1.8rem);
-  }
-
-  .tool-arrays {
-    display: contents;
-  }
-
-  .tool-group[data-tool-group='software'] {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .tool-group[data-tool-group='link'] {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .tool-group {
-    position: relative;
-    min-width: 0;
-    padding: 1rem 1.15rem 1.35rem;
-    border: 1px solid rgb(190 174 204 / 15%);
-    border-radius: 8px;
-    background:
-      linear-gradient(155deg, rgb(255 255 255 / 3%), transparent 42%),
-      rgb(18 16 23 / 48%);
-    box-shadow: inset 0 2px 9px rgb(0 0 0 / 20%);
-  }
-
-  .tool-group__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.1rem;
-    padding-bottom: 0.78rem;
-    border-bottom: 1px solid rgb(190 174 204 / 12%);
-  }
-
-  .tool-group__header h2,
-  .tool-group__header p {
-    margin: 0;
-  }
-
-  .tool-group__header h2 {
-    color: var(--color-heading);
-    font-size: 1rem;
-    font-weight: 650;
-    line-height: 1.35;
-  }
-
-  .tool-group__header p {
-    margin-top: 0.2rem;
-    color: var(--color-muted);
-    font-size: 0.78rem;
-    line-height: 1.45;
-  }
-
-  .tool-group__header > span {
-    color: var(--color-copper);
-    font-family: var(--font-data);
-    font-size: 0.76rem;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.5;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-panel), var(--shadow-inset);
   }
 
   .tool-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: clamp(1rem, 2.2vw, 1.4rem);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(0.75rem, 1.5vw, 1rem);
     min-width: 0;
-    padding: 0 0.7rem 0.35rem 0.15rem;
-  }
-
-  .tool-group[data-tool-group='software'] .tool-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    padding: clamp(0.9rem, 2vw, 1.25rem);
+    background: var(--surface-sheen), rgb(30 27 37 / 94%);
   }
 
   .tool-readout {
-    --readout-accent: #84d4c6;
-    --readout-accent-rgb: 132 212 198;
+    --screen-cyan: 132 212 198;
+    --screen-amber: 243 187 98;
     position: sticky;
     top: calc(var(--header-height) + 1rem);
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
     overflow: hidden;
-    min-height: 280px;
-    border: 1px solid #6f574a;
-    border-radius: 8px;
+    min-width: 0;
+    padding: clamp(0.7rem, 1.6vw, 1rem);
     background:
-      linear-gradient(145deg, rgb(255 237 209 / 6%), transparent 31%),
-      linear-gradient(160deg, #30282b, #19161f 65%);
-    box-shadow:
-      0 18px 28px rgb(5 4 8 / 28%),
-      inset 0 1px rgb(255 255 255 / 6%);
+      linear-gradient(145deg, rgb(245 224 193 / 5%), transparent 36%),
+      linear-gradient(160deg, #302a35, #1d1923 72%);
   }
 
-  .tool-readout[data-tone='amber'] {
-    --readout-accent: #f3bb62;
-    --readout-accent-rgb: 243 187 98;
+  .tool-readout::before,
+  .tool-readout::after {
+    content: '';
+    position: absolute;
+    top: 0.55rem;
+    width: 2.5rem;
+    height: 2px;
+    background: rgb(var(--screen-amber) / 54%);
+    box-shadow: 0 0 8px rgb(var(--screen-amber) / 12%);
   }
 
-  .tool-readout[data-tone='violet'] {
-    --readout-accent: #bba7e6;
-    --readout-accent-rgb: 187 167 230;
+  .tool-readout::before {
+    left: 0.75rem;
   }
 
-  .tool-readout[data-tone='green'] {
-    --readout-accent: #87c89a;
-    --readout-accent-rgb: 135 200 154;
-  }
-
-  .tool-readout__rail {
-    display: grid;
-    grid-template-columns: 8px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.62rem 0.72rem;
-    border-bottom: 1px solid #5d4942;
-    color: #c7bdcc;
-    font-family: var(--font-data);
-    font-size: 0.66rem;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-  }
-
-  .tool-readout__light {
-    width: 7px;
-    height: 7px;
-    border: 1px solid rgb(var(--readout-accent-rgb) / 58%);
-    border-radius: 50%;
-    background: rgb(var(--readout-accent-rgb) / 78%);
-    box-shadow: 0 2px 7px rgb(var(--readout-accent-rgb) / 36%);
+  .tool-readout::after {
+    right: 0.75rem;
   }
 
   .tool-readout__screen {
     position: relative;
-    min-height: 190px;
-    margin: 0.75rem;
-    padding: 1.2rem 1rem;
-    border: 1px solid rgb(var(--readout-accent-rgb) / 24%);
-    border-radius: 5px;
-    background:
-      linear-gradient(180deg, rgb(var(--readout-accent-rgb) / 4%), transparent 58%),
-      #111016;
-    box-shadow: inset 0 3px 12px rgb(0 0 0 / 46%);
-  }
-
-  .tool-readout__reticle {
-    display: block;
-    width: 2.25rem;
-    height: 2px;
-    margin-bottom: 1.1rem;
-    border-radius: 2px;
-    background: var(--readout-accent);
-    box-shadow: 0 3px 9px rgb(var(--readout-accent-rgb) / 24%);
-  }
-
-  .tool-readout__screen strong {
-    display: block;
-    color: #f5f0e8;
-    font-size: 1rem;
-    font-weight: 650;
-    line-height: 1.35;
-  }
-
-  .tool-readout__screen p {
-    margin: 0.65rem 0 0;
-    color: #c7bdcc;
-    font-size: 0.83rem;
-    line-height: 1.65;
-  }
-
-  .tool-readout__hint {
-    margin: -0.08rem 0.8rem 0.78rem;
-    color: #968c9c;
-    font-size: 0.68rem;
-    line-height: 1.4;
-    text-align: center;
-  }
-
-  .tool-deck__footer {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.58rem 1rem;
-    border-top: 1px solid var(--color-line);
-    color: var(--color-muted);
-    font-family: var(--font-data);
-    font-size: 0.56rem;
-    letter-spacing: 0.08em;
-    opacity: 0.62;
-  }
-
-  .tool-deck__footer span:first-child,
-  .tool-deck__footer span:last-child {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-line-strong));
-  }
-
-  .tool-deck__footer span:last-child {
-    transform: scaleX(-1);
-  }
-
-  :global(html[data-theme='light'] body.software-page) .tool-deck {
-    border-color: #9f929f;
+    min-height: clamp(19rem, 34vw, 25rem);
+    place-items: center;
+    overflow: hidden;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    border: 2px solid rgb(var(--screen-cyan) / 72%);
+    border-radius: 3px;
     background:
-      linear-gradient(145deg, rgb(255 255 255 / 48%), transparent 34%),
-      rgb(232 226 216 / 95%);
+      linear-gradient(180deg, rgb(var(--screen-cyan) / 7%), transparent 38%),
+      radial-gradient(circle at 50% 42%, rgb(var(--screen-cyan) / 7%), transparent 64%),
+      #0e1719;
     box-shadow:
-      0 26px 52px rgb(58 43 35 / 18%),
-      inset 0 1px rgb(255 255 255 / 70%);
+      inset 0 0 0 4px rgb(4 12 14 / 76%),
+      inset 0 0 2.75rem rgb(var(--screen-cyan) / 7%),
+      0 8px 18px rgb(5 4 8 / 32%);
+    container-type: size;
   }
 
-  :global(html[data-theme='light'] body.software-page) .tool-deck__counts,
-  :global(html[data-theme='light'] body.software-page) .tool-group {
-    background: rgb(250 248 243 / 58%);
+  .tool-readout__screen::before,
+  .tool-readout__screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
-  :global(html[data-theme='light'] body.software-page) .tool-deck__counts {
-    box-shadow: inset 0 1px 5px rgb(78 58 34 / 8%);
+  .tool-readout__screen::before {
+    z-index: 1;
+    background: repeating-linear-gradient(
+      0deg,
+      rgb(var(--screen-cyan) / 2.5%) 0,
+      rgb(var(--screen-cyan) / 2.5%) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  }
+
+  .tool-readout__screen::after {
+    background: linear-gradient(112deg, transparent 12%, rgb(255 255 255 / 3%) 45%, transparent 64%);
+  }
+
+  .tool-readout__corners {
+    position: absolute;
+    z-index: 2;
+    inset: 0.8rem;
+    border: solid rgb(var(--screen-amber) / 68%);
+    border-width: 2px 0 0 2px;
+    width: 1.35rem;
+    height: 1.35rem;
+    filter: drop-shadow(0 0 5px rgb(var(--screen-amber) / 14%));
+  }
+
+  .tool-readout__corners::before,
+  .tool-readout__corners::after {
+    content: '';
+    position: absolute;
+    width: 1.35rem;
+    height: 1.35rem;
+    border: solid rgb(var(--screen-cyan) / 46%);
+  }
+
+  .tool-readout__corners::before {
+    top: -2px;
+    left: calc(100cqw - 3.35rem);
+    border-width: 2px 2px 0 0;
+  }
+
+  .tool-readout__corners::after {
+    top: calc(100cqh - 3.35rem);
+    left: -2px;
+    border-width: 0 0 2px 2px;
+  }
+
+  .tool-readout__content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 30rem;
+  }
+
+  .tool-readout__content::before {
+    content: '';
+    display: block;
+    width: 3.25rem;
+    height: 3px;
+    margin-bottom: clamp(1rem, 2vw, 1.4rem);
+    background: rgb(var(--screen-amber) / 82%);
+    box-shadow: 0 0 9px rgb(var(--screen-amber) / 22%);
+  }
+
+  .tool-readout__content strong {
+    display: block;
+    color: #e5fff9;
+    font-family: var(--font-data);
+    font-size: clamp(1.1rem, 2vw, 1.45rem);
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    text-shadow: 0 0 12px rgb(var(--screen-cyan) / 28%);
+  }
+
+  .tool-readout__content p {
+    max-width: 31ch;
+    margin: 0.9rem 0 0;
+    color: #b9e4dc;
+    font-size: clamp(0.9rem, 1.4vw, 1rem);
+    line-height: 1.75;
+    text-shadow: 0 0 10px rgb(var(--screen-cyan) / 16%);
+  }
+
+  :global(html[data-theme='light'] body.software-page) .tool-grid {
+    background: var(--surface-sheen), rgb(232 226 216 / 95%);
+  }
+
+  :global(html[data-theme='light'] body.software-page) .tool-readout {
+    border-color: #8f7d87;
+    background:
+      linear-gradient(145deg, rgb(255 255 255 / 44%), transparent 36%),
+      linear-gradient(160deg, #5b515e, #302936 72%);
   }
 
   :global(body.software-page [data-sakana-layer]) {
     display: none;
   }
 
-  @media (max-width: 1080px) {
-    .tool-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+  @media (max-width: 900px) {
+    .toolbox-main {
+      width: min(100% - 2rem, var(--content-width));
+    }
+
+    .toolbox-shell {
+      grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.7fr);
+    }
+
+    .tool-readout__screen {
+      min-height: 17rem;
     }
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 720px) {
     .toolbox-main {
-      width: min(100% - 1rem, var(--content-width));
+      padding-bottom: 5rem;
     }
 
-    .tool-deck__workspace {
+    .toolbox-shell {
       grid-template-columns: minmax(0, 1fr);
-    }
-
-    .tool-group[data-tool-group='software'],
-    .tool-group[data-tool-group='link'] {
-      grid-column: 1;
-    }
-
-    .tool-group[data-tool-group='software'] {
-      grid-row: 2;
-    }
-
-    .tool-group[data-tool-group='link'] {
-      grid-row: 3;
     }
 
     .tool-readout {
       position: relative;
       top: auto;
-      grid-column: 1;
       grid-row: 1;
-      min-height: 0;
     }
 
     .tool-readout__screen {
-      min-height: 132px;
-    }
-  }
-
-  @media (max-width: 720px), (hover: none) {
-    .tool-readout {
-      display: none;
-    }
-
-    .tool-group[data-tool-group='software'] {
-      grid-row: 1;
-    }
-
-    .tool-group[data-tool-group='link'] {
-      grid-row: 2;
-    }
-
-    .tool-deck__header {
-      align-items: flex-start;
+      min-height: 12rem;
+      padding: 1.5rem;
     }
 
     .tool-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .tool-group[data-tool-group='software'] .tool-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-row: 2;
+      gap: 0.7rem;
+      padding: 0.85rem;
     }
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 420px) {
     .toolbox-main {
       width: min(100% - 1rem, var(--content-width));
-      padding-bottom: 5rem;
-    }
-
-    .tool-deck {
-      border-radius: 8px;
-    }
-
-    .tool-deck__header {
-      display: grid;
-      gap: 1rem;
-      padding: 1rem;
-    }
-
-    .tool-deck__intro h1 {
-      font-size: 1.4rem;
-    }
-
-    .tool-deck__intro p {
-      font-size: 0.84rem;
-    }
-
-    .tool-deck__counts {
-      width: 100%;
-    }
-
-    .tool-deck__workspace {
-      padding: 0.8rem;
-    }
-
-    .tool-group {
-      padding: 0.85rem 0.72rem 1.1rem;
     }
 
     .tool-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1.05rem 0.9rem;
-      padding: 0 0.62rem 0.25rem 0.1rem;
+      gap: 0.55rem;
+      padding: 0.65rem;
     }
 
-    .tool-group[data-tool-group='software'] .tool-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .tool-readout {
+      padding: 0.6rem;
+    }
+
+    .tool-readout__screen {
+      min-height: 10.5rem;
+      padding: 1.25rem;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tool-deck,
-    .tool-readout {
+    .tool-readout,
+    .tool-readout__screen {
       scroll-behavior: auto;
     }
   }

@@ -4,7 +4,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import BackButton from '@/components/BackButton.astro';
 ---
 
-<BaseLayout title="留言板" bodyClass="guestbook-page plain-page">
+<BaseLayout title="留言板" bodyClass="guestbook-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" />
   <main class="guestbook-main container">
     <section class="guestbook-shell" aria-labelledby="guestbook-title" data-guestbook-shell>
@@ -13,10 +13,6 @@ import BackButton from '@/components/BackButton.astro';
           <h1 id="guestbook-title">留言板</h1>
           <p>欢迎留下想说的话。</p>
         </div>
-        <p class="guestbook-service">
-          <span aria-hidden="true"></span>
-          GitHub Discussions
-        </p>
       </header>
 
       <div class="guestbook-board">
@@ -60,10 +56,6 @@ import BackButton from '@/components/BackButton.astro';
   }
 
   .guestbook-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 1.25rem 2rem;
-    align-items: start;
     padding-bottom: clamp(1.25rem, 3vw, 2rem);
     border-bottom: 1px solid var(--color-line);
   }
@@ -87,31 +79,6 @@ import BackButton from '@/components/BackButton.astro';
     color: var(--color-text);
     font-size: 1rem;
     line-height: 1.75;
-  }
-
-  .guestbook-service {
-    display: inline-flex;
-    gap: 0.55rem;
-    align-items: center;
-    min-height: 32px;
-    margin: 0;
-    border: 1px solid rgb(132 212 198 / 28%);
-    border-radius: 999px;
-    padding: 0.35rem 0.7rem;
-    background: rgb(132 212 198 / 10%);
-    color: var(--color-link);
-    font-family: var(--font-data);
-    font-size: 14.5px;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .guestbook-service span {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #84d4c6;
-    box-shadow: 0 0 0 3px rgb(132 212 198 / 12%);
   }
 
   .guestbook-board {
@@ -145,14 +112,6 @@ import BackButton from '@/components/BackButton.astro';
       padding-top: calc(var(--header-height) + 4rem);
     }
 
-    .guestbook-header {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-
-    .guestbook-service {
-      justify-self: start;
-    }
   }
 
   @media (max-width: 420px) {

@@ -4,16 +4,13 @@ import type { SoftwareTool } from '@/data/software-tools';
 
 interface Props {
   tool: SoftwareTool;
-  index: number;
-  total: number;
 }
 
-const { tool, index, total } = Astro.props;
-const kindLabel = tool.kind === 'software' ? '本地软件' : '在线网站';
+const { tool } = Astro.props;
 ---
 
 <a
-  class:list={['tool-module', `tool-module--${tool.tone}`]}
+  class="tool-module"
   href={tool.href}
   target="_blank"
   rel="noreferrer"
@@ -22,10 +19,6 @@ const kindLabel = tool.kind === 'software' ? '本地软件' : '在线网站';
   data-tool-name={tool.name}
   data-tool-description={tool.description}
   data-tool-kind={tool.kind}
-  data-tool-kind-label={kindLabel}
-  data-tool-tone={tool.tone}
-  data-tool-index={String(index).padStart(2, '0')}
-  data-tool-total={String(total).padStart(2, '0')}
 >
   <span class="tool-module__face" data-tool-face>
     <span class="tool-module__screws" aria-hidden="true">
@@ -35,120 +28,72 @@ const kindLabel = tool.kind === 'software' ? '本地软件' : '在线网站';
     <span class="tool-module__icon" aria-hidden="true">
       <ToolGlyph name={tool.icon} />
     </span>
-    <span class="tool-module__plate">
-      <span>{tool.name}</span>
-      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-        <path d="M6 3H3v10h10v-3M8 3h5v5M13 3 7 9" />
-      </svg>
-    </span>
-  </span>
-
-  <span class="tool-module__mobile-description" data-tool-mobile-description>
-    {tool.description}
   </span>
 </a>
 
 <style>
   .tool-module {
-    --module-accent: #84d4c6;
-    --module-accent-rgb: 132 212 198;
-    --module-rx: 0deg;
-    --module-ry: 0deg;
-    --module-lift: 0px;
     display: block;
     min-width: 0;
-    color: var(--color-text);
+    color: var(--color-link);
     text-decoration: none;
-    perspective: 620px;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  .tool-module--amber {
-    --module-accent: #f3bb62;
-    --module-accent-rgb: 243 187 98;
-  }
-
-  .tool-module--violet {
-    --module-accent: #bba7e6;
-    --module-accent-rgb: 187 167 230;
-  }
-
-  .tool-module--green {
-    --module-accent: #87c89a;
-    --module-accent-rgb: 135 200 154;
   }
 
   .tool-module__face {
     position: relative;
     display: grid;
     aspect-ratio: 1;
+    place-items: center;
+    overflow: hidden;
     min-width: 0;
-    align-content: center;
-    justify-items: center;
-    padding: 0.82rem 0.62rem 0.56rem;
     border: 1px solid #625568;
-    border-radius: 7px;
+    border-radius: 3px;
     background:
-      linear-gradient(145deg, rgb(255 245 231 / 8%), transparent 32%),
-      linear-gradient(160deg, #312c39 0%, #211e29 56%, #191720 100%);
+      linear-gradient(145deg, rgb(255 245 231 / 7%), transparent 34%),
+      linear-gradient(160deg, #312c39, #211e29 62%, #191720);
     box-shadow:
-      0 13px 22px rgb(5 4 8 / 28%),
-      inset 0 1px rgb(255 255 255 / 7%),
-      inset 0 -2px rgb(0 0 0 / 24%);
-    transform: translate3d(0, var(--module-lift), 0) rotateX(var(--module-rx)) rotateY(var(--module-ry));
-    transform-style: preserve-3d;
-    transform-origin: 50% 70%;
+      0 8px 16px rgb(5 4 8 / 24%),
+      inset 0 1px rgb(255 255 255 / 6%),
+      inset 0 -2px rgb(0 0 0 / 22%);
     transition:
-      transform 220ms var(--ease-out),
-      border-color 180ms var(--ease-out),
-      box-shadow 220ms var(--ease-out);
-    will-change: transform;
+      border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-normal) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out);
   }
 
   .tool-module__face::before,
   .tool-module__face::after {
     content: '';
     position: absolute;
-    z-index: -1;
-    border: 1px solid #4d3e3b;
-    background: linear-gradient(135deg, #463732, #211a1e);
     pointer-events: none;
   }
 
   .tool-module__face::before {
-    right: -7px;
-    bottom: -10px;
-    left: 7px;
-    height: 10px;
-    border-radius: 0 0 5px 5px;
-    transform: skewX(-34deg);
-    transform-origin: 0 0;
+    inset: 6px;
+    border: 1px solid rgb(190 174 204 / 13%);
   }
 
   .tool-module__face::after {
-    top: 7px;
-    right: -10px;
-    bottom: -3px;
-    width: 10px;
-    border-radius: 0 5px 5px 0;
-    transform: skewY(-34deg);
-    transform-origin: 0 0;
+    right: 8px;
+    bottom: 8px;
+    width: 13px;
+    height: 3px;
+    background: rgb(243 187 98 / 66%);
+    box-shadow: 0 0 7px rgb(243 187 98 / 14%);
   }
 
   .tool-module__screws {
     position: absolute;
-    inset: 8px;
+    inset: 10px;
     pointer-events: none;
   }
 
   .tool-module__screws span {
     position: absolute;
-    width: 4px;
-    height: 4px;
-    border: 1px solid rgb(218 190 155 / 48%);
-    border-radius: 50%;
-    background: #201b22;
-    box-shadow: inset 1px 1px rgb(255 255 255 / 10%);
+    width: 3px;
+    height: 3px;
+    background: rgb(181 140 101 / 74%);
   }
 
   .tool-module__screws span:nth-child(1) { top: 0; left: 0; }
@@ -158,135 +103,83 @@ const kindLabel = tool.kind === 'software' ? '本地软件' : '在线网站';
 
   .tool-module__signal {
     position: absolute;
-    top: 11px;
+    top: 10px;
     left: 50%;
-    width: 16px;
-    height: 3px;
-    border-radius: 2px;
-    background: rgb(var(--module-accent-rgb) / 72%);
-    box-shadow: 0 2px 7px rgb(var(--module-accent-rgb) / 32%);
+    width: 18px;
+    height: 2px;
+    background: rgb(132 212 198 / 58%);
+    box-shadow: 0 0 7px rgb(132 212 198 / 18%);
     transform: translateX(-50%);
   }
 
   .tool-module__icon {
-    width: clamp(2.25rem, 3.2vw, 2.75rem);
-    height: clamp(2.25rem, 3.2vw, 2.75rem);
-    margin-bottom: 0.5rem;
-    color: var(--module-accent);
-    filter: drop-shadow(0 5px 6px rgb(5 4 8 / 28%));
-    transform: translateZ(18px);
+    width: clamp(2.4rem, 4vw, 3.25rem);
+    height: clamp(2.4rem, 4vw, 3.25rem);
+    filter: drop-shadow(0 0 8px rgb(132 212 198 / 12%));
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      filter var(--duration-fast) var(--ease-out),
+      transform var(--duration-normal) var(--ease-out);
   }
 
-  .tool-module__plate {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 10px;
-    width: 100%;
-    align-items: center;
-    gap: 0.35rem;
-    min-height: 1.9rem;
-    padding: 0.35rem 0.42rem;
-    border: 1px solid rgb(var(--module-accent-rgb) / 24%);
-    border-radius: 4px;
-    background: rgb(10 9 14 / 46%);
-    box-shadow: inset 0 1px rgb(255 255 255 / 4%);
-    transform: translateZ(11px);
+  :global(html[data-theme='light'] body.software-page) .tool-module {
+    color: #9de9dc;
   }
 
-  .tool-module__plate > span {
-    overflow: hidden;
-    color: #f2ede5;
-    font-size: clamp(0.62rem, 1vw, 0.76rem);
-    font-weight: 650;
-    line-height: 1.25;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .tool-module:hover .tool-module__face,
+  .tool-module:focus-visible .tool-module__face,
+  .tool-module[data-active] .tool-module__face {
+    border-color: rgb(132 212 198 / 76%);
+    box-shadow:
+      0 10px 20px rgb(5 4 8 / 30%),
+      inset 0 0 0 1px rgb(132 212 198 / 13%),
+      inset 0 0 1.5rem rgb(132 212 198 / 6%);
+    transform: translateY(-2px);
   }
 
-  .tool-module__plate svg {
-    width: 10px;
-    height: 10px;
-    fill: none;
-    stroke: #b9b0c2;
-    stroke-width: 1.4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .tool-module__mobile-description {
-    display: none;
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .tool-module:hover,
-    .tool-module:focus-visible {
-      --module-lift: -8px;
-    }
-
-    .tool-module:hover .tool-module__face,
-    .tool-module:focus-visible .tool-module__face {
-      border-color: rgb(var(--module-accent-rgb) / 60%);
-      box-shadow:
-        0 22px 32px rgb(5 4 8 / 34%),
-        0 7px 18px rgb(var(--module-accent-rgb) / 10%),
-        inset 0 1px rgb(255 255 255 / 9%);
-    }
+  .tool-module:hover .tool-module__icon,
+  .tool-module:focus-visible .tool-module__icon,
+  .tool-module[data-active] .tool-module__icon {
+    color: #a9eee2;
+    filter: drop-shadow(0 0 9px rgb(132 212 198 / 24%));
+    transform: scale(1.04);
   }
 
   .tool-module:focus-visible {
-    border-radius: 8px;
+    border-radius: 3px;
     outline: 3px solid var(--color-accent);
-    outline-offset: 6px;
+    outline-offset: 4px;
   }
 
-  @media (max-width: 720px), (hover: none) {
-    .tool-module__mobile-description {
-      display: -webkit-box;
-      overflow: hidden;
-      min-height: 3.3em;
-      margin: 0.85rem 0.15rem 0;
-      color: var(--color-muted);
-      font-size: 0.76rem;
-      line-height: 1.5;
-      text-align: center;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
+  @media (max-width: 420px) {
+    .tool-module__face::before {
+      inset: 5px;
     }
-  }
 
-  @media (max-width: 520px) {
-    .tool-module__face {
-      padding: 0.8rem 0.55rem 0.56rem;
+    .tool-module__screws {
+      inset: 8px;
+    }
+
+    .tool-module__signal {
+      top: 8px;
+      width: 14px;
     }
 
     .tool-module__icon {
-      width: 2.45rem;
-      height: 2.45rem;
-      margin-bottom: 0.52rem;
-    }
-
-    .tool-module__plate {
-      min-height: 1.7rem;
-      padding-inline: 0.32rem;
-    }
-
-    .tool-module__plate > span {
-      font-size: 0.64rem;
+      width: 2.15rem;
+      height: 2.15rem;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tool-module,
-    .tool-module:hover,
-    .tool-module:focus-visible {
-      --module-lift: 0px;
-      --module-rx: 0deg;
-      --module-ry: 0deg;
-    }
-
     .tool-module__face,
+    .tool-module__icon,
     .tool-module:hover .tool-module__face,
-    .tool-module:focus-visible .tool-module__face {
+    .tool-module:focus-visible .tool-module__face,
+    .tool-module[data-active] .tool-module__face,
+    .tool-module:hover .tool-module__icon,
+    .tool-module:focus-visible .tool-module__icon,
+    .tool-module[data-active] .tool-module__icon {
       transform: none;
       transition: none;
     }

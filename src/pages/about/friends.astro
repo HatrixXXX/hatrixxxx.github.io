@@ -12,7 +12,7 @@ const posts = await getCollection('posts');
 const stats = posts.length > 0 ? buildSiteStats(posts) : null;
 ---
 
-<BaseLayout title="友链" bodyClass="friends-page plain-page">
+<BaseLayout title="友链" bodyClass="friends-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" />
   <main class="friends-main container">
     <SidebarStack posts={[]} showClock={false} showStats={false}>
@@ -102,7 +102,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
     min-width: 0;
     height: 100%;
     overflow-y: auto;
-    padding-block: clamp(2rem, 4vw, 3.5rem);
+    padding-bottom: clamp(2rem, 4vw, 3.5rem);
   }
 
   .friends-grid {
@@ -208,7 +208,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
       align-content: start;
       height: 100%;
       overflow-y: auto;
-      padding-block: clamp(2rem, 4vw, 3.5rem);
+      padding-bottom: clamp(2rem, 4vw, 3.5rem);
     }
   }
 

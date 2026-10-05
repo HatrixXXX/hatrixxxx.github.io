@@ -197,6 +197,12 @@ body.plain-page > main[class] {
   padding-top: calc(var(--header-height) + clamp(2rem, 5vw, 3.5rem));
 }
 
+@media (min-width: 769px) {
+  body.nav-content-page.plain-page > main[class] {
+    padding-top: calc(var(--header-height) + 1rem);
+  }
+}
+
 body.blog-page {
   --blog-header-height: 60px;
   overflow: hidden;
