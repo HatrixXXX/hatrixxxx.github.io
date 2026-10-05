@@ -4,16 +4,161 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import BackButton from '@/components/BackButton.astro';
 ---
 
-<BaseLayout title="留言板" pageSubtitle="想说什么都可以写在这里" bodyClass="guestbook-page plain-page">
+<BaseLayout title="留言板" bodyClass="guestbook-page plain-page">
   <BackButton href="/" label="返回主页" />
   <main class="guestbook-main container">
-    <GiscusComments themeMode="dark" />
+    <section class="guestbook-shell" aria-labelledby="guestbook-title" data-guestbook-shell>
+      <header class="guestbook-header">
+        <div class="guestbook-intro">
+          <h1 id="guestbook-title">留言板</h1>
+          <p>欢迎留下想说的话。</p>
+        </div>
+        <p class="guestbook-service">
+          <span aria-hidden="true"></span>
+          GitHub Discussions
+        </p>
+      </header>
+
+      <div class="guestbook-board">
+        <GiscusComments themeMode="dark" />
+      </div>
+    </section>
   </main>
 </BaseLayout>
 
 <style>
   .guestbook-main {
-    max-width: 920px;
-    padding-block: clamp(2.5rem, 6vw, 5rem);
+    max-width: 1040px;
+    min-height: 100svh;
+    padding-bottom: clamp(3rem, 7vw, 6rem);
+  }
+
+  .guestbook-shell {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: clamp(1.25rem, 3.6vw, 2.5rem);
+    background-color: rgb(20 17 27 / 66%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 244 224 / 8%),
+      inset 0 -1px 0 rgb(0 0 0 / 22%),
+      0 24px 60px rgb(8 6 12 / 34%);
+    backdrop-filter: blur(14px) saturate(112%);
+  }
+
+  .guestbook-shell::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background:
+      var(--surface-sheen),
+      linear-gradient(90deg, rgb(132 212 198 / 4%), transparent 42% 64%, rgb(243 187 98 / 4%));
+    content: '';
+    pointer-events: none;
+  }
+
+  .guestbook-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.25rem 2rem;
+    align-items: start;
+    padding-bottom: clamp(1.25rem, 3vw, 2rem);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .guestbook-intro {
+    max-width: 68ch;
+  }
+
+  .guestbook-intro h1 {
+    margin: 0;
+    color: var(--color-heading);
+    font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  .guestbook-intro p {
+    margin: 0.75rem 0 0;
+    color: var(--color-text);
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .guestbook-service {
+    display: inline-flex;
+    gap: 0.55rem;
+    align-items: center;
+    min-height: 32px;
+    margin: 0;
+    border: 1px solid rgb(132 212 198 / 28%);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    background: rgb(132 212 198 / 10%);
+    color: var(--color-link);
+    font-family: var(--font-data);
+    font-size: 14.5px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .guestbook-service span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #84d4c6;
+    box-shadow: 0 0 0 3px rgb(132 212 198 / 12%);
+  }
+
+  .guestbook-board {
+    padding-top: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .guestbook-board :global(.comments) {
+    margin-top: 0;
+  }
+
+  .guestbook-board :global(.comments-status),
+  .guestbook-board :global(noscript) {
+    margin: 0;
+    color: var(--color-muted);
+  }
+
+  .guestbook-board :global(.giscus-frame) {
+    border-radius: var(--radius-control);
+    background: transparent;
+    color-scheme: dark;
+  }
+
+  @supports not ((backdrop-filter: blur(1px))) {
+    .guestbook-shell {
+      background-color: rgb(20 17 27 / 90%);
+    }
+  }
+
+  @media (max-width: 640px) {
+    :global(body.guestbook-page.plain-page) > main.guestbook-main {
+      padding-top: calc(var(--header-height) + 4rem);
+    }
+
+    .guestbook-header {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .guestbook-service {
+      justify-self: start;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .guestbook-shell {
+      border-radius: var(--radius-card);
+      padding-inline: 1rem;
+    }
   }
 </style>

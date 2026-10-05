@@ -8,6 +8,7 @@
 - 只有涉及影响重大的修改，或需要确定统计、计数口径与计算路线时，才向用户确认；确认前先完成不依赖该决定的准备工作。
 - 用户可能同时开启多个 Codex 会话。开始修改前先检查当前工作区和相关文件的最新状态；只改动本会话负责的范围，不覆盖、回退或整理其他会话尚未完成的修改。
 - 发现并行修改、未提交内容或文件状态与预期不一致时，保留现有改动，调整自己的修改以兼容，并在必要时说明具体冲突。
+- 验证范围与改动风险匹配。小型内容和样式调整只运行相关测试、类型检查与本地 HTTP 预览；不要自动安装浏览器，也不要默认运行全量 E2E 或视觉回归。只有用户明确要求，或改动涉及安全边界、构建发布、跨页面公共逻辑且轻量验证不足时，才扩大验证范围，并提前说明。
 - 本地预览统一使用 `corepack pnpm astro dev --background --host 127.0.0.1 --port 4321` 启动；修改完成后先用 `corepack pnpm astro dev status` 和 HTTP 请求确认服务，再提供 `http://127.0.0.1:4321/`。
 
 ## 线性代数学习文档
@@ -52,7 +53,7 @@ corepack pnpm test:e2e
 
 - `.private-content/posts/`：16 篇已发布文章，文件名只保留标题，不加日期前缀；公开路径由 `legacySlug` 生成。`.private-content/` 是独立的私有 Git 仓库；公开仓库不跟踪文章 Markdown。
 - `.env.local`：本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；文件已忽略，禁止提交、分享或复制到任何内容仓库。
-- `src/content/projects/`：允许为空的作品集合。
+- `src/content/projects/`：作品集合；当前含 10 个明确标注的示例作品，后续可直接替换为真实项目。
 - `src/data/playlist.ts`：允许为空的音乐列表。
 - `src/config/navigation.ts`：主导航、关于子页和首页快捷链接的唯一来源。
 - `src/config/site.ts`：域名、作者、社交链接、Giscus 和站点验证信息。
@@ -70,14 +71,14 @@ corepack pnpm test:e2e
 - 加锁正文图片必须使用 `.private-content/posts/` 内文件的 Markdown 相对路径。禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`；加锁文章的 `cover` 仍是公开资源。
 - 非首页主导航在顶部按视口居中，顺序固定为首页、博客文章、作品橱窗、关于我、书签、工具箱、装备铺、计划、实验场、友链、留言板；宽度小于 `1200px` 时使用同顺序的折叠菜单。首页博客卡片直接进入展示全部文章的 `/blog/`，不提供文章类型分类或二级菜单。
 - 页面返回按钮使用固定目标：文章详情返回 `/blog/`；其余页面统一返回 `/`，包括关于子页、归档、旧分页和 404。
-- 作品状态只能是 `idea|active|done|archived`。作品、歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
+- 作品状态只能是 `idea|active|done|archived`。作品橱窗当前按用户要求显示 4 个大罐子和 6 个小罐子的示例作品，条目必须保留“示例”标记，直到换成真实项目。桌面端每层罐子均匀铺满平台，大罐高 180px、小罐高 120px，罐子横向间距为 12px，平台纵向间距为 20px；窄屏使用固定槽宽横向滚动。`ToolSpecimen.astro` 只用于作品橱窗；工具箱改用 `ToolModule.astro` 和 `src/scripts/toolbox.ts` 的方形模块阵列。歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
 - 音乐播放器在首页左下透视卡片中常驻，所有非首页页面默认固定折叠到左侧，只露半张唱片；点击展开，点击卡片空白或收起按钮折叠，播放控件不得误触收起。全站只挂载一个播放器，以 `transition:persist` 保留 DOM 和 Audio；跨客户端导航后按当前路径更新首页/侧边模式，不依赖保留下来的旧 props。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；当前允许 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增同源图片也要带 `@<commit>`；增加 ref 时，同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` remote pattern，以及 inventory 测试。Astro 会逐跳校验重定向，不能为了接受 jsDelivr 的 GitHub Raw 跳转而放宽整个主机。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。
 - Playwright 当前收集 204 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀。首页基线覆盖桌面、平板和手机，包含 v5 分块立绘、v6 背景、年龄等级、Hatrix 名称和左下金句。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
 - 首页使用 `1920×1080` 设计画布并等比缩放。右侧 7 个面板共用一个 `matrix3d` 父平面，子卡片只设置局部位置和尺寸，不单独旋转；组内间距保持固定。超宽屏用纯 CSS 平移左右两组贴近视口边缘，竖屏留上下空白，不改为单列。角色层运行时使用 `public/character-parts/*.webp` 裁边 WebP，分块源 PNG 位于 `src/assets/home/character-parts-source/`。用户明确选定的原始 v5 PNG `src/assets/home/hatrix-character-v5.png` 仍是合成和视觉核对基准，与 `output/imagegen/hatrix-character-v5.png` 原图一致，保留该版本的全部人物与外围元素；此前迭代中的元素删减要求不再用于改写这张已选定图片。立绘按前景近景比例裁在画布内；背景为 `src/assets/home/liupin-workshop-v6.png`，按 v5 立绘和人机协作设定重画。人物位于背景之上、入口面板之下，允许与卡片重叠，不拦截输入；不恢复旧打字、箭头或拖动揭开逻辑。首页无滚动，不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
 - 首页金句语料在 `src/data/home-quotes.ts`，每 6 秒按随机轮次自动切换；每轮完整播放全部语录，轮内不重复，跨轮不连续重复。正常动效为 420ms 竖向滚动和透明度变化；正文保持单行，长句自动缩小字号；不提供手动切换或暂停控制；减少动态效果时仍每 6 秒换字，只取消动画。金句、播放器、友链和留言板共用一个仿射平面，均为上下边平行、左右边竖直的 2D 平行四边形；金句与下排、友链与留言板各隔 4 个设计像素，两列隔 12 个设计像素，播放器与留言板底边同在局部 y=172。首页播放器高 172px，侧边模式仍为 170px。金句使用不可交互的 live region，底色和边框与首页播放器一致；金句和友链共用 `--home-panel-radius: 3px`。辉光管时钟按本地时间每秒更新，格式为 `YYYY/MM/DD HH:mm:ss`。“效率提升”仅作标题，下方入口为书签、工具箱和装备铺；计划和实验场分别为 `/plans/`、`/lab/`。
 - 首页左侧等级圆环保留，Hatrix 名称位于其右侧。生日为 `2002-07-29`，等级按北京时间的周岁计算，每年 7 月 29 日零点升级；进度为距上次生日的整天数除以两次生日之间的实际天数（365 或 366）。浏览器进入首页、跨日和恢复页面时更新，不使用构建日期；无 JavaScript 时显示未知等级。
-- 主导航对应的栏目页不渲染 Hero 主标题，在固定导航下方保留原副标题，正文紧随其后。归档、旧分页和 404 仍可使用紧凑 Hero；文章详情保持标题和元信息开头，不恢复题图横幅；全站不渲染波浪分隔。
+- 主导航对应的栏目页不渲染 Hero 主标题或副标题栏，正文直接接在固定导航下方。博客页卡片在导航栏下方居中，上下各留约 16px，基本占满剩余视口高度。归档、旧分页和 404 仍可使用紧凑 Hero；文章详情保持标题和元信息开头，不恢复题图横幅；全站不渲染波浪分隔。
 - 当前仅文章页启用页脚及站点统计，普通布局默认不显示页脚；页脚版权区显示版权与“保留所有权利”，不提供第三方许可入口；`public/third-party-notices.txt` 仍随构建产物发布。只有配置真实备案信息后才允许增加法规要求的备案链接。
 - `SidebarStack` 承载作者资料，统计按页面配置显示；当前关于页及子页只显示作者资料，文章侧栏显示目录和最近文章。播放器独立于侧栏。Vercount 只在生产环境加载固定脚本 `https://events.vercount.one/js`；开发和测试不得请求该服务，加载失败时访客数保持 `—`。
 - Sakana 的许可和素材来源告知固定在 `public/third-party-notices.txt`，构建后必须复制到 `dist/third-party-notices.txt`。内置千束与泷奈插画只用于非商业网页；站点用途或依赖版本变化时必须重新核对授权。
@@ -89,7 +90,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 1536 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 1537 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 

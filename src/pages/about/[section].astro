@@ -17,7 +17,7 @@ const { section } = Astro.props;
 const showProfileSidebar = !['bookmarks', 'software', 'gear'].includes(section.slug);
 ---
 
-<BaseLayout title={section.label} pageSubtitle={section.subtitle} bodyClass="plain-page">
+<BaseLayout title={section.label} bodyClass="plain-page">
   <BackButton href="/" label="返回主页" />
   <main class:list={['about-section', 'container', { 'about-section--with-sidebar': showProfileSidebar }]}>
     <div class="about-content">

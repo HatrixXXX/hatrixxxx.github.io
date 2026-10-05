@@ -13,7 +13,7 @@ test('blog index lists every published post in date order', async ({ page, reque
   await expect(coverflow).toHaveAttribute('tabindex', '0');
   await expect(coverflow).toHaveAccessibleName('文章列表');
   await expect(cards).toHaveCount(16);
-  await expect(cards.first().locator('h2')).toHaveText('Infra-GEMM优化');
+  await expect(cards.first().locator('h2')).toHaveText('Infra-微积分');
   await expect(cards.first()).toHaveAttribute('data-active', 'true');
   await expect(coverflow.locator('[data-post-card][data-active="true"]')).toHaveCount(1);
 
@@ -46,6 +46,29 @@ test('coverflow presents one active card and folded neighbouring cards', async (
   await expect(coverflow.locator('.coverflow-scene')).toHaveCSS('overflow', 'hidden');
 });
 
+test('coverflow cards nearly fill the viewport below the fixed navigation', async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 }
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/blog/');
+
+    const header = page.locator('[data-site-header]');
+    const activeCard = page.locator('[data-post-card][data-active="true"]');
+    await expect(activeCard).toBeVisible();
+    const [headerBox, cardBox] = await Promise.all([header.boundingBox(), activeCard.boundingBox()]);
+    if (!headerBox || !cardBox) throw new Error('Missing navigation or active card bounds');
+
+    const gapBelowHeader = cardBox.y - (headerBox.y + headerBox.height);
+    const gapAboveViewportBottom = viewport.height - (cardBox.y + cardBox.height);
+    expect(gapBelowHeader).toBeGreaterThanOrEqual(0);
+    expect(gapBelowHeader).toBeLessThanOrEqual(20);
+    expect(gapAboveViewportBottom).toBeGreaterThanOrEqual(0);
+    expect(gapAboveViewportBottom).toBeLessThanOrEqual(20);
+  }
+});
+
 test('focused coverflow supports arrow-key navigation', async ({ page }) => {
   await page.goto('/blog/');
   const coverflow = page.locator('[data-post-coverflow]');
@@ -54,11 +77,11 @@ test('focused coverflow supports arrow-key navigation', async ({ page }) => {
 
   await page.keyboard.press('ArrowRight');
   await expect(coverflow.locator('[data-post-card][data-active="true"] h2')).toHaveText(
-    'Infra-线性代数'
+    'Infra-概率论'
   );
   await page.keyboard.press('ArrowLeft');
   await expect(coverflow.locator('[data-post-card][data-active="true"] h2')).toHaveText(
-    'Infra-GEMM优化'
+    'Infra-微积分'
   );
 });
 
@@ -72,7 +95,7 @@ test('mouse wheel advances the coverflow without scrolling the page', async ({ p
   const pageStart = await page.evaluate(() => window.scrollY);
   await coverflow.dispatchEvent('wheel', { deltaY: 60, deltaMode: 0 });
   await expect(coverflow.locator('[data-post-card][data-active="true"] h2')).toHaveText(
-    'Infra-线性代数'
+    'Infra-概率论'
   );
   expect(await page.evaluate(() => window.scrollY)).toBe(pageStart);
 });
@@ -94,9 +117,9 @@ test('reduced motion switches coverflow cards without a lingering animation', as
   await page.keyboard.press('ArrowRight');
 
   const activeCard = coverflow.locator('[data-post-card][data-active="true"]');
-  await expect(activeCard.locator('h2')).toHaveText('Infra-线性代数');
+  await expect(activeCard.locator('h2')).toHaveText('Infra-概率论');
   await page.waitForTimeout(100);
-  await expect(activeCard.locator('h2')).toHaveText('Infra-线性代数');
+  await expect(activeCard.locator('h2')).toHaveText('Infra-概率论');
 });
 
 test('post headings remain readable in the light theme', async ({ page }) => {
@@ -115,6 +138,6 @@ test('home blog entry goes directly to the blog index', async ({ page }) => {
   await expect(blogNavigation).toHaveAttribute('href', '/blog/');
   await blogNavigation.click();
   await expect(page).toHaveURL('/blog/');
-  await expect(page.getByRole('heading', { level: 1, name: '博客文章' })).toBeVisible();
+  await expect(page.locator('[data-page-subtitle]')).toHaveCount(0);
   await expect(page.locator('[data-post-coverflow]')).toBeVisible();
 });

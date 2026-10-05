@@ -2,20 +2,28 @@
 import ToolGlyph from '@/components/ToolGlyph.astro';
 import type { SoftwareTool } from '@/data/software-tools';
 
+type SpecimenItem = Omit<SoftwareTool, 'href'> & { href?: string };
+
 interface Props {
-  tool: SoftwareTool;
+  tool: SpecimenItem;
+  specimenKind?: 'tool' | 'project';
 }
 
-const { tool } = Astro.props;
+const { tool, specimenKind = 'tool' } = Astro.props;
+const linked = Boolean(tool.href);
+const isProject = specimenKind === 'project';
 ---
 
 <a
-  class:list={['tool-specimen', `tool-specimen--${tool.tone}`, `tool-specimen--${tool.kind}`]}
-  href={tool.href}
-  target="_blank"
-  rel="noreferrer"
-  aria-label={`${tool.name}：${tool.description}（在新标签页打开）`}
-  data-tool-specimen
+  class:list={['tool-specimen', `tool-specimen--${tool.tone}`, `tool-specimen--${tool.kind}`, { 'tool-specimen--example': isProject }]}
+  href={tool.href || undefined}
+  target={linked ? '_blank' : undefined}
+  rel={linked ? 'noreferrer' : undefined}
+  role={isProject ? 'article' : undefined}
+  tabindex={linked ? undefined : '0'}
+  aria-label={linked ? `${tool.name}：${tool.description}（在新标签页打开）` : `${tool.name}：${tool.description}（示例作品）`}
+  data-tool-specimen={!isProject ? '' : undefined}
+  data-project-specimen={isProject ? '' : undefined}
   data-tool-kind={tool.kind}
 >
   <span class="tool-purpose" data-tool-purpose>
@@ -37,9 +45,11 @@ const { tool } = Astro.props;
   <span class="tool-base">
     <span class="tool-base-light" aria-hidden="true"></span>
     <span class="tool-name">{tool.name}</span>
-    <svg class="tool-external" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-      <path d="M6 3H3v10h10v-3M8 3h5v5M13 3 7 9" />
-    </svg>
+    {linked ? (
+      <svg class="tool-external" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M6 3H3v10h10v-3M8 3h5v5M13 3 7 9" />
+      </svg>
+    ) : <span class="tool-example">示例</span>}
   </span>
 </a>
 
@@ -110,6 +120,54 @@ const { tool } = Astro.props;
   .tool-specimen--green {
     --tool-light: #87c89a;
     --tool-light-rgb: 135 200 154;
+  }
+
+  .tool-specimen--example .tool-base {
+    grid-template-columns: 6px minmax(0, 1fr) 1.8rem;
+  }
+
+  .tool-specimen--example.tool-specimen--software {
+    --tool-vessel-width: 140px;
+    --tool-vessel-height: 180px;
+    --tool-cap-width: 70px;
+    --tool-cap-height: 25px;
+    --tool-jar-top: 20px;
+    --tool-icon-size: 75px;
+    --tool-shine-width: 15px;
+    --tool-shine-height: 90px;
+    --tool-shine-top: 30px;
+    --tool-shine-left: 18px;
+    --tool-shine-after-right: -87px;
+    --tool-shine-after-bottom: -25px;
+    --tool-light-width: 80px;
+    --tool-light-height: 25px;
+    --tool-light-bottom: 15px;
+    --tool-base-width: 210px;
+    --tool-base-height: 58px;
+    --tool-name-size: 0.84rem;
+    grid-template-rows: 180px 58px;
+  }
+
+  .tool-specimen--example.tool-specimen--link {
+    --tool-vessel-width: 92px;
+    --tool-vessel-height: 120px;
+    --tool-cap-width: 46px;
+    --tool-cap-height: 16px;
+    --tool-jar-top: 13px;
+    --tool-icon-size: 48px;
+    --tool-shine-width: 10px;
+    --tool-shine-height: 58px;
+    --tool-shine-top: 19px;
+    --tool-shine-left: 12px;
+    --tool-shine-after-right: -57px;
+    --tool-shine-after-bottom: -16px;
+    --tool-light-width: 54px;
+    --tool-light-height: 17px;
+    --tool-light-bottom: 10px;
+    --tool-base-width: 144px;
+    --tool-base-height: 42px;
+    --tool-name-size: 0.74rem;
+    grid-template-rows: 120px 42px;
   }
 
   .tool-purpose {
@@ -324,6 +382,13 @@ const { tool } = Astro.props;
     stroke-width: 1.4;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+
+  .tool-example {
+    color: #b9b0c2;
+    font-size: 0.5rem;
+    line-height: 1;
+    text-align: right;
   }
 
   .tool-specimen:hover,

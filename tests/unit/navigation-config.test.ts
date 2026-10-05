@@ -49,12 +49,10 @@ describe('navigation configuration', () => {
     expect(HOME_LINKS.bookmarks.href).toBe('/about/bookmarks/');
     expect(HOME_LINKS.software.href).toBe('/about/software/');
     expect(ABOUT_SECTION_LINKS.find((item) => item.slug === 'software')).toMatchObject({
-      label: '工具箱',
-      subtitle: '常用软件与网页小工具'
+      label: '工具箱'
     });
     expect(ABOUT_SECTION_LINKS.find((item) => item.slug === 'gear')).toMatchObject({
-      label: '装备铺',
-      subtitle: '日常使用的硬件与外设'
+      label: '装备铺'
     });
     expect(HOME_LINKS.gear.href).toBe('/about/gear/');
     expect(HOME_LINKS.friends.href).toBe('/about/friends/');

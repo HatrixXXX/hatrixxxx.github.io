@@ -70,6 +70,18 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
 
   expect(response?.status()).toBe(200);
   await expect(page.locator('body')).toHaveClass(/guestbook-page/);
+  const shell = page.locator('[data-guestbook-shell]');
+  await expect(shell).toBeVisible();
+  await expect(shell.getByRole('heading', { name: '留言板' })).toBeVisible();
+  const shellMaterial = await shell.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      backdropFilter: style.backdropFilter
+    };
+  });
+  expect(shellMaterial.backgroundColor).toMatch(/^rgba\(.+, 0\.\d+\)$/);
+  expect(shellMaterial.backdropFilter).not.toBe('none');
   const comments = page.locator('[data-giscus-comments]');
   await expect(comments).toHaveAccessibleName('评论');
   await expect(comments).toHaveAttribute('data-giscus-mapping', 'pathname');
@@ -77,6 +89,13 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
   const overlay = await page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
   expect(overlay).toContain('rgba(23, 21, 29');
   await expect(page.getByRole('link', { name: '首页', exact: true })).toHaveCSS('color', 'rgb(233, 228, 220)');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const backButtonBox = await page.getByRole('link', { name: '返回主页' }).boundingBox();
+  const mobileShellBox = await shell.boundingBox();
+  expect(backButtonBox).not.toBeNull();
+  expect(mobileShellBox).not.toBeNull();
+  expect(mobileShellBox!.y - (backButtonBox!.y + backButtonBox!.height)).toBeGreaterThanOrEqual(12);
 });
 
 test('profile and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {

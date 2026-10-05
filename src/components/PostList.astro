@@ -29,14 +29,11 @@ const { posts } = Astro.props;
 </script>
 
 <style>
-  /*
-   * Shell fills everything below the compact banner.
-   * Banner compact total = --inner-page-banner-height + --header-height.
-   */
+  /* Fill the viewport below the fixed navigation. */
   .coverflow-shell {
     position: relative;
     width: 100%;
-    height: calc(100dvh - var(--inner-page-banner-height, 240px) - var(--header-height, 56px));
+    height: 100%;
     min-height: 400px;
     overflow: visible;
     outline: none;
@@ -57,9 +54,9 @@ const { posts } = Astro.props;
     overflow: hidden;
   }
 
-  /* Active card centred; height fills ~88% of the shell */
+  /* Active card leaves a 16px breathing edge above and below. */
   .coverflow-scene :global([data-post-card]) {
-    --card-h: clamp(360px, calc((100dvh - var(--inner-page-banner-height, 240px) - var(--header-height, 56px)) * 0.88), 760px);
+    --card-h: max(360px, calc(100dvh - var(--blog-header-height, 60px) - 2rem));
     position: absolute;
     left: 50%;
     top: 50%;

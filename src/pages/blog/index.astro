@@ -8,7 +8,7 @@ import { sortPosts } from '@/lib/content';
 const posts = sortPosts(await getCollection('posts'));
 ---
 
-<BaseLayout title="博客文章" pageSubtitle="想到啥写啥，慢慢看不着急" bodyClass="plain-page">
+<BaseLayout title="博客文章" bodyClass="blog-page plain-page">
   <BackButton href="/" label="返回主页" />
   <main class="blog-main">
     <PostList posts={posts} />

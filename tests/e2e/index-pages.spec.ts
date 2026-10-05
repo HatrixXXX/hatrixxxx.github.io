@@ -34,7 +34,19 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
   }
 
   await page.goto('/projects/');
-  await expect(page.getByText('作品内容还没添加')).toBeVisible();
+  await expect(page.getByText('作品内容还没添加')).toHaveCount(0);
+  await expect(page.locator('[data-project-shelf]')).toHaveCount(2);
+  await expect(page.locator('[data-project-shelf][data-shelf-size="large"] [data-project-specimen]')).toHaveCount(4);
+  await expect(page.locator('[data-project-shelf][data-shelf-size="small"] [data-project-specimen]')).toHaveCount(6);
+  await expect(page.locator('[data-project-specimen]')).toHaveCount(10);
+  await expect(page.locator('.project-shelves')).toHaveCSS('row-gap', '20px');
+  for (const grid of await page.locator('.project-grid').all()) {
+    await expect(grid).toHaveCSS('column-gap', '12px');
+  }
+  const largeVessels = page.locator('[data-project-shelf][data-shelf-size="large"] .tool-vessel');
+  const smallVessels = page.locator('[data-project-shelf][data-shelf-size="small"] .tool-vessel');
+  await expect(largeVessels.first()).toHaveCSS('height', '180px');
+  await expect(smallVessels.first()).toHaveCSS('height', '120px');
 
   await page.goto('/about/hobbies/');
   await expect(page.locator('main').getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', /HatrixXXX/);

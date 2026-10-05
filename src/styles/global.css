@@ -197,21 +197,14 @@ body.plain-page > main[class] {
   padding-top: calc(var(--header-height) + clamp(2rem, 5vw, 3.5rem));
 }
 
-.page-subtitle {
-  padding-top: calc(var(--header-height) + clamp(1.25rem, 3vw, 2rem));
-  text-align: center;
+body.blog-page {
+  --blog-header-height: 60px;
+  overflow: hidden;
 }
 
-.page-subtitle p {
-  max-width: 68ch;
-  margin: 0 auto;
-  color: var(--color-muted);
-  font-size: clamp(0.95rem, 1.5vw, 1.08rem);
-  line-height: 1.6;
-}
-
-body.plain-page.has-page-subtitle > main[class] {
-  padding-top: clamp(1.25rem, 3vw, 2rem);
+body.blog-page > main.blog-main {
+  height: 100dvh;
+  padding-top: var(--blog-header-height);
 }
 
 html[data-theme='light'] body[style*="--page-bg-image"]::before {

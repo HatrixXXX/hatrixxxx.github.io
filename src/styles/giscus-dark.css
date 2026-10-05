@@ -11,6 +11,10 @@ main {
   color-scheme: dark;
 }
 
+body {
+  color: #e9e4dc;
+}
+
 main {
   --color-prettylights-syntax-comment: #8b949e;
   --color-prettylights-syntax-constant: #79c0ff;
@@ -43,15 +47,15 @@ main {
   --color-prettylights-syntax-sublimelinter-gutter-mark: #484f58;
   --color-prettylights-syntax-constant-other-reference-link: #a5d6ff;
   --color-btn-text: #c9d1d9;
-  --color-btn-bg: #2c2735;
-  --color-btn-border: rgb(240 246 252 / 10%);
+  --color-btn-bg: rgb(44 39 53 / 74%);
+  --color-btn-border: rgb(216 195 225 / 18%);
   --color-btn-shadow: 0 0 transparent;
   --color-btn-inset-shadow: 0 0 transparent;
-  --color-btn-hover-bg: #494151;
-  --color-btn-hover-border: #8b949e;
-  --color-btn-active-bg: #282e33;
-  --color-btn-active-border: #6e7681;
-  --color-btn-selected-bg: #2c2735;
+  --color-btn-hover-bg: rgb(73 65 81 / 78%);
+  --color-btn-hover-border: #9d8ca7;
+  --color-btn-active-bg: rgb(25 22 31 / 72%);
+  --color-btn-active-border: #7b6a84;
+  --color-btn-selected-bg: rgb(44 39 53 / 78%);
   --color-btn-primary-text: #241c13;
   --color-btn-primary-bg: #f3bb62;
   --color-btn-primary-border: rgb(240 246 252 / 10%);
@@ -64,9 +68,9 @@ main {
   --color-btn-primary-disabled-text: #241c13;
   --color-btn-primary-disabled-bg: rgb(243 187 98 / 35%);
   --color-btn-primary-disabled-border: rgb(240 246 252 / 10%);
-  --color-action-list-item-default-hover-bg: rgb(144 157 171 / 12%);
-  --color-segmented-control-bg: rgb(99 110 123 / 10%);
-  --color-segmented-control-button-bg: #17151d;
+  --color-action-list-item-default-hover-bg: rgb(132 212 198 / 10%);
+  --color-segmented-control-bg: rgb(17 14 22 / 28%);
+  --color-segmented-control-button-bg: transparent;
   --color-segmented-control-button-selected-border: #636e7b;
   --color-fg-default: #e9e4dc;
   --color-fg-muted: #b9b0c2;
@@ -75,8 +79,8 @@ main {
   --color-canvas-overlay: #211e29;
   --color-canvas-inset: #19161f;
   --color-canvas-subtle: #211e29;
-  --color-border-default: #494151;
-  --color-border-muted: #302938;
+  --color-border-default: rgb(216 195 225 / 24%);
+  --color-border-muted: rgb(216 195 225 / 14%);
   --color-neutral-muted: rgb(110 118 129 / 20%);
   --color-neutral-subtle: rgb(110 118 129 / 10%);
   --color-accent-fg: #84d4c6;
@@ -95,6 +99,58 @@ main {
   --color-scale-blue-8: #254b46;
   --color-social-reaction-bg-hover: var(--color-scale-gray-7);
   --color-social-reaction-bg-reacted-hover: var(--color-scale-blue-8);
+}
+
+.gsc-main {
+  color: var(--color-fg-default);
+}
+
+.gsc-comment-box,
+.gsc-comment > div {
+  overflow: hidden;
+  border-color: var(--color-border-default) !important;
+  border-radius: 8px;
+  background-color: rgb(18 15 24 / 42%) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 244 224 / 5%),
+    0 10px 28px rgb(6 5 10 / 16%);
+}
+
+.gsc-comment-box-tabs,
+.gsc-replies,
+.gsc-reply-box {
+  background-color: rgb(28 24 35 / 36%) !important;
+}
+
+.gsc-comment-box-textarea,
+.gsc-comment-box-preview,
+.gsc-reply-box button {
+  border-color: rgb(216 195 225 / 20%) !important;
+  background-color: rgb(12 10 17 / 38%) !important;
+}
+
+.gsc-comment-box-textarea:focus,
+.gsc-reply-box button:focus-visible {
+  border-color: #f3bb62 !important;
+  box-shadow: 0 0 0 2px rgb(243 187 98 / 20%) !important;
+}
+
+.gsc-comment-header,
+.gsc-comment-footer {
+  border-color: rgb(216 195 225 / 14%) !important;
+}
+
+.gsc-comment-author-avatar img {
+  border: 1px solid rgb(243 187 98 / 24%);
+}
+
+.gsc-social-reaction-summary-item,
+.gsc-reactions-button {
+  background-color: rgb(17 14 22 / 28%);
+}
+
+.gsc-pagination-button {
+  border-color: rgb(216 195 225 / 20%);
 }
 
 main .pagination-loader-container {
