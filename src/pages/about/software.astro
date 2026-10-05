@@ -1,7 +1,7 @@
 ---
 import BackButton from '@/components/BackButton.astro';
 import ToolModule from '@/components/ToolModule.astro';
-import { SOFTWARE_TOOLS } from '@/data/software-tools';
+import { SOFTWARE_TOOLS, SOFTWARE_TOOL_CATEGORIES } from '@/data/software-tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const description = '收录常用软件、在线工具和工作中会反复打开的站点。';
@@ -13,8 +13,15 @@ const initialTool = SOFTWARE_TOOLS[0]!;
 
   <main class="toolbox-main container" aria-label="工具箱" data-toolbox>
     <section class="toolbox-shell" data-tool-deck>
-      <div class="tool-grid" data-tool-grid aria-label="工具和网站">
-        {SOFTWARE_TOOLS.map((tool) => <ToolModule tool={tool} />)}
+      <div class="tool-arrays">
+        {SOFTWARE_TOOL_CATEGORIES.map((category) => (
+          <section class="tool-category" data-tool-category={category.id} aria-labelledby={`tool-category-${category.id}`}>
+            <h2 id={`tool-category-${category.id}`}>{category.label}</h2>
+            <div class="tool-grid" data-tool-grid>
+              {SOFTWARE_TOOLS.filter((tool) => tool.category === category.id).map((tool) => <ToolModule tool={tool} />)}
+            </div>
+          </section>
+        ))}
       </div>
 
       <aside class="tool-readout" data-tool-readout role="status" aria-live="polite" aria-atomic="true">
@@ -40,35 +47,58 @@ const initialTool = SOFTWARE_TOOLS[0]!;
   }
 
   .toolbox-shell {
+    --toolbox-gap: clamp(1rem, 2.4vw, 1.75rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.56fr);
     align-items: start;
-    gap: clamp(1rem, 2.4vw, 1.75rem);
+    gap: var(--toolbox-gap);
   }
 
-  .tool-grid,
+  .tool-arrays,
   .tool-readout {
     border: 1px solid var(--color-line-strong);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-panel), var(--shadow-inset);
   }
 
-  .tool-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(0.75rem, 1.5vw, 1rem);
+  .tool-arrays {
     min-width: 0;
     padding: clamp(0.9rem, 2vw, 1.25rem);
     background: var(--surface-sheen), rgb(30 27 37 / 94%);
   }
 
+  .tool-category + .tool-category {
+    margin-top: 1.45rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .tool-category h2 {
+    margin: 0 0 0.75rem;
+    color: var(--color-heading);
+    font-size: 0.9rem;
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: clamp(0.65rem, 1.1vw, 0.9rem);
+    min-width: 0;
+  }
+
   .tool-readout {
     --screen-cyan: 132 212 198;
     --screen-amber: 243 187 98;
-    position: sticky;
+    position: fixed;
     top: calc(var(--header-height) + 1rem);
+    right: max(24px, calc((100vw - var(--content-width)) / 2));
     overflow: hidden;
     min-width: 0;
+    width: max(19rem, calc((min(calc(100vw - 48px), var(--content-width)) - var(--toolbox-gap)) * 0.358974));
+    height: calc(100dvh - var(--header-height) - 2rem);
+    min-height: 30rem;
     padding: clamp(0.7rem, 1.6vw, 1rem);
     background:
       linear-gradient(145deg, rgb(245 224 193 / 5%), transparent 36%),
@@ -97,7 +127,7 @@ const initialTool = SOFTWARE_TOOLS[0]!;
   .tool-readout__screen {
     position: relative;
     display: grid;
-    min-height: clamp(19rem, 34vw, 25rem);
+    height: 100%;
     place-items: center;
     overflow: hidden;
     padding: clamp(1.5rem, 4vw, 2.5rem);
@@ -206,7 +236,7 @@ const initialTool = SOFTWARE_TOOLS[0]!;
     text-shadow: 0 0 10px rgb(var(--screen-cyan) / 16%);
   }
 
-  :global(html[data-theme='light'] body.software-page) .tool-grid {
+  :global(html[data-theme='light'] body.software-page) .tool-arrays {
     background: var(--surface-sheen), rgb(232 226 216 / 95%);
   }
 
@@ -227,11 +257,21 @@ const initialTool = SOFTWARE_TOOLS[0]!;
     }
 
     .toolbox-shell {
-      grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.7fr);
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tool-readout {
+      position: relative;
+      top: auto;
+      right: auto;
+      grid-row: 1;
+      width: auto;
+      height: auto;
+      min-height: 0;
     }
 
     .tool-readout__screen {
-      min-height: 17rem;
+      min-height: 13rem;
     }
   }
 
@@ -240,25 +280,14 @@ const initialTool = SOFTWARE_TOOLS[0]!;
       padding-bottom: 5rem;
     }
 
-    .toolbox-shell {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .tool-readout {
-      position: relative;
-      top: auto;
-      grid-row: 1;
-    }
-
     .tool-readout__screen {
       min-height: 12rem;
       padding: 1.5rem;
     }
 
     .tool-grid {
-      grid-row: 2;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.7rem;
-      padding: 0.85rem;
     }
   }
 
@@ -267,9 +296,13 @@ const initialTool = SOFTWARE_TOOLS[0]!;
       width: min(100% - 1rem, var(--content-width));
     }
 
+    .tool-arrays {
+      padding: 0.75rem;
+    }
+
     .tool-grid {
-      gap: 0.55rem;
-      padding: 0.65rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
     }
 
     .tool-readout {

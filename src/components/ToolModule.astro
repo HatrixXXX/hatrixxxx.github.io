@@ -29,6 +29,7 @@ const { tool } = Astro.props;
       <ToolGlyph name={tool.icon} />
     </span>
   </span>
+  <span class="tool-module__name" data-tool-label>{tool.name}</span>
 </a>
 
 <style>
@@ -120,6 +121,17 @@ const { tool } = Astro.props;
       color var(--duration-fast) var(--ease-out),
       filter var(--duration-fast) var(--ease-out),
       transform var(--duration-normal) var(--ease-out);
+  }
+
+  .tool-module__name {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--color-text);
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    overflow-wrap: anywhere;
   }
 
   :global(html[data-theme='light'] body.software-page) .tool-module {

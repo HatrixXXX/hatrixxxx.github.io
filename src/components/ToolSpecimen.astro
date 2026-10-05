@@ -2,7 +2,7 @@
 import ToolGlyph from '@/components/ToolGlyph.astro';
 import type { SoftwareTool } from '@/data/software-tools';
 
-type SpecimenItem = Omit<SoftwareTool, 'href'> & { href?: string };
+type SpecimenItem = Pick<SoftwareTool, 'name' | 'description' | 'icon' | 'tone' | 'kind'> & { href?: string };
 
 interface Props {
   tool: SpecimenItem;
