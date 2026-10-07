@@ -1,84 +1,90 @@
 import { expect, test } from '@playwright/test';
 import { SOFTWARE_TOOLS } from '../../src/data/software-tools';
 
-test('toolbox renders categorized six-column modules with names and safe external links', async ({ page }) => {
+test('toolbox presents nine readable colored cards per row', async ({ page }) => {
   await page.goto('/about/software/');
 
-  await expect(page.locator('[data-hero]')).toHaveCount(0);
-  await expect(page.locator('[data-page-subtitle]')).toHaveCount(0);
-  await expect(page.locator('[data-tool-category]')).toHaveCount(4);
-  await expect(page.locator('[data-tool-category] h2')).toHaveText([
-    '日常效率', '图片处理', '开发与图表', '阅读与研究'
-  ]);
-  await expect(page.locator('[data-tool-grid]')).toHaveCount(4);
-  await expect(page.locator('[data-tool-module]')).toHaveCount(SOFTWARE_TOOLS.length);
+  const cards = page.locator('[data-tool-module]');
+  await expect(page.locator('[data-tool-readout]')).toHaveCount(0);
+  await expect(page.locator('.tool-category')).toHaveCount(0);
+  await expect(page.locator('[data-tool-grid]')).toHaveCount(1);
+  await expect(cards).toHaveCount(SOFTWARE_TOOLS.length);
 
-  const gridColumns = await page.locator('[data-tool-grid]').first().evaluate((element) =>
-    getComputedStyle(element).gridTemplateColumns.split(' ').length
+  const columns = await page.locator('[data-tool-grid]').evaluate((grid) =>
+    getComputedStyle(grid).gridTemplateColumns.split(' ').length
   );
-  expect(gridColumns).toBe(6);
+  expect(columns).toBe(9);
 
-  const firstFace = page.locator('[data-tool-face]').first();
-  const faceBox = await firstFace.boundingBox();
-  if (!faceBox) throw new Error('Missing tool module face geometry');
-  expect(faceBox.width / faceBox.height).toBeCloseTo(1, 1);
-  expect(faceBox.width).toBeGreaterThanOrEqual(88);
-  expect(faceBox.width).toBeLessThan(130);
-  await expect(page.locator('[data-tool-module]').first().locator('[data-tool-label]')).toHaveText('PowerToys');
-  await expect(page.locator('[data-tool-category="image"] [data-tool-label]')).toHaveText([
-    'Snipaste', 'remove.bg', 'Adobe Color'
-  ]);
+  const first = cards.first();
+  await expect(first.locator('[data-tool-title]')).toHaveText('SolidWorks');
+  await expect(first.locator('[data-tool-purpose]')).toHaveText('机械设计');
+  await expect(first.locator('[data-tool-kind-badge]')).toHaveText('软件');
+  await expect(first.locator('[data-tool-led]')).toHaveCount(2);
+  await expect(first.locator('img')).toHaveAttribute('src', '/tool-icons/solidworks.svg');
 
-  const readoutBox = await page.locator('[data-tool-readout]').boundingBox();
-  if (!readoutBox) throw new Error('Missing tool readout geometry');
-  expect(readoutBox.y + readoutBox.height).toBeGreaterThanOrEqual(860);
+  const cardBox = await first.boundingBox();
+  const iconAreaBox = await first.locator('.tool-module__center').boundingBox();
+  const purposeBox = await first.locator('[data-tool-purpose]').boundingBox();
+  if (!cardBox || !iconAreaBox || !purposeBox) throw new Error('Missing card geometry');
+  expect(cardBox.width).toBeGreaterThan(110);
+  expect(purposeBox.y).toBeGreaterThanOrEqual(iconAreaBox.y + iconAreaBox.height - 1);
+  expect(purposeBox.y + purposeBox.height).toBeLessThanOrEqual(cardBox.y + cardBox.height + 1);
 
-  const transfer = page.getByRole('link', { name: /轻松传.*在不同设备间临时传输文件/ });
-  await expect(transfer).toHaveAttribute('href', 'https://easychuan.cn/');
-  await expect(transfer).toHaveAttribute('target', '_blank');
-  await expect(transfer).toHaveAttribute('rel', 'noreferrer');
+  const clippedTitles = await page.locator('[data-tool-title]').evaluateAll((titles) =>
+    titles.filter((title) => title.scrollHeight > title.clientHeight + 1).map((title) => title.textContent)
+  );
+  expect(clippedTitles).toEqual([]);
 
-  const links = page.locator('[data-tool-module]');
-  for (let index = 0; index < await links.count(); index += 1) {
-    await expect(links.nth(index)).toHaveAttribute('href', /^https:\/\//);
-    await expect(links.nth(index)).toHaveAttribute('data-tool-description', /\S/);
-  }
+  const online = page.getByRole('link', { name: /轻松传.*文件传输/ });
+  await expect(online.locator('[data-tool-kind-badge]')).toHaveText('在线');
+  await expect(online).toHaveAttribute('href', 'https://easychuan.cn/');
+  await expect(online).toHaveAttribute('target', '_blank');
+  await expect(online).toHaveAttribute('rel', 'noreferrer');
+
+  const firstColor = await first.evaluate((card) => getComputedStyle(card).borderColor);
+  const everydayColor = await page.getByRole('link', { name: /PowerToys/ }).evaluate((card) => getComputedStyle(card).borderColor);
+  const imageColor = await page.getByRole('link', { name: /Snipaste/ }).evaluate((card) => getComputedStyle(card).borderColor);
+  expect(new Set([firstColor, everydayColor, imageColor]).size).toBe(3);
+
+  const brokenIcons = await cards.locator('img').evaluateAll(async (images) => {
+    const sources = images.map((image) => (image as HTMLImageElement).src);
+    return (await Promise.all(sources.map((src) => new Promise<string | null>((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve(image.naturalWidth > 0 ? null : src);
+      image.onerror = () => resolve(src);
+      image.src = src;
+    })))).filter((src): src is string => src !== null);
+  });
+  expect(brokenIcons).toEqual([]);
 });
 
-test('the fluorescent readout starts with real content and follows hover and keyboard focus', async ({ page }) => {
+test('full descriptions appear above a card on hover and keyboard focus', async ({ page }) => {
   await page.goto('/about/software/');
+  await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
 
-  const readout = page.locator('[data-tool-readout]');
-  await expect(readout.locator('[data-tool-readout-name]')).toHaveText('PowerToys');
-  await expect(readout.locator('[data-tool-readout-description]')).toContainText('补充窗口管理');
+  const solidWorks = page.getByRole('link', { name: /SolidWorks.*三维机械设计/ });
+  const tooltip = solidWorks.locator('[data-tool-tooltip]');
+  await expect(tooltip).toContainText('用于零件、装配体与工程图的三维机械设计');
+  await solidWorks.hover();
+  await expect(tooltip).toHaveCSS('opacity', '1');
 
-  const powerToys = page.getByRole('link', { name: /PowerToys.*补充窗口管理/ });
-  await powerToys.hover();
-  await expect(readout.locator('[data-tool-readout-name]')).toHaveText('PowerToys');
-  await expect(readout.locator('[data-tool-readout-description]')).toContainText('补充窗口管理');
+  const cardBox = await solidWorks.boundingBox();
+  const tooltipBox = await tooltip.boundingBox();
+  if (!cardBox || !tooltipBox) throw new Error('Missing card or tooltip geometry');
+  expect(tooltipBox.y + tooltipBox.height).toBeLessThan(cardBox.y);
+  expect(tooltipBox.y).toBeGreaterThanOrEqual(60);
+  expect(Math.abs(tooltipBox.x + tooltipBox.width / 2 - cardBox.x - cardBox.width / 2)).toBeLessThan(1);
+  await expect(tooltip).toHaveCSS('border-radius', '12px');
+  await expect(tooltip).toHaveCSS('background-color', 'rgb(48, 49, 57)');
 
   const snipaste = page.getByRole('link', { name: /Snipaste.*截图/ });
   await snipaste.focus();
   await expect(snipaste).toBeFocused();
-  await expect(readout.locator('[data-tool-readout-name]')).toHaveText('Snipaste');
-  await expect(readout.locator('[data-tool-readout-description]')).toContainText('截图');
-  expect(await snipaste.evaluate((element) => getComputedStyle(element).outlineStyle)).not.toBe('none');
-
+  await expect(snipaste.locator('[data-tool-tooltip]')).toHaveCSS('opacity', '1');
+  expect(await snipaste.evaluate((card) => getComputedStyle(card).outlineStyle)).not.toBe('none');
 });
 
-test('desktop readout stays at the same viewport position when scrolling to the page bottom', async ({ page }) => {
-  await page.goto('/about/software/');
-
-  const readout = page.locator('[data-tool-readout]');
-  const initialTop = await readout.evaluate((element) => element.getBoundingClientRect().top);
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
-
-  const scrolledTop = await readout.evaluate((element) => element.getBoundingClientRect().top);
-  expect(Math.abs(scrolledTop - initialTop)).toBeLessThan(1);
-});
-
-test('touch layout shows names and categories without horizontal overflow', async ({ browser }) => {
+test('phone cards retain readable labels and avoid horizontal overflow', async ({ browser }) => {
   const context = await browser.newContext({
     hasTouch: true,
     isMobile: true,
@@ -87,19 +93,13 @@ test('touch layout shows names and categories without horizontal overflow', asyn
   const page = await context.newPage();
   await page.goto('/about/software/');
 
-  const powerToys = page.getByRole('link', { name: /PowerToys.*补充窗口管理/ });
-  await expect(powerToys.locator('[data-tool-label]')).toHaveText('PowerToys');
-  await expect(page.locator('[data-tool-category] h2')).toHaveText([
-    '日常效率', '图片处理', '开发与图表', '阅读与研究'
-  ]);
-  await expect(page.locator('[data-tool-readout]')).toBeVisible();
-  await expect(page.locator('[data-tool-readout-name]')).toHaveText('PowerToys');
-  await expect(page.locator('[data-tool-readout-description]')).toContainText('补充窗口管理');
-
-  const columns = await page.locator('[data-tool-grid]').first().evaluate((element) =>
-    getComputedStyle(element).gridTemplateColumns.split(' ').length
+  const columns = await page.locator('[data-tool-grid]').evaluate((grid) =>
+    getComputedStyle(grid).gridTemplateColumns.split(' ').length
   );
   expect(columns).toBe(3);
+  await expect(page.locator('[data-tool-readout]')).toHaveCount(0);
+  await expect(page.locator('[data-tool-module]').first().locator('[data-tool-title]')).toBeVisible();
+  await expect(page.locator('[data-tool-module]').first().locator('[data-tool-purpose]')).toBeVisible();
 
   const viewport = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,

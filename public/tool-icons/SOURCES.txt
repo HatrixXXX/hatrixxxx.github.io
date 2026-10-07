@@ -1,0 +1,73 @@
+Toolbox icon sources
+====================
+
+These marks identify the corresponding products or sites. They remain the
+trademarks of their respective owners. Files are stored locally so the toolbox
+does not need a third-party image service at runtime.
+
+Dashboard Icons (Apache-2.0)
+https://github.com/homarr-labs/dashboard-icons
+Local license: LICENSE-dashboard-icons.txt
+solidworks.svg <- svg/solidworks.svg
+bambu-studio.svg <- svg/bambu-lab.svg
+anaconda.svg <- svg/anaconda.svg
+vmware-workstation.svg <- svg/vmware-workstation.svg
+rustdesk.svg <- svg/rustdesk.svg
+7zip.svg <- svg/7zip.svg
+google-scholar.svg <- svg/google-scholar.svg
+mermaid-chart.svg <- svg/mermaid.svg
+
+Devicon (MIT)
+https://github.com/devicons/devicon
+Local license: LICENSE-devicon.txt
+arduino-ide.svg <- icons/arduino/arduino-original.svg
+matlab.svg <- icons/matlab/matlab-original.svg
+visual-studio-code.svg <- icons/vscode/vscode-original.svg
+git.svg <- icons/git/git-original.svg
+sourcetree.svg <- icons/sourcetree/sourcetree-original.svg
+clion.svg <- icons/clion/clion-original.svg
+pycharm.svg <- icons/pycharm/pycharm-original.svg
+visual-studio.svg <- icons/visualstudio/visualstudio-original.svg
+
+Simple Icons (CC0-1.0), served by Iconify
+https://github.com/simple-icons/simple-icons
+https://api.iconify.design/
+lceda.svg <- simple-icons:easyeda
+kicad.svg <- simple-icons:kicad
+keil-mdk.svg <- simple-icons:armkeil
+multisim.svg <- simple-icons:multisim
+zotero.svg <- simple-icons:zotero
+compiler-explorer.svg <- simple-icons:compilerexplorer
+
+SVG Logos (CC0-1.0), served by Iconify
+https://github.com/gilbarbara/logos
+platformio.svg <- logos:platformio
+adobe-color.svg <- logos:adobe
+
+Product or project image:
+fusion-360.png <- https://marketplace.visualstudio.com/items?itemName=Autodesk.hsm-post-processor
+inventor.png <- https://www.software.unam.mx/busqueda
+orcad.png <- https://cs.hofstra.edu/docs/pages/resources/software/orcad_capture.html
+vivado.png <- https://github.com/marwin1991/profile-technology-icons
+quartus-prime.png <- https://www.pngaaa.com/detail/4783836
+picgo.png <- https://github.com/Molunerfinn/PicGo
+powertoys.png <- https://github.com/microsoft/PowerToys
+simpletex.ico <- https://www.simpletex.cn/simpletex.ico
+
+Site favicons downloaded through Google's favicon service:
+https://www.google.com/s2/favicons
+altium-designer.png <- altium.com
+pads.png <- eda.sw.siemens.com
+stm32cubemx.png <- st.com
+ozone.png <- segger.com
+psim.png <- powersimtech.com
+typora.png <- typora.io
+sunlogin.png <- sunlogin.oray.com
+vnc-viewer.png <- realvnc.com
+snipaste.png <- snipaste.com
+everything.png <- voidtools.com
+easychuan.png <- easychuan.cn
+hjfy.png <- hjfy.top
+remove-bg.png <- remove.bg
+deepwiki.png <- deepwiki.org
+connected-papers.png <- connectedpapers.com

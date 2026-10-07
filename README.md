@@ -87,7 +87,7 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 
 文章详情返回 `/blog/`，其余页面统一返回首页。
 
-非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、书签、工具箱、装备铺、计划、实验场、友链、留言板；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索与主题切换在桌面右侧，管理员退出按钮在左侧，不影响导航居中。`/blog/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。工具箱按用途分为四组，桌面端每组最多六列方块，方块下显示名称；右侧固定信息屏显示当前工具的名称和用途。手机端信息屏位于工具列表上方，方块每行三列。`/guestbook/` 在独立面板中加载 Giscus 留言区。
+非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、书签、工具箱、装备铺、计划、实验场、友链、留言板；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索与主题切换在桌面右侧，管理员退出按钮在左侧，不影响导航居中。`/blog/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。工具箱使用带用途颜色的图标卡片，桌面端每行 9 张，手机端每行 3 张。卡片显示软件名、图标、用途短语和“软件／在线”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 在独立面板中加载 Giscus 留言区。
 
 站内搜索支持普通文章的标题和正文。结果会显示命中片段并高亮关键词；点击后文章页会滚动到对应段落，段落背景短暂突出后渐变恢复。加锁文章不会进入公开搜索索引。
 
@@ -187,7 +187,7 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 181 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
+文章共引用 173 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
@@ -219,10 +219,10 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | --- | --- |
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
-| `pnpm check:images` | 181 个去重后的远程图片 URL |
+| `pnpm check:images` | 173 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、31 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章路由、CNAME、1537 条站内链接和发布体积 |
+| `pnpm check:site` | 文章路由、CNAME、1588 条站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 204 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。

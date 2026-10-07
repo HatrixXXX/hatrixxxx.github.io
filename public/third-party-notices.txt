@@ -1,6 +1,15 @@
 Third-party notices
 ===================
 
+Toolbox brand icons
+-------------------
+The locally stored toolbox marks identify their respective products and sites.
+Asset sources are recorded in tool-icons/SOURCES.txt.
+Dashboard Icons assets are distributed with their Apache-2.0 license in
+tool-icons/LICENSE-dashboard-icons.txt. Devicon assets are distributed with
+their MIT license in tool-icons/LICENSE-devicon.txt. Simple Icons and SVG Logos
+assets are available under CC0-1.0.
+
 Sakana 1.0.8
 ------------
 Project: https://github.com/itorr/sakana

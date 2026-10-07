@@ -1,5 +1,4 @@
 ---
-import ToolGlyph from '@/components/ToolGlyph.astro';
 import type { SoftwareTool } from '@/data/software-tools';
 
 interface Props {
@@ -7,6 +6,7 @@ interface Props {
 }
 
 const { tool } = Astro.props;
+const kindLabel = tool.kind === 'link' ? '在线' : '软件';
 ---
 
 <a
@@ -14,186 +14,279 @@ const { tool } = Astro.props;
   href={tool.href}
   target="_blank"
   rel="noreferrer"
-  aria-label={`${tool.name}：${tool.description}（在新标签页打开）`}
+  aria-label={`${tool.name}：${tool.purpose}。${tool.description}（${kindLabel}，在新标签页打开）`}
   data-tool-module
-  data-tool-name={tool.name}
-  data-tool-description={tool.description}
+  data-tool-category={tool.category}
   data-tool-kind={tool.kind}
 >
-  <span class="tool-module__face" data-tool-face>
-    <span class="tool-module__screws" aria-hidden="true">
-      <span></span><span></span><span></span><span></span>
-    </span>
-    <span class="tool-module__signal" aria-hidden="true"></span>
-    <span class="tool-module__icon" aria-hidden="true">
-      <ToolGlyph name={tool.icon} />
-    </span>
+  <span class="tool-module__header">
+    <span class="tool-module__led" data-tool-led aria-hidden="true"></span>
+    <span class:list={['tool-module__title', { 'tool-module__title--compact': tool.name.length > 17 }]} data-tool-title>{tool.name}</span>
+    <span class="tool-module__led" data-tool-led aria-hidden="true"></span>
   </span>
-  <span class="tool-module__name" data-tool-label>{tool.name}</span>
+  <span class="tool-module__center">
+    <img src={tool.icon} alt="" width="64" height="64" loading="lazy" decoding="async" />
+    <span class="tool-module__kind" data-tool-kind-badge>{kindLabel}</span>
+  </span>
+  <span class="tool-module__purpose" data-tool-purpose>{tool.purpose}</span>
+  <span class="tool-module__tooltip" data-tool-tooltip aria-hidden="true">{tool.description}。</span>
 </a>
 
 <style>
   .tool-module {
-    display: block;
+    --tool-rgb: 119 224 214;
+    position: relative;
+    display: grid;
+    grid-template-rows: 1.8rem minmax(0, 1fr) 1.35rem;
     min-width: 0;
-    color: var(--color-link);
+    aspect-ratio: 1;
+    padding: 0.2rem 0.25rem 0;
+    border: 1px solid rgb(var(--tool-rgb) / 75%);
+    border-radius: 5px;
+    background:
+      radial-gradient(circle at 50% 45%, rgb(var(--tool-rgb) / 10%), transparent 62%),
+      linear-gradient(160deg, #302d38, #1a1a22 75%);
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--tool-rgb) / 16%),
+      0 0 12px rgb(var(--tool-rgb) / 18%),
+      0 3px 6px rgb(5 4 8 / 38%),
+      0 12px 24px rgb(5 4 8 / 52%);
+    color: #f5f0e8;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .tool-module__face {
-    position: relative;
-    display: grid;
-    aspect-ratio: 1;
-    place-items: center;
-    overflow: hidden;
+  .tool-module[data-tool-category='everyday'] { --tool-rgb: 248 190 91; }
+  .tool-module[data-tool-category='image'] { --tool-rgb: 215 154 240; }
+  .tool-module[data-tool-category='development'] { --tool-rgb: 163 223 124; }
+  .tool-module[data-tool-category='research'] { --tool-rgb: 135 184 244; }
+
+  .tool-module__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.13rem;
     min-width: 0;
-    border: 1px solid #625568;
-    border-radius: 3px;
-    background:
-      linear-gradient(145deg, rgb(255 245 231 / 7%), transparent 34%),
-      linear-gradient(160deg, #312c39, #211e29 62%, #191720);
-    box-shadow:
-      0 8px 16px rgb(5 4 8 / 24%),
-      inset 0 1px rgb(255 255 255 / 6%),
-      inset 0 -2px rgb(0 0 0 / 22%);
-    transition:
-      border-color var(--duration-fast) var(--ease-out),
-      box-shadow var(--duration-normal) var(--ease-out),
-      transform var(--duration-normal) var(--ease-out);
   }
 
-  .tool-module__face::before,
-  .tool-module__face::after {
-    content: '';
-    position: absolute;
-    pointer-events: none;
+  .tool-module__led {
+    flex: 0 0 0.45rem;
+    height: 0.2rem;
+    border-radius: 999px;
+    background: rgb(var(--tool-rgb));
+    box-shadow: 0 0 7px rgb(var(--tool-rgb) / 80%);
   }
 
-  .tool-module__face::before {
-    inset: 6px;
-    border: 1px solid rgb(190 174 204 / 13%);
-  }
-
-  .tool-module__face::after {
-    right: 8px;
-    bottom: 8px;
-    width: 13px;
-    height: 3px;
-    background: rgb(243 187 98 / 66%);
-    box-shadow: 0 0 7px rgb(243 187 98 / 14%);
-  }
-
-  .tool-module__screws {
-    position: absolute;
-    inset: 10px;
-    pointer-events: none;
-  }
-
-  .tool-module__screws span {
-    position: absolute;
-    width: 3px;
-    height: 3px;
-    background: rgb(181 140 101 / 74%);
-  }
-
-  .tool-module__screws span:nth-child(1) { top: 0; left: 0; }
-  .tool-module__screws span:nth-child(2) { top: 0; right: 0; }
-  .tool-module__screws span:nth-child(3) { right: 0; bottom: 0; }
-  .tool-module__screws span:nth-child(4) { bottom: 0; left: 0; }
-
-  .tool-module__signal {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    width: 18px;
-    height: 2px;
-    background: rgb(132 212 198 / 58%);
-    box-shadow: 0 0 7px rgb(132 212 198 / 18%);
-    transform: translateX(-50%);
-  }
-
-  .tool-module__icon {
-    width: clamp(2.4rem, 4vw, 3.25rem);
-    height: clamp(2.4rem, 4vw, 3.25rem);
-    filter: drop-shadow(0 0 8px rgb(132 212 198 / 12%));
-    transition:
-      color var(--duration-fast) var(--ease-out),
-      filter var(--duration-fast) var(--ease-out),
-      transform var(--duration-normal) var(--ease-out);
-  }
-
-  .tool-module__name {
-    display: block;
-    margin-top: 0.5rem;
-    color: var(--color-text);
-    font-size: 0.74rem;
-    font-weight: 600;
-    line-height: 1.35;
+  .tool-module__title {
+    display: -webkit-box;
+    min-width: 0;
+    max-height: 2.15em;
+    overflow: hidden;
+    font-size: 0.72rem;
+    font-weight: 650;
+    line-height: 1.08;
     text-align: center;
     overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
-  :global(html[data-theme='light'] body.software-page) .tool-module {
-    color: #9de9dc;
+  .tool-module__title--compact { font-size: 0.66rem; }
+
+  .tool-module__center {
+    position: relative;
+    display: grid;
+    min-height: 0;
+    place-items: center;
   }
 
-  .tool-module:hover .tool-module__face,
-  .tool-module:focus-visible .tool-module__face,
-  .tool-module[data-active] .tool-module__face {
-    border-color: rgb(132 212 198 / 76%);
+  .tool-module__center img {
+    display: block;
+    width: min(3.5rem, 76%);
+    height: min(3.5rem, 100%);
+    object-fit: contain;
+    filter: drop-shadow(0 3px 5px rgb(0 0 0 / 35%));
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+
+  .tool-module__kind {
+    position: absolute;
+    right: 0;
+    bottom: 0.05rem;
+    padding: 0.06rem 0.16rem;
+    border: 1px solid rgb(var(--tool-rgb) / 45%);
+    border-radius: 2px;
+    background: rgb(15 18 23 / 88%);
+    color: rgb(var(--tool-rgb));
+    font-size: 0.58rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .tool-module__purpose {
+    display: block;
+    overflow: hidden;
+    margin-inline: -0.25rem;
+    border-top: 1px solid rgb(var(--tool-rgb) / 33%);
+    border-radius: 0 0 4px 4px;
+    background: rgb(8 11 15 / 62%);
+    color: #f0ebe7;
+    font-size: 0.68rem;
+    line-height: 1.3rem;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tool-module__tooltip {
+    position: absolute;
+    z-index: 2;
+    bottom: calc(100% + 0.6rem);
+    left: 50%;
+    width: max-content;
+    max-width: min(12rem, calc(100vw - 1rem));
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #777782;
+    border-radius: 12px;
+    background: #303139;
+    box-shadow: 0 10px 22px rgb(5 4 8 / 48%);
+    color: #f5f0e8;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%);
+    transition: opacity var(--duration-fast) var(--ease-out);
+    pointer-events: none;
+  }
+
+  .tool-module__tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 1px solid #777782;
+    border-bottom: 1px solid #777782;
+    background: #303139;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  .tool-module:hover,
+  .tool-module:focus-visible {
+    z-index: 3;
+    border-color: rgb(var(--tool-rgb));
     box-shadow:
-      0 10px 20px rgb(5 4 8 / 30%),
-      inset 0 0 0 1px rgb(132 212 198 / 13%),
-      inset 0 0 1.5rem rgb(132 212 198 / 6%);
-    transform: translateY(-2px);
+      inset 0 0 0 1px rgb(var(--tool-rgb) / 35%),
+      0 0 20px rgb(var(--tool-rgb) / 32%),
+      0 4px 8px rgb(5 4 8 / 42%),
+      0 15px 28px rgb(5 4 8 / 58%);
   }
 
-  .tool-module:hover .tool-module__icon,
-  .tool-module:focus-visible .tool-module__icon,
-  .tool-module[data-active] .tool-module__icon {
-    color: #a9eee2;
-    filter: drop-shadow(0 0 9px rgb(132 212 198 / 24%));
-    transform: scale(1.04);
+  .tool-module:hover .tool-module__center img,
+  .tool-module:focus-visible .tool-module__center img {
+    transform: scale(1.06);
+  }
+
+  .tool-module:hover .tool-module__tooltip,
+  .tool-module:focus-visible .tool-module__tooltip {
+    opacity: 1;
+    visibility: visible;
   }
 
   .tool-module:focus-visible {
-    border-radius: 3px;
     outline: 3px solid var(--color-accent);
-    outline-offset: 4px;
+    outline-offset: 3px;
   }
 
-  @media (max-width: 420px) {
-    .tool-module__face::before {
-      inset: 5px;
+  @media (max-width: 1280px) {
+    .tool-module:nth-child(9n + 1) .tool-module__tooltip {
+      left: 0;
+      transform: none;
     }
 
-    .tool-module__screws {
-      inset: 8px;
+    .tool-module:nth-child(9n) .tool-module__tooltip {
+      right: 0;
+      left: auto;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .tool-module:nth-child(9n + 1) .tool-module__tooltip,
+    .tool-module:nth-child(9n) .tool-module__tooltip {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
     }
 
-    .tool-module__signal {
-      top: 8px;
-      width: 14px;
+    .tool-module:nth-child(8n + 1) .tool-module__tooltip {
+      left: 0;
+      transform: none;
     }
 
-    .tool-module__icon {
-      width: 2.15rem;
-      height: 2.15rem;
+    .tool-module:nth-child(8n) .tool-module__tooltip {
+      right: 0;
+      left: auto;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 800px) {
+    .tool-module:nth-child(8n + 1) .tool-module__tooltip,
+    .tool-module:nth-child(8n) .tool-module__tooltip {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tool-module:nth-child(6n + 1) .tool-module__tooltip {
+      left: 0;
+      transform: none;
+    }
+
+    .tool-module:nth-child(6n) .tool-module__tooltip {
+      right: 0;
+      left: auto;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .tool-module__title { font-size: 0.76rem; }
+    .tool-module__purpose { font-size: 0.7rem; }
+
+    .tool-module:nth-child(6n + 1) .tool-module__tooltip,
+    .tool-module:nth-child(6n) .tool-module__tooltip {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tool-module:nth-child(3n + 1) .tool-module__tooltip {
+      left: 0;
+      transform: none;
+    }
+
+    .tool-module:nth-child(3n) .tool-module__tooltip {
+      right: 0;
+      left: auto;
+      transform: none;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tool-module__face,
-    .tool-module__icon,
-    .tool-module:hover .tool-module__face,
-    .tool-module:focus-visible .tool-module__face,
-    .tool-module[data-active] .tool-module__face,
-    .tool-module:hover .tool-module__icon,
-    .tool-module:focus-visible .tool-module__icon,
-    .tool-module[data-active] .tool-module__icon {
-      transform: none;
+    .tool-module__center img,
+    .tool-module__tooltip {
       transition: none;
+    }
+
+    .tool-module:hover .tool-module__center img,
+    .tool-module:focus-visible .tool-module__center img {
+      transform: none;
     }
   }
 </style>

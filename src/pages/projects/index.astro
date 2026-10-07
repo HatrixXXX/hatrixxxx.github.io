@@ -5,7 +5,7 @@ import ToolSpecimen from '@/components/ToolSpecimen.astro';
 import type { SoftwareTool, ToolIconName, ToolTone } from '@/data/software-tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
-type ProjectSpecimen = Pick<SoftwareTool, 'name' | 'description' | 'icon' | 'tone' | 'kind'> & { href?: string };
+type ProjectSpecimen = Pick<SoftwareTool, 'name' | 'description' | 'tone' | 'kind'> & { icon: ToolIconName; href?: string };
 
 const projects = (await getCollection('projects')) as CollectionEntry<'projects'>[];
 projects.sort((a, b) => a.data.order - b.data.order);

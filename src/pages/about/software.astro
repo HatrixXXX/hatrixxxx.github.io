@@ -5,320 +5,57 @@ import { SOFTWARE_TOOLS, SOFTWARE_TOOL_CATEGORIES } from '@/data/software-tools'
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const description = '收录常用软件、在线工具和工作中会反复打开的站点。';
-const initialTool = SOFTWARE_TOOLS[0]!;
+const orderedTools = SOFTWARE_TOOL_CATEGORIES.flatMap((category) =>
+  SOFTWARE_TOOLS.filter((tool) => tool.category === category.id)
+);
 ---
 
 <BaseLayout title="工具箱" description={description} bodyClass="software-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" />
 
-  <main class="toolbox-main container" aria-label="工具箱" data-toolbox>
-    <section class="toolbox-shell" data-tool-deck>
-      <div class="tool-arrays">
-        {SOFTWARE_TOOL_CATEGORIES.map((category) => (
-          <section class="tool-category" data-tool-category={category.id} aria-labelledby={`tool-category-${category.id}`}>
-            <h2 id={`tool-category-${category.id}`}>{category.label}</h2>
-            <div class="tool-grid" data-tool-grid>
-              {SOFTWARE_TOOLS.filter((tool) => tool.category === category.id).map((tool) => <ToolModule tool={tool} />)}
-            </div>
-          </section>
-        ))}
-      </div>
-
-      <aside class="tool-readout" data-tool-readout role="status" aria-live="polite" aria-atomic="true">
-        <div class="tool-readout__screen">
-          <span class="tool-readout__corners" aria-hidden="true"></span>
-          <div class="tool-readout__content">
-            <strong data-tool-readout-name>{initialTool.name}</strong>
-            <p data-tool-readout-description>{initialTool.description}</p>
-          </div>
-        </div>
-      </aside>
-    </section>
+  <main class="toolbox-main container" aria-label="工具箱">
+    <div class="tool-grid" data-tool-grid>
+      {orderedTools.map((tool) => <ToolModule tool={tool} />)}
+    </div>
   </main>
 </BaseLayout>
 
-<script>
-  import '@/scripts/toolbox';
-</script>
-
 <style>
-  .toolbox-main {
+  :global(body.software-page.nav-content-page.plain-page) > main.toolbox-main {
+    padding-top: calc(var(--header-height) + 4.5rem);
     padding-bottom: clamp(5rem, 8vw, 7rem);
-  }
-
-  .toolbox-shell {
-    --toolbox-gap: clamp(1rem, 2.4vw, 1.75rem);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.56fr);
-    align-items: start;
-    gap: var(--toolbox-gap);
-  }
-
-  .tool-arrays,
-  .tool-readout {
-    border: 1px solid var(--color-line-strong);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-panel), var(--shadow-inset);
-  }
-
-  .tool-arrays {
-    min-width: 0;
-    padding: clamp(0.9rem, 2vw, 1.25rem);
-    background: var(--surface-sheen), rgb(30 27 37 / 94%);
-  }
-
-  .tool-category + .tool-category {
-    margin-top: 1.45rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--color-line);
-  }
-
-  .tool-category h2 {
-    margin: 0 0 0.75rem;
-    color: var(--color-heading);
-    font-size: 0.9rem;
-    font-weight: 650;
-    line-height: 1.4;
   }
 
   .tool-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: clamp(0.65rem, 1.1vw, 0.9rem);
-    min-width: 0;
-  }
-
-  .tool-readout {
-    --screen-cyan: 132 212 198;
-    --screen-amber: 243 187 98;
-    position: fixed;
-    top: calc(var(--header-height) + 1rem);
-    right: max(24px, calc((100vw - var(--content-width)) / 2));
-    overflow: hidden;
-    min-width: 0;
-    width: max(19rem, calc((min(calc(100vw - 48px), var(--content-width)) - var(--toolbox-gap)) * 0.358974));
-    height: calc(100dvh - var(--header-height) - 2rem);
-    min-height: 30rem;
-    padding: clamp(0.7rem, 1.6vw, 1rem);
-    background:
-      linear-gradient(145deg, rgb(245 224 193 / 5%), transparent 36%),
-      linear-gradient(160deg, #302a35, #1d1923 72%);
-  }
-
-  .tool-readout::before,
-  .tool-readout::after {
-    content: '';
-    position: absolute;
-    top: 0.55rem;
-    width: 2.5rem;
-    height: 2px;
-    background: rgb(var(--screen-amber) / 54%);
-    box-shadow: 0 0 8px rgb(var(--screen-amber) / 12%);
-  }
-
-  .tool-readout::before {
-    left: 0.75rem;
-  }
-
-  .tool-readout::after {
-    right: 0.75rem;
-  }
-
-  .tool-readout__screen {
-    position: relative;
-    display: grid;
-    height: 100%;
-    place-items: center;
-    overflow: hidden;
-    padding: clamp(1.5rem, 4vw, 2.5rem);
-    border: 2px solid rgb(var(--screen-cyan) / 72%);
-    border-radius: 3px;
-    background:
-      linear-gradient(180deg, rgb(var(--screen-cyan) / 7%), transparent 38%),
-      radial-gradient(circle at 50% 42%, rgb(var(--screen-cyan) / 7%), transparent 64%),
-      #0e1719;
-    box-shadow:
-      inset 0 0 0 4px rgb(4 12 14 / 76%),
-      inset 0 0 2.75rem rgb(var(--screen-cyan) / 7%),
-      0 8px 18px rgb(5 4 8 / 32%);
-    container-type: size;
-  }
-
-  .tool-readout__screen::before,
-  .tool-readout__screen::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .tool-readout__screen::before {
-    z-index: 1;
-    background: repeating-linear-gradient(
-      0deg,
-      rgb(var(--screen-cyan) / 2.5%) 0,
-      rgb(var(--screen-cyan) / 2.5%) 1px,
-      transparent 1px,
-      transparent 4px
-    );
-  }
-
-  .tool-readout__screen::after {
-    background: linear-gradient(112deg, transparent 12%, rgb(255 255 255 / 3%) 45%, transparent 64%);
-  }
-
-  .tool-readout__corners {
-    position: absolute;
-    z-index: 2;
-    inset: 0.8rem;
-    border: solid rgb(var(--screen-amber) / 68%);
-    border-width: 2px 0 0 2px;
-    width: 1.35rem;
-    height: 1.35rem;
-    filter: drop-shadow(0 0 5px rgb(var(--screen-amber) / 14%));
-  }
-
-  .tool-readout__corners::before,
-  .tool-readout__corners::after {
-    content: '';
-    position: absolute;
-    width: 1.35rem;
-    height: 1.35rem;
-    border: solid rgb(var(--screen-cyan) / 46%);
-  }
-
-  .tool-readout__corners::before {
-    top: -2px;
-    left: calc(100cqw - 3.35rem);
-    border-width: 2px 2px 0 0;
-  }
-
-  .tool-readout__corners::after {
-    top: calc(100cqh - 3.35rem);
-    left: -2px;
-    border-width: 0 0 2px 2px;
-  }
-
-  .tool-readout__content {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    max-width: 30rem;
-  }
-
-  .tool-readout__content::before {
-    content: '';
-    display: block;
-    width: 3.25rem;
-    height: 3px;
-    margin-bottom: clamp(1rem, 2vw, 1.4rem);
-    background: rgb(var(--screen-amber) / 82%);
-    box-shadow: 0 0 9px rgb(var(--screen-amber) / 22%);
-  }
-
-  .tool-readout__content strong {
-    display: block;
-    color: #e5fff9;
-    font-family: var(--font-data);
-    font-size: clamp(1.1rem, 2vw, 1.45rem);
-    font-weight: 700;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-    text-shadow: 0 0 12px rgb(var(--screen-cyan) / 28%);
-  }
-
-  .tool-readout__content p {
-    max-width: 31ch;
-    margin: 0.9rem 0 0;
-    color: #b9e4dc;
-    font-size: clamp(0.9rem, 1.4vw, 1rem);
-    line-height: 1.75;
-    text-shadow: 0 0 10px rgb(var(--screen-cyan) / 16%);
-  }
-
-  :global(html[data-theme='light'] body.software-page) .tool-arrays {
-    background: var(--surface-sheen), rgb(232 226 216 / 95%);
-  }
-
-  :global(html[data-theme='light'] body.software-page) .tool-readout {
-    border-color: #8f7d87;
-    background:
-      linear-gradient(145deg, rgb(255 255 255 / 44%), transparent 36%),
-      linear-gradient(160deg, #5b515e, #302936 72%);
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: clamp(0.4rem, 0.7vw, 0.65rem);
   }
 
   :global(body.software-page [data-sakana-layer]) {
     display: none;
   }
 
-  @media (max-width: 900px) {
-    .toolbox-main {
-      width: min(100% - 2rem, var(--content-width));
-    }
-
-    .toolbox-shell {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .tool-readout {
-      position: relative;
-      top: auto;
-      right: auto;
-      grid-row: 1;
-      width: auto;
-      height: auto;
-      min-height: 0;
-    }
-
-    .tool-readout__screen {
-      min-height: 13rem;
-    }
-  }
-
-  @media (max-width: 720px) {
-    .toolbox-main {
-      padding-bottom: 5rem;
-    }
-
-    .tool-readout__screen {
-      min-height: 12rem;
-      padding: 1.5rem;
-    }
-
+  @media (max-width: 1100px) {
     .tool-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.7rem;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 420px) {
-    .toolbox-main {
-      width: min(100% - 1rem, var(--content-width));
+  @media (max-width: 800px) {
+    .tool-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
+  }
 
-    .tool-arrays {
-      padding: 0.75rem;
+  @media (max-width: 560px) {
+    :global(body.software-page.nav-content-page.plain-page) > main.toolbox-main {
+      width: min(100% - 1rem, var(--content-width));
     }
 
     .tool-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.65rem;
-    }
-
-    .tool-readout {
-      padding: 0.6rem;
-    }
-
-    .tool-readout__screen {
-      min-height: 10.5rem;
-      padding: 1.25rem;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .tool-readout,
-    .tool-readout__screen {
-      scroll-behavior: auto;
+      gap: 0.55rem;
     }
   }
 </style>

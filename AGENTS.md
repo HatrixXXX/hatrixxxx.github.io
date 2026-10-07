@@ -71,7 +71,7 @@ corepack pnpm test:e2e
 - 加锁正文图片必须使用 `.private-content/posts/` 内文件的 Markdown 相对路径。禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`；加锁文章的 `cover` 仍是公开资源。
 - 非首页主导航在顶部按视口居中，顺序固定为首页、博客文章、作品橱窗、关于我、书签、工具箱、装备铺、计划、实验场、友链、留言板；宽度小于 `1200px` 时使用同顺序的折叠菜单。首页博客卡片直接进入展示全部文章的 `/blog/`，不提供文章类型分类或二级菜单。
 - 页面返回按钮使用固定目标：文章详情返回 `/blog/`；其余页面统一返回 `/`，包括关于子页、归档、旧分页和 404。
-- 作品状态只能是 `idea|active|done|archived`。作品橱窗当前按用户要求显示 4 个大罐子和 6 个小罐子的示例作品，条目必须保留“示例”标记，直到换成真实项目。桌面端每层罐子均匀铺满平台，大罐高 180px、小罐高 120px，罐子横向间距为 12px，平台纵向间距为 20px；窄屏使用固定槽宽横向滚动。`ToolSpecimen.astro` 只用于作品橱窗；工具箱由 `ToolModule.astro` 和 `src/scripts/toolbox.ts` 实现，按 `src/data/software-tools.ts` 的四个用途类别分组。桌面端每组最多六列，方块下方显示名称；右侧读取台固定在视口内，显示当前工具的名称和用途。窄屏将读取台移至阵列上方，手机端每行三列。歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
+- 作品状态只能是 `idea|active|done|archived`。作品橱窗当前按用户要求显示 4 个大罐子和 6 个小罐子的示例作品，条目必须保留“示例”标记，直到换成真实项目。桌面端每层罐子均匀铺满平台，大罐高 180px、小罐高 120px，罐子横向间距为 12px，平台纵向间距为 20px；窄屏使用固定槽宽横向滚动。`ToolSpecimen.astro` 只用于作品橱窗；工具箱由 `ToolModule.astro` 和 `src/data/software-tools.ts` 实现，不显示分类标题或右侧读取台。桌面端每行 9 张卡片，窄屏依次调整为 8、6、3 列；卡片按用途类别使用不同荧光边框，顶部显示名称和两侧短灯，中部显示本地图标与“软件／在线”标记，底部显示用途短语。鼠标悬停或键盘聚焦时，在卡片上方居中显示深灰色圆角气泡，内含一句功能介绍。图标来源记录在 `public/tool-icons/SOURCES.txt`。歌单、计划和实验场为空是合法状态，不填演示数据；空歌单不会创建 `Audio` 对象。
 - 音乐播放器在首页左下透视卡片中常驻，所有非首页页面默认固定折叠到左侧，只露半张唱片；点击展开，点击卡片空白或收起按钮折叠，播放控件不得误触收起。全站只挂载一个播放器，以 `transition:persist` 保留 DOM 和 Audio；跨客户端导航后按当前路径更新首页/侧边模式，不依赖保留下来的旧 props。
 - 已发布文章中的 Hatrix 图床 URL 必须固定到不可变 commit；当前允许 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增同源图片也要带 `@<commit>`；增加 ref 时，同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` remote pattern，以及 inventory 测试。Astro 会逐跳校验重定向，不能为了接受 jsDelivr 的 GitHub Raw 跳转而放宽整个主机。文章列表题图走 Astro/Sharp，正文远程图片经过构建预检后保留 CDN 地址，并使用 lazy/async 属性。
 - Playwright 当前收集 204 项检查，保留 18 张 Windows 视觉基线，命名不含平台后缀。首页基线覆盖桌面、平板和手机，包含 v5 分块立绘、v6 背景、年龄等级、Hatrix 名称和左下金句。收集数量不代表通过数量。Pages workflow 不运行视觉套件。
@@ -90,7 +90,7 @@ corepack pnpm test:e2e
 - 已发布 Markdown 由 `remark-content-security.ts` 拒绝可执行原始 HTML、危险 URL、任意 `srcset` 和未固定的远程图片；原始 `style` 只允许单条 `zoom: <正整数>%`。不要用 sanitizer 静默改写正文。
 - Pages workflow 的 Action 固定到完整 commit SHA，checkout 不保留凭据，手动发布只能来自 `master`；升级 Action 时同步更新版本注释和配置测试。
 - `hatrix.site` 的权威 DNS 和网站代理位于 Cloudflare，源站仍是 GitHub Pages；当前 NS 是 `eugene.ns.cloudflare.com` 与 `millie.ns.cloudflare.com`。外部配置保持 Full (strict)、最低 TLS 1.2、六个月 HSTS、DNSSEC 和全站安全响应头。修改 NS、DNSSEC、HSTS、代理状态或响应头前先按 `docs/operations/cloudflare.md` 核对顺序，不能只改仓库。
-- `check:site` 固定校验 1537 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
+- `check:site` 固定校验 1588 条站内链接。新增或删除内容导致总量合理变化时，核对构建产物后同步更新 `scripts/check-built-site.ts` 中的期望值。
 - 未来的 3D 功能使用独立客户端岛并延迟加载，不把 3D 依赖放进公共布局。
 
 
