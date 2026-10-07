@@ -203,12 +203,15 @@ document.addEventListener('wheel', (event: WheelEvent) => {
     : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? delta * 300
     : delta;
 
+  if (normalized !== 0 && state.wheelAccum !== 0 && Math.sign(normalized) !== Math.sign(state.wheelAccum)) {
+    state.wheelAccum = 0;
+  }
   state.wheelAccum += normalized;
 
   const steps = Math.trunc(state.wheelAccum / WHEEL_STEP_THRESHOLD);
   if (steps !== 0) {
     state.wheelAccum -= steps * WHEEL_STEP_THRESHOLD;
-    navigateTo(rail, state.target + steps);
+    navigateTo(rail, state.target + Math.sign(steps));
   }
 }, { passive: false });
 

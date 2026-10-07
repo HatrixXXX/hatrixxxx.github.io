@@ -21,7 +21,7 @@ const { posts } = Astro.props;
   </div>
 </div>
 <p id="post-list-instructions" class="post-list-instructions">
-  滚动鼠标滚轮或使用方向键浏览文章，点击侧边卡片直接跳转。
+  滚动鼠标滚轮或使用方向键浏览文章，点击当前卡片进入文章，点击侧边卡片切换文章。
 </p>
 
 <script>
@@ -54,9 +54,13 @@ const { posts } = Astro.props;
     overflow: hidden;
   }
 
-  /* Active card leaves a 16px breathing edge above and below. */
+  /* Preserve the 1080p card proportions instead of stretching on taller displays. */
   .coverflow-scene :global([data-post-card]) {
-    --card-h: max(360px, calc(100dvh - var(--blog-header-height, 60px) - 2rem));
+    --card-h: clamp(
+      360px,
+      calc(100dvh - var(--blog-header-height, 60px) - 2rem),
+      calc(1080px - var(--blog-header-height, 60px) - 2rem)
+    );
     position: absolute;
     left: 50%;
     top: 50%;

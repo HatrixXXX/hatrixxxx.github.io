@@ -34,7 +34,7 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   await page.locator('a[data-home-blog]').click();
   await page.waitForURL('**/blog/');
   await expect(page.locator('[data-post-coverflow]')).toBeVisible();
-  await expect(page.locator('[data-post-coverflow] [data-post-card]')).toHaveCount(16);
+  await expect(page.locator('[data-post-coverflow] [data-post-card]')).toHaveCount(15);
   await expect(page.locator('[data-blog-view-toggle], [data-blog-archive-view]')).toHaveCount(0);
   await page.getByRole('link', { name: 'Infra-线性代数', exact: true }).focus();
   await page.keyboard.press('Enter');

@@ -48,7 +48,7 @@ const stats = buildSiteStats(posts);
     runningDuration: formatRunningDurationAt(new Date())
   }}
 >
-  <BackButton href="/blog/" label="返回博客文章" />
+  <BackButton href="/blog/" label="返回博客文章" belowHeader={true} />
   <article data-post>
     <div class="post-intro container">
       <h1>{post.data.title}</h1>
@@ -203,11 +203,16 @@ const stats = buildSiteStats(posts);
       grid-column: 2;
       grid-row: 1;
       position: sticky;
-      top: 1.25rem;
+      top: var(--post-sidebar-top, auto);
       display: grid;
-      grid-template-rows: minmax(0, 1fr) auto;
-      max-height: min(38rem, calc(100vh - 2.5rem));
-      overflow: hidden;
+      grid-template-rows: auto auto;
+      max-height: min(
+        46.5rem,
+        calc(100vh - var(--post-sidebar-top, 0px) - 1rem)
+      );
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
     }
 
     .post-sidebar :global(.toc),
@@ -216,10 +221,15 @@ const stats = buildSiteStats(posts);
     }
   }
 
+  @media (max-width: 1199px) {
+    .post-intro {
+      padding-top: calc(var(--header-height) + 3.5rem);
+    }
+  }
+
   @media (max-width: 768px) {
     .post-intro {
       width: min(calc(100% - 32px), var(--content-width));
-      padding-top: 3rem;
     }
     .post-grid {
       width: min(calc(100% - 32px), 1440px);

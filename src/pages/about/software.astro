@@ -14,8 +14,10 @@ const orderedTools = SOFTWARE_TOOL_CATEGORIES.flatMap((category) =>
   <BackButton href="/" label="返回主页" />
 
   <main class="toolbox-main container" aria-label="工具箱">
-    <div class="tool-grid" data-tool-grid>
-      {orderedTools.map((tool) => <ToolModule tool={tool} />)}
+    <div class="tool-deck" data-tool-deck>
+      <div class="tool-grid" data-tool-grid>
+        {orderedTools.map((tool) => <ToolModule tool={tool} />)}
+      </div>
     </div>
   </main>
 </BaseLayout>
@@ -34,6 +36,16 @@ const orderedTools = SOFTWARE_TOOL_CATEGORIES.flatMap((category) =>
 
   :global(body.software-page [data-sakana-layer]) {
     display: none;
+  }
+
+  @media (min-width: 769px) {
+    :global(body.software-page.nav-content-page.plain-page) > main.toolbox-main {
+      padding-top: calc(var(--header-height) + 1rem);
+    }
+
+    .tool-deck {
+      padding-top: 3.5rem;
+    }
   }
 
   @media (max-width: 1100px) {

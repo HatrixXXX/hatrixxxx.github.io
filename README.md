@@ -41,7 +41,7 @@ pnpm test:e2e
 - `src/data/playlist.ts`：音乐列表
 - `public/`：CNAME、favicon、头像和本地静态资源
 
-私有内容仓库有 16 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。所有通过校验的文章都会生成页面；一次完整构建会生成 37 个页面。
+私有内容仓库有 15 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。所有通过校验的文章都会生成页面；一次完整构建会生成 36 个页面。
 
 私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
 
@@ -187,7 +187,7 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 173 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
+文章共引用 168 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
@@ -219,17 +219,17 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | --- | --- |
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
-| `pnpm check:images` | 173 个去重后的远程图片 URL |
+| `pnpm check:images` | 168 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、31 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章路由、CNAME、1588 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 204 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
+| `pnpm check:site` | 文章路由、CNAME、1579 条站内链接和发布体积 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 213 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
 
 2026-09-25 本次发布检查通过 316 项单元测试、55 项相关浏览器回归、Astro 检查、生产依赖审计、完整构建、保护审计和 3976 条站内链接检查。浏览器回归覆盖首页、导航、各页面返回路径、键盘操作和无脚本访问。
 
-完整浏览器套件当前收集 204 项。博客路径、文章数量、普通页页脚、Coverflow、实验场 CursorTrail、About 装饰层和 18 张视觉基线均按当前实现校验。
+完整浏览器套件当前收集 213 项。博客路径、文章数量、普通页页脚、Coverflow、实验场 CursorTrail、About 装饰层和 18 张视觉基线均按当前实现校验。
 新增或删除页面、导航项等内容后，如果站内链接总量发生了合理变化，先核对构建产物，再同步更新 `scripts/check-built-site.ts` 中的期望值；未更新时 `pnpm check:site` 会失败。
 
 ## 安全边界
