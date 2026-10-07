@@ -11,3 +11,5 @@ audit:
 overrides:
   # GHSA-r5fr-rjxr-66jc: Chevrotain pins a vulnerable lodash-es version.
   'lodash-es@<4.18.1': 4.18.1
+  # GHSA-68fv-2mgg-jv7q: use the patched transitive source-map-js release.
+  'source-map-js@<1.2.2': 1.2.2
