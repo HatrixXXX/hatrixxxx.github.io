@@ -156,29 +156,54 @@ test('post layout places the sidebar, article and TOC in responsive reading orde
   expect(sizes.scroll).toBe(sizes.client);
 });
 
-test('desktop post sidebar stays at its initial viewport position while the article scrolls', async ({ page }) => {
+test('desktop post sidebar stays fixed when the full stack fits the viewport', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/Infra-概率论/');
 
   const stack = page.locator('.post-sidebar');
-  const header = page.locator('[data-site-header]');
+  await expect(stack).toHaveAttribute('data-sidebar-fixed', 'true');
+  await expect(stack).toHaveCSS('position', 'fixed');
+  await expect(stack).toHaveCSS('overflow-y', 'visible');
   const before = await stack.boundingBox();
   if (!before) throw new Error('Missing post sidebar bounds');
 
   await page.evaluate(() => window.scrollTo(0, 1_200));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1_200);
-  const [after, headerBox, scrollY] = await Promise.all([
+  const [after, scrollY] = await Promise.all([
     stack.boundingBox(),
-    header.boundingBox(),
     page.evaluate(() => window.scrollY)
   ]);
-  if (!after || !headerBox) throw new Error('Missing scrolled post layout bounds');
+  if (!after) throw new Error('Missing scrolled post layout bounds');
 
-  await expect(stack).toHaveCSS('position', 'sticky');
   expect(scrollY).toBe(1_200);
-  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
-  expect(after.y).toBeGreaterThan(headerBox.y + headerBox.height);
+  expect(after.y).toBeCloseTo(before.y, 0);
+});
+
+test('post back-to-top button appears after scrolling and returns to the page start', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/posts/Infra-概率论/');
+
+  const backToTop = page.locator('[data-back-to-top]');
+  await expect(backToTop).toHaveCount(1);
+  await expect(backToTop).toHaveAttribute('aria-label', '回到顶部');
+  await expect(backToTop).toBeHidden();
+
+  await page.evaluate(() => window.scrollTo(0, 1_200));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1_200);
+  await expect(backToTop).toBeVisible();
+  const buttonBox = await backToTop.boundingBox();
+  if (!buttonBox) throw new Error('Missing back-to-top button bounds');
+  expect(buttonBox.width).toBeGreaterThanOrEqual(44);
+  expect(buttonBox.height).toBeGreaterThanOrEqual(44);
+
+  await backToTop.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(backToTop).toBeHidden();
+
+  await page.goto('/blog/');
+  await expect(page.getByRole('button', { name: '回到顶部' })).toHaveCount(0);
 });
 
 test('mobile post back button stays between the fixed navigation and article title', async ({ page }) => {
@@ -201,7 +226,7 @@ test('mobile post back button stays between the fixed navigation and article tit
   }
 });
 
-test('desktop table of contents reveals descendants only for the current level-two section', async ({ page }) => {
+test('table of contents keeps every heading visible on desktop and mobile', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/posts/Infra-线性代数/');
 
@@ -211,18 +236,13 @@ test('desktop table of contents reveals descendants only for the current level-t
     depth: Number((element as HTMLElement).dataset.depth),
     hidden: (element as HTMLElement).hidden
   })));
-  expect(initialState.filter(({ depth }) => depth === 2).every(({ hidden }) => !hidden)).toBe(true);
-  expect(initialState.filter(({ depth }) => depth > 2).every(({ hidden }) => hidden)).toBe(true);
-  const levelTwoLinks = toc.locator('a[data-toc-depth="2"]');
-  const expandableLevelTwoLinks = toc.locator('a[data-toc-depth="2"][aria-expanded]');
-  expect(await expandableLevelTwoLinks.count()).toBeGreaterThan(0);
-  expect(await expandableLevelTwoLinks.count()).toBeLessThan(await levelTwoLinks.count());
+  expect(initialState.some(({ depth }) => depth > 2)).toBe(true);
+  expect(initialState.every(({ hidden }) => !hidden)).toBe(true);
+  await expect(toc.locator('a[aria-expanded]')).toHaveCount(0);
 
   const firstNestedLink = toc.locator('li[data-depth="3"] a').first();
-  const firstNestedItem = firstNestedLink.locator('xpath=..');
   const targetId = (await firstNestedLink.getAttribute('href'))?.slice(1);
-  const activeSection = await firstNestedItem.getAttribute('data-toc-section');
-  if (!targetId || !activeSection) throw new Error('Missing nested TOC section metadata');
+  if (!targetId) throw new Error('Missing nested TOC target');
 
   await page.evaluate((slug) => {
     document.documentElement.style.scrollBehavior = 'auto';
@@ -230,24 +250,13 @@ test('desktop table of contents reveals descendants only for the current level-t
     if (heading) window.scrollTo(0, heading.offsetTop);
   }, targetId);
   await expect(firstNestedLink).toHaveAttribute('aria-current', 'location');
-  await expect(firstNestedItem).toBeVisible();
+  await expect(firstNestedLink).toBeVisible();
 
-  const expandedState = await toc.locator('li[data-depth="3"], li[data-depth="4"]').evaluateAll(
-    (elements) => elements.map((element) => ({
-      section: (element as HTMLElement).dataset.tocSection,
-      hidden: (element as HTMLElement).hidden
-    }))
-  );
-  expect(expandedState.some(({ section, hidden }) => section === activeSection && !hidden)).toBe(true);
-  expect(expandedState.filter(({ section }) => section !== activeSection).every(({ hidden }) => hidden)).toBe(true);
-
-  const mobileExpandedState = await page.locator(
+  const mobileState = await page.locator(
     '[data-toc-mobile] li[data-depth="3"], [data-toc-mobile] li[data-depth="4"]'
-  ).evaluateAll((elements) => elements.map((element) => ({
-    section: (element as HTMLElement).dataset.tocSection,
-    hidden: (element as HTMLElement).hidden
-  })));
-  expect(mobileExpandedState).toEqual(expandedState);
+  ).evaluateAll((elements) => elements.map((element) => (element as HTMLElement).hidden));
+  expect(mobileState.length).toBeGreaterThan(0);
+  expect(mobileState.every((hidden) => !hidden)).toBe(true);
 });
 
 test('table of contents updates after a heading jumps across the observer band', async ({ page }) => {
@@ -285,36 +294,35 @@ test('table of contents updates after a heading jumps across the observer band',
   await expect(firstDesktopLevelTwo).toHaveAttribute('aria-current', 'location');
   await expect(firstMobileLevelTwo).toHaveAttribute('aria-current', 'location');
   await expect(nestedLink).not.toHaveAttribute('aria-current', 'location');
-  expect(await page.locator('[data-toc-desktop] li[data-depth="3"]:not([hidden]), [data-toc-desktop] li[data-depth="4"]:not([hidden])').count()).toBe(0);
+  await expect(nestedLink).toBeVisible();
 });
 
-test('post sidebar shows two more latest articles and allows two more rows of height', async ({ page }) => {
+test('post sidebar retains the latest article allocation with a full table of contents', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1200 });
   await page.goto('/posts/Infra-线性代数/');
 
   await expect(page.locator('[data-latest-posts] .latest-item')).toHaveCount(3);
-  const maxHeight = await page.locator('.post-sidebar').evaluate(
-    (element) => Number.parseFloat(getComputedStyle(element).maxHeight)
-  );
-  expect(maxHeight).toBeCloseTo(46.5 * 16, 0);
 });
 
-test('short desktop viewports can scroll the full sidebar to the last latest article', async ({ page }) => {
+test('short desktop viewports lay out the full sidebar without internal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/posts/Infra-线性代数/');
 
   const sidebar = page.locator('.post-sidebar');
-  await expect(sidebar).toHaveCSS('overflow-y', 'auto');
+  await expect(sidebar).not.toHaveAttribute('data-sidebar-fixed');
+  await expect(sidebar).toHaveCSS('position', 'static');
+  await expect(sidebar).toHaveCSS('max-height', 'none');
+  await expect(sidebar).toHaveCSS('overflow-y', 'visible');
   const dimensions = await sidebar.evaluate((element) => ({
     clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight
+    scrollHeight: element.scrollHeight,
+    scrollTop: element.scrollTop
   }));
-  expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
+  expect(dimensions.scrollHeight).toBe(dimensions.clientHeight);
+  expect(dimensions.scrollTop).toBe(0);
 
-  await sidebar.evaluate((element) => { element.scrollTop = element.scrollHeight; });
-  await expect.poll(() => sidebar.evaluate((element) => element.scrollTop)).toBe(
-    dimensions.scrollHeight - dimensions.clientHeight
-  );
+  await sidebar.evaluate((element) => { element.scrollTop = 200; });
+  await expect.poll(() => sidebar.evaluate((element) => element.scrollTop)).toBe(0);
   const [sidebarBox, lastLatestBox] = await Promise.all([
     sidebar.boundingBox(),
     page.locator('[data-latest-posts] .latest-item').last().boundingBox()
@@ -323,8 +331,7 @@ test('short desktop viewports can scroll the full sidebar to the last latest art
   expect(lastLatestBox.y + lastLatestBox.height).toBeLessThanOrEqual(sidebarBox.y + sidebarBox.height + 1);
 
   const pageStart = await page.evaluate(() => window.scrollY);
-  await page.mouse.move(sidebarBox.x + sidebarBox.width / 2, sidebarBox.y + sidebarBox.height / 2);
-  await page.mouse.wheel(0, 300);
+  await page.mouse.move(sidebarBox.x + sidebarBox.width / 2, sidebarBox.y + 100);
   await page.mouse.wheel(0, 300);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(pageStart);
 });

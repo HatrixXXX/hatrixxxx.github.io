@@ -3,6 +3,7 @@ import 'katex/dist/katex.min.css';
 import { getCollection } from 'astro:content';
 import GiscusComments from '@/components/GiscusComments.astro';
 import BackButton from '@/components/BackButton.astro';
+import BackToTop from '@/components/BackToTop.astro';
 import PostLink from '@/components/PostLink.astro';
 import PostMeta from '@/components/PostMeta.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
@@ -83,10 +84,13 @@ const stats = buildSiteStats(posts);
       </div>
     </ProtectedContent>
   </article>
+  <BackToTop />
 </BaseLayout>
 
 <script>
+  import '@/scripts/back-to-top';
   import '@/scripts/mermaid';
+  import '@/scripts/post-sidebar';
   import '@/scripts/toc';
 </script>
 
@@ -202,22 +206,14 @@ const stats = buildSiteStats(posts);
     .post-sidebar {
       grid-column: 2;
       grid-row: 1;
-      position: sticky;
-      top: var(--post-sidebar-top, auto);
-      display: grid;
-      grid-template-rows: auto auto;
-      max-height: min(
-        46.5rem,
-        calc(100vh - var(--post-sidebar-top, 0px) - 1rem)
-      );
-      overflow-x: hidden;
-      overflow-y: auto;
-      scrollbar-width: thin;
     }
 
-    .post-sidebar :global(.toc),
-    .post-sidebar :global(.latest-posts) {
-      min-height: 0;
+    .post-sidebar[data-sidebar-fixed='true'] {
+      position: fixed;
+      z-index: 20;
+      top: var(--post-sidebar-fixed-top);
+      left: var(--post-sidebar-fixed-left);
+      width: var(--post-sidebar-fixed-width);
     }
   }
 
@@ -234,10 +230,6 @@ const stats = buildSiteStats(posts);
     .post-grid {
       width: min(calc(100% - 32px), 1440px);
     }
-  }
-
-  @media (max-width: 1279px) {
-    .post-sidebar { position: static; max-height: none; overflow: visible; }
   }
 
   @media (max-width: 600px) {

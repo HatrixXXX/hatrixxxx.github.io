@@ -1,0 +1,63 @@
+<button class="back-to-top" type="button" aria-label="回到顶部" data-back-to-top hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="m6 10 6-6 6 6M12 4v16" />
+  </svg>
+</button>
+
+<style>
+  .back-to-top {
+    position: fixed;
+    z-index: 30;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    padding: 0;
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: var(--shadow-inset), var(--shadow-panel);
+    color: var(--color-accent);
+    cursor: pointer;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+
+  .back-to-top[hidden] {
+    display: none;
+  }
+
+  .back-to-top:hover,
+  .back-to-top:focus-visible {
+    border-color: var(--color-copper);
+    color: var(--color-accent-strong);
+    transform: translateY(-2px);
+  }
+
+  .back-to-top:active {
+    background: var(--color-inset);
+    box-shadow: var(--shadow-inset);
+    transform: translateY(0);
+  }
+
+  .back-to-top svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .back-to-top {
+      transition: none;
+    }
+  }
+</style>

@@ -9,16 +9,7 @@ interface Props {
   headings: Heading[];
 }
 
-let sectionSlug = '';
-const headings = Astro.props.headings
-  .filter(({ depth }) => depth >= 2 && depth <= 4)
-  .map((heading) => {
-    if (heading.depth === 2) sectionSlug = heading.slug;
-    return { ...heading, sectionSlug: sectionSlug || heading.slug };
-  });
-const expandableSections = new Set(
-  headings.filter(({ depth }) => depth > 2).map((heading) => heading.sectionSlug)
-);
+const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth <= 4);
 ---
 
 {
@@ -29,19 +20,11 @@ const expandableSections = new Set(
         <nav aria-label="文章目录">
           <ol>
             {headings.map((heading) => (
-              <li
-                data-toc-item
-                data-depth={heading.depth}
-                data-toc-section={heading.sectionSlug}
-                hidden={heading.depth > 2}
-              >
+              <li data-depth={heading.depth}>
                 <a
                   href={`#${heading.slug}`}
                   data-toc-link={heading.slug}
                   data-toc-depth={heading.depth}
-                  data-toc-section={heading.sectionSlug}
-                  data-toc-expandable={heading.depth === 2 && expandableSections.has(heading.sectionSlug) ? 'true' : undefined}
-                  aria-expanded={heading.depth === 2 && expandableSections.has(heading.sectionSlug) ? 'false' : undefined}
                 >
                   {heading.text}
                 </a>
@@ -55,19 +38,11 @@ const expandableSections = new Set(
         <nav aria-label="文章目录">
           <ol>
             {headings.map((heading) => (
-              <li
-                data-toc-item
-                data-depth={heading.depth}
-                data-toc-section={heading.sectionSlug}
-                hidden={heading.depth > 2}
-              >
+              <li data-depth={heading.depth}>
                 <a
                   href={`#${heading.slug}`}
                   data-toc-link={heading.slug}
                   data-toc-depth={heading.depth}
-                  data-toc-section={heading.sectionSlug}
-                  data-toc-expandable={heading.depth === 2 && expandableSections.has(heading.sectionSlug) ? 'true' : undefined}
-                  aria-expanded={heading.depth === 2 && expandableSections.has(heading.sectionSlug) ? 'false' : undefined}
                 >
                   {heading.text}
                 </a>
