@@ -23,14 +23,6 @@
       "commit": "33375500bcea98d610eb30ce10ac4e59b89c390d",
       "sourcePath": "skills/frontend-design",
       "installedPath": ".agents/skills/frontend-design"
-    },
-    {
-      "name": "motion-web",
-      "repository": "https://github.com/feitangyuan/motion-web",
-      "commit": "5f4e40f1253e11e28850d08dce28b9b7e4320115",
-      "sourcePath": ".",
-      "installedPath": ".agents/skills/motion-web",
-      "license": "CC BY-NC 4.0"
     }
   ],
   "impeccableEngine": {
