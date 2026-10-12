@@ -8,18 +8,17 @@
  *
  * 触发规则
  * --------
- * - 只对同源、同会话内未访问过的页面显示遮罩。
+ * - 首次硬导航到同会话内未访问过的页面显示圆环加载器。
+ * - 同源 HTML 客户端跳转每次显示左右双瓣遮罩。
  * - 外部链接、非 HTML 目标（/rss.xml 等）不触发。
- * - 访问记录存 sessionStorage，关标签重置。
+ * - 硬导航的访问记录存 sessionStorage，关标签重置。
  *
  * 时序
  * ----
- * VT 导航到未访问页:
- *   astro:before-preparation → showLoader() + fakeProgress(80%) → pending = state
- *   astro:page-load          → complete(pending) → 淡出
- *
- * VT 导航到已访问页:
- *   before-preparation 跳过，page-load 跳过
+ * VT 导航:
+ *   astro:before-preparation → 两瓣闭合，与目标页请求并行
+ *   闭合完成后交换页面；背景或首页资源就绪后两瓣展开
+ *   导航中断时由 abort signal 收回遮罩
  *
  * 硬导航首次访问:
  *   astro:page-load → showLoader() + 快速跑满 → complete()
@@ -38,6 +37,7 @@
 
 const VISITED_KEY = 'hatrix-visited-pages';
 const HOME_DEADLINE_MS = 8_000;
+const SHUTTER_CLOSE_FALLBACK_MS = 540;
 
 // ── 访问记录 ──────────────────────────────────────────────────────────────────
 
@@ -87,20 +87,26 @@ const INNER_HTML = `
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
+const SHUTTER_HTML = `
+  <div class="pl-shutter-leaf pl-shutter-leaf--left"></div>
+  <div class="pl-shutter-leaf pl-shutter-leaf--right"></div>`;
+
 interface State {
   el:       HTMLElement;
   arcs:     SVGCircleElement[];
   numEl:    HTMLElement | null;
+  mode:     'initial' | 'transition';
   progress: number;
   raf:      number;
   finished: boolean;
 }
 
-function buildState(el: HTMLElement): State {
+function buildState(el: HTMLElement, mode: State['mode']): State {
   return {
     el,
     arcs:  Array.from(el.querySelectorAll<SVGCircleElement>('.pl-arc')),
     numEl: el.querySelector<HTMLElement>('.pl-pct-num'),
+    mode,
     progress: 0, raf: 0, finished: false,
   };
 }
@@ -129,17 +135,40 @@ function fakeProgress(s: State, target: number, ms = 2400): void {
 
 let activeLoader: State | null = null;
 
-function showLoader(): State | null {
+function showLoader(mode: State['mode'] = 'initial'): State | null {
   const el = document.getElementById('page-loader');
   if (!el) return null;
-  el.innerHTML = INNER_HTML;
-  el.classList.remove('pl-done');
+  el.innerHTML = mode === 'transition' ? SHUTTER_HTML : INNER_HTML;
+  el.classList.remove('pl-done', 'pl-transition', 'pl-closed');
   el.classList.add('pl-visible');
+  if (mode === 'transition') {
+    el.classList.add('pl-transition');
+    void el.offsetWidth;
+    el.classList.add('pl-closed');
+  }
   delete document.documentElement.dataset.initialPageLoader;
-  const s = buildState(el);
+  const s = buildState(el, mode);
   activeLoader = s;
   applyPct(s, 0);
   return s;
+}
+
+function waitForShutterClose(s: State): Promise<void> {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
+  const leaf = s.el.querySelector<HTMLElement>('.pl-shutter-leaf--left');
+  if (!leaf) return Promise.resolve();
+  return new Promise((resolve) => {
+    const finish = () => {
+      leaf.removeEventListener('transitionend', onEnd);
+      window.clearTimeout(fallback);
+      resolve();
+    };
+    const onEnd = (event: TransitionEvent) => {
+      if (event.target === leaf && event.propertyName === 'transform') finish();
+    };
+    const fallback = window.setTimeout(finish, SHUTTER_CLOSE_FALLBACK_MS);
+    leaf.addEventListener('transitionend', onEnd);
+  });
 }
 
 function complete(s: State): void {
@@ -153,9 +182,13 @@ function complete(s: State): void {
     activeLoader = null;
     delete document.documentElement.dataset.initialPageLoader;
     delete document.documentElement.dataset.initialPageLoaderStartedAt;
-    s.el.classList.remove('pl-visible', 'pl-done');
+    s.el.classList.remove('pl-visible', 'pl-done', 'pl-transition', 'pl-closed');
     s.el.innerHTML = '';
   };
+  if (s.mode === 'transition' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.setTimeout(cleanup, 0);
+    return;
+  }
   s.el.addEventListener('transitionend', cleanup, { once: true });
   window.setTimeout(cleanup, 700); // transitionend 兜底
 }
@@ -271,16 +304,35 @@ function drainPending(): void {
 // ── before-preparation：VT 导航开始 ─────────────────────────────────────────
 
 document.addEventListener('astro:before-preparation', (raw) => {
-  const to = (raw as unknown as { to?: URL }).to;
+  const event = raw as unknown as { to?: URL; loader?: () => Promise<void>; signal?: AbortSignal };
+  const to = event.to;
   const replacesOverlay = !!to && isSameOriginPage(to);
-  const supersedesHomeWait = cancelHomeWait !== null;
   cancelHomeWait?.(!replacesOverlay);
-  if (!to || !replacesOverlay || (!supersedesHomeWait && hasVisited(to.pathname))) return;
-  const s = showLoader();
+  if (!to || !replacesOverlay) return;
+  const s = showLoader('transition');
   if (!s) return;
   pageBackgroundWait += 1;
-  fakeProgress(s, 80);
   pending = s;
+  event.signal?.addEventListener('abort', () => {
+    window.setTimeout(() => {
+      if (pending !== s) return;
+      pending = null;
+      complete(s);
+    }, 0);
+  }, { once: true });
+  if (event.loader) {
+    const load = event.loader;
+    const closed = waitForShutterClose(s);
+    event.loader = async () => {
+      try {
+        await Promise.all([load(), closed]);
+      } catch (error) {
+        if (pending === s) pending = null;
+        complete(s);
+        throw error;
+      }
+    };
+  }
 });
 
 document.addEventListener('astro:before-swap', (raw) => {

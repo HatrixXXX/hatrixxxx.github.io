@@ -1,7 +1,7 @@
 ﻿// Coverflow carousel for post list
-// - Active card faces forward (rotateY 0), neighbours fold inward
+// - Active card faces forward (rotateX 0), neighbours fold above and below
 // - Mouse wheel over the rail scrolls through cards with spring damping
-// - First card starts active; last card can be active with right-side whitespace
+// - First card starts active; last card can be active with lower whitespace
 
 const RAIL_SELECTOR = '[data-post-coverflow]';
 const INDEX_KEY = 'blog-coverflow-index';
@@ -13,11 +13,11 @@ const SPRING_DAMPING   = 28;    // critical damping avoids overshoot
 const SETTLE_EPS       = 0.005; // index units below which we consider settled
 
 // Coverflow visual parameters
-const SIDE_ROTATE_DEG  = 48;    // how much each non-active card rotates
-const SIDE_TRANSLATE_Z = -120;  // px push-back for non-active cards
-const SIDE_SCALE       = 0.82;  // scale of non-active cards
-const ACTIVE_SCALE     = 1.0;
-const CARD_GAP_FACTOR  = 0.62;  // fraction of card width used as step offset
+const SIDE_ROTATE_STEP_DEG = 22;
+const MAX_ROTATE_DEG = 80;
+const SIDE_TRANSLATE_Z = -70;   // px per depth layer
+const MIN_SIDE_SCALE = 0.72;
+const CARD_GAP_FACTOR  = 0.95;  // fraction of card height used as step offset
 
 interface CoverflowState {
   current: number;
@@ -59,8 +59,10 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
   const cardCount = cards.length;
   if (cardCount === 0) return;
 
-  const cardWidth = cards[0]?.offsetWidth ?? 280;
-  const step = cardWidth * CARD_GAP_FACTOR;
+  const cardHeight = cards[0]?.offsetHeight ?? 360;
+  const step = cardHeight * CARD_GAP_FACTOR;
+  const edgeShift = -Math.max(0, 1 - currentIndex) * step * 0.5
+    + Math.max(0, currentIndex - (cardCount - 2)) * step * 0.5;
 
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
@@ -68,18 +70,22 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
     const absOffset = Math.abs(offset);
     const sign = offset >= 0 ? 1 : -1;
 
-    const rotateY = sign * Math.min(absOffset * SIDE_ROTATE_DEG, SIDE_ROTATE_DEG);
-    const translateZ = absOffset === 0 ? 0 : SIDE_TRANSLATE_Z * Math.min(absOffset, 1);
-    const translateX = offset * step;
-    const scaleFactor = absOffset === 0
-      ? ACTIVE_SCALE
-      : SIDE_SCALE + (1 - SIDE_SCALE) * Math.max(0, 1 - absOffset);
-    const opacity = absOffset > 2 ? Math.max(0.25, 1 - (absOffset - 2) * 0.35) : 1;
+    const rotateX = -sign * Math.min(absOffset * SIDE_ROTATE_STEP_DEG, MAX_ROTATE_DEG);
+    const translateZ = SIDE_TRANSLATE_Z * Math.min(absOffset, 4);
+    const translateY = offset * step + edgeShift;
+    const scaleFactor = Math.max(MIN_SIDE_SCALE, 1 - absOffset * 0.08);
+    const opacity = absOffset <= 1
+      ? 1 - absOffset * 0.28
+      : Math.min(0.98, 0.72 + (absOffset - 1) * 0.1);
 
-    card.style.transform = `translateX(${translateX.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) rotateY(${rotateY.toFixed(2)}deg) scale(${scaleFactor.toFixed(4)})`;
+    card.style.transform = `translateY(${translateY.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) rotateX(${rotateX.toFixed(2)}deg) scale(${scaleFactor.toFixed(4)})`;
     card.style.opacity = String(opacity.toFixed(3));
     card.style.zIndex = String(Math.round(100 - absOffset * 10));
     card.setAttribute('data-active', absOffset < 0.5 ? 'true' : 'false');
+    card.inert = false;
+    const titleLink = card.querySelector<HTMLAnchorElement>('h2 a');
+    const tabIndex = absOffset > 1.5 ? -1 : 0;
+    if (titleLink && titleLink.tabIndex !== tabIndex) titleLink.tabIndex = tabIndex;
   }
 }
 
@@ -220,10 +226,10 @@ document.addEventListener('keydown', (event: KeyboardEvent) => {
   const target = event.target instanceof Element ? event.target : null;
   const rail = target?.closest<HTMLElement>(RAIL_SELECTOR) ?? null;
   if (!rail) return;
-  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+  if (event.key === 'ArrowDown') {
     event.preventDefault();
     navigateTo(rail, stateFor(rail).target + 1);
-  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+  } else if (event.key === 'ArrowUp') {
     event.preventDefault();
     navigateTo(rail, stateFor(rail).target - 1);
   }
@@ -234,7 +240,10 @@ document.addEventListener('click', (event: MouseEvent) => {
   const target = event.target instanceof Element ? event.target : null;
   const card = target?.closest<HTMLElement>('[data-post-card]') ?? null;
   if (!card) return;
-  if (card.getAttribute('data-active') === 'true') return;
+  if (card.getAttribute('data-active') === 'true') {
+    if (!target?.closest('a')) card.querySelector<HTMLAnchorElement>('h2 a')?.click();
+    return;
+  }
   const rail = card.closest<HTMLElement>(RAIL_SELECTOR);
   if (!rail) return;
   event.preventDefault();
@@ -247,9 +256,8 @@ document.addEventListener('click', (event: MouseEvent) => {
 // ─── Touch swipe ──────────────────────────────────────────────────────────────
 interface TouchSwipeState {
   rail: HTMLElement;
-  startX: number;
+  startY: number;
   startTarget: number;
-  moved: boolean;
 }
 let touchSwipe: TouchSwipeState | null = null;
 const SWIPE_THRESHOLD = 40;
@@ -258,16 +266,13 @@ document.addEventListener('touchstart', (event: TouchEvent) => {
   const t = event.target instanceof Element ? event.target : null;
   const rail = t?.closest<HTMLElement>(RAIL_SELECTOR) ?? null;
   if (!rail || event.touches.length !== 1) return;
-  touchSwipe = { rail, startX: event.touches[0].clientX, startTarget: stateFor(rail).target, moved: false };
+  touchSwipe = { rail, startY: event.touches[0].clientY, startTarget: stateFor(rail).target };
 }, { passive: true });
 
 document.addEventListener('touchmove', (event: TouchEvent) => {
   if (!touchSwipe) return;
-  const dx = touchSwipe.startX - event.touches[0].clientX;
-  if (!touchSwipe.moved && Math.abs(dx) > 8) touchSwipe.moved = true;
-  if (touchSwipe.moved) {
-    navigateTo(touchSwipe.rail, touchSwipe.startTarget + Math.round(dx / SWIPE_THRESHOLD));
-  }
+  const dy = touchSwipe.startY - event.touches[0].clientY;
+  if (Math.abs(dy) >= SWIPE_THRESHOLD) navigateTo(touchSwipe.rail, touchSwipe.startTarget + Math.sign(dy));
 }, { passive: true });
 
 document.addEventListener('touchend', () => { touchSwipe = null; });
@@ -301,6 +306,12 @@ function initAllRails(): void {
 
 document.addEventListener('astro:page-load', initAllRails);
 initAllRails();
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
+    applyTransforms(rail, stateFor(rail).current);
+  });
+});
 
 reducedMotionMq.addEventListener('change', () => {
   document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {

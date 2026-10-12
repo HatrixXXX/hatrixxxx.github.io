@@ -1,6 +1,6 @@
 # 文档入口
 
-[项目 README](../README.md) 说明内容格式、开发命令、验证和部署方式；[AGENTS.md](../AGENTS.md) 记录协作规则与实现约束。[Cloudflare 运维说明](operations/cloudflare.md) 维护 DNS、TLS、响应头及回退步骤。
+[项目 README](../README.md) 说明内容格式、开发命令、验证和部署方式；[AGENTS.md](../AGENTS.md) 记录协作规则与实现约束。[Cloudflare 运维说明](operations/cloudflare.md) 维护 DNS、TLS、响应头及回退步骤，[Twikoo 运维说明](operations/twikoo.md) 记录评论后端的部署和回退。
 
 ## 当前实现
 
@@ -10,16 +10,16 @@
 
 文章页的二至四级目录始终完整展开。桌面宽屏下，目录和最近文章组成的侧栏只在能整体放入可用视口时固定；否则使用页面滚动。文章页还提供右下角返回顶部按钮。
 
-非首页顶部导航按视口居中，顺序为首页、博客文章、作品橱窗、关于我、收藏、工具箱、装备铺、计划、实验场、友链、留言板。小于 1200px 时使用折叠菜单，博客不提供类型二级入口。主导航栏目页不显示 Hero 主标题或副标题栏，桌面端主要内容与作品橱窗柜体顶边对齐；博客卡片基本占满导航栏之外的视口高度。作品橱窗使用玻璃罐陈列柜，当前一层放 4 个大罐子、一层放 6 个小罐子，均为明确标注的示例作品。工具箱用不同荧光边框区分五种用途，桌面端每行 9 张图标卡片，手机端每行 3 张；卡片显示名称、用途短语和“软件／在线”标记，悬停或聚焦时在上方显示完整介绍。留言板使用独立半透明面板。播放器在首页常驻，在其他页面折叠为左侧半张唱片，客户端导航保持播放。
+非首页顶部导航按视口居中，顺序为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场。小于 1200px 时使用同顺序的折叠菜单，博客不提供类型二级入口。主导航栏目页不显示 Hero 主标题或副标题栏，桌面端主要内容与作品橱窗柜体顶边对齐；博客卡片基本占满导航栏之外的视口高度。作品橱窗现有 5 张数字档案卡，桌面端排成三张加两张，窄屏单列。工具箱按用途使用不同荧光边框，桌面端每行 9 张图标卡片，窄屏依次调整为 8、6、3 列。留言板加载 Twikoo 评论。播放器在首页常驻，在其他页面折叠为左侧半张唱片，客户端导航保持播放。
 
-完整构建生成 37 个页面，远程图片清单包含 168 个 URL，站内链接检查清单为 1662 条。测试数量与验证范围见项目 README。
+当前 10 篇随笔参与构建时生成 48 个页面；随笔为空时生成 38 个页面，并按 1799 条站内链接核对基线。远程图片清单包含 168 个 URL。测试数量与验证范围见项目 README。
 
 ## 设计记录
 
-首页截图、配色饱和度参考图、留频街世界观指南和布局分析放在[首页设计参考](design-references/homepage/)；使用顺序与边界见 [AGENTS.md](../AGENTS.md) 的“首页视觉设计参考”。
+首页截图、配色饱和度参考图、共构城世界观指南和布局分析放在[首页设计参考](design-references/)；使用顺序与边界见 [AGENTS.md](../AGENTS.md) 的“首页视觉设计参考”。
 
-当前首页、导航和播放器以[首页设计记录](superpowers/specs/2026-09-25-home-dashboard-design.md)为准。加锁与搜索分别见[加锁内容设计](superpowers/specs/2026-09-03-protected-content-design.md)和[搜索设计](superpowers/specs/2026-09-06-search-content-highlight-design.md)。
+当前外观规则见 [DESIGN.md](../DESIGN.md)；[首页设计记录](superpowers/specs/2026-09-25-home-dashboard-design.md)保留历史方案。加锁与搜索分别见[加锁内容设计](superpowers/specs/2026-09-03-protected-content-design.md)和[搜索设计](superpowers/specs/2026-09-06-search-content-highlight-design.md)。
 
 `superpowers/specs/` 和 `superpowers/plans/` 保存按日期编写的设计与实施记录。旧文档中的草稿目录、`draft`、`type`、`series`、`seriesOrder`、`math`、`mermaid` 字段，文章类型页、打字封面、拖动揭开、侧栏播放器及旧计数均为历史状态；遇到冲突，以根目录 README、AGENTS.md 和当前实现为准，不应直接重跑旧迁移步骤。
 
-全站外观规则见 [DESIGN.md](../DESIGN.md)，本轮范围、素材取舍和验证见[留频街视觉设计](superpowers/specs/2026-09-25-liupin-visual-system-design.md)及[实现计划](superpowers/plans/2026-09-25-liupin-visual-system.md)。布局沿用当前实现。
+全站外观规则见 [DESIGN.md](../DESIGN.md)，本轮范围、素材取舍和验证见[2026-09-25 视觉实施记录](superpowers/specs/2026-09-25-liupin-visual-system-design.md)及[实现计划](superpowers/plans/2026-09-25-liupin-visual-system.md)。布局沿用当前实现。

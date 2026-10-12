@@ -7,6 +7,8 @@ import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
 import { contentRoot } from '../src/lib/content-root';
+import { snippetRoot } from '../src/lib/snippet-root';
+import { snippetIdFromFile, snippetPath } from '../src/lib/snippets';
 import {
   dangerousBrowserUrlKind,
   isApprovedRemoteImageUrl,
@@ -17,10 +19,10 @@ import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 // Includes the static noscript character fallback as well as the runtime layers.
-export const EXPECTED_LOCAL_LINKS = 1662;
+export const EXPECTED_LOCAL_LINKS = 1799;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
-  'https://giscus.app/client.js'
+  'https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js'
 ]);
 const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -53,6 +55,7 @@ export interface ProjectBuiltSiteCheckOptions {
   expectedLocalLinks?: number;
   expectedPostCount?: number;
   sourceContentRoot?: string;
+  sourceSnippetsRoot?: string;
 }
 
 export interface BuiltSiteCheckResult {
@@ -436,7 +439,7 @@ export function securityErrorsForHtml(html: string, route: string): string[] {
     if (inTemplate) continue;
     const src = attributeValue(iframe, 'src');
     const url = src ? externalUrl(src, route) : undefined;
-    if (url && url.origin !== 'https://giscus.app') {
+    if (url) {
       errors.push(diagnostic(route, 'Unapproved external frame', 'src', url.origin));
     }
   }
@@ -571,6 +574,8 @@ export async function inspectProjectBuiltSite(
   const expectedPostCount = options.expectedPostCount ?? 16;
   const sourceContentRoot = resolve(projectRoot, options.sourceContentRoot ?? '.private-content');
   const postsDirectory = resolve(sourceContentRoot, 'posts');
+  const sourceSnippetsRoot = resolve(projectRoot, options.sourceSnippetsRoot ?? '.private-snippets');
+  const snippetsDirectory = resolve(sourceSnippetsRoot, 'snippets');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
   const routes: string[] = [];
   for (const file of postFiles) {
@@ -597,9 +602,30 @@ export async function inspectProjectBuiltSite(
     errors.push(`Expected ${expectedPostCount} generated post routes, found ${generatedPostCount}.`);
   }
 
+  let snippetFiles: string[] = [];
+  try {
+    const sourceEntries = await readdir(snippetsDirectory, { withFileTypes: true });
+    for (const entry of sourceEntries) {
+      if (entry.isFile() && /\.mdx$/i.test(entry.name)) {
+        errors.push(`Unsupported snippet source: ${entry.name}. Use .md files.`);
+      }
+    }
+    snippetFiles = sourceEntries
+      .filter((entry) => entry.isFile() && /\.md$/i.test(entry.name))
+      .map((entry) => entry.name);
+  } catch {
+    errors.push(`Unable to read source snippets directory: ${snippetsDirectory}`);
+  }
+  for (const file of snippetFiles) {
+    const route = snippetPath(snippetIdFromFile(file));
+    if (!(await resolvesToOutput(distPath, route))) {
+      errors.push(`Missing expected snippet route: ${route}`);
+    }
+  }
+
   const result = await inspectBuiltSite(distPath, routes, {
     sourceCnamePath: resolve(projectRoot, 'public/CNAME'),
-    expectedLocalLinks: options.expectedLocalLinks
+    expectedLocalLinks: snippetFiles.length === 0 ? options.expectedLocalLinks : undefined
   });
   errors.push(...result.errors, ...(await nativeMarkdownImageErrors(distPath, postsDirectory)));
   return { ...result, errors };
@@ -610,7 +636,8 @@ async function main(): Promise<void> {
   const result = await inspectProjectBuiltSite(process.cwd(), {
     expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
     expectedPostCount: fixtureMode ? 2 : 16,
-    sourceContentRoot: contentRoot()
+    sourceContentRoot: contentRoot(),
+    sourceSnippetsRoot: snippetRoot()
   });
 
   console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);

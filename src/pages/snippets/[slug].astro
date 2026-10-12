@@ -1,0 +1,83 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BackButton from '@/components/BackButton.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { snippetPath } from '@/lib/snippets';
+
+interface Props {
+  snippet: CollectionEntry<'snippets'>;
+}
+
+export const getStaticPaths = (async () => {
+  const snippets = await getCollection('snippets');
+  return snippets.map((snippet: CollectionEntry<'snippets'>) => ({
+    params: { slug: snippet.id },
+    props: { snippet }
+  }));
+}) satisfies GetStaticPaths;
+
+const { snippet } = Astro.props;
+const { Content } = await render(snippet);
+const canonicalPath = snippetPath(snippet.id);
+const date = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'
+}).format(snippet.data.date);
+---
+
+<BaseLayout
+  title={snippet.data.title}
+  description={snippet.data.description}
+  image={snippet.data.cover}
+  canonicalPath={canonicalPath}
+  bodyClass="snippet-entry-page plain-page"
+>
+  <BackButton href="/" label="返回主页" belowHeader={true} />
+  <main class="snippet-entry-main container">
+    <article data-post>
+      <header class="snippet-entry-header">
+        <p class="snippet-entry-kicker">随笔 / SNIPPETS</p>
+        <h1>{snippet.data.title}</h1>
+        <time datetime={snippet.data.date.toISOString()}>{date}</time>
+      </header>
+      <div class="prose"><Content /></div>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .snippet-entry-main {
+    width: min(100% - 2rem, 940px);
+    padding-block: clamp(6rem, 11vw, 9rem) 5rem;
+  }
+
+  .snippet-entry-header {
+    margin-bottom: clamp(2.5rem, 6vw, 4rem);
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-copper);
+  }
+
+  .snippet-entry-kicker {
+    margin: 0 0 0.75rem;
+    color: var(--color-accent);
+    font-family: var(--font-data);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+  }
+
+  .snippet-entry-header h1 {
+    margin: 0 0 1rem;
+    color: var(--color-heading);
+    font-size: clamp(2rem, 5vw, 3.75rem);
+    line-height: 1.2;
+  }
+
+  .snippet-entry-header time {
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 768px) {
+    .snippet-entry-main { padding-top: 7rem; }
+  }
+</style>

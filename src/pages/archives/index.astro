@@ -12,7 +12,7 @@ const archives = buildArchives(posts);
 
 <BaseLayout title="归档">
   <BackButton href="/" label="返回主页" />
-  <HeroBanner title="归档" subtitle={`共 ${posts.length} 篇文章`} image="/images/default-cover.svg" compact />
+  <HeroBanner title="归档" subtitle={`共 ${posts.length} 篇文章`} image="/assets/images/default-cover.svg" compact />
   <main class="index-main container">
     <section class="archive-list" aria-label="文章归档">
       <p class="archive-total">已归档 <strong data-archive-total>{posts.length}</strong> 篇文章</p>

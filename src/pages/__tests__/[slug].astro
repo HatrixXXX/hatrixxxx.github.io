@@ -1,5 +1,5 @@
 ---
-import GiscusComments from '@/components/GiscusComments.astro';
+import TwikooComments from '@/components/TwikooComments.astro';
 import PostCard from '@/components/PostCard.astro';
 import PostLink from '@/components/PostLink.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
@@ -32,9 +32,9 @@ const lockedPost = {
   body: 'distinctive-private-body-marker',
   data: {
     title: '公开的加锁文章标题',
-    description: '公开的加锁文章摘要',
+    summary: '公开的加锁文章摘要',
     pubDate: new Date('2026-09-03'),
-    cover: '/images/default-cover.svg',
+    cover: '/assets/images/default-cover.svg',
     locked: true,
     legacySlug: 'locked-index-fixture'
   }
@@ -93,7 +93,7 @@ const publicPost = {
               前往另一加锁页
             </a>
           </article>
-          <GiscusComments title="测试评论" />
+          <TwikooComments title="测试评论" />
         </main>
       </ProtectedContent>
     )

@@ -12,6 +12,22 @@ html {
   -ms-overflow-style: none;
 }
 
+:where(
+  .friends-main,
+  .friends-content,
+  .friends-main [data-sidebar-stack],
+  .search-results,
+  .mobile-nav,
+  .project-dossier-content,
+  .project-gallery-track,
+  .prose pre,
+  .prose table,
+  .prose .katex-display,
+  .prose .mermaid
+) {
+  scroll-behavior: smooth;
+}
+
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
@@ -111,16 +127,16 @@ button {
 /* Use the published Endfield cursor set throughout the site. */
 html,
 body {
-  cursor: url('/cursors/pointer.cur') 4 5, auto;
-  cursor: image-set(url('/cursors/pointer.cur') 2x) 2 3, auto;
+  cursor: url('/assets/cursors/pointer.cur') 4 5, auto;
+  cursor: image-set(url('/assets/cursors/pointer.cur') 2x) 2 3, auto;
 }
 
 a[href],
 button,
 [role='button'],
 summary {
-  cursor: url('/cursors/link.cur') 47 80, pointer !important;
-  cursor: image-set(url('/cursors/link.cur') 2x) 24 40, pointer !important;
+  cursor: url('/assets/cursors/link.cur') 47 80, pointer !important;
+  cursor: image-set(url('/assets/cursors/link.cur') 2x) 24 40, pointer !important;
 }
 
 input:not([type]),
@@ -132,14 +148,14 @@ input[type='search'],
 input[type='url'],
 textarea,
 [contenteditable='true'] {
-  cursor: url('/cursors/text.cur') 47 78, text !important;
-  cursor: image-set(url('/cursors/text.cur') 2x) 24 39, text !important;
+  cursor: url('/assets/cursors/text.cur') 47 78, text !important;
+  cursor: image-set(url('/assets/cursors/text.cur') 2x) 24 39, text !important;
 }
 
 [draggable='true'],
 [data-post-rail] {
-  cursor: url('/cursors/move.cur') 48 80, move !important;
-  cursor: image-set(url('/cursors/move.cur') 2x) 24 40, move !important;
+  cursor: url('/assets/cursors/move.cur') 48 80, move !important;
+  cursor: image-set(url('/assets/cursors/move.cur') 2x) 24 40, move !important;
 }
 
 button:disabled,
@@ -147,13 +163,50 @@ input:disabled,
 textarea:disabled,
 select:disabled,
 [aria-disabled='true'] {
-  cursor: url('/cursors/unavailable.cur') 47 80, not-allowed !important;
-  cursor: image-set(url('/cursors/unavailable.cur') 2x) 24 40, not-allowed !important;
+  cursor: url('/assets/cursors/unavailable.cur') 47 80, not-allowed !important;
+  cursor: image-set(url('/assets/cursors/unavailable.cur') 2x) 24 40, not-allowed !important;
 }
 
 [aria-busy='true'] {
-  cursor: url('/cursors/busy.ani') 48 80, wait !important;
-  cursor: image-set(url('/cursors/busy.ani') 2x) 24 40, wait !important;
+  cursor: url('/assets/cursors/busy.ani') 48 80, wait !important;
+  cursor: image-set(url('/assets/cursors/busy.ani') 2x) 24 40, wait !important;
+}
+
+[data-magnetic-frame] {
+  position: fixed;
+  z-index: 2000;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  background:
+    linear-gradient(var(--color-accent), var(--color-accent)) left top / 12px 2px no-repeat,
+    linear-gradient(var(--color-accent), var(--color-accent)) left top / 2px 12px no-repeat,
+    linear-gradient(var(--color-accent), var(--color-accent)) right top / 12px 2px no-repeat,
+    linear-gradient(var(--color-accent), var(--color-accent)) right top / 2px 12px no-repeat,
+    linear-gradient(var(--color-accent), var(--color-accent)) left bottom / 12px 2px no-repeat,
+    linear-gradient(var(--color-accent), var(--color-accent)) left bottom / 2px 12px no-repeat,
+    linear-gradient(var(--color-accent), var(--color-accent)) right bottom / 12px 2px no-repeat,
+    linear-gradient(var(--color-accent), var(--color-accent)) right bottom / 2px 12px no-repeat;
+  contain: layout paint;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 180ms var(--ease-out), width 180ms var(--ease-out), height 180ms var(--ease-out), opacity 120ms ease;
+}
+
+[data-magnetic-frame][data-active] {
+  opacity: 1;
+}
+
+[data-magnetic-frame][data-dialog-frame] {
+  position: absolute;
+}
+
+[data-magnetic-frame][data-home-tile-frame] {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
 }
 
 @media (max-width: 1024px) {
@@ -201,6 +254,36 @@ body[style*="--page-bg-image"]::before {
   z-index: -1;
   background: linear-gradient(90deg, rgb(23 21 29 / 30%), rgb(23 21 29 / 48%) 45%, rgb(23 21 29 / 38%));
   pointer-events: none;
+}
+
+/* A fixed instrument frame belongs to the page shell, never to the reading surface. */
+body[style*="--page-bg-image"]::after {
+  content: "";
+  position: fixed;
+  inset: 9px;
+  z-index: 19;
+  border-inline: 1px solid var(--chassis-edge);
+  background:
+    linear-gradient(90deg, var(--color-copper), transparent) left top / 72px 2px no-repeat,
+    linear-gradient(270deg, var(--color-copper), transparent) right top / 72px 2px no-repeat,
+    linear-gradient(90deg, var(--chassis-signal), transparent) left bottom / 58px 2px no-repeat,
+    linear-gradient(270deg, var(--chassis-signal), transparent) right bottom / 58px 2px no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 9px, var(--chassis-edge) 9px 10px, transparent 10px 18px) left 50% / 3px 126px no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 9px, var(--chassis-edge) 9px 10px, transparent 10px 18px) right 50% / 3px 126px no-repeat;
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+body[style*="--page-bg-image"] > main {
+  isolation: isolate;
+}
+
+@media (max-width: 768px) {
+  body[style*="--page-bg-image"]::after {
+    inset: 5px;
+    background-size: 28px 2px, 28px 2px, 28px 2px, 28px 2px, 0 0, 0 0;
+    opacity: 0.6;
+  }
 }
 
 body.plain-page > main[class] {

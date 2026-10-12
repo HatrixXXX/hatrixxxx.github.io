@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const PLACEHOLDER_URL = '/images/image-unavailable.svg';
+const PLACEHOLDER_URL = '/assets/images/image-unavailable.svg';
 const UNSUPPORTED_EXTENSION = /\.(?:gif|svg)(?:$|[?#])/i;
 const REMOTE_IMAGE_URL = /^https?:\/\//i;
 let cachedFailedUrls: Set<string> | undefined;

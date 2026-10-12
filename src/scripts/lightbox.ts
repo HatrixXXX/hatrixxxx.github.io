@@ -22,13 +22,13 @@ async function openImage(image: HTMLImageElement): Promise<void> {
 
 function articleImage(target: EventTarget | null): HTMLImageElement | null {
   if (!(target instanceof Element)) return null;
-  const image = target.closest<HTMLImageElement>('article img');
+  const image = target.closest<HTMLImageElement>('article[data-post] .prose img');
   if (!image || image.closest('a')) return null;
   return image;
 }
 
 function markImages(): void {
-  document.querySelectorAll<HTMLImageElement>('article img:not([data-lightbox-image])').forEach((image) => {
+  document.querySelectorAll<HTMLImageElement>('article[data-post] .prose img:not([data-lightbox-image])').forEach((image) => {
     image.dataset.lightboxImage = '';
     image.tabIndex = 0;
     image.setAttribute('role', 'button');

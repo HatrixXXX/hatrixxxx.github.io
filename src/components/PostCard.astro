@@ -8,28 +8,33 @@ import { postPath } from '@/lib/urls';
 interface Props {
   post: PostEntry;
   index?: number;
+  total?: number;
 }
 
-const { post, index = 0 } = Astro.props;
+const { post, index = 0, total = 1 } = Astro.props;
 const href = postPath(post.data.legacySlug);
-const isAboveFold = index < 4;
+const isAboveFold = index < 2;
 const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
 const published = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
   month: '2-digit',
   day: '2-digit'
 }).format(post.data.pubDate);
+const position = `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+const coverProps = post.data.cover && !post.data.cover.startsWith('/')
+  ? { inferSize: true as const }
+  : { width: 1600, height: 900 };
 ---
 
 <article data-post-card class="post-card">
   <div class="post-card-media" aria-hidden="true">
     <Image
-      src={post.data.cover || '/images/default-cover.svg'}
+      src={post.data.cover || '/assets/images/default-cover.svg'}
       alt=""
-      width={480}
-      height={270}
+      {...coverProps}
       layout="constrained"
-      widths={[240, 360, 480]}
+      widths={[480, 768, 1024, 1280, 1440]}
+      quality={90}
       loading={isAboveFold ? "eager" : "lazy"}
       decoding={isAboveFold ? "sync" : "async"}
       fetchpriority={isAboveFold ? "high" : "auto"}
@@ -37,65 +42,120 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     />
   </div>
   <div class="post-card-content">
-    <h2>
-      <a href={href} data-locked-link={post.data.locked ? '' : undefined}>
-        {post.data.title}{post.data.locked && <LockIndicator />}
-      </a>
-    </h2>
-    <div class="post-meta">
+    <div class="post-card-header">
+      <span class="post-card-position" aria-label={`第 ${index + 1} 篇，共 ${total} 篇`}>{position}</span>
       <time datetime={post.data.pubDate.toISOString()}>{published}</time>
+    </div>
+    <div class="post-card-body">
+      <h2>
+        <a href={href} data-locked-link={post.data.locked ? '' : undefined}>
+          {post.data.title}{post.data.locked && <LockIndicator />}
+        </a>
+      </h2>
+      <p class="post-card-excerpt">{post.data.summary}</p>
+    </div>
+    <div class="post-card-footer">
       <span aria-label={`预计阅读 ${minutes} 分钟`}>{minutes} 分钟</span>
+      <svg class="post-card-terminal" width="72" height="20" viewBox="0 0 72 20" fill="none" aria-hidden="true" focusable="false">
+        <path d="M1 16h35l7-7h16M17 4h42M43 9V4" stroke="var(--color-copper)" stroke-width="1.25" />
+        <path d="M1 12h20M1 8h12" stroke="var(--color-copper)" stroke-width="1.25" opacity=".55" />
+        <rect x="63" y="6" width="7" height="7" fill="var(--color-link)" stroke="var(--color-copper)" />
+      </svg>
     </div>
   </div>
 </article>
 
 <style>
-  /* PostCard is sized by its parent (.coverflow-scene via data-post-card selector).
-     Width and height are fully controlled by PostList.astro / coverflow JS.
-     We only define internal layout here. */
+  /* PostList owns outer dimensions and the vertical coverflow transforms. */
 
   .post-card {
     position: relative;
     display: flex;
     width: 100%;
     height: 100%;
-    flex-direction: column;
+    flex-direction: row;
     overflow: hidden;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
+    border: 1px solid var(--color-line-strong);
+    clip-path: polygon(0 14px, 14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px));
     background: var(--surface-sheen), var(--color-surface);
-    box-shadow: var(--shadow-inset), var(--shadow-panel);
-    transition: border-color var(--duration-fast) var(--ease-out);
+    box-shadow: var(--shadow-inset), inset 0 0 0 5px rgb(0 0 0 / 24%);
+    transition: border-color var(--duration-fast) var(--ease-out), filter var(--duration-fast) var(--ease-out);
     backface-visibility: hidden;
+  }
+
+  .post-card::before {
+    position: absolute;
+    z-index: 2;
+    top: 8px;
+    right: 12px;
+    width: 46px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-copper) 0 45%, transparent 45% 58%, var(--color-link) 58% 70%, transparent 70% 80%, var(--color-copper) 80%);
+    content: '';
+    pointer-events: none;
   }
 
   .post-card[data-active='true'],
   .post-card:focus-within {
-    border-color: var(--color-line-strong);
+    border-color: var(--color-copper);
+    box-shadow: var(--shadow-inset), inset 0 0 0 2px rgb(216 140 60 / 48%);
   }
 
-  /* Cover image: fixed height at top of card (roughly 40% of card height) */
+  .post-card:hover {
+    filter: brightness(1.08);
+  }
+
   .post-card-media {
+    position: relative;
     display: block;
-    flex: 0 0 42%;
+    flex: 0 1 auto;
+    height: 100%;
+    max-width: 60%;
+    aspect-ratio: 1.85;
+    order: 0;
     overflow: hidden;
-    background: var(--color-surface-raised);
-    box-shadow: inset 0 -1px var(--color-line);
+    background: linear-gradient(140deg, var(--color-surface-raised), var(--color-bg));
+    box-shadow: inset -1px 0 var(--color-copper);
     user-select: none;
     -webkit-user-drag: none;
+  }
+
+  .post-card:nth-child(even) .post-card-media {
+    order: 2;
+    box-shadow: inset 1px 0 var(--color-copper);
+  }
+
+  .post-card-media::before {
+    position: absolute;
+    z-index: 1;
+    inset: 12px;
+    border: 1px solid rgb(255 210 0 / 55%);
+    clip-path: polygon(0 16px, 16px 0, 38% 0, 38% 2px, 2px 2px, 2px calc(100% - 2px), 52% calc(100% - 2px), 52% 100%, 0 100%);
+    content: '';
+    pointer-events: none;
+  }
+
+  .post-card-media::after {
+    position: absolute;
+    z-index: 1;
+    right: 4px;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--color-copper);
+    border-radius: 50%;
+    background: var(--color-link);
+    content: '';
+    pointer-events: none;
   }
 
   .post-card-media :global(img) {
     width: 100%;
     height: 100%;
+    padding: 12px;
     object-fit: cover;
-    transition: transform var(--duration-normal) var(--ease-out);
+    object-position: center;
     -webkit-user-drag: none;
-  }
-
-  .post-card[data-active='true'] .post-card-media :global(img),
-  .post-card:hover .post-card-media :global(img) {
-    transform: scale(1.03);
   }
 
   .post-card-content {
@@ -103,21 +163,65 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     min-width: 0;
     flex: 1;
     flex-direction: column;
-    padding: 1.1rem 1.25rem 1.25rem;
+    order: 1;
+    padding: 1.1rem clamp(1.25rem, 3vw, 2.25rem);
+    gap: 0.75rem;
+    background:
+      linear-gradient(90deg, transparent 0 10px, rgb(216 140 60 / 22%) 10px 11px, transparent 11px) left center / 100% 100% no-repeat,
+      linear-gradient(135deg, transparent 0 46%, rgb(0 221 235 / 8%) 46.5% 47%, transparent 47.5%) right top / 45% 90px no-repeat,
+      var(--color-surface);
+  }
+
+  .post-card-header,
+  .post-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .post-card-header {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgb(216 140 60 / 36%);
+  }
+
+  .post-card-position {
+    color: var(--color-copper);
+    font-family: var(--font-data);
+    letter-spacing: 0.06em;
+  }
+
+  .post-card-body {
+    display: grid;
     gap: 0.5rem;
+    margin-block: auto;
   }
 
   h2 {
     margin: 0;
     color: var(--color-heading);
-    font-size: clamp(1rem, 1.5vw, 1.3rem);
+    font-size: clamp(1.35rem, 2.2vw, 2rem);
     font-weight: 650;
     line-height: 1.35;
     overflow-wrap: anywhere;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .post-card-excerpt {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
   }
 
   h2 a {
@@ -136,21 +240,61 @@ const published = new Intl.DateTimeFormat('zh-CN', {
     color: var(--color-link);
   }
 
-  .post-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem 0.85rem;
-    margin-top: auto;
-    padding-top: 0.75rem;
-    color: var(--color-muted);
-    font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
+  h2 a:focus-visible {
+    color: var(--color-link);
+    outline: 2px solid var(--color-link);
+    outline-offset: 3px;
+  }
+
+  .post-card-footer {
+    padding-top: 0.6rem;
+    border-top: 1px solid rgb(216 140 60 / 36%);
+  }
+
+  .post-card-terminal {
+    width: 72px;
+    height: 20px;
+    flex: none;
+  }
+
+  @media (max-width: 600px) {
+    .post-card {
+      flex-direction: column;
+    }
+
+    .post-card-media,
+    .post-card:nth-child(even) .post-card-media {
+      flex: 0 0 52%;
+      width: 100%;
+      height: auto;
+      max-width: none;
+      aspect-ratio: auto;
+      order: 0;
+      box-shadow: inset 0 -1px var(--color-copper);
+    }
+
+    .post-card-content {
+      padding: 1.25rem;
+      gap: 0.5rem;
+    }
+
+    h2 {
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      -webkit-line-clamp: 2;
+    }
+
+    .post-card-excerpt {
+      display: none;
+    }
+
+    .post-card-footer {
+      padding-top: 0.5rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .post-card:hover .post-card-media :global(img),
-    .post-card[data-active='true'] .post-card-media :global(img) {
-      transform: none;
+    .post-card {
+      transition: none;
     }
   }
 </style>

@@ -1,15 +1,16 @@
 ---
 import HomeIcon from './HomeIcon.astro';
 
-type TileName = 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'plans' | 'lab' | 'friends' | 'guestbook';
+type TileName = 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'plans' | 'digest' | 'lab' | 'friends' | 'guestbook';
 
 interface Props {
   name: TileName;
   href: string;
   label: string;
+  className?: string;
 }
 
-const { name, href, label } = Astro.props;
+const { name, href, label, className } = Astro.props;
 const english: Record<TileName, string> = {
   blog: 'Blogs',
   projects: 'Creation',
@@ -18,18 +19,19 @@ const english: Record<TileName, string> = {
   bookmark: 'Favorites',
   software: 'Toolbox',
   plans: 'Plans',
+  digest: 'Digest',
   lab: 'Playground',
   friends: 'Friends',
   guestbook: 'Guestbook'
 };
 ---
 
-<a class:list={['tile', `tile--${name}`]} data-astro-prefetch="tap" data-home-blog={name === 'blog' ? '' : undefined} href={href} aria-label={label}>
+<a class:list={['tile', `tile--${name}`, className]} data-astro-prefetch="tap" data-home-blog={name === 'blog' ? '' : undefined} href={href} aria-label={label}>
   <span class="tile-texture" aria-hidden="true"></span>
   <span class="tile-copy">
     <span class="tile-title">{label}</span>
     <span class="tile-english" lang="en" aria-hidden="true">{english[name]}</span>
   </span>
-  {name === 'blog' && <span class="tile-note" aria-hidden="true">技术实践 / 生活记录</span>}
+  {name === 'blog' && <span class="tile-note" aria-hidden="true">技术笔记 / 踩坑记录</span>}
   <span class="tile-glyph" aria-hidden="true"><HomeIcon name={name} /></span>
 </a>

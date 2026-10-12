@@ -1,0 +1,19 @@
+---
+import BackButton from '@/components/BackButton.astro';
+import EmptyState from '@/components/EmptyState.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="资讯" bodyClass="nav-content-page plain-page">
+  <BackButton href="/" label="返回主页" />
+  <main class="digest-main container">
+    <EmptyState title="暂时没有资讯" />
+  </main>
+</BaseLayout>
+
+<style>
+  .digest-main {
+    max-width: 920px;
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+  }
+</style>

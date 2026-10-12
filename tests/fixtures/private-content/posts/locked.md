@@ -1,8 +1,9 @@
 ---
 title: Locked fixture
+summary: Public summary for the locked fixture.
 description: Locked content used by pull request validation.
 pubDate: '2026-09-03'
-cover: /images/default-cover.svg
+cover: /assets/images/default-cover.svg
 legacySlug: fixture-locked
 locked: true
 ---

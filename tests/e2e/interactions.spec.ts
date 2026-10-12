@@ -110,89 +110,14 @@ test('post pages locate and temporarily highlight the searched paragraph', async
   await expect(hit).toHaveCSS('box-shadow', /inset/);
 });
 
-test('saved light preference no longer changes the site after client navigation', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+test('site stays dark after client navigation', async ({ page }) => {
   await page.goto('/projects/');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   expect(await page.locator('html').getAttribute('data-theme')).toBeNull();
 
   await page.locator('.desktop-nav a[href="/blog/"]').click();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
-  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('light');
-});
-
-test('cat animation alternates night to day and day to night without changing the page colors', async ({ page }) => {
-  await page.goto('/projects/');
-  const overlay = page.locator('[data-cat-animation]');
-  const button = page.locator('[data-cat-animation-trigger]');
-  const cat = overlay.locator('.cat-animation__cat');
-  const background = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
-
-  await expect(overlay).toBeHidden();
-  await button.click();
-  await expect(overlay).toBeVisible();
-  await expect(button).toBeDisabled();
-  await expect(overlay).toHaveCSS('background-image', /linear-gradient/);
-  await expect(overlay.locator('.cat-animation__orbit')).toHaveCSS('animation-name', 'cat-animation-celestial-track');
-  await expect(cat).toHaveCSS('animation-name', 'cat-animation-cat-rise');
-  await expect(overlay).toHaveAttribute('data-from-sky', 'night');
-  await expect(overlay).toHaveAttribute('data-to-sky', 'day');
-  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('animation-name', 'cat-animation-night-out');
-  await expect(overlay.locator('.cat-animation__stars')).toHaveCSS('animation-name', 'cat-animation-stars-out');
-  await expect(cat.locator('.cat-animation__pupil').first()).toHaveCSS('animation-name', 'cat-animation-pupil-close');
-  await expect(overlay).toHaveAttribute('data-visible-sky', 'day');
-  await expect(overlay.locator('.cat-animation__sun')).toHaveCSS('opacity', '1');
-  await expect(overlay.locator('.cat-animation__moon')).toHaveCSS('opacity', '0');
-  await expect(page.locator('body')).toHaveCSS('background-color', background);
   expect(await page.locator('html').getAttribute('data-theme')).toBeNull();
-
-  await expect(overlay).toBeHidden({ timeout: 5_000 });
-  await expect(button).toBeEnabled();
-  await button.click();
-  await expect(overlay).toBeVisible();
-  await expect(overlay).toHaveAttribute('data-from-sky', 'day');
-  await expect(overlay).toHaveAttribute('data-to-sky', 'night');
-  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('animation-name', 'cat-animation-night-in');
-  await expect(overlay.locator('.cat-animation__stars')).toHaveCSS('animation-name', 'cat-animation-stars-in');
-  await expect(cat.locator('.cat-animation__pupil').first()).toHaveCSS('animation-name', 'cat-animation-pupil-open');
-  await expect(overlay).toHaveAttribute('data-visible-sky', 'night');
-  await expect(overlay.locator('.cat-animation__sun')).toHaveCSS('opacity', '0');
-  await expect(overlay.locator('.cat-animation__moon')).toHaveCSS('opacity', '1');
-  await expect(page.locator('body')).toHaveCSS('background-color', background);
-  await expect(overlay).toBeHidden({ timeout: 5_000 });
-});
-
-test('cat animation ends when client navigation replaces the page', async ({ page }) => {
-  await page.goto('/projects/');
-  await page.locator('[data-cat-animation-trigger]').click();
-  await expect(page.locator('[data-cat-animation]')).toBeVisible();
-
-  await page.locator('.desktop-nav a[href="/blog/"]').dispatchEvent('click');
-  await expect(page).toHaveURL(/\/blog\/$/);
-  await expect(page.locator('[data-cat-animation]')).toBeHidden();
-  await expect(page.locator('[data-cat-animation-trigger]')).toBeEnabled();
-});
-
-test('reduced motion shows each target sky without moving the cat', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/projects/');
-  const overlay = page.locator('[data-cat-animation]');
-  const cat = overlay.locator('.cat-animation__cat');
-
-  await page.locator('[data-cat-animation-trigger]').click();
-  await expect(overlay).toBeVisible();
-  await expect(overlay).toHaveAttribute('data-visible-sky', 'day');
-  await expect(overlay.locator('.cat-animation__sun')).toHaveCSS('opacity', '1');
-  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('opacity', '0');
-  await expect(cat).toHaveCSS('animation-name', 'none');
-  await expect(cat).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -54, 0)');
-  await expect(overlay).toBeHidden({ timeout: 2_000 });
-
-  await page.locator('[data-cat-animation-trigger]').click();
-  await expect(overlay).toHaveAttribute('data-visible-sky', 'night');
-  await expect(overlay.locator('.cat-animation__moon')).toHaveCSS('opacity', '1');
-  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('opacity', '1');
-  await expect(overlay).toBeHidden({ timeout: 2_000 });
 });
 
 test('mobile menu toggles once and closes on Escape and navigation', async ({ page }) => {
@@ -264,12 +189,9 @@ test('music player persists across about navigation without recreating its audio
   await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
   await player.locator('[data-player-toggle]').click();
   await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-  await expect(player.locator('[data-player-title]')).toHaveText('其实');
-  await expect(player.locator('[data-player-artist]')).toHaveText('薛之谦');
-  await expect(player.getByRole('button', { name: '上一曲' })).toBeEnabled();
-  await expect(player.getByRole('button', { name: '播放', exact: true })).toBeEnabled();
-  await expect(player.getByRole('button', { name: '下一曲' })).toBeEnabled();
-  await expect(player.getByRole('slider', { name: '播放进度' })).toHaveValue('0');
+  await expect(player.locator('[data-player-track]')).toHaveText('其实-薛之谦');
+  await expect(player.locator('[data-player-record]')).toBeEnabled();
+  await expect(player).toHaveAttribute('data-playback-state', 'paused');
 
   await player.evaluate((element) => element.setAttribute('data-persist-probe', 'same-node'));
   await page.locator('.desktop-nav').getByRole('link', { name: '随笔', exact: true }).click();

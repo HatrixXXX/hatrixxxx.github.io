@@ -1,3 +1,5 @@
+import { scrollPageTo } from './smooth-scroll';
+
 const SHOW_AFTER_PX = 480;
 let visibilityFrame: number | undefined;
 
@@ -22,8 +24,7 @@ function initializeBackToTop(): void {
   if (button.dataset.bound !== 'true') {
     button.dataset.bound = 'true';
     button.addEventListener('click', () => {
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      scrollPageTo(0);
     });
   }
 

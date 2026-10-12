@@ -27,6 +27,7 @@ const compactContentSurfaces = [
   { path: '/about/software/', selector: '[data-tool-deck]' },
   { path: '/snippets/', selector: '.empty-state' },
   { path: '/plans/', selector: '.empty-state' },
+  { path: '/digest/', selector: '.empty-state' },
   { path: '/lab/', selector: '.empty-state' },
   { path: '/about/friends/', selector: '[data-profile-card]' },
   { path: '/about/friends/', selector: '.friend-card' },
@@ -94,16 +95,31 @@ test('primary content surfaces align with the project cabinet below desktop navi
   }
 });
 
-test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
-  await page.route('https://giscus.app/**', (route) => route.abort());
+test('guestbook mounts Twikoo on its own pathname', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as typeof window & { twikoo: { init: (options: { el: string; path: string }) => Promise<void> } }).twikoo = {
+      init: async ({ el, path }) => {
+        const mount = document.querySelector(el);
+        mount?.closest('[data-twikoo-comments]')?.setAttribute('data-mock-path', path);
+        const button = document.createElement('button');
+        button.className = 'tk-button';
+        button.textContent = '提交';
+        const textarea = document.createElement('textarea');
+        textarea.className = 'tk-textarea__inner';
+        mount?.append(button, textarea);
+      }
+    };
+  });
+  await page.route('https://comments.hatrix.site/**', (route) => route.abort());
   const response = await page.goto('/guestbook/');
 
   expect(response?.status()).toBe(200);
   await expect(page.locator('body')).toHaveClass(/guestbook-page/);
   const shell = page.locator('[data-guestbook-shell]');
   await expect(shell).toBeVisible();
+  await expect(shell).toHaveAccessibleName('留言板');
   await expect(shell.getByText('GitHub Discussions', { exact: true })).toHaveCount(0);
-  await expect(shell.getByRole('heading', { name: '留言板' })).toBeVisible();
+  await expect(shell.locator('.guestbook-serial, .guestbook-header, .guestbook-board-heading')).toHaveCount(0);
   const shellMaterial = await shell.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -113,9 +129,14 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
   });
   expect(shellMaterial.backgroundColor).toMatch(/^rgba\(.+, 0\.\d+\)$/);
   expect(shellMaterial.backdropFilter).not.toBe('none');
-  const comments = page.locator('[data-giscus-comments]');
+  const comments = page.locator('[data-twikoo-comments]');
   await expect(comments).toHaveAccessibleName('评论');
-  await expect(comments).toHaveAttribute('data-giscus-mapping', 'pathname');
+  await expect(comments).toHaveAttribute('data-twikoo-path', '/guestbook/');
+  await expect(comments).toHaveAttribute('data-twikoo-env-id', 'https://comments.hatrix.site');
+  await expect(comments).toHaveAttribute('data-mock-path', '/guestbook/');
+  await expect(comments.locator('iframe')).toHaveCount(0);
+  await expect(comments.locator('.tk-button')).toHaveCSS('cursor', /link\.cur/);
+  await expect(comments.locator('.tk-textarea__inner')).toHaveCSS('cursor', /text\.cur/);
   const overlay = await page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
   expect(overlay).toContain('rgba(23, 21, 29');
   await expect(page.getByRole('link', { name: '首页', exact: true })).toHaveCSS('color', 'rgb(233, 228, 220)');
@@ -126,6 +147,56 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
   expect(backButtonBox).not.toBeNull();
   expect(mobileShellBox).not.toBeNull();
   expect(mobileShellBox!.y - (backButtonBox!.y + backButtonBox!.height)).toBeGreaterThanOrEqual(12);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test('Twikoo runtime styles survive client navigation to guestbook and an article', async ({ page }) => {
+  await page.addInitScript(() => {
+    const global = window as typeof window & {
+      twikoo: { init: (options: { el: string }) => Promise<void> };
+      __twikooStyleInjected?: boolean;
+    };
+    global.twikoo = {
+      init: async ({ el }) => {
+        if (!global.__twikooStyleInjected) {
+          const style = document.createElement('style');
+          style.setAttribute('data-twikoo', '');
+          style.textContent = '.tk-avatar { width: 40px; height: 40px; }';
+          document.head.append(style);
+          global.__twikooStyleInjected = true;
+        }
+        const avatar = document.createElement('span');
+        avatar.className = 'tk-avatar';
+        const comments = document.createElement('div');
+        comments.className = 'tk-comments';
+        comments.append(avatar);
+        document.querySelector(el)?.replaceChildren(comments);
+      }
+    };
+  });
+
+  const avatar = page.locator('[data-twikoo-comments] .tk-avatar');
+  await page.goto('/guestbook/');
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
+  await expect(avatar).toHaveCSS('width', '40px');
+
+  await page.locator('[data-back-button]').click();
+  await page.waitForURL((url) => url.pathname === '/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.locator('a[href="/guestbook/"]').first().click();
+  await page.waitForURL('**/guestbook/');
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
+  await expect(avatar).toHaveCSS('width', '40px');
+  await expect(page.locator('style[data-twikoo]')).toHaveCount(1);
+
+  await page.locator('.desktop-nav a[href="/blog/"]').click();
+  await page.waitForURL('**/blog/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.locator('[data-post-card][data-active="true"] h2 a').click();
+  await page.waitForURL((url) => url.pathname.startsWith('/posts/'));
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
+  await expect(avatar).toHaveCSS('width', '40px');
+  await expect(page.locator('style[data-twikoo]')).toHaveCount(1);
 });
 
 test('profile and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {
@@ -236,31 +307,31 @@ test('contextual sidebar cards remain readable in the dark theme', async ({ page
   await expect(page.locator('[data-site-stats]')).toHaveCount(0);
 });
 
-test('the player dock reveals half a record and keeps playback controls independent from collapse', async ({ page }) => {
+test('the player dock reveals half a record and keeps its record action independent from collapse', async ({ page }) => {
   await page.goto('/about/');
   const player = page.locator('[data-music-player]');
   const toggle = player.locator('[data-player-toggle]');
   await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
-  const record = await player.locator('.turntable').boundingBox();
+  const record = await player.locator('[data-turntable-record]').boundingBox();
+  const card = await player.boundingBox();
   expect(record).not.toBeNull();
+  expect(card).not.toBeNull();
   expect(record!.x).toBeLessThan(0);
-  expect(record!.x + record!.width).toBeGreaterThan(45);
-  expect(record!.x + record!.width).toBeLessThan(70);
-  await toggle.click({ position: { x: 92, y: 58 } });
+  const exposedWidth = Math.min(record!.x + record!.width, card!.x + card!.width) - Math.max(record!.x, 0);
+  expect(exposedWidth).toBeGreaterThan(45);
+  expect(exposedWidth).toBeLessThanOrEqual(80);
+  await toggle.click();
   await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-  await player.getByRole('button', { name: '播放', exact: true }).click();
+  await player.locator('[data-player-record]').click();
   await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-  await player.getByRole('slider', { name: '音量调节' }).fill('0.4');
-  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-  await player.locator('[data-player-title]').click();
+  await expect(player).toHaveAttribute('data-playback-state', 'playing');
+  await expect(player.locator('[data-player-track]')).toHaveText('其实-薛之谦');
+  await player.click({ position: { x: 12, y: 12 } });
   await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
   await toggle.focus();
   await page.keyboard.press('Enter');
   await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-  await player.getByRole('button', { name: '收起音乐播放器' }).click();
-  await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
-  await toggle.press('Enter');
-  await player.locator('[data-player-play]').focus();
+  await player.locator('[data-player-record]').focus();
   await page.keyboard.press('Escape');
   await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
   await expect(toggle).toBeFocused();

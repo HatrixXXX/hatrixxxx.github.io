@@ -11,7 +11,9 @@ test('inner pages share the brandless centered navigation', async ({ page }) => 
     expect(box).not.toBeNull();
     expect(viewport).not.toBeNull();
     expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - (viewport?.width ?? 0) / 2)).toBeLessThan(1);
-    await expect(controls.locator('[data-open-search], [data-cat-animation-trigger]')).toHaveCount(2);
+    await expect(controls.locator('[data-open-search]')).toHaveCount(1);
+    await expect(controls.locator('[data-cat-animation-trigger]')).toHaveCount(0);
+    await expect(page.locator('[data-cat-animation]')).toHaveCount(0);
   }
 });
 
@@ -68,8 +70,8 @@ test('favicon metadata is valid in static output', async ({ request }) => {
   const manifest = await manifestResponse.json();
   expect(manifest.icons).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ src: '/web-app-manifest-192x192.png' }),
-      expect.objectContaining({ src: '/web-app-manifest-512x512.png' })
+      expect.objectContaining({ src: '/assets/icons/web-app-manifest-192x192.png' }),
+      expect.objectContaining({ src: '/assets/icons/web-app-manifest-512x512.png' })
     ])
   );
 

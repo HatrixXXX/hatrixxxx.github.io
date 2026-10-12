@@ -35,7 +35,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
               >
                 <img
                   class="friend-avatar"
-                  src="/images/default-avatar.svg" data-src={friend.avatar}
+                  src="/assets/images/default-avatar.svg" data-src={friend.avatar}
                   data-fallback-favicon={faviconUrl}
                   data-fallback-initial={initial}
                   alt={friend.name}
@@ -115,31 +115,70 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
   }
 
   .friend-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 1rem;
     padding: 1rem 1.1rem;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
-    background: var(--surface-sheen), var(--color-surface);
-    box-shadow: var(--shadow-inset), var(--shadow-panel);
+    border: 1px solid var(--chassis-edge);
+    border-radius: 3px;
+    background:
+      linear-gradient(130deg, rgb(0 221 235 / 7%), transparent 43%),
+      linear-gradient(180deg, rgb(245 224 193 / 5%), transparent 26%),
+      var(--color-surface);
+    box-shadow: inset 0 0 0 3px var(--chassis-groove), 0 10px 26px rgb(4 5 10 / 25%);
     text-decoration: none;
     transition:
       border-color var(--duration-fast) var(--ease-out),
       background-color var(--duration-fast) var(--ease-out),
-      transform var(--duration-fast) var(--ease-out),
       box-shadow var(--duration-fast) var(--ease-out);
   }
 
-  .friend-card:hover {
-    border-color: var(--color-copper);
-    background: var(--color-surface-raised);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-inset), 0 10px 28px rgb(10 8 14 / 28%);
+  .friend-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    width: 65%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-copper), transparent);
+    transform: scaleX(0.55);
+    transform-origin: left;
+    transition: transform 220ms var(--ease-out), background-color 220ms ease;
+  }
+
+  .friend-card::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 11px;
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--color-link);
+    background: rgb(0 221 235 / 15%);
+    box-shadow: 0 0 0 3px var(--chassis-groove);
+    transition: background-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .friend-card:hover,
+  .friend-card:focus-visible {
+    border-color: var(--color-accent);
+    background-color: var(--color-surface-raised);
+    box-shadow: inset 0 0 0 3px var(--chassis-groove), 0 16px 35px rgb(4 5 10 / 40%);
+  }
+
+  .friend-card:is(:hover, :focus-visible)::before {
+    background: linear-gradient(90deg, var(--color-accent), var(--color-link), transparent);
+    transform: scaleX(1);
+  }
+
+  .friend-card:is(:hover, :focus-visible)::after {
+    background: var(--color-link);
+    box-shadow: 0 0 0 3px var(--chassis-groove), 0 0 12px var(--color-link);
   }
 
   .friend-card:active {
-    transform: translateY(0);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove);
     transition-duration: 80ms;
   }
 

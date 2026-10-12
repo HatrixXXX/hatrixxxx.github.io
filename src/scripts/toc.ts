@@ -1,3 +1,5 @@
+import { scrollPageTo } from './smooth-scroll';
+
 let observer: IntersectionObserver | undefined;
 let tocScrollFrame: number | undefined;
 let refreshCurrentHeading: (() => void) | undefined;
@@ -36,11 +38,11 @@ async function scrollToHeading(slug: string): Promise<void> {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   );
   history.pushState(null, '', `#${slug}`);
-  heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  scrollPageTo(heading);
   window.setTimeout(() => {
     const offset = heading.getBoundingClientRect().top;
     if (window.location.hash === `#${slug}` && (offset < -32 || offset > window.innerHeight * 0.35)) {
-      heading.scrollIntoView({ behavior: 'auto', block: 'start' });
+      scrollPageTo(heading);
     }
   }, 900);
 }

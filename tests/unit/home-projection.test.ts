@@ -4,24 +4,28 @@ import { createPanelView, projectPanel, projectRectOnPanelPlane } from '../../sr
 describe('home panel perspective', () => {
   it.each([
     {
-      name: 'quote', rect: { x: -392, y: -74, width: 600, height: 70 },
-      expected: [[8.88462, 716.61538], [606, 682], [606, 752], [8.88462, 786.61538]]
+      name: 'quote', rect: { x: -392, y: -78, width: 600, height: 70 },
+      expected: [[8.88462, 652.61538], [606, 618], [606, 688], [8.88462, 722.61538]]
     },
     {
-      name: 'music', rect: { x: -392, y: 0, width: 380, height: 172 },
-      expected: [[8.88462, 790.61538], [387.05769, 768.69231], [387.05769, 940.69231], [8.88462, 962.61538]]
+      name: 'music', rect: { x: -392, y: 0, width: 376, height: 289 },
+      expected: [[8.88462, 730.61538], [383.07692, 708.92308], [383.07692, 997.92308], [8.88462, 1019.61538]]
     },
     {
-      name: 'friends', rect: { x: 0, y: 0, width: 208, height: 88 },
-      expected: [[399, 768], [606, 756], [606, 844], [399, 856]]
+      name: 'friends', rect: { x: -8, y: 0, width: 216, height: 91 },
+      expected: [[391.03846, 708.46154], [606, 696], [606, 787], [391.03846, 799.46154]]
     },
     {
-      name: 'guestbook', rect: { x: 0, y: 92, width: 208, height: 80 },
-      expected: [[399, 860], [606, 848], [606, 928], [399, 940]]
+      name: 'guestbook', rect: { x: -8, y: 99, width: 216, height: 91 },
+      expected: [[391.03846, 807.46154], [606, 795], [606, 886], [391.03846, 898.46154]]
+    },
+    {
+      name: 'lab-shortcut', rect: { x: -8, y: 198, width: 216, height: 91 },
+      expected: [[391.03846, 906.46154], [606, 894], [606, 985], [391.03846, 997.46154]]
     }
   ] as const)('projects $name through the shared affine lower-left plane', ({ rect, expected }) => {
     const corners = projectRectOnPanelPlane(208, 88,
-      [[399, 768], [606, 756], [606, 844], [399, 856]], rect);
+      [[399, 708], [606, 696], [606, 784], [399, 796]], rect);
     corners.forEach((corner, index) => {
       corner.forEach((coordinate, axis) => {
         expect(Math.abs(coordinate - expected[index][axis])).toBeLessThan(0.05);

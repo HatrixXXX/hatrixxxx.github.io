@@ -31,13 +31,39 @@ const { archives } = Astro.props;
   }
 
   .archive-month {
-    margin-left: 0.5rem;
-    border-left: 2px solid var(--color-copper);
-    padding: 0 0 1.75rem 1.25rem;
+    position: relative;
+    margin-bottom: 1.1rem;
+    border: 1px solid var(--chassis-edge);
+    border-radius: 3px;
+    padding: 1.15rem clamp(1rem, 3vw, 1.6rem) 1.35rem;
+    background: linear-gradient(120deg, rgb(0 221 235 / 5%), transparent 44%), var(--color-surface);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove), 0 12px 25px rgb(4 5 10 / 20%);
+  }
+
+  .archive-month::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 1.25rem;
+    width: min(35%, 180px);
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-copper), var(--color-accent), transparent);
+  }
+
+  .archive-month::after {
+    content: '';
+    position: absolute;
+    top: 1.35rem;
+    right: 1.35rem;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--color-link);
+    background: rgb(0 221 235 / 35%);
+    box-shadow: 0 0 0 3px var(--chassis-groove);
   }
 
   .archive-month:last-child {
-    padding-bottom: 0;
+    margin-bottom: 0;
   }
 
   h2 {
@@ -59,7 +85,11 @@ const { archives } = Astro.props;
     display: flex;
     min-width: 0;
     gap: 0.75rem;
+    border-bottom: 1px solid var(--color-line);
+    padding-bottom: 0.55rem;
   }
+
+  li:last-child { border-bottom: 0; padding-bottom: 0; }
 
   time {
     flex: none;

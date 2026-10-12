@@ -6,7 +6,7 @@ export const SITE = {
   author: {
     name: 'Hatrix',
     email: '3113624526@qq.com',
-    avatar: '/images/avatar.jpg'
+    avatar: '/assets/images/avatar.jpg'
   },
   socials: [
     { id: 'rss', label: 'RSS', url: '/rss.xml', color: '#f59e0b' },
@@ -19,12 +19,8 @@ export const SITE = {
     { id: 'email', label: '邮件', url: 'mailto:3113624526@qq.com', color: '#f97316' }
   ],
   filings: [] as readonly { label: string; url: string }[],
-  giscus: {
-    repo: 'hatrixxxx/hatrixxxx.github.io',
-    repoId: 'R_kgDORB9GlQ',
-    category: 'Comments',
-    categoryId: 'DIC_kwDORB9Glc4DACF_',
-    mapping: 'pathname'
+  twikoo: {
+    envId: 'https://comments.hatrix.site'
   },
   verification: { bing: '3B97E495A5055898AEC92C5FF736F169' }
 } as const;

@@ -217,13 +217,12 @@ describe('Astro project tooling', () => {
     expect(playwrightConfig.snapshotPathTemplate).not.toContain('platform');
   });
 
-  it('keeps the Giscus canvas opaque inside the translucent guestbook shell', () => {
-    expect(existsSync('src/styles/giscus-light.css')).toBe(false);
-    const theme = readFileSync('src/styles/giscus-dark.css', 'utf8');
-    expect(theme).toMatch(/html,\s*body,\s*main\s*\{[^}]*background:\s*#17151d;/s);
-    expect(theme).toContain('--color-canvas-default: #17151d;');
-    expect(theme).toContain('--color-canvas-inset: #19161f;');
-    expect(theme).toContain('--color-canvas-subtle: #211e29;');
+  it('styles the Twikoo editor and comments inside the guestbook shell', () => {
+    expect(existsSync('src/styles/giscus-dark.css')).toBe(false);
+    const theme = readFileSync('src/styles/twikoo.css', 'utf8');
+    expect(theme).toContain('.tk-comments');
+    expect(theme).toContain('.tk-submit');
+    expect(theme).toContain('var(--');
     expect(theme).not.toContain('@import');
   });
 
@@ -248,6 +247,7 @@ describe('Astro project tooling', () => {
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/setup-node', revision: '820762786026740c76f36085b0efc47a31fe5020', version: 'v7' },
       { action: 'actions/cache', revision: '55cc8345863c7cc4c66a329aec7e433d2d1c52a9', version: 'v6' },
+      { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },

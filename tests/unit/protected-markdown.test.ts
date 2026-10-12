@@ -100,7 +100,7 @@ describe('protected Markdown', () => {
 
   it.each([
     '![x](https://example.com/x.png)',
-    '![x](/images/x.png)',
+    '![x](/assets/images/x.png)',
     '![x](../../outside.png)'
   ])('rejects an unprotectable image reference without echoing private body text: %s', async (image) => {
     const privateText = 'PRIVATE BODY MUST NOT APPEAR IN ERRORS';

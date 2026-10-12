@@ -13,7 +13,7 @@ import {
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 it('tracks the current content and local link inventories', async () => {
-  expect(EXPECTED_LOCAL_LINKS).toBe(1662);
+  expect(EXPECTED_LOCAL_LINKS).toBe(1799);
   expect(await readFile('scripts/check-built-site.ts', 'utf8')).toContain(
     'expectedPostCount: fixtureMode ? 2 : 16'
   );
@@ -46,10 +46,10 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
   await writeSiteFile(
     root,
     'index.html',
-    `<html>${secureHead}<body><a href="/posts/%E4%B8%AD%E6%96%87%20%E6%96%87%E7%AB%A0/">post</a><img src="/images/logo.svg"><a href="#jump">skip</a><a href="mailto:test@example.com">mail</a><a href="tel:+100">phone</a><img src="data:image/png,skip"><a href="https://example.com">external</a></body></html>`
+    `<html>${secureHead}<body><a href="/posts/%E4%B8%AD%E6%96%87%20%E6%96%87%E7%AB%A0/">post</a><img src="/assets/images/logo.svg"><a href="#jump">skip</a><a href="mailto:test@example.com">mail</a><a href="tel:+100">phone</a><img src="data:image/png,skip"><a href="https://example.com">external</a></body></html>`
   );
   await writeSiteFile(root, 'posts/中文 文章/index.html', `<html>${secureHead}<body><a href="/">home</a></body></html>`);
-  await writeSiteFile(root, 'images/logo.svg', '<svg/>');
+  await writeSiteFile(root, 'assets/images/logo.svg', '<svg/>');
   await writeSiteFile(root, '404.html', `<html>${secureHead}</html>`);
   await writeSiteFile(root, 'CNAME', 'hatrix.site\n');
   await writeSiteFile(root, 'rss.xml', '<rss/>');
@@ -63,7 +63,7 @@ it('accepts a complete site with encoded Unicode routes and local assets', async
 });
 
 it('accepts the reviewed metadata and safe external resources', () => {
-  const html = `<html>${secureHead}<body><img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png"><a href="https://example.com" target="_blank" rel="noreferrer">external</a><script src="https://giscus.app/client.js"></script><script src="https://events.vercount.one/js"></script></body></html>`;
+  const html = `<html>${secureHead}<body><img src="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png"><a href="https://example.com" target="_blank" rel="noreferrer">external</a><script src="https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js" integrity="sha384-test" crossorigin="anonymous"></script><script src="https://events.vercount.one/js"></script></body></html>`;
 
   expect(securityErrorsForHtml(html, '/safe/')).toEqual([]);
 });
@@ -181,8 +181,8 @@ it('accepts local and pinned image srcsets while rejecting normalized remote ima
   const safeHtml = `<html>${secureHead}<body><picture><source srcset="/_astro/a.webp 320w, ${pinnedImage} 640w"><img src="/_astro/a.webp" srcset="/_astro/a.webp 320w, ${pinnedImage} 640w"></picture></body></html>`;
   const unsafeHtml = String.raw`<html>${secureHead}<body><img src="\\evil.example\\tracker.png" srcset="//evil.example/one.png 1x, https:\\evil.example\\two.png 2x"><picture><source srcset="//evil.example/three.png 1x"></picture></body></html>`;
 
-  expect(securityErrorsForHtml(safeHtml, '/images/')).toEqual([]);
-  expect(securityErrorsForHtml(unsafeHtml, '/images/')).toEqual(expect.arrayContaining([
+  expect(securityErrorsForHtml(safeHtml, '/assets/images/')).toEqual([]);
+  expect(securityErrorsForHtml(unsafeHtml, '/assets/images/')).toEqual(expect.arrayContaining([
     expect.stringContaining('unapproved remote image'),
     expect.stringContaining('src='),
     expect.stringContaining('srcset=')
@@ -219,7 +219,7 @@ it('bounds diagnostic attribute values while retaining the route and attribute n
 it('rejects SVG scripts and external SVG resources while preserving local fragments and pinned images', () => {
   const pinnedImage =
     'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
-  const safeHtml = `<html>${secureHead}<body><svg><use href="#symbol"></use><image href="/images/local.svg"></image><feImage href="${pinnedImage}"></feImage></svg></body></html>`;
+  const safeHtml = `<html>${secureHead}<body><svg><use href="#symbol"></use><image href="/assets/images/local.svg"></image><feImage href="${pinnedImage}"></feImage></svg></body></html>`;
   const unsafeHtml = `<html>${secureHead}<body><svg xmlns:xlink="http://www.w3.org/1999/xlink"><script>alert(1)</script><script xlink:href="https://evil.example/script.js"></script><image href="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/mutable.png"></image><feImage xlink:href="//evil.example/filter.png"></feImage><use href="https://evil.example/sprite.svg#icon"></use></svg></body></html>`;
 
   expect(securityErrorsForHtml(safeHtml, '/svg/')).toEqual([]);
@@ -234,7 +234,7 @@ it('rejects SVG scripts and external SVG resources while preserving local fragme
 it('validates standard image resource carriers', () => {
   const pinnedImage =
     'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
-  const safeHtml = `<html>${secureHead}<body><link rel="icon" href="/favicon.svg"><video poster="${pinnedImage}"></video><input type="image" src="/images/submit.png"><table background="${pinnedImage}"></table></body></html>`;
+  const safeHtml = `<html>${secureHead}<body><link rel="icon" href="/favicon.svg"><video poster="${pinnedImage}"></video><input type="image" src="/assets/images/submit.png"><table background="${pinnedImage}"></table></body></html>`;
   const unsafeHtml = `<html>${secureHead}<body><link rel="shortcut icon" href="https://evil.example/favicon.ico"><video poster="https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/mutable.png"></video><input type="image" src="//evil.example/submit.png"><table background="https://evil.example/background.png"></table></body></html>`;
 
   expect(securityErrorsForHtml(safeHtml, '/carriers/')).toEqual([]);
@@ -247,19 +247,23 @@ it('validates standard image resource carriers', () => {
   ]));
 });
 
-it('rejects iframe srcdoc without relaxing the frame allowlist', () => {
-  const html = `<html>${secureHead}<body><iframe src="https://giscus.app" srcdoc="<p>embedded</p>"></iframe></body></html>`;
+it('rejects external iframes and iframe srcdoc', () => {
+  const html = `<html>${secureHead}<body><iframe srcdoc="<p>embedded</p>"></iframe></body></html>`;
+  const externalFrame = `<html>${secureHead}<body><iframe src="https://giscus.app"></iframe></body></html>`;
 
   expect(securityErrorsForHtml(html, '/frames/')).toEqual(expect.arrayContaining([
     expect.stringContaining('iframe srcdoc'),
     expect.stringContaining('srcdoc=')
+  ]));
+  expect(securityErrorsForHtml(externalFrame, '/frames/')).toEqual(expect.arrayContaining([
+    expect.stringContaining('Unapproved external frame')
   ]));
 });
 
 it('enforces explicit remote CSS resources in attributes and style elements', () => {
   const pinnedImage =
     'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
-  const safeHtml = `<html>${secureHead}<body><style>.hero { background-image: url(${pinnedImage}); }</style><div style="background-image: url('/images/local.png')"></div></body></html>`;
+  const safeHtml = `<html>${secureHead}<body><style>.hero { background-image: url(${pinnedImage}); }</style><div style="background-image: url('/assets/images/local.png')"></div></body></html>`;
   const unsafeHtml = `<html>${secureHead}<body><div style="background-image: url(//evil.example/inline.png)"></div><style>@import "https://evil.example/theme.css"; .hero { background-image: url(https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/mutable.png); }</style></body></html>`;
 
   expect(securityErrorsForHtml(safeHtml, '/styles/')).toEqual([]);
@@ -273,7 +277,7 @@ it('enforces explicit remote CSS resources in attributes and style elements', ()
 it('parses escaped CSS resource functions and image sets without rejecting safe declarations', () => {
   const pinnedImage =
     'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
-  const safeHtml = `<html>${secureHead}<body><style>.shiki { color: #fff; } .katex { font: normal 1em KaTeX_Main; } .hero { --hero-image: url(${pinnedImage}); } .local { background: url(/images/local.png); } .raster { background: url(data:image/png;base64,AA==); }</style></body></html>`;
+  const safeHtml = `<html>${secureHead}<body><style>.shiki { color: #fff; } .katex { font: normal 1em KaTeX_Main; } .hero { --hero-image: url(${pinnedImage}); } .local { background: url(/assets/images/local.png); } .raster { background: url(data:image/png;base64,AA==); }</style></body></html>`;
   const unsafeHtml = String.raw`<html>${secureHead}<body><div style='background: u\72l("https\3A //cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/mutable.png")'></div><style>.escaped { background: url("https\3A //evil.example/escaped.png"); } .set { background: image-set("https://evil.example/set.png" 1x, "https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/set.png" 2x); }</style></body></html>`;
 
   expect(securityErrorsForHtml(safeHtml, '/css/')).toEqual([]);
@@ -301,8 +305,8 @@ it('validates image and executable link resource relations', () => {
 it('validates image preload imagesrcset candidates independently of a local href', () => {
   const pinnedImage =
     'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/a.png';
-  const safeHtml = `<html>${secureHead}<body><link rel="preload" as="image" href="/images/hero.png" imagesrcset="/images/hero.png 320w, ${pinnedImage} 640w"></body></html>`;
-  const unsafeHtml = `<html>${secureHead}<body><link rel="preload" as="image" href="/images/hero.png" imagesrcset="//evil.example/hero.png 320w, https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/mutable.png 640w"></body></html>`;
+  const safeHtml = `<html>${secureHead}<body><link rel="preload" as="image" href="/assets/images/hero.png" imagesrcset="/assets/images/hero.png 320w, ${pinnedImage} 640w"></body></html>`;
+  const unsafeHtml = `<html>${secureHead}<body><link rel="preload" as="image" href="/assets/images/hero.png" imagesrcset="//evil.example/hero.png 320w, https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@main/img/mutable.png 640w"></body></html>`;
 
   expect(securityErrorsForHtml(safeHtml, '/preloads/')).toEqual([]);
   expect(securityErrorsForHtml(unsafeHtml, '/preloads/')).toEqual(expect.arrayContaining([
@@ -312,7 +316,7 @@ it('validates image preload imagesrcset candidates independently of a local href
 });
 
 it('rejects remote candidates following a data URL in image srcsets', () => {
-  const html = `<html>${secureHead}<body><img srcset="data:image/png;base64,AAAA, https://evil.example/after-data.png 2x"><picture><source srcset="data:image/png;base64,BBBB, https://evil.example/source-after-data.png 2x"></picture><link rel="preload" as="image" href="/images/hero.png" imagesrcset="data:image/png;base64,CCCC, https://evil.example/preload-after-data.png 2x"></body></html>`;
+  const html = `<html>${secureHead}<body><img srcset="data:image/png;base64,AAAA, https://evil.example/after-data.png 2x"><picture><source srcset="data:image/png;base64,BBBB, https://evil.example/source-after-data.png 2x"></picture><link rel="preload" as="image" href="/assets/images/hero.png" imagesrcset="data:image/png;base64,CCCC, https://evil.example/preload-after-data.png 2x"></body></html>`;
 
   expect(securityErrorsForHtml(html, '/srcset-data/')).toEqual(expect.arrayContaining([
     expect.stringContaining('unapproved remote image'),
@@ -322,7 +326,7 @@ it('rejects remote candidates following a data URL in image srcsets', () => {
 });
 
 it('applies executable URL and dangerous data checks to preload imagesrcset candidates', () => {
-  const html = `<html>${secureHead}<body><link rel="preload" as="image" href="/images/hero.png" imagesrcset="javascript:alert(1) 1x, data:image/svg+xml,%3Csvg%3E 2x"></body></html>`;
+  const html = `<html>${secureHead}<body><link rel="preload" as="image" href="/assets/images/hero.png" imagesrcset="javascript:alert(1) 1x, data:image/svg+xml,%3Csvg%3E 2x"></body></html>`;
 
   expect(securityErrorsForHtml(html, '/preload-schemes/')).toEqual(expect.arrayContaining([
     expect.stringContaining('unsafe URL scheme'),
@@ -332,7 +336,7 @@ it('applies executable URL and dangerous data checks to preload imagesrcset cand
 });
 
 it('returns a bounded diagnostic for malformed strict srcset values', () => {
-  const html = `<html>${secureHead}<body><img srcset="/images/a.png 1x 2x"></body></html>`;
+  const html = `<html>${secureHead}<body><img srcset="/assets/images/a.png 1x 2x"></body></html>`;
 
   expect(securityErrorsForHtml(html, '/srcset-error/')).toEqual(expect.arrayContaining([
     expect.stringContaining('Unable to parse srcset'),
@@ -386,6 +390,7 @@ it('aggregates missing post output errors without throwing', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
   await writeSiteFile(root, '.private-content/posts/example.md', '---\nlegacySlug: absent\n---\n');
+  await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
   await writeSiteFile(root, 'dist/index.html');
   await writeSiteFile(root, 'dist/404.html');
   await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
@@ -411,6 +416,7 @@ it('requires a generated route for every source post', async () => {
   await writeSiteFile(root, 'dist/search-index.json', '[]');
   await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
   await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
+  await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
 
   for (let index = 0; index < 16; index += 1) {
     const slug = `published-${index}`;
@@ -433,5 +439,38 @@ it('requires a generated route for every source post', async () => {
     expect.stringContaining('Expected 16 generated post routes, found 15.'),
     expect.stringContaining('/posts/published-15/')
   ]));
+});
+
+it('checks the fixed link count only while snippets are empty', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
+  await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, '.private-content/posts/.gitkeep');
+  await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, 'dist/posts/.gitkeep');
+  await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}<body><a href="/404.html">404</a></body></html>`);
+  await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);
+  await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'dist/rss.xml', '<rss/>');
+  await writeSiteFile(root, 'dist/search-index.json', '[]');
+  await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
+  await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
+
+  const options = { expectedPostCount: 0, expectedLocalLinks: 3 };
+  const emptyResult = await inspectProjectBuiltSite(root, options);
+  expect(emptyResult.errors).toContain('Expected 3 local links, found 1.');
+
+  await writeSiteFile(root, '.private-snippets/snippets/My Note.md', '---\ntitle: Entry\ndate: 2026-10-12\n---\n');
+  await writeSiteFile(root, 'dist/snippets/my-note/index.html', `<html>${secureHead}<body><a href="/missing/">broken</a></body></html>`);
+  const populatedResult = await inspectProjectBuiltSite(root, options);
+  expect(populatedResult.errors).not.toContain('Expected 3 local links, found 2.');
+  expect(populatedResult.errors).toContain('Broken local link in /snippets/my-note/: /missing/');
+
+  await unlink(join(root, 'dist/snippets/my-note/index.html'));
+  const missingResult = await inspectProjectBuiltSite(root, options);
+  expect(missingResult.errors).toContain('Missing expected snippet route: /snippets/my-note/');
+
+  await writeSiteFile(root, '.private-snippets/snippets/unsupported.mdx', '---\ntitle: Unsupported\n---\n');
+  const unsupportedResult = await inspectProjectBuiltSite(root, options);
+  expect(unsupportedResult.errors).toContain('Unsupported snippet source: unsupported.mdx. Use .md files.');
 });
 

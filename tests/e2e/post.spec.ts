@@ -18,6 +18,7 @@ async function legacySlugs(): Promise<string[]> {
 }
 
 test('legacy post route renders enhanced article content', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
   const response = await page.goto('/posts/Infra-线性代数/');
   expect(response?.status()).toBe(200);
   await expect(page.locator('article[data-post] h1')).toContainText('线性代数');
@@ -32,13 +33,13 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
     'href',
     new URL('/posts/Infra-线性代数/', 'https://hatrix.site').href
   );
-  const giscus = page.locator('script[src="https://giscus.app/client.js"]');
-  await expect(giscus).toHaveAttribute('data-repo', 'hatrixxxx/hatrixxxx.github.io');
-  await expect(giscus).toHaveAttribute('data-repo-id', 'R_kgDORB9GlQ');
-  await expect(giscus).toHaveAttribute('data-category', 'Comments');
-  await expect(giscus).toHaveAttribute('data-category-id', 'DIC_kwDORB9Glc4DACF_');
-  await expect(giscus).toHaveAttribute('data-mapping', 'pathname');
-  await expect(giscus).toHaveAttribute('data-strict', '0');
+  const comments = page.locator('[data-twikoo-comments]');
+  await expect(comments).toHaveAttribute('data-twikoo-path', await page.evaluate(() => location.pathname));
+  await expect(comments).toHaveAttribute('data-twikoo-env-id', 'https://comments.hatrix.site');
+  const twikooScript = page.locator('script[src="https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js"]');
+  await expect(twikooScript).toHaveCount(1);
+  await expect(twikooScript).toHaveAttribute('integrity', 'sha384-4NeeZc0tIujxxq7kkMjvDpA4MwaKREjyVNMVeV2+hQgonShrBsu+UG26QGAWBpLD');
+  await expect(twikooScript).toHaveAttribute('crossorigin', 'anonymous');
   await expect(page.locator('[data-adjacent-posts] a').first()).toHaveAttribute(
     'href',
     /^\/posts\//
@@ -336,74 +337,48 @@ test('short desktop viewports lay out the full sidebar without internal scrollin
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(pageStart);
 });
 
-test('Giscus uses the site dark theme and remounts once after client navigation', async ({
-  page
-}) => {
-  await page.route('https://giscus.app/theme-probe', (route) =>
-    route.fulfill({
-      contentType: 'text/html',
-      body: `
-        <!doctype html>
-        <html data-message-count="0">
-          <body>
-            <script>
-              addEventListener('message', (event) => {
-                const theme = event.data?.giscus?.setConfig?.theme;
-                if (!theme?.startsWith('data:text/css')) return;
-                document.documentElement.dataset.theme = theme;
-                document.documentElement.dataset.messageCount = String(
-                  Number(document.documentElement.dataset.messageCount) + 1
-                );
-              });
-            <\/script>
-          </body>
-        </html>
-      `
-    })
-  );
-  await page.route('https://giscus.app/client.js', (route) =>
-    route.fulfill({
-      contentType: 'application/javascript',
-      body: `
-        (() => {
-          const section = document.currentScript?.closest('[data-giscus-comments]');
-          const iframe = document.createElement('iframe');
-          iframe.className = 'giscus-frame';
-          iframe.src = 'https://giscus.app/theme-probe';
-          section?.append(iframe);
-        })();
-      `
-    })
-  );
+test('Twikoo mounts once per pathname after client navigation', async ({ page }) => {
+  await page.addInitScript(() => {
+    const calls: { envId: string; path: string; el: string }[] = [];
+    const global = window as typeof window & {
+      twikoo: { init: (options: { envId: string; path: string; el: string }) => Promise<void> };
+      __twikooCalls: typeof calls;
+    };
+    global.__twikooCalls = calls;
+    global.twikoo = {
+      init: async (options) => {
+        calls.push(options);
+        const mount = document.querySelector(options.el);
+        mount?.closest('[data-twikoo-comments]')?.setAttribute('data-mock-path', options.path);
+      }
+    };
+  });
+  await page.route('https://comments.hatrix.site/**', (route) => route.abort());
 
   await page.goto('/posts/Infra-线性代数/');
-  await expect(page.locator('[data-giscus-status]')).toBeHidden();
-  const script = page.locator('script[src="https://giscus.app/client.js"]');
-  await expect(script).toHaveCount(1);
-  const darkTheme = await page.locator('[data-giscus-comments]').getAttribute('data-giscus-dark-theme');
-  expect(darkTheme).toMatch(/^data:text\/css/);
-  await expect(script).toHaveAttribute('data-theme', darkTheme!);
-  await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
-
-  await page.locator('[data-cat-animation-trigger]').click();
-  await expect(page.locator('[data-cat-animation]')).toBeVisible();
-  await expect(script).toHaveAttribute('data-theme', darkTheme!);
-  await expect(page.frameLocator('iframe.giscus-frame').locator('html')).toHaveAttribute('data-message-count', '0');
+  const postComments = page.locator('[data-twikoo-comments]');
+  const firstPath = await page.evaluate(() => location.pathname);
+  await expect(postComments).toHaveAttribute('data-twikoo-path', firstPath);
+  await expect(postComments).toHaveAttribute('data-mock-path', firstPath);
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __twikooCalls: unknown[] }
+  ).__twikooCalls.length)).toBe(1);
 
   await page.locator('[data-adjacent-posts] a').first().click();
+  await expect.poll(() => page.evaluate(() => location.pathname)).not.toBe(firstPath);
   await expect(page.locator('article[data-post]')).toBeVisible();
-  await expect(page.locator('[data-giscus-status]')).toBeHidden();
-  await expect(script).toHaveCount(1);
-  await expect(script).toHaveAttribute('data-theme', darkTheme!);
-  await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
-
-  await page.goto('/guestbook/');
-  const guestbookComments = page.locator('[data-giscus-comments]');
-  const guestbookDarkTheme = await guestbookComments.getAttribute('data-giscus-dark-theme');
-  const guestbookScript = guestbookComments.locator('script[src="https://giscus.app/client.js"]');
-  await expect(guestbookScript).toHaveAttribute('data-theme', guestbookDarkTheme!);
-  await page.locator('[data-cat-animation-trigger]').click();
-  await expect(guestbookScript).toHaveAttribute('data-theme', guestbookDarkTheme!);
+  const secondPath = await page.evaluate(() => location.pathname);
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-mock-path', secondPath);
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __twikooCalls: unknown[] }
+  ).__twikooCalls.length)).toBe(2);
+  const calls = await page.evaluate(() => (
+    window as typeof window & { __twikooCalls: { envId: string; path: string }[] }
+  ).__twikooCalls);
+  expect(calls.map(({ envId, path }) => ({ envId, path }))).toEqual([
+    { envId: 'https://comments.hatrix.site', path: firstPath },
+    { envId: 'https://comments.hatrix.site', path: secondPath }
+  ]);
 });
 
 test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ page }) => {
@@ -427,11 +402,20 @@ test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ 
   await expect(mobileToc.locator('nav')).toBeHidden();
 });
 
-test('Giscus failure degrades comments without hiding the article', async ({ page }) => {
-  await page.route('https://giscus.app/client.js', (route) => route.abort());
+test('Twikoo script failure leaves the article readable', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
   await page.goto('/posts/Infra-线性代数/');
-  await expect(page.locator('[data-giscus-status]')).toHaveText(
-    '评论暂时无法加载，正文内容不受影响'
-  );
+  await expect(page.locator('[data-twikoo-status]')).toContainText(/无法连接|无法加载|失败/);
+  await expect(page.locator('article[data-post] .prose')).toBeVisible();
+});
+
+test('Twikoo backend failure leaves the article readable', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as typeof window & { twikoo: { init: () => Promise<void> } }).twikoo = {
+      init: async () => { throw new Error('mock backend failure'); }
+    };
+  });
+  await page.goto('/posts/Infra-线性代数/');
+  await expect(page.locator('[data-twikoo-status]')).toContainText(/无法连接|无法加载|失败/);
   await expect(page.locator('article[data-post] .prose')).toBeVisible();
 });

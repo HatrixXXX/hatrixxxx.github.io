@@ -3,8 +3,8 @@ import { basename, join, resolve } from 'node:path';
 import sharp from 'sharp';
 
 const root = process.cwd();
-const sourceRoot = resolve(root, 'src/assets/home/character-parts-source');
-const outputRoot = resolve(root, 'public/character-parts');
+const sourceRoot = resolve(root, 'public/assets/home/character-parts-source');
+const outputRoot = resolve(root, 'public/assets/home/character-parts');
 const manifestPath = resolve(root, 'src/data/character-parts.ts');
 
 type Bounds = { x: number; y: number; width: number; height: number };
@@ -40,7 +40,7 @@ async function main(): Promise<void> {
     }
     const bounds = alphaBounds(data, info.width, info.height);
     const name = basename(file, '.png');
-    parts[name] = { src: `/character-parts/${name}.webp`, ...bounds };
+    parts[name] = { src: `/assets/home/character-parts/${name}.webp`, ...bounds };
   }
 
   const source = `export interface CharacterPart {\n  src: string;\n  x: number;\n  y: number;\n  width: number;\n  height: number;\n}\n\nexport const CHARACTER_CANVAS = { width: 1024, height: 1536 } as const;\n\nexport const CHARACTER_PARTS = ${JSON.stringify(parts, null, 2)} as const satisfies Record<string, CharacterPart>;\n\nexport type CharacterPartName = keyof typeof CHARACTER_PARTS;\n`;

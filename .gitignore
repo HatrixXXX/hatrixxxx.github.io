@@ -6,12 +6,14 @@ node_modules
 dist/
 .astro/
 .private-content/
+.private-snippets/
 .env.local
 
 # Test and audit output
 playwright-report/
 test-results/
 reports/
+/output/tmp/
 
 # Agent work files
 .superpowers/

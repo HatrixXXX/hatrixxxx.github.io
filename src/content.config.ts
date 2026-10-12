@@ -5,10 +5,22 @@ import { z } from 'astro/zod';
 import { isHttpsUrl } from './lib/safe-url';
 import { contentRoot } from './lib/content-root';
 import { postSchema } from './lib/post-schema';
+import { snippetRoot } from './lib/snippet-root';
+import { snippetSchema } from './lib/snippet-schema';
+import { snippetIdFromFile } from './lib/snippets';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(contentRoot('posts')).href }),
   schema: postSchema
+});
+
+const snippets = defineCollection({
+  loader: glob({
+    pattern: '*.md',
+    base: pathToFileURL(snippetRoot('snippets')).href,
+    generateId: ({ entry }) => snippetIdFromFile(entry)
+  }),
+  schema: snippetSchema
 });
 
 const projects = defineCollection({
@@ -16,7 +28,16 @@ const projects = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    status: z.enum(['idea', 'active', 'done', 'archived']),
+    status: z.enum(['idea', 'active', 'done', 'archived']).optional(),
+    category: z.string().default('作品'),
+    theme: z.enum(['render', 'notes', 'robot', 'dream', 'wall']).default('render'),
+    experience: z.string().optional(),
+    moment: z.string().optional(),
+    gallery: z.array(z.object({
+      src: z.string().startsWith('/assets/project-images/'),
+      alt: z.string().min(1),
+      caption: z.string().optional()
+    })).default([]),
     cover: z.string().optional(),
     tech: z.array(z.string()).default([]),
     links: z
@@ -32,4 +53,4 @@ const projects = defineCollection({
   })
 });
 
-export const collections = { posts, projects };
+export const collections = { posts, snippets, projects };

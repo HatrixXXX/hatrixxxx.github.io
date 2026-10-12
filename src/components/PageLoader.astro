@@ -156,4 +156,50 @@
     #page-loader.pl-visible,
     :root[data-initial-page-loader='visible'] #page-loader { transition-duration: 0.1s; }
   }
+
+  #page-loader.pl-visible.pl-transition {
+    display: block;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  #page-loader .pl-shutter-leaf {
+    position: absolute;
+    inset: 0;
+    background: #17151d url('/assets/transitions/mecha-shutter-v1.webp') center / cover no-repeat;
+    transition: transform 460ms cubic-bezier(.65, 0, .25, 1);
+    will-change: transform;
+  }
+
+  #page-loader .pl-shutter-leaf--left {
+    clip-path: inset(0 50% 0 0);
+    transform: translateX(-50%);
+  }
+
+  #page-loader .pl-shutter-leaf--right {
+    clip-path: inset(0 0 0 50%);
+    transform: translateX(50%);
+  }
+
+  #page-loader.pl-transition.pl-closed .pl-shutter-leaf {
+    transform: translateX(0);
+  }
+
+  #page-loader.pl-visible.pl-transition.pl-done {
+    opacity: 1;
+    pointer-events: auto;
+    transition: none;
+  }
+
+  #page-loader.pl-transition.pl-done .pl-shutter-leaf--left {
+    transform: translateX(-50%);
+  }
+
+  #page-loader.pl-transition.pl-done .pl-shutter-leaf--right {
+    transform: translateX(50%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #page-loader .pl-shutter-leaf { transition: none; }
+  }
 </style>

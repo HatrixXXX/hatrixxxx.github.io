@@ -200,7 +200,7 @@ describe('remark image status', () => {
 
     expect(tree.children[0]).toMatchObject({
       type: 'image',
-      url: '/images/image-unavailable.svg',
+      url: '/assets/images/image-unavailable.svg',
       alt: 'diagram',
       data: { hProperties: { 'data-original-src': failedUrl } }
     });
@@ -213,7 +213,7 @@ describe('remark image status', () => {
     remarkImageStatus(new Set([failedUrl]))(tree);
 
     expect(tree.children[0]).toMatchObject({
-      url: '/images/image-unavailable.svg',
+      url: '/assets/images/image-unavailable.svg',
       alt: '',
       data: { hProperties: { 'data-original-src': failedUrl } }
     });
@@ -229,7 +229,7 @@ describe('remark image status', () => {
     remarkImageStatus(new Set([failedUrl]))(tree);
 
     expect(tree.children[0]).toMatchObject({
-      value: '<img src="/images/image-unavailable.svg" alt="diagram" data-original-src="https://cdn.jsdelivr.net/missing.png">'
+      value: '<img src="/assets/images/image-unavailable.svg" alt="diagram" data-original-src="https://cdn.jsdelivr.net/missing.png">'
     });
   });
 
@@ -243,7 +243,7 @@ describe('remark image status', () => {
     remarkImageStatus(new Set([failedUrl]))(tree);
 
     expect(tree.children[0]).toMatchObject({
-      value: '<img src="/images/image-unavailable.svg" alt="diagram" data-original-src="https://cdn.jsdelivr.net/missing.png" />'
+      value: '<img src="/assets/images/image-unavailable.svg" alt="diagram" data-original-src="https://cdn.jsdelivr.net/missing.png" />'
     });
   });
 

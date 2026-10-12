@@ -7,6 +7,8 @@ class PlayerElement extends EventTarget {
   dataset: Record<string, string> = {};
   attributes = new Map<string, string>();
   inert = false;
+  disabled = false;
+  textContent = '';
   offsetWidth = 380;
   controls = new Map<string, PlayerElement>();
   setAttribute(name: string, value: string) { this.attributes.set(name, value); }
@@ -19,8 +21,12 @@ function playerFixture(pathname: string) {
   const panel = new PlayerElement();
   const toggle = new PlayerElement();
   const main = new PlayerElement();
+  const record = new PlayerElement();
+  const track = new PlayerElement();
   player.controls.set('[data-player-toggle]', toggle);
   player.controls.set('[data-player-main]', main);
+  player.controls.set('[data-player-record]', record);
+  player.controls.set('[data-player-track]', track);
   const location = { pathname };
   const root = Object.assign(new EventTarget(), {
     querySelector: (selector: string) => {
@@ -30,7 +36,7 @@ function playerFixture(pathname: string) {
     },
     defaultView: Object.assign(new EventTarget(), { location }),
   }) as unknown as Document;
-  return { player, panel, toggle, main, location, root };
+  return { player, panel, toggle, main, record, track, location, root };
 }
 
 describe('music player', () => {
@@ -38,38 +44,120 @@ describe('music player', () => {
     vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => undefined });
     vi.stubGlobal('Audio', vi.fn());
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
-  it('renders track information, progress, and turntable chrome', async () => {
+  it('renders only the tactile turntable and its hover track label', async () => {
     const source = await readFile('src/components/MusicPlayer.astro', 'utf8');
-    expect(source).toContain('data-player-prev');
-    expect(source).toContain('data-player-play');
-    expect(source).toContain('data-player-next');
-    expect(source).toContain('data-player-volume');
-    expect(source).toContain('data-player-progress');
-    expect(source).toContain('data-player-current-time');
-    expect(source).toContain('data-player-duration');
+    expect(source).toContain('data-player-record');
+    expect(source).toContain('data-player-track');
     expect(source).toContain('data-turntable-record');
     expect(source).toContain('data-turntable-tonearm');
+    expect(source).toContain('viewBox="0 0 376 289"');
+    expect(source).not.toContain('scaleY(');
+    expect(source).not.toContain('dust-cover');
     expect(source).toContain('prefers-reduced-motion');
-    expect(source).toContain('data-player-title');
-    expect(source).toContain('data-player-artist');
+    for (const removed of ['data-player-prev', 'data-player-play', 'data-player-next', 'data-player-volume', 'data-player-progress', 'data-player-current-time', 'data-player-duration', 'data-player-title', 'data-player-artist']) {
+      expect(source).not.toContain(removed);
+    }
     expect(source).toContain("data-layout-state={mode === 'home' ? 'pending' : 'ready'}");
     expect(source).not.toContain('data-player-mode');
     expect(source).not.toContain('mode-button');
   });
 
-  it('uses fixed random selection and starts each loaded track from the beginning', async () => {
+  it('uses shuffled rounds like home quotes and starts each loaded track from the beginning', async () => {
     const source = await readFile('src/scripts/music-player.ts', 'utf8');
-    expect(source).toContain('Math.floor(Math.random() * (tracks.length - 1))');
+    expect(source).toContain('shuffleQuoteOrder');
     expect(source).toContain('audio = new Audio()');
-    expect(source).toContain('audio!.currentTime = 0');
   });
 
   it('does not construct Audio for an empty playlist', () => {
     const { root } = playerFixture('/about/');
     expect(initializeMusicPlayer([], root)).toBeUndefined();
     expect(Audio).not.toHaveBeenCalled();
+  });
+
+  it('starts with the arm lifted, toggles on a single record click, and shows one track label', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record, track } = playerFixture('/');
+    initializeMusicPlayer([{ id: 'one', title: '其实', artist: '薛之谦', src: '/one.mp3' }], root);
+
+    expect(player.dataset.playbackState).toBe('paused');
+    expect(track.textContent).toBe('其实-薛之谦');
+    record.dispatchEvent(new Event('click'));
+    expect(player.dataset.playbackState).toBe('paused');
+    vi.advanceTimersByTime(350);
+    expect(player.dataset.playbackState).toBe('playing');
+    expect(record.attributes.get('aria-pressed')).toBe('true');
+    record.dispatchEvent(new Event('click'));
+    vi.advanceTimersByTime(350);
+    expect(player.dataset.playbackState).toBe('paused');
+    expect(record.attributes.get('aria-pressed')).toBe('false');
+  });
+
+  it('double clicking skips the pending toggle and draws each remaining track before reshuffling', () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record, track } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([
+      { id: 'a', title: 'A', artist: '甲', src: '/a.mp3' },
+      { id: 'b', title: 'B', artist: '乙', src: '/b.mp3' },
+      { id: 'c', title: 'C', artist: '丙', src: '/c.mp3' },
+    ], root);
+
+    const doubleClick = () => {
+      const previousTrack = track.textContent;
+      record.dispatchEvent(new Event('click'));
+      record.dispatchEvent(new Event('click'));
+      expect(player.dataset.playbackState).toBe('changing');
+      expect(player.dataset.recordSwap).toBe('true');
+      expect(record.disabled).toBe(true);
+      expect(track.textContent).toBe(previousTrack);
+      vi.advanceTimersByTime(440);
+      expect(track.textContent).not.toBe(previousTrack);
+      expect(player.dataset.playbackState).toBe('changing');
+      vi.advanceTimersByTime(280);
+      expect(player.dataset.playbackState).toBe('playing');
+      expect(player.dataset.recordSwap).toBeUndefined();
+      expect(record.disabled).toBe(false);
+    };
+    playerAudio!.currentTime = 42;
+    doubleClick();
+    expect(playerAudio!.currentTime).toBe(0);
+    expect(track.textContent).toBe('B-乙');
+    expect(player.dataset.playbackState).toBe('playing');
+    doubleClick();
+    expect(track.textContent).toBe('C-丙');
+    doubleClick();
+    expect(track.textContent).toBe('A-甲');
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 2 }));
+    expect(player.dataset.playbackState).toBe('changing');
+    vi.advanceTimersByTime(720);
+    expect(track.textContent).toBe('B-乙');
+    expect(Audio).toHaveBeenCalledTimes(1);
   });
 
   it('hides pending players before their persisted display mode changes', async () => {

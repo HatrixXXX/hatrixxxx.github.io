@@ -20,24 +20,24 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 
 站点使用 Astro 生成静态页面，运行环境固定为 Node 24，包管理器为 Corepack 管理的 pnpm。源站为 GitHub Pages，域名由 Cloudflare 提供 DNS 和代理。
 
-读者从首页入口进入博客列表，也可使用搜索、目录、最近文章和归档。文章地址继续采用 `/posts/<legacySlug>/`，Giscus 评论以 pathname 对应文章。
+读者从首页入口进入博客列表，也可使用搜索、目录、最近文章和归档。文章地址继续采用 `/posts/<legacySlug>/`，Twikoo 评论以 pathname 对应文章。
 
 ## Capabilities and Constraints
 
-- 保持纯静态输出，不增加服务器、数据库、上传或对象存储。
+- 网站保持纯静态输出；评论服务由独立的 Cloudflare Worker 和 D1 提供，不进入网站构建。
 - 文章不使用分类、标签、类型或系列元数据，博客页直接展示全部文章。
 - 主导航配置由 `src/config/navigation.ts` 维护，站点与社交信息由 `src/config/site.ts` 维护。
 - 加锁文章公开 metadata、Hero 和封面；正文与正文图片必须输出密文。密钥和私有正文不能进入公开源码、文档或构建日志。
 - 作品、歌单、计划和实验场允许为空。空状态如实说明，没有演示项目、虚构歌曲或补出的统计。
 - 音乐播放器全站只有一个实例，跨客户端导航保留 DOM 和 Audio。声音由读者主动开启。
-- 全站固定使用深色配色。页头猫咪按钮播放昼夜动画；搜索、评论和播放器保留各自已实现的行为。
+- 全站固定使用深色配色；搜索、评论和播放器保留各自已实现的行为。
 - 部署、推送和远端设置变更需要用户明确要求。日常实现完成后保留本地预览。
 
 ## Brand Commitments
 
-站点名称是 Hatrix。“留频街”是主题世界的名字，不替换作者身份。虚构人物阿岑与 AI 协作者“栈”不代表作者经历，也不表示网站已提供 AI 聊天功能。
+站点名称是 Hatrix。“共构城”是主题世界的名字，不替换作者身份。虚构人物阿岑与 AI 协作者“栈”不代表作者经历，也不表示网站已提供 AI 聊天功能。
 
-现行 v5 立绘与工坊背景是已选定的身份素材。立绘右上方的颗粒侧脸表达 AI 与机器人；不得改写为人像扫描或删除该意象。素材记录和视觉规则见 `DESIGN.md`。
+现行 v5 立绘与共构舱背景是身份素材。主题画面中的颗粒侧脸表达 AI 与机器人；不得改写为人像扫描。新背景呈现立体城区、机甲测试舱和加速计算机架。设定中的 AI-Infra 包含边缘推理、共享算力、存储、调度与监控，不表示网站实际运行这些服务。素材记录和视觉规则见 `DESIGN.md`。
 
 页面使用真实栏目名、状态和错误信息。文章正文不为了配合世界观改写成虚构档案。
 
@@ -46,8 +46,8 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 - 项目边界、路由与协作规则：`AGENTS.md`。
 - 已发布文章：`.private-content/posts/`，位于独立私有仓库。这里只记录位置，不摘录私有正文或图片。
 - 作品与歌单数据：`src/content/projects/`、`src/data/playlist.ts`。
-- 已选定素材：`src/assets/home/hatrix-character-v5.png`、`src/assets/home/liupin-workshop-v6.png`。
-- 世界设定参考：`docs/design-references/homepage/留频街-世界观与主题设计指南.md`。该文件只作设计参考，不进入网页运行时资源。
+- 已选定素材：`public/assets/home/hatrix-character-v5.png`、`public/assets/home/cover.webp`、`public/assets/backgrounds/background.png`。
+- 世界设定参考：`docs/design-references/共构城-世界观与主题设计指南.md`。该文件只作设计参考，不进入网页运行时资源。
 - 本轮实施依据：`docs/superpowers/specs/2026-09-25-liupin-visual-system-design.md` 与对应实现计划。
 
 ## Product Principles
@@ -59,6 +59,6 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 
 ## Accessibility & Inclusion
 
-核心操作支持键盘与可见焦点。颜色之外保留文字、图标或状态语义。首页金句每 6 秒按随机轮次自动切换，每轮完整播放全部语录，不提供手动切换或暂停控制。减少动态效果时仍每 6 秒换字，只取消切换动画；猫咪按钮显示静态目标画面。
+核心操作支持键盘与可见焦点。颜色之外保留文字、图标或状态语义。首页金句每 6 秒按随机轮次自动切换，每轮完整播放全部语录，不提供手动切换或暂停控制。减少动态效果时仍每 6 秒换字，只取消切换动画；等级圆环的装饰旋转停止。
 
 桌面与手机都需要实际检查。首页固定画布在竖屏保留上下空白，这项布局选择不等于窄屏文字和触控已经通过无障碍验证。

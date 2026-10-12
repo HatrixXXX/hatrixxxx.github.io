@@ -9,6 +9,7 @@ import { postSchema } from '../../src/lib/post-schema';
 
 const postFixture = {
   title: 'Schema fixture',
+  summary: '一篇用于校验文章元数据的示例。',
   pubDate: '2026-09-03',
   cover: 'https://example.com/cover.png',
   legacySlug: 'schema-fixture'
@@ -24,6 +25,7 @@ describe('content contracts', () => {
     expect(files).toHaveLength(usesPublicFixtures ? 2 : 16);
     for (const file of files) {
       const { data } = matter(await readFile(join(root, file), 'utf8'));
+      expect(postSchema.safeParse(data).success, file).toBe(true);
       if (data.locked === true) lockedPosts += 1;
       expect(data, file).not.toHaveProperty('type');
       expect(data, file).not.toHaveProperty('series');
@@ -45,7 +47,10 @@ describe('content contracts', () => {
       'xue-zhiqian-tianwailaiwu',
       'xue-zhiqian-yanyuan'
     ]);
-    expect(SITE.giscus.mapping).toBe('pathname');
+  });
+
+  it('uses the dedicated Twikoo endpoint for comments', () => {
+    expect(SITE.twikoo.envId).toBe('https://comments.hatrix.site');
   });
 
   it('loads published posts from the private content root', async () => {
@@ -68,6 +73,15 @@ describe('content contracts', () => {
     }
 
     expect(postSchema.safeParse({ ...postFixture, locked: 'true' }).success).toBe(false);
+  });
+
+  it('requires a nonempty summary of at most 100 characters', () => {
+    const { summary: _summary, ...postWithoutSummary } = postFixture;
+
+    expect(postSchema.safeParse(postWithoutSummary).success).toBe(false);
+    expect(postSchema.safeParse({ ...postFixture, summary: '   ' }).success).toBe(false);
+    expect(postSchema.safeParse({ ...postFixture, summary: '文'.repeat(100) }).success).toBe(true);
+    expect(postSchema.safeParse({ ...postFixture, summary: '文'.repeat(101) }).success).toBe(false);
   });
 
   it('accepts an omitted cover while rejecting an empty cover', () => {

@@ -19,7 +19,7 @@ test('home shows restored identity, quote, and character without JavaScript', as
   const hrefs = await homeLinks.evaluateAll((links) =>
     links.map((link) => link.getAttribute('href'))
   );
-  expect(hrefs.length).toBe(10);
+  expect(hrefs.length).toBe(11);
   expect(hrefs.every((href) => href?.startsWith('/') && href !== '#')).toBe(true);
 });
 
@@ -29,7 +29,7 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   const hrefs = await homeLinks.evaluateAll((links) =>
     links.map((link) => link.getAttribute('href'))
   );
-  expect(hrefs.length).toBe(10);
+  expect(hrefs.length).toBe(11);
   expect(hrefs.every((href) => href?.startsWith('/') && href !== '#')).toBe(true);
   await page.locator('a[data-home-blog]').click();
   await page.waitForURL('**/blog/');
@@ -39,7 +39,7 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   await page.getByRole('link', { name: 'Infra-线性代数', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('article[data-post]')).toBeVisible();
-  const commentsText = await page.locator('[data-giscus-comments]').evaluate(
+  const commentsText = await page.locator('[data-twikoo-comments]').evaluate(
     (element) => (element as HTMLElement).innerText
   );
   expect(commentsText).toContain('评论需要 JavaScript');

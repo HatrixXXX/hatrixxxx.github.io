@@ -34,7 +34,7 @@ describe('software tool cabinet data', () => {
       expect(tool.description.trim().length).toBeGreaterThan(0);
       expect(tool.purpose.trim().length).toBeGreaterThan(0);
       expect(new URL(tool.href).protocol).toBe('https:');
-      expect(tool.icon).toMatch(/^\/tool-icons\/[a-z0-9-]+\.(?:svg|png|ico)$/);
+      expect(tool.icon).toMatch(/^\/assets\/tool-icons\/[a-z0-9-]+\.(?:svg|png|ico)$/);
       expect(existsSync(join(process.cwd(), 'public', tool.icon.slice(1)))).toBe(true);
     }
 

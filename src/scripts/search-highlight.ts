@@ -1,4 +1,5 @@
 import { normalizeSearchText, searchTerms } from '../lib/search';
+import { scrollPageTo } from './smooth-scroll';
 
 export function findSearchTarget(
   elements: readonly HTMLElement[],
@@ -43,10 +44,7 @@ function highlightSearchTarget(): void {
   if (!target) return;
 
   target.dataset.searchHit = '';
-  target.scrollIntoView({
-    block: 'center',
-    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-  });
+  scrollPageTo(target, 'center');
   highlightTimer = window.setTimeout(() => {
     delete target.dataset.searchHit;
     highlightTimer = undefined;

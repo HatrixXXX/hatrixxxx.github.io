@@ -1,6 +1,4 @@
 ---
-import { Image } from 'astro:assets';
-import characterReference from '@/assets/home/hatrix-character-v5.png';
 import { CHARACTER_PARTS, type CharacterPartName } from '@/data/character-parts';
 
 const part = (name: CharacterPartName) => {
@@ -99,10 +97,12 @@ const part = (name: CharacterPartName) => {
 </div>
 
 <noscript>
-  <Image class="char-static-fallback" data-character-fallback src={characterReference} width={714} format="webp" alt="" aria-hidden="true" draggable="false" loading="eager" />
+  <img class="char-static-fallback" data-character-fallback src="/assets/home/hatrix-character-v5-fallback.webp" width="714" height="1071" alt="" aria-hidden="true" draggable="false" loading="eager" />
 </noscript>
 
 <style>
+  .char-rig-outer,
+  .char-static-fallback { filter: saturate(1.2); }
   .char-static-fallback {
     position: absolute;
     left: 380px; top: 55px;

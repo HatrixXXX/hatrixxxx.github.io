@@ -1,5 +1,5 @@
 ---
-import GiscusComments from '@/components/GiscusComments.astro';
+import TwikooComments from '@/components/TwikooComments.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import BackButton from '@/components/BackButton.astro';
 ---
@@ -7,16 +7,9 @@ import BackButton from '@/components/BackButton.astro';
 <BaseLayout title="留言板" bodyClass="guestbook-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" />
   <main class="guestbook-main container">
-    <section class="guestbook-shell" aria-labelledby="guestbook-title" data-guestbook-shell>
-      <header class="guestbook-header">
-        <div class="guestbook-intro">
-          <h1 id="guestbook-title">留言板</h1>
-          <p>欢迎留下想说的话。</p>
-        </div>
-      </header>
-
+    <section class="guestbook-shell" aria-label="留言板" data-guestbook-shell>
       <div class="guestbook-board">
-        <GiscusComments />
+        <TwikooComments variant="guestbook" />
       </div>
     </section>
   </main>
@@ -24,7 +17,7 @@ import BackButton from '@/components/BackButton.astro';
 
 <style>
   .guestbook-main {
-    max-width: 1040px;
+    max-width: 1120px;
     min-height: 100svh;
     padding-bottom: clamp(3rem, 7vw, 6rem);
   }
@@ -33,56 +26,45 @@ import BackButton from '@/components/BackButton.astro';
     position: relative;
     isolation: isolate;
     overflow: clip;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
-    padding: clamp(1.25rem, 3.6vw, 2.5rem);
-    background-color: rgb(20 17 27 / 66%);
+    border: 1px solid var(--chassis-edge);
+    border-radius: 8px;
+    padding: clamp(1.2rem, 3vw, 2.25rem) clamp(1.25rem, 3.6vw, 3rem) clamp(1.5rem, 3.6vw, 3rem);
+    background-color: rgb(15 18 27 / 82%);
+    background-image:
+      linear-gradient(160deg, rgb(0 221 235 / 10%), transparent 28% 75%, rgb(216 140 60 / 9%)),
+      repeating-linear-gradient(90deg, transparent 0 39px, rgb(255 255 255 / 1.5%) 40px 41px);
     box-shadow:
-      inset 0 1px 0 rgb(255 244 224 / 8%),
-      inset 0 -1px 0 rgb(0 0 0 / 22%),
-      0 24px 60px rgb(8 6 12 / 34%);
-    backdrop-filter: blur(14px) saturate(112%);
+      inset 0 0 0 5px rgb(4 8 16 / 78%),
+      inset 0 0 0 6px rgb(216 140 60 / 32%),
+      inset 0 26px 44px rgb(0 221 235 / 3%),
+      0 26px 70px rgb(2 5 11 / 52%);
+    backdrop-filter: blur(18px) saturate(118%);
+    transition: border-color 220ms ease, box-shadow 220ms ease;
+  }
+
+  .guestbook-shell:hover,
+  .guestbook-shell:focus-within {
+    border-color: rgb(255 210 0 / 72%);
+    box-shadow:
+      inset 0 0 0 5px rgb(4 8 16 / 78%),
+      inset 0 0 0 6px rgb(216 140 60 / 42%),
+      inset 0 26px 44px rgb(0 221 235 / 5%),
+      0 26px 70px rgb(2 5 11 / 52%),
+      0 0 30px rgb(255 210 0 / 8%);
   }
 
   .guestbook-shell::before {
     position: absolute;
     z-index: -1;
-    inset: 0;
+    inset: 6px;
     background:
-      var(--surface-sheen),
-      linear-gradient(90deg, rgb(132 212 198 / 4%), transparent 42% 64%, rgb(243 187 98 / 4%));
+      linear-gradient(90deg, var(--color-link), transparent 72%) left top / 130px 2px no-repeat,
+      linear-gradient(270deg, var(--color-copper), transparent 72%) right bottom / 130px 2px no-repeat,
+      linear-gradient(180deg, rgb(0 221 235 / 45%), transparent 72%) left top / 2px 100px no-repeat,
+      linear-gradient(0deg, rgb(216 140 60 / 52%), transparent 72%) right bottom / 2px 100px no-repeat,
+      var(--surface-sheen);
     content: '';
     pointer-events: none;
-  }
-
-  .guestbook-header {
-    padding-bottom: clamp(1.25rem, 3vw, 2rem);
-    border-bottom: 1px solid var(--color-line);
-  }
-
-  .guestbook-intro {
-    max-width: 68ch;
-  }
-
-  .guestbook-intro h1 {
-    margin: 0;
-    color: var(--color-heading);
-    font-size: clamp(1.3rem, 2.2vw, 1.8rem);
-    font-weight: 650;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    text-wrap: balance;
-  }
-
-  .guestbook-intro p {
-    margin: 0.75rem 0 0;
-    color: var(--color-text);
-    font-size: 1rem;
-    line-height: 1.75;
-  }
-
-  .guestbook-board {
-    padding-top: clamp(1.25rem, 3vw, 2rem);
   }
 
   .guestbook-board :global(.comments) {
@@ -95,15 +77,9 @@ import BackButton from '@/components/BackButton.astro';
     color: var(--color-muted);
   }
 
-  .guestbook-board :global(.giscus-frame) {
-    border-radius: var(--radius-control);
-    background: transparent;
-    color-scheme: dark;
-  }
-
   @supports not ((backdrop-filter: blur(1px))) {
     .guestbook-shell {
-      background-color: rgb(20 17 27 / 90%);
+      background-color: rgb(15 18 27 / 94%);
     }
   }
 
@@ -111,13 +87,22 @@ import BackButton from '@/components/BackButton.astro';
     :global(body.guestbook-page.plain-page) > main.guestbook-main {
       padding-top: calc(var(--header-height) + 4rem);
     }
-
   }
 
   @media (max-width: 420px) {
     .guestbook-shell {
       border-radius: var(--radius-card);
       padding-inline: 1rem;
+    }
+
+    .guestbook-board {
+      margin-left: 55px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .guestbook-shell {
+      transition: none;
     }
   }
 </style>

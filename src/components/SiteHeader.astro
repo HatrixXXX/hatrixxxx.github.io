@@ -51,19 +51,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
         </svg>
       </button>
       <button
-        class="header-action"
-        type="button"
-        aria-label="播放猫咪动画"
-        data-cat-animation-trigger
-      >
-        <span class="cat-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path d="M4 20V5l4 3 4-1 4 1 4-3v15Z"></path>
-            <path d="M8 13h.01M16 13h.01M11 17l1 1 1-1"></path>
-          </svg>
-        </span>
-      </button>
-      <button
         class="menu-toggle"
         type="button"
         aria-label="切换导航栏"
@@ -104,7 +91,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     right: 0;
     left: 0;
     min-height: var(--site-header-height);
-    border-bottom: 0;
+    border-bottom: 1px solid var(--chassis-edge);
     background: transparent;
     color: var(--color-text);
       font-family: var(--font-body);
@@ -121,6 +108,18 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     background: var(--color-surface);
     pointer-events: none;
     transition: opacity 200ms ease;
+  }
+
+  .site-header::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 5%, var(--color-copper) 11%, transparent 24% 76%, var(--color-copper) 89%, transparent 95%);
+    opacity: 0.75;
+    pointer-events: none;
   }
 
   :global(html:has([data-hero])) .site-header::before {
@@ -164,7 +163,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   /* Cropped crosshair keeps its 48px artwork and centered hotspot; fallback matches the site's pointer size. */
   .header-inner :is(a[href], button:not(:disabled):not([aria-disabled='true'])) {
     cursor: pointer !important;
-    cursor: image-set(url('/cursors/link-nav.png') 2x) 24 24, image-set(url('/cursors/pointer.cur') 2x) 2 3, pointer !important;
+    cursor: image-set(url('/assets/cursors/link-nav.png') 2x) 24 24, image-set(url('/assets/cursors/pointer.cur') 2x) 2 3, pointer !important;
   }
 
   .desktop-nav ul,
@@ -199,6 +198,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   }
 
   .desktop-nav > ul > li > a {
+    position: relative;
     display: flex;
     min-height: var(--site-header-height);
     align-items: center;
@@ -208,7 +208,21 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     font-size: 16px;
     font-weight: 600;
     white-space: nowrap;
-    transition: color var(--duration-fast) ease;
+    transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+  }
+
+  .desktop-nav > ul > li > a::after {
+    content: '';
+    position: absolute;
+    right: 0.25rem;
+    bottom: 0;
+    left: 0.25rem;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--color-accent) 25% 75%, transparent);
+    box-shadow: 0 -4px 12px rgb(255 210 0 / 25%);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 230ms var(--ease-out);
   }
 
   .nav-icon {
@@ -218,6 +232,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     flex: none;
     align-items: center;
     justify-content: center;
+    transition: transform 230ms var(--ease-out), filter 230ms var(--ease-out);
   }
 
   .nav-icon :global(svg) {
@@ -230,9 +245,23 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     color: var(--color-accent);
   }
 
+  .desktop-nav > ul > li > a:hover,
+  .desktop-nav > ul > li > a:focus-visible,
+  .desktop-nav > ul > li > a[aria-current='page'] {
+    background: linear-gradient(180deg, transparent 38%, rgb(255 210 0 / 9%));
+  }
+
+  .desktop-nav > ul > li > a:is(:hover, :focus-visible, [aria-current='page'])::after {
+    transform: scaleX(1);
+  }
+
+  .desktop-nav > ul > li > a:is(:hover, :focus-visible) .nav-icon {
+    filter: drop-shadow(0 0 5px rgb(255 210 0 / 48%));
+    transform: translateY(-2px);
+  }
+
   .desktop-nav a[aria-current='page'] {
     color: var(--color-accent);
-    box-shadow: inset 0 -2px var(--color-copper);
   }
 
   .nav-caret {
@@ -317,46 +346,51 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
 
   .header-action,
   .menu-toggle {
+    position: relative;
     width: 44px;
     height: 44px;
     border: 1px solid transparent;
-    border-radius: var(--radius-control);
-    background: transparent;
+    border-radius: 2px;
+    background: linear-gradient(145deg, rgb(245 224 193 / 5%), transparent 58%), rgb(11 13 20 / 32%);
     color: var(--color-text);
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  }
+
+  .header-action::before,
+  .menu-toggle::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 2px;
+    background: var(--color-copper);
+    opacity: 0.7;
+    transform: scaleX(0.5);
+    transform-origin: left;
+    transition: transform var(--duration-fast) ease, background-color var(--duration-fast) ease;
   }
 
   .header-action:hover,
-  .menu-toggle:hover {
+  .header-action:focus-visible,
+  .menu-toggle:hover,
+  .menu-toggle:focus-visible,
+  .menu-toggle[aria-expanded='true'] {
     background: var(--color-accent-soft);
-    border-color: var(--color-line);
+    border-color: var(--color-copper);
     color: var(--color-accent);
+    box-shadow: inset 0 0 0 1px rgb(255 210 0 / 14%), 0 4px 13px rgb(0 0 0 / 28%);
+  }
+  .header-action:is(:hover, :focus-visible)::before,
+  .menu-toggle:is(:hover, :focus-visible, [aria-expanded='true'])::before {
+    background: var(--color-accent);
+    transform: scaleX(1);
   }
   .header-action:active, .menu-toggle:active { background: var(--color-inset); box-shadow: var(--shadow-inset); }
-  .header-action:disabled {
-    cursor: wait;
-  }
 
   .search-icon {
     margin: auto;
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.8;
-  }
-
-  .cat-icon {
-    display: grid;
-    width: 20px;
-    height: 20px;
-    margin: auto;
-    place-items: center;
-  }
-
-  .cat-icon svg {
-    overflow: visible;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
@@ -380,7 +414,12 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     margin: 4px auto;
     border-radius: 2px;
     background: currentColor;
+    transition: transform 180ms var(--ease-out), opacity 130ms ease;
   }
+
+  .menu-toggle[aria-expanded='true'] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .menu-toggle[aria-expanded='true'] span:nth-child(2) { opacity: 0; }
+  .menu-toggle[aria-expanded='true'] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
   @media (max-width: 1199px) {
     .header-inner {
@@ -411,9 +450,10 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
       display: block;
       overflow-y: auto;
       max-height: calc(100dvh - var(--site-header-height));
-      border-top: 1px solid var(--color-line);
-      background: var(--color-surface);
-      box-shadow: var(--shadow-panel);
+      border-top: 1px solid var(--color-copper);
+      background: linear-gradient(145deg, rgb(0 221 235 / 6%), transparent 34%), var(--color-surface);
+      box-shadow: 0 18px 36px rgb(4 5 10 / 55%), inset 0 2px 0 var(--chassis-groove);
+      animation: nav-hatch-open 260ms var(--ease-out) both;
     }
 
     .mobile-nav__list {
@@ -452,6 +492,17 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     .mobile-nav a[aria-current='page'] {
       background: var(--color-accent-soft);
       color: var(--color-accent);
+      box-shadow: inset 3px 0 var(--color-accent);
     }
+  }
+
+  @keyframes nav-hatch-open {
+    from { opacity: 0; clip-path: inset(0 0 90% 0); }
+    to { opacity: 1; clip-path: inset(0 0 0 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-nav:not([hidden]) { animation: none; }
+    .desktop-nav > ul > li > a:is(:hover, :focus-visible) .nav-icon { transform: none; }
   }
 </style>

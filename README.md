@@ -37,11 +37,13 @@ pnpm test:e2e
 ## 内容目录
 
 - `.private-content/posts/`：已发布文章。`.private-content/` 是独立的私有 Git 仓库，整个目录由公开仓库忽略
-- `src/content/projects/`：作品集合；当前放置 10 个带“示例”标记的占位项目
+- `.private-snippets/snippets/`：随笔 Markdown。`.private-snippets/` 是另一个私有 Git 仓库，由公开仓库忽略
+- `src/content/projects/`：作品集合；当前有 5 个待补充资料的作品档案
 - `src/data/playlist.ts`：音乐列表
-- `public/`：CNAME、favicon、头像和本地静态资源
+- `public/assets/`：网站图片、图标、纹理、光标和音频；首页原图与人物分块源图也在此目录
+- `public/`：CNAME、manifest 和第三方告知等站点根文件
 
-私有内容仓库有 16 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。所有通过校验的文章都会生成页面；一次完整构建会生成 37 个页面。
+私有内容仓库有 16 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。文章和随笔通过校验后都会生成页面；当前 10 篇随笔参与构建时生成 48 个页面，随笔为空时生成 38 个页面。
 
 私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
 
@@ -83,17 +85,29 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 
 `.env.local` 已加入 `.gitignore`。管理员 key 不得提交、写进文章或文档、发到聊天中，也不要放进私有内容仓库。它至少需要 8 个字符；本机值应与公开仓库 Actions Secret 中的 `HATRIX_ADMIN_KEY` 一致。
 
+## 随笔内容
+
+随笔保存在私有仓库 `HatrixXXX/hatrix-snippets`，本机目录为 `.private-snippets/`。新电脑上克隆站点后，再把该仓库克隆到站点根目录：
+
+```powershell
+git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
+```
+
+在 `.private-snippets/snippets/` 中新建 Markdown 文件。文件名会转为 URL slug，作为 `/snippets/<slug>/` 的路径；frontmatter 必填 `title` 和仅含日期的 `date`（如 `2026-10-12`），可选 `description` 和 `cover`。封面图放在公开站点的 `public/` 内，`cover` 写站点根路径，例如 `/assets/images/snippets/wallpaper.webp`。远程图片地址不能直接作为封面。
+
+私有仓库只限制源文件的访问。当前随笔详情页会把正文作为普通静态 HTML 发布，尚未加锁；需要保密的文字和图片暂时不要写入随笔。内容提交并推送到随笔仓库后，在公开站点仓库的 Actions 中手动从 `master` 运行 **Build and deploy GitHub Pages**。公开站点的 `master` 推送也会读取随笔仓库的最新提交；随笔仓库推送本身暂不触发站点构建。生产工作流使用只读 deploy key 和站点仓库 Secret `HATRIX_SNIPPETS_DEPLOY_KEY` 读取随笔，pull request 则使用空的测试目录。
+
 ## 站点导航
 
 文章详情返回 `/blog/`，其余页面统一返回首页。
 
-非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、实验场、友链、留言板；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索与猫咪动画按钮在桌面右侧，管理员退出按钮在左侧，不影响导航居中。`/blog/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 暂时显示空状态。工具箱使用带用途颜色的图标卡片，桌面端每行 9 张，手机端每行 3 张。卡片显示软件名、图标、用途短语和“软件／在线”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 在独立面板中加载 Giscus 留言区。
+非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮在桌面右侧，管理员退出按钮在左侧，不影响导航居中。`/blog/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱使用带用途颜色的图标卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、图标、用途短语和“软件／在线”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 在独立面板中加载 Twikoo 留言区。
 
 站内搜索支持普通文章的标题和正文。结果会显示命中片段并高亮关键词；点击后文章页会滚动到对应段落，段落背景短暂突出后渐变恢复。加锁文章不会进入公开搜索索引。
 
 首页采用参考图的两侧透视卡片排布，中央展示透明角色立绘，位于背景之上、入口面板之下。`1920×1080` 画布按有效 CSS 视口等比缩放；超宽屏将左右两组移向屏幕边缘，组内排布保持不变，竖屏保留上下空白。`src/pages/index.astro` 用 `leftPanels` 定义左侧四角，用 `rightPanels` 定义右侧平面内矩形；右侧全部卡片共用父层的一次 `matrix3d` 投影，主要行列间隔为 12 个设计像素。首页没有滚动条，也不渲染普通导航栏、页脚、Sakana 或 CursorTrail。
 
-左上以小图标提供站内搜索，中左保留等级圆环，其右侧显示 Hatrix 名称；左下依次为金句、播放器、友链和留言板。四块左下面板共用一个仿射平面，均为上下边平行、左右边竖直的 2D 平行四边形；金句与下排、友链与留言板各隔 4 个设计像素，两列隔 12 个设计像素。播放器和留言板的底边都在局部 y=172，首页播放器高 172px，侧边模式高 170px。金句语料位于 `src/data/home-quotes.ts`，每 6 秒按随机轮次自动切换；每轮完整播放全部语录，轮内不重复。正常动效为 420ms 竖向滚动和透明度变化，长句会自动缩小字号并保持单行；不提供手动切换或暂停控制，减少动态效果时仍每 6 秒换字，只取消切换动画。右上辉光管时钟每秒显示本地时间，格式为 `YYYY/MM/DD HH:mm:ss`，卡片只比博客入口略长。博客卡片直接进入展示全部文章的 `/blog/`；随笔入口占分组左侧整高，进入 `/snippets/`，右侧“效率提升”标题下方并排收藏夹和工具箱。计划与实验场占底部一行。收藏夹、工具箱和友链使用 `/about/` 下的页面；随笔、计划和实验场暂为空状态。旧首页的打字、底部箭头和拖动揭开逻辑已移除。当前布局细节见 `DESIGN.md`，历史方案见[首页设计记录](docs/superpowers/specs/2026-09-25-home-dashboard-design.md)。
+左上以小图标提供站内搜索，中左保留等级圆环和 Hatrix 名称。左下的金句、播放器、友链、留言板与实验场共用仿射平面：金句与下排、三张小卡片彼此间隔 8 个设计像素，三张小卡片叠起后与高 289px 的播放器对齐。金句语料位于 `src/data/home-quotes.ts`，每 6 秒按随机轮次切换；长句自动缩小字号并保持单行，减少动态效果时取消切换动画。右上辉光管时钟每秒显示本地时间。博客卡片进入 `/blog/`；随笔占分组左侧整高，右侧“效率提升”标题下方并排收藏夹和工具箱。右侧底部是计划和资讯，左下实验场仍进入 `/lab/`；计划、资讯和实验场暂为空状态。当前布局细节见 `DESIGN.md`，历史方案见[首页设计记录](docs/superpowers/specs/2026-09-25-home-dashboard-design.md)。
 
 首次进入首页时，splash 覆盖到背景、人物分块和字体加载结束。播放器布局另有 8 秒降级；人物图片实际加载失败时，不显示残缺立绘。
 
@@ -112,6 +126,7 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 ```yaml
 ---
 title: 示例文章
+summary: 介绍示例文章的主要内容。
 pubDate: 2026-09-02
 updatedDate: 2026-09-03
 cover: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png
@@ -120,14 +135,14 @@ legacySlug: 示例文章
 ---
 ```
 
-`updatedDate` 和 `cover` 可省略，`locked` 省略时按 `false` 处理。未填写 `cover` 时，文章列表和社交元信息使用默认封面。数学公式与 Mermaid 图表由文章内容自动触发，不需要额外的 frontmatter 开关。
+`summary` 必填，不超过 100 字，博客文章卡片直接显示它。随笔属于另一个集合，不使用这条博客文章规则。正文更新后检查摘要是否仍准确；只有主题、主要结论、覆盖范围或关键内容明显变化时才重写。`updatedDate` 和 `cover` 可省略，`locked` 省略时按 `false` 处理。未填写 `cover` 时，文章列表和社交元信息使用默认封面。数学公式与 Mermaid 图表由文章内容自动触发，不需要额外的 frontmatter 开关。
 
 | `locked` | 结果 |
 | --- | --- |
 | `false` | 发布公开正文 |
 | `true` | 发布公开元数据、封面和解锁外壳，正文与正文图片加密 |
 
-加锁文章的标题、摘要、日期、类型、阅读时间、URL 和 `cover` 都是公开信息。封面可以继续使用带不可变 commit 的 jsDelivr URL。加锁正文图片必须保存在 `.private-content/posts/` 内，并用 Markdown 相对路径引用，例如：
+加锁文章的标题、摘要、日期、阅读时间、URL 和 `cover` 都是公开信息。封面可以继续使用带不可变 commit 的 jsDelivr URL。加锁正文图片必须保存在 `.private-content/posts/` 内，并用 Markdown 相对路径引用，例如：
 
 ```markdown
 ![示意图](./assets/private-image.png)
@@ -135,13 +150,12 @@ legacySlug: 示例文章
 
 加锁正文不能使用远程图片、data URL、站点根绝对路径或原始 HTML `<img>`；这些写法会让构建失败。公开文章的远程正文图片继续遵守下方的图床固定提交和 inventory 规则。
 
-文章改完后，只在私有仓库中提交并 push，不需要为文章改动提交公开仓库：
+文章改完后，在私有仓库提交；用户要求推送时，再推送私有仓库。不需要为文章改动提交公开仓库：
 
 ```powershell
 git -C .private-content status
 git -C .private-content add posts
 git -C .private-content commit -m "content: update posts"
-git -C .private-content push
 ```
 
 不要把文章、加锁正文图片或其他私密资源复制回公开仓库。
@@ -155,7 +169,7 @@ git -C .private-content push
 title: 示例作品
 description: 作品解决的问题和目前进度
 status: active
-cover: /images/default-cover.svg
+cover: /assets/images/default-cover.svg
 tech:
   - Astro
   - TypeScript
@@ -181,8 +195,8 @@ export const playlist: readonly Track[] = [
     id: 'example-track',
     title: '曲名',
     artist: '作者',
-    src: '/audio/example.mp3',
-    cover: '/images/example-cover.webp'
+    src: '/assets/audio/example.mp3',
+    cover: '/assets/images/example-cover.webp'
   }
 ];
 ```
@@ -195,7 +209,7 @@ export const playlist: readonly Track[] = [
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
-人物运行时资源为 `public/character-parts/*.webp`，分块源 PNG 位于 `src/assets/home/character-parts-source/`；原始 v5 PNG 保留作合成和视觉核对基准。禁用 JavaScript 时显示由该原图生成的静态 WebP 回退图；启用 JavaScript 时不请求该图。首页背景为 `src/assets/home/liupin-workshop-v6.png`。
+人物运行时资源为 `public/assets/home/character-parts/*.webp`，分块源 PNG 位于 `public/assets/home/character-parts-source/`；原始 v5 PNG 保留作合成和视觉核对基准。禁用 JavaScript 时显示同目录的静态 WebP 回退图；启用 JavaScript 时不请求该图。首页使用 `public/assets/home/cover.webp`，原图为同目录的 `cover.png`，以灰紫色调衔接人物；其他页面使用用户选定的 `public/assets/backgrounds/background.png`，独立维护。原始 v8 保留在 `docs/design-references/previous-backgrounds/`，人物立绘未改。
 
 文章列表的 `cover` 由 Astro 的图片管线和 Sharp 生成 WebP、`srcset` 与尺寸信息。正文远程图片通过预检后仍使用 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
 
@@ -224,17 +238,17 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
 | `pnpm check:images` | 168 个去重后的远程图片 URL |
-| `pnpm build` | 图片预检、37 页静态构建与加锁内容泄漏审计 |
+| `pnpm build` | 图片预检、静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章路由、CNAME、1662 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 222 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
+| `pnpm check:site` | 文章和随笔路由、CNAME、站内链接和发布体积 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 244 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
 
 2026-09-25 本次发布检查通过 316 项单元测试、55 项相关浏览器回归、Astro 检查、生产依赖审计、完整构建、保护审计和 3976 条站内链接检查。浏览器回归覆盖首页、导航、各页面返回路径、键盘操作和无脚本访问。
 
-完整浏览器套件当前收集 222 项。博客路径、文章数量、普通页页脚、Coverflow、实验场 CursorTrail、About 装饰层和 18 张视觉基线均按当前实现校验。
-新增或删除页面、导航项等内容后，如果站内链接总量发生了合理变化，先核对构建产物，再同步更新 `scripts/check-built-site.ts` 中的期望值；未更新时 `pnpm check:site` 会失败。
+完整浏览器套件当前收集 244 项。博客路径、文章数量、普通页页脚、Coverflow、实验场 CursorTrail、About 装饰层和 18 张视觉基线均按当前实现校验。
+随笔为空时，`check:site` 按 1799 条站内链接核对基线；有随笔时逐条检查站内链接，不锁总数。新增或删除其他页面、导航项后若总量合理变化，核对构建产物，再同步更新 `scripts/check-built-site.ts` 和对应单测中的期望值。
 
 ## 安全边界
 
@@ -271,9 +285,9 @@ GitHub 需要三个 Secret，值不得写进仓库：
 | `HATRIX_CONTENT_TOKEN` | `HatrixXXX/hatrixxxx.github.io` | fine-grained token，只授权 `HatrixXXX/hatrix-content` 的 Contents read |
 | `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-content` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
 
-Giscus 深色主题源码位于 `src/styles/giscus-dark.css`。本地开发时，主题以内联 data URL 注入 iframe；生产构建会输出带 hash 的 HTTPS CSS。修改评论区配色时只改主题文件。
+Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留言板共用 `src/components/TwikooComments.astro`，样式在 `src/styles/twikoo.css`。访客只需填写昵称，同一浏览器会记住上次填写的昵称；邮箱和网址不显示。评论数据保存在独立的 Cloudflare Worker 和 D1，部署、检查与回退见 `docs/operations/twikoo.md`。原 GitHub Discussions 留言保留在 GitHub，不迁移。
 
-不要恢复根目录 `CNAME`，也不要提交 `.env.local`、`.private-content/`、`dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
+不要恢复根目录 `CNAME`，也不要提交 `.env.local`、`.private-content/`、`.private-snippets/`、`dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
 
 ## 构建失败排查
 
@@ -282,7 +296,7 @@ Giscus 深色主题源码位于 `src/styles/giscus-dark.css`。本地开发时�
 - `pnpm check:images` 检查 jsDelivr inventory 和远程地址，把结果写入 `reports/image-check.json`。如果视觉差异只发生在含远程图片的文章，先看报告。网络恢复后重跑 `pnpm check:images`，清理根目录 `.astro/` 和 `node_modules/.astro/data-store.json`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要用 inventory 或视觉基线更新掩盖远程图片失败。
 - `pnpm check:protected` 检查现有 `dist/` 是否含加锁正文片段、原图片字节、原文件名、错误的索引规则或 sitemap URL。加锁正文使用远程图片、绝对路径或越界相对路径时，Astro 渲染会先失败。修正文或加密边界；不要放宽审计、替换期望密文，或把泄漏输出当成新基线。
 
-生产构建还可能因 `.private-content/posts/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。
+生产构建还可能因 `.private-content/posts/` 或 `.private-snippets/snippets/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token 或随笔只读 deploy key 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。
 
 
 ## 后续 3D 页面
@@ -295,6 +309,6 @@ Three.js、Babylon.js 等 3D 依赖不能进入公共布局或普通页面的首
 
 本站使用 `sakana@1.0.8` 显示千束和泷奈。代码许可、上游元数据冲突、画师来源及插画非商业使用条件见 [`public/third-party-notices.txt`](public/third-party-notices.txt)。只要站点继续分发这两张插画，就必须保持非商业用途。
 
-### 留频街视觉统一（2026-09-25）
+### 共构城视觉方向（2026-10-13）
 
-全站颜色、字体、图标、图片外框和交互反馈沿用首页工坊与 v5 立绘的旧白、石墨、灰紫和铜色关系。主导航栏目页不显示 Hero 主标题或副标题栏；归档、旧分页和 404 保留紧凑 Hero。正文采用 17px / 1.85 排版。完整规则见 [DESIGN.md](DESIGN.md)。本轮未增加依赖或生成新的位图。
+现行主题以[共构城世界观](docs/design-references/共构城-世界观与主题设计指南.md)为准：立体城区中的机甲作业、边缘 AI 硬件加速与共享 AI-Infra 共同支撑人和 AI 的协作。全站颜色、字体、图标、图片外框和交互反馈沿用首页及 v5 立绘的浅色装甲、石墨、灰紫和铜色关系。主导航栏目页不显示 Hero 主标题或副标题栏；归档、旧分页和 404 保留紧凑 Hero。正文采用 17px / 1.85 排版。完整规则见 [DESIGN.md](DESIGN.md)。

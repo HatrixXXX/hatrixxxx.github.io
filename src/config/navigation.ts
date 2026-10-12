@@ -20,6 +20,7 @@ export const HOME_LINKS = {
   bookmarks: { label: '收藏夹', href: ABOUT_SECTION_LINKS[6].href },
   software: { label: '工具箱', href: ABOUT_SECTION_LINKS[5].href },
   plans: { label: '计划', href: '/plans/' },
+  digest: { label: '资讯', href: '/digest/' },
   lab: { label: '实验场', href: '/lab/' }
 } as const;
 
@@ -32,7 +33,8 @@ export const PRIMARY_NAV_ITEMS = [
   { ...HOME_LINKS.bookmarks, icon: 'bookmark' },
   { ...HOME_LINKS.software, icon: 'software' },
   { ...HOME_LINKS.plans, icon: 'plans' },
-  { ...HOME_LINKS.lab, icon: 'lab' },
+  { ...HOME_LINKS.digest, icon: 'digest' },
   { ...HOME_LINKS.friends, icon: 'friends' },
-  { ...HOME_LINKS.guestbook, icon: 'guestbook' }
+  { ...HOME_LINKS.guestbook, icon: 'guestbook' },
+  { ...HOME_LINKS.lab, icon: 'lab' }
 ] as const;

@@ -1,7 +1,7 @@
 ---
 import { REFERENCE_ICON_PATHS } from '@/data/home-reference-icon-paths';
 
-type IconName = 'search' | 'home' | 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'plans' | 'lab' | 'friends' | 'guestbook';
+type IconName = 'search' | 'home' | 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'plans' | 'digest' | 'lab' | 'friends' | 'guestbook';
 interface Props { name: IconName }
 const { name } = Astro.props;
 
@@ -36,6 +36,11 @@ const symbols = {
     body: 'M21 28H12a9 9 0 0 0 0 18h39a4 4 0 0 1 0 8H28v5h23a9 9 0 0 0 0-18H12a4 4 0 0 1 0-8h9a7 7 0 0 0 0-14h-3v5h3a2 2 0 0 1 0 4ZM30 24l23-23 10 10-23 23H30V24Zm5 2v3h3l18-18-3-3-18 18Z',
     fill: 'M48 6l5-5 10 10-5 5-10-10ZM30 29h8l-8 5v-5Z',
     lines: 'M14 37h12M37 50h12M46 18l8-8'
+  },
+  digest: {
+    body: 'M30 5h22l6 6v48H6V19l5-5h19V5Zm5 5v44h18V12l-2-2H35ZM11 20v34h19V20H11Z',
+    fill: 'M15 38h11v4H15v-4Zm0 9h11v4H15v-4Zm24-20h10v4H39v-4Zm0 11h10v4H39v-4Zm0 9h10v4H39v-4Z',
+    lines: 'M15 30h11M39 19h10'
   },
   lab: {
     body: 'M23 5h18v5h-4v18l16 23a5 5 0 0 1-4 8H15a5 5 0 0 1-4-8l16-23V10h-4V5Zm9 5v20L16 54h32L32 30V10Z',

@@ -8,7 +8,6 @@ interface Props {
 const { mode = 'dock' } = Astro.props;
 const isEmpty = playlist.length === 0;
 const currentTrack = playlist[0];
-const cover = currentTrack?.cover;
 ---
 
 <aside
@@ -19,9 +18,9 @@ const cover = currentTrack?.cover;
   data-display-mode={mode}
   data-layout-state={mode === 'home' ? 'pending' : 'ready'}
   data-ui-state={mode === 'home' ? 'expanded' : 'collapsed'}
+  data-playback-state="paused"
   transition:persist="music-player"
 >
-  <!-- click zone for expanding when collapsed (dock mode) -->
   <button
     class="player-toggle"
     type="button"
@@ -32,406 +31,264 @@ const cover = currentTrack?.cover;
   ></button>
 
   <div class="player-inner" id="music-player-inner" data-player-main inert={mode === 'dock'}>
+    <div class="deck-stage">
+      <svg class="machine-body" viewBox="0 0 376 289" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="deck-surface" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stop-color="#38333d" />
+            <stop offset=".56" stop-color="#292630" />
+            <stop offset="1" stop-color="#1d1d27" />
+          </linearGradient>
+          <radialGradient id="pivot-metal">
+            <stop offset="0" stop-color="#b9b5ae" />
+            <stop offset=".45" stop-color="#666b6f" />
+            <stop offset="1" stop-color="#14171b" />
+          </radialGradient>
+        </defs>
 
-    <!-- LEFT: text + controls + progress -->
-    <div class="player-left">
-      <div class="track-copy" aria-live="polite" aria-atomic="true">
-        <strong data-player-title title={currentTrack?.title}>
-          {currentTrack?.title ?? '歌单待添加'}
-        </strong>
-        <span data-player-artist title={currentTrack?.artist}>{currentTrack?.artist ?? ''}</span>
-      </div>
+        <rect x="2" y="2" width="372" height="285" rx="10" fill="#10131b" stroke="#d88c3c" stroke-width="1.5" />
+        <rect x="5" y="5" width="366" height="279" rx="8" fill="url(#deck-surface)" stroke="#625444" stroke-width="1" />
+        <path d="M17 17h69M17 17v25" fill="none" stroke="#ffd200" stroke-opacity=".72" stroke-width="1.5" />
+        <path d="M17 48v99M17 153v43M359 102v102" fill="none" stroke="#00ddeb" stroke-opacity=".22" stroke-width="1" />
+        <circle cx="20" cy="25" r="2" fill="#6b5b48" stroke="#bba47b" stroke-width=".7" />
+        <circle cx="356" cy="25" r="2" fill="#6b5b48" stroke="#bba47b" stroke-width=".7" />
+        <circle cx="20" cy="265" r="2" fill="#6b5b48" stroke="#bba47b" stroke-width=".7" />
+        <circle cx="356" cy="265" r="2" fill="#6b5b48" stroke="#bba47b" stroke-width=".7" />
 
-      <div class="controls-bar">
-        <div class="btn-group">
-          <button type="button" aria-label="上一曲" data-player-prev disabled={isEmpty}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 6 9 12l9 6V6Z"/></svg>
-          </button>
-          <button type="button" class="play-btn" aria-label="播放" aria-pressed="false" data-player-play disabled={isEmpty}>
-            <svg data-play-icon viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
-            <svg data-pause-icon viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>
-          </button>
-          <button type="button" aria-label="下一曲" data-player-next disabled={isEmpty}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 6l9 6-9 6V6Z"/></svg>
-          </button>
-        </div>
+        <circle cx="176" cy="139" r="129" fill="#0c0e12" stroke="#806744" stroke-width="2" />
+        <circle cx="176" cy="139" r="126" fill="#24242a" stroke="#393c3f" stroke-width="2" />
 
-        <div class="vol-group">
-          <span class="vol-label" aria-hidden="true">VOL</span>
-          <label class="vol-wrap">
-            <span class="sr-only">音量调节</span>
-            <input
-              type="range"
-              class="vol-slider"
-              min="0" max="1" step="0.02" value="0.7"
-              aria-label="音量调节"
-              data-player-volume
-              disabled={isEmpty}
-            />
-          </label>
-        </div>
-      </div>
+        <rect x="307" y="27" width="58" height="72" rx="9" fill="#0e1116" stroke="#807058" stroke-width="1.5" />
+        <rect x="313" y="33" width="46" height="60" rx="6" fill="#1a1c21" stroke="#30343a" stroke-width="1" />
+        <circle cx="340" cy="53" r="21" fill="#0c0f13" stroke="#474b4c" stroke-width="2" />
+        <circle cx="340" cy="53" r="13" fill="url(#pivot-metal)" />
+        <circle cx="340" cy="53" r="4" fill="#161a1f" stroke="#c8bdab" stroke-width="1" />
+        <path d="M313 85h46" stroke="#d88c3c" stroke-opacity=".55" stroke-width="1" />
 
-      <div class="progress-bar" role="group" aria-label="播放进度">
-        <span class="prog-time" data-player-current-time>0:00</span>
-        <input
-          class="prog-slider"
-          type="range" min="0" max="0" step="0.1" value="0"
-          aria-label="播放进度"
-          data-player-progress
+        <path d="M273 251h82" stroke="#9c7c50" stroke-opacity=".55" stroke-width="1" />
+        <text x="271" y="275" fill="#e8e0d1" font-family="Orbitron, Arial, sans-serif" font-size="19" font-weight="800" letter-spacing="2">HATRIX</text>
+        <circle cx="345" cy="236" r="2.6" fill="#ffd200" />
+      </svg>
+
+      <div class="record-assembly">
+        <div class="record-disc" data-turntable-record aria-hidden="true"></div>
+        <button
+          class="record-button"
+          type="button"
+          data-player-record
+          aria-label={isEmpty ? '歌单待添加' : '播放唱片，双击随机下一曲'}
+          aria-describedby="record-track record-help"
+          aria-keyshortcuts="Shift+Enter"
+          aria-pressed="false"
           disabled={isEmpty}
-        />
-        <span class="prog-time" data-player-duration>0:00</span>
+        ></button>
       </div>
+
+      <svg class="tonearm" data-turntable-tonearm viewBox="0 0 140 220" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="arm-shaft" x1="0" x2="1">
+            <stop offset="0" stop-color="#12161b" />
+            <stop offset=".5" stop-color="#a1a5a3" />
+            <stop offset="1" stop-color="#1c2025" />
+          </linearGradient>
+        </defs>
+        <circle cx="110" cy="25" r="16" fill="#101318" stroke="#6c6660" stroke-width="2" />
+        <circle cx="110" cy="25" r="8" fill="#30363b" stroke="#bdad8f" stroke-width="1.5" />
+        <path d="M106 40 37 177" fill="none" stroke="#0a0c0f" stroke-width="14" stroke-linecap="round" />
+        <path d="M106 40 37 177" fill="none" stroke="url(#arm-shaft)" stroke-width="8" stroke-linecap="round" />
+        <path d="M103 43 34 174" fill="none" stroke="#d9d6ca" stroke-opacity=".28" stroke-width="1.5" stroke-linecap="round" />
+        <path d="M97 57 105 61" stroke="#d88c3c" stroke-width="5" />
+        <path d="m27 171 26 13-12 20-28-13Z" fill="#16191d" stroke="#6f6860" stroke-width="1.5" />
+        <path d="m16 190 18 8-5 10-18-8Z" fill="#292d31" />
+        <circle cx="31" cy="185" r="3" fill="#d88c3c" />
+        <path d="m28 205-2 7" stroke="#b9b5ae" stroke-width="2" />
+      </svg>
+
+      <span class="track-tooltip" id="record-track" data-player-track aria-live="polite" aria-atomic="true">
+        {currentTrack ? `${currentTrack.title}-${currentTrack.artist}` : '歌单待添加'}
+      </span>
     </div>
-
-    <!-- RIGHT: turntable -->
-    <figure class="turntable" aria-hidden="true">
-      <div class="platter">
-        <div
-          class="record"
-          data-turntable-record
-          style={cover ? `--record-cover: url(${cover})` : undefined}
-        ></div>
-      </div>
-      <div class="tonearm" data-turntable-tonearm>
-        <span class="ta-cap"></span>
-        <span class="ta-pivot"></span>
-        <span class="ta-post"></span>
-        <span class="ta-arm"></span>
-        <span class="ta-head"></span>
-      </div>
-    </figure>
-
+    <span class="sr-only" id="record-help">单击播放或暂停，双击随机下一曲；键盘可按 Shift 加 Enter 切歌。</span>
   </div>
 </aside>
 
 <style>
-  /* ── tokens ─────────────────────────────────────── */
   .music-player {
-    --disc: 124px;       /* turntable diameter          */
-    --btn: 34px;         /* playback button size        */
-    --vol-h: 52px;       /* vertical volume bar height  */
-    --pad: 14px;         /* card padding                */
-    --gap: 10px;         /* left↔right gap              */
-
-    --ink:   var(--color-heading);
-    --muted: var(--color-muted);
-    --acc:   var(--color-accent);
-    --acc2:  var(--color-accent-strong);
-    --on-acc:var(--color-on-accent);
-    --trk:   var(--color-line-strong);
-
     position: relative;
     z-index: 3;
     box-sizing: border-box;
-    padding: var(--pad);
-    border: 1px solid var(--color-line-strong);
-    border-radius: var(--radius-card);
-    background: var(--surface-sheen), var(--color-surface);
-    box-shadow: var(--shadow-inset), var(--shadow-panel);
-    color: var(--ink);
-    font-size: 11px;
+    overflow: visible;
+    border: 1px solid var(--color-copper);
+    border-radius: 10px;
+    background: #211e29;
+    box-shadow: 0 10px 24px #080a12a8;
     contain: layout;
-    transition: transform .35s var(--ease-out-expo, cubic-bezier(.19,1,.22,1)),
-                border-color .2s, background .2s, box-shadow .2s;
+    transition: transform 280ms cubic-bezier(.2, .8, .2, 1), border-color 180ms, box-shadow 180ms;
   }
-
-  /* ── dock: fixed bottom-left ─────────────────────── */
+  .music-player[data-display-mode='home'] { position: absolute; width: 376px; height: 289px; }
   .music-player[data-display-mode='dock'] {
     position: fixed;
     z-index: 90;
     left: 0;
     bottom: 28px;
     width: 330px;
-    height: 170px;
-    transition: transform 280ms cubic-bezier(.2,.8,.2,1),
-                background-color 180ms ease, border-color 180ms ease;
+    height: 254px;
   }
-
-  /* ── home: sized to panel, JS handles position ───── */
-  .music-player[data-display-mode='home'] {
-    position: absolute;
-    width: 380px;
-    height: 172px;
-  }
-
   .music-player[data-layout-state='pending'] {
     visibility: hidden;
     transition: none;
   }
+  .player-inner, .deck-stage { position: relative; width: 100%; height: 100%; }
+  .machine-body { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-  /* ── inner: two-column grid ──────────────────────── */
-  .player-inner {
-    display: grid;
-    /* left col = remaining space; right col = disc */
-    grid-template-columns: 1fr var(--disc);
-    column-gap: var(--gap);
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-  }
-
-  /* ── left column ─────────────────────────────────── */
-  .player-left {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-    min-width: 0;
-    height: 100%;
-  }
-
-  /* ── track info ──────────────────────────────────── */
-  .track-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    flex-shrink: 0;
-  }
-  .track-copy strong,
-  .track-copy span {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.45;
-  }
-  .track-copy strong { font-size: 12px; font-weight: 600; color: var(--ink); }
-  .track-copy span   { font-size: 10px; color: var(--muted); }
-
-  /* ── controls bar: buttons + VOL side-by-side ────── */
-  .controls-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  /* playback buttons */
-  .btn-group {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .btn-group button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--btn);
-    height: var(--btn);
-    padding: 0;
-    background: none;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    color: var(--ink);
-    transition: background .15s;
-    flex-shrink: 0;
-  }
-  .btn-group button:hover { background: color-mix(in srgb, var(--acc) 15%, transparent); }
-  .btn-group button svg {
-    width: 15px; height: 15px;
-    fill: none; stroke: currentColor;
-    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
-    pointer-events: none;
-  }
-  .play-btn {
-    background: var(--acc) !important;
-    color: var(--on-acc) !important;
-  }
-  .play-btn:hover { background: var(--acc2) !important; }
-  .play-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
-  [data-play-icon]  { display: block; }
-  [data-pause-icon] { display: none; }
-  .music-player[data-playback-state='playing'] [data-play-icon]  { display: none; }
-  .music-player[data-playback-state='playing'] [data-pause-icon] { display: block; }
-  .btn-group button:disabled { opacity: .4; cursor: not-allowed; }
-
-  /* vertical VOL slider */
-  .vol-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    flex-shrink: 0;
-  }
-  .vol-label {
-    font-size: 8px;
-    letter-spacing: .1em;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    line-height: 1;
-  }
-  .vol-wrap {
-    position: relative;
-    width: 18px;
-    height: var(--vol-h);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-  }
-  .vol-slider {
-    appearance: none;
+  .record-assembly {
     position: absolute;
-    width: var(--vol-h);   /* horizontal length becomes vertical height after rotation */
-    height: 3px;
-    padding: 0; margin: 0; border: 0;
-    border-radius: 2px;
-    background: var(--trk);
-    accent-color: var(--acc);
-    cursor: pointer;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
+    z-index: 2;
+    left: 13.03%;
+    top: 4.15%;
+    width: 67.55%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #0b0d10;
+    box-shadow: 0 0 0 2px #524b42, 0 5px 10px #05070aa6, inset 0 0 0 3px #1a1c20;
+    transition: transform 280ms cubic-bezier(.2, .8, .2, 1);
   }
-  .vol-slider::-webkit-slider-runnable-track { height: 3px; background: transparent; }
-  .vol-slider::-moz-range-track { height: 3px; border: 0; background: transparent; }
-  .vol-slider::-webkit-slider-thumb {
-    appearance: none; width: 8px; height: 11px;
-    margin-top: -4px; border: 0; border-radius: 0; background: var(--ink);
+  .record-disc {
+    position: absolute;
+    inset: 1.6%;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, #121417 0 1px, #292b2f 1px 2px, #15171a 2px 4px);
+    box-shadow: inset 0 0 0 2px #303136, inset 0 0 20px 4px #050608;
   }
-  .vol-slider::-moz-range-thumb { width: 8px; height: 11px; border: 0; border-radius: 0; background: var(--ink); }
-  .vol-slider:disabled { opacity: .4; cursor: not-allowed; }
-
-  /* ── progress bar ────────────────────────────────── */
-  .progress-bar {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-  .prog-time {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-  .prog-slider {
-    appearance: none;
-    width: 100%; min-width: 0;
-    height: 3px; padding: 0; margin: 0; border: 0; border-radius: 0;
-    background: linear-gradient(90deg, var(--acc) var(--played,0%), var(--trk) var(--played,0%));
-    accent-color: var(--acc);
-    cursor: pointer;
-  }
-  .prog-slider::-webkit-slider-runnable-track { height: 3px; background: transparent; }
-  .prog-slider::-moz-range-track { height: 3px; border: 0; background: transparent; }
-  .prog-slider::-webkit-slider-thumb {
-    appearance: none; width: 8px; height: 11px;
-    margin-top: -4px; border: 0; border-radius: 0; background: var(--ink);
-  }
-  .prog-slider::-moz-range-thumb { width: 8px; height: 11px; border: 0; border-radius: 0; background: var(--ink); }
-  .prog-slider:disabled { opacity: .4; cursor: not-allowed; }
-
-  /* ── turntable (right grid cell) ─────────────────── */
-  .turntable {
-    position: relative;
-    width: var(--disc);
-    height: var(--disc);
-    margin: 0;
-    flex-shrink: 0;
-    align-self: center;
-    pointer-events: none;
-  }
-  .platter {
+  .record-disc::before {
+    content: '';
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: #17151d;
-    border: 2px solid var(--color-copper);
+    background: conic-gradient(from 18deg, transparent 0 10%, #d7e4e414 15%, transparent 25% 40%, #fff4da1c 46%, transparent 54% 71%, #d7e4e413 78%, transparent 85%);
   }
-  .record {
-    position: absolute;
-    inset: 5px;
-    border: 5px solid #17151d;
-    border-radius: 50%;
-    background: repeating-radial-gradient(circle, #211e29 0 2px, #39323f 2px 3px);
-  }
-  .record::after {
+  .record-disc::after {
     content: '';
     position: absolute;
-    inset: 31%;
-    border: 6px solid #2c2735;
+    inset: 34%;
     border-radius: 50%;
-    background: var(--record-cover, #b58c65);
-    background-size: cover;
-    background-position: center;
+    background: radial-gradient(circle, #7f8585 0 3%, #11161c 4% 6%, #c3a776 7% 9%, var(--record-label, #3b3540) 10% 66%, var(--record-label-edge, #524858) 100%);
+    box-shadow: 0 0 0 2px #121519, inset 0 0 0 2px #a57c46;
   }
-  .music-player[data-playback-state='playing'] .record {
-    animation: spin 1.8s linear infinite;
+  .music-player[data-record-variant='1'] { --record-label: #344650; --record-label-edge: #566671; }
+  .music-player[data-record-variant='2'] { --record-label: #4b3934; --record-label-edge: #735247; }
+  .music-player[data-playback-state='playing'] .record-disc { animation: record-spin 1.8s linear infinite; }
+  @keyframes record-spin { to { transform: rotate(360deg); } }
+  .music-player[data-record-swap='true'] .record-assembly {
+    animation: record-exchange 560ms cubic-bezier(.4, 0, .2, 1) 160ms both;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes record-exchange {
+    0% { opacity: 1; transform: none; }
+    45% { opacity: 0; transform: translate(-24%, -8%) rotate(-10deg) scale(.88); }
+    49% { opacity: 0; transform: translate(-27%, -9%) rotate(-12deg) scale(.86); }
+    50% { opacity: 0; transform: translate(27%, -9%) rotate(12deg) scale(.86); }
+    100% { opacity: 1; transform: none; }
+  }
 
-  /* ── tonearm ─────────────────────────────────────── */
-  /*
-   * Whole arm pivots around the cap (top-right corner).
-   * idle  = -20 deg (lifted)   play = 0 deg (on groove)
-   */
-  .tonearm {
+  .record-button {
     position: absolute;
-    right: -6px;
-    top: -6px;
-    width: 52px;
-    height: 100px;
-    transform-origin: 100% 0%;
-    transform: rotate(var(--arm-angle, -20deg));
-    transition: transform .6s cubic-bezier(.4,0,.2,1);
-  }
-  .music-player[data-playback-state='playing'] .tonearm { --arm-angle: 0deg; }
-
-  .ta-cap   { position:absolute;right:0;top:0;width:13px;height:13px;border-radius:50%;background:var(--color-copper);box-shadow:0 1px 3px rgb(0 0 0/.5); }
-  .ta-pivot { position:absolute;right:4px;top:4px;width:5px;height:5px;border-radius:50%;background:#2c2735; }
-  .ta-post  { position:absolute;right:5px;top:12px;width:3px;height:58px;background:linear-gradient(90deg,#9e96a8,#d4cedd,#9e96a8);border-radius:2px; }
-  .ta-arm   { position:absolute;right:5px;top:68px;width:3px;height:26px;background:linear-gradient(90deg,#9e96a8,#d4cedd,#9e96a8);border-radius:1px;transform:rotate(35deg);transform-origin:top center; }
-  .ta-head  { position:absolute;right:18px;top:83px;width:9px;height:14px;background:#e9e4dc;border-radius:2px 2px 0 0;transform:rotate(35deg);transform-origin:top center;box-shadow:0 2px 4px rgb(0 0 0/.4); }
-  .ta-head::after { content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:2px;height:5px;background:#888;border-radius:0 0 1px 1px; }
-
-  /* ── toggle (click disc to expand) ──────────────── */
-  .player-toggle {
-    position: absolute;
-    z-index: 4;
-    /* align with turntable: right=pad, top=center */
-    right: var(--pad);
-    top: 50%;
-    width: var(--disc);
-    height: var(--disc);
-    transform: translateY(-50%);
-    padding: 0; border: 0;
+    z-index: 3;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
     border-radius: 50%;
     background: transparent;
-    cursor: pointer;
+    cursor: var(--cursor-link, pointer);
+    touch-action: manipulation;
+  }
+  .record-button:active { box-shadow: inset 0 0 0 5px #ffd20055; }
+  .record-button:focus-visible { outline: 4px solid #ffd200; outline-offset: 3px; }
+  .record-button:disabled { cursor: not-allowed; }
+  .music-player[data-empty='true'] .record-disc { filter: saturate(.4) brightness(.75); }
+
+  .tonearm {
+    position: absolute;
+    z-index: 4;
+    left: 61.17%;
+    top: 9.69%;
+    width: 37.23%;
+    height: 76.12%;
+    overflow: visible;
+    pointer-events: none;
+    transform-origin: 78.57% 11.36%;
+    transform: rotate(-24deg);
+    transition: transform 660ms cubic-bezier(.2, .7, .18, 1);
+    filter: drop-shadow(2px 3px 2px #080a0d9c);
+  }
+  .music-player[data-playback-state='playing'] .tonearm { transform: rotate(0); }
+  .music-player[data-playback-state='changing'] .tonearm { transition-duration: 180ms; }
+
+  .track-tooltip {
+    position: absolute;
+    z-index: 6;
+    top: 0;
+    left: 47%;
+    max-width: 72%;
+    overflow: hidden;
+    padding: 6px 12px;
+    border: 1px solid #d88c3c;
+    border-radius: 3px;
+    background: #201e24f2;
+    box-shadow: 0 5px 14px #090b12b0;
+    color: #f5f0e8;
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 9px);
+    transition: opacity 160ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1), visibility 0s linear 220ms;
+  }
+  .music-player:not([data-record-swap='true']) .record-assembly:hover ~ .track-tooltip,
+  .music-player[data-input-mode='keyboard']:not([data-record-swap='true']) .record-assembly:has(.record-button:focus-visible) ~ .track-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -10px);
+    transition: opacity 160ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1), visibility 0s;
   }
 
-  /* ── show/hide ───────────────────────────────────── */
-  .music-player[data-display-mode='home'] .player-toggle { display: none; }
-  .music-player[data-display-mode='dock'] .player-collapse { display: none; }
-
-  /* collapsed dock */
+  .player-toggle { display: none; }
   .music-player[data-display-mode='dock'][data-ui-state='collapsed'] {
-    transform: translateX(calc(-100% + 77px));
+    transform: translateX(calc(-100% + 80px));
+    overflow: hidden;
     border-color: transparent;
     background: transparent;
     box-shadow: none;
   }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-left { visibility: hidden; }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .tonearm     { visibility: hidden; }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .turntable   { filter: drop-shadow(3px 5px 8px rgb(23 21 29/.4)); }
-  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-toggle { clip-path: inset(0 0 0 50%); }
-
-  /* ── a11y ────────────────────────────────────────── */
-  .sr-only {
-    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .machine-body,
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .tonearm,
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .track-tooltip { visibility: hidden; }
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .record-assembly {
+    transform: translateX(65%);
+    filter: drop-shadow(2px 5px 7px #080a0daa);
   }
-
-  /* ── responsive / motion ─────────────────────────── */
+  .music-player[data-display-mode='dock'][data-ui-state='collapsed'] .player-toggle {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    right: 0;
+    display: block;
+    width: 80px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: var(--cursor-link, pointer);
+  }
+  .player-toggle:focus-visible { outline: 4px solid #ffd200; outline-offset: -5px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   @media (max-width: 400px) {
-    .music-player[data-display-mode='dock'] { bottom: 20px; }
+    .music-player[data-display-mode='dock'] { bottom: 20px; width: min(330px, calc(100vw - 12px)); height: auto; aspect-ratio: 376 / 289; }
   }
   @media (prefers-reduced-motion: reduce) {
     .music-player, .music-player *, .music-player *::before, .music-player *::after {
@@ -440,4 +297,3 @@ const cover = currentTrack?.cover;
     }
   }
 </style>
-

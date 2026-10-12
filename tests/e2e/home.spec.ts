@@ -75,7 +75,7 @@ test('Hatrix is a flat transparent label beside the level ring', async ({ page }
   expect(nameBox!.x - ringBox!.x - ringBox!.width).toBeGreaterThanOrEqual(12);
 });
 
-test('lower stack shares one vertical-sided parallelogram plane with exact gaps and extents', async ({ page }) => {
+test('lower stack keeps its shared plane with a second experiment entrance below the guestbook', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
   const geometry = await page.evaluate(() => {
@@ -87,7 +87,7 @@ test('lower stack shares one vertical-sided parallelogram plane with exact gaps 
       });
     const friends = panel('friends');
     const inverse = new DOMMatrix(getComputedStyle(friends).transform).inverse();
-    const projected = Object.fromEntries(['quote', 'music', 'friends', 'guestbook'].map((name) => [name, corners(panel(name))]));
+    const projected = Object.fromEntries(['quote', 'music', 'friends', 'guestbook', 'lab-shortcut'].map((name) => [name, corners(panel(name))]));
     const local = Object.fromEntries(Object.entries(projected).map(([name, points]) => [name, points.map(({ x, y }) => {
       const point = new DOMPoint(x, y).matrixTransform(inverse);
       return { x: point.x / point.w, y: point.y / point.w };
@@ -103,10 +103,11 @@ test('lower stack shares one vertical-sided parallelogram plane with exact gaps 
     };
   });
   const expectedCorners = {
-    quote: [[8.88462, 716.61538], [606, 682], [606, 752], [8.88462, 786.61538]],
-    music: [[8.88462, 790.61538], [387.05769, 768.69231], [387.05769, 940.69231], [8.88462, 962.61538]],
-    friends: [[399, 768], [606, 756], [606, 844], [399, 856]],
-    guestbook: [[399, 860], [606, 848], [606, 928], [399, 940]]
+    quote: [[8.88462, 652.61538], [606, 618], [606, 688], [8.88462, 722.61538]],
+    music: [[8.88462, 730.61538], [383.07692, 708.92308], [383.07692, 997.92308], [8.88462, 1019.61538]],
+    friends: [[391.03846, 708.46154], [606, 696], [606, 787], [391.03846, 799.46154]],
+    guestbook: [[391.03846, 807.46154], [606, 795], [606, 886], [391.03846, 898.46154]],
+    'lab-shortcut': [[391.03846, 906.46154], [606, 894], [606, 985], [391.03846, 997.46154]]
   };
   for (const [name, expected] of Object.entries(expectedCorners)) {
     geometry.projected[name].forEach((point, index) => {
@@ -114,7 +115,7 @@ test('lower stack shares one vertical-sided parallelogram plane with exact gaps 
       expect.soft(Math.abs(point.y - expected[index][1]), `${name} corner ${index} y`).toBeLessThan(0.05);
     });
   }
-  const { quote, music, friends, guestbook } = geometry.local;
+  const { quote, music, friends, guestbook, 'lab-shortcut': labShortcut } = geometry.local;
   for (const projected of Object.values(geometry.projected)) {
     expect.soft(projected[0].x).toBeCloseTo(projected[3].x, 2);
     expect.soft(projected[1].x).toBeCloseTo(projected[2].x, 2);
@@ -123,23 +124,31 @@ test('lower stack shares one vertical-sided parallelogram plane with exact gaps 
   }
   // Computed matrix3d values are serialized to limited precision by Chromium.
   for (const edge of [0, 1]) {
-    expect.soft(music[edge].y - quote[edge + 2].y).toBeCloseTo(4, 2);
-    expect.soft(friends[edge].y - quote[edge + 2].y).toBeCloseTo(4, 2);
-    expect.soft(guestbook[edge].y - friends[edge + 2].y).toBeCloseTo(4, 2);
+    expect.soft(music[edge].y - quote[edge + 2].y).toBeCloseTo(8, 2);
+    expect.soft(friends[edge].y - quote[edge + 2].y).toBeCloseTo(8, 2);
+    expect.soft(guestbook[edge].y - friends[edge + 2].y).toBeCloseTo(8, 2);
+    expect.soft(labShortcut[edge].y - guestbook[edge + 2].y).toBeCloseTo(8, 2);
   }
   for (const bottom of [2, 3]) {
-    expect.soft(music[bottom].y).toBeCloseTo(172, 2);
-    expect.soft(guestbook[bottom].y).toBeCloseTo(172, 2);
+    expect.soft(music[bottom].y).toBeCloseTo(289, 2);
+    expect.soft(guestbook[bottom].y).toBeCloseTo(190, 2);
+    expect.soft(labShortcut[bottom].y).toBeCloseTo(289, 2);
   }
-  expect.soft(friends[0].x - music[1].x).toBeCloseTo(12, 2);
-  for (const points of [quote, [...music, ...friends, ...guestbook]]) {
-    expect.soft(Math.min(...points.map(({ x }) => x))).toBeCloseTo(-392, 2);
-    expect.soft(Math.max(...points.map(({ x }) => x))).toBeCloseTo(208, 2);
+  for (const card of [friends, guestbook, labShortcut]) {
+    expect.soft(card[1].x - card[0].x).toBeCloseTo(216, 2);
+    expect.soft(card[3].y - card[0].y).toBeCloseTo(91, 2);
   }
-  expect.soft(geometry.musicPanelHeight).toBe(172);
-  expect.soft(geometry.musicCssHeight).toBe('172px');
+  expect.soft(friends[0].x - music[1].x).toBeCloseTo(8, 2);
+  for (const points of [quote, [...music, ...friends, ...guestbook, ...labShortcut]]) {
+    expect.soft(Math.min(...points.map(({ x }) => x))).toBeCloseTo(-384, 2);
+    expect.soft(Math.max(...points.map(({ x }) => x))).toBeCloseTo(216, 2);
+  }
+  expect.soft(geometry.musicPanelHeight).toBe(289);
+  expect.soft(geometry.musicCssHeight).toBe('289px');
   expect.soft(geometry.ring).toEqual({ x: 72, y: 355, width: 180, height: 180 });
   expect.soft(geometry.name).toEqual({ x: 264, y: 389, width: 300, height: 112 });
+  await expect(page.locator('[data-home-panel="lab-shortcut"] a')).toHaveAttribute('href', '/lab/');
+  await expect(page.locator('[data-home-panel="digest"] a')).toHaveAttribute('href', '/digest/');
 });
 
 test('quote clears the friends panel across its entire projected bottom edge', async ({ page }) => {
@@ -191,20 +200,20 @@ test('right-side cards share one perspective plane with aligned rows', async ({ 
     const projects = box('projects');
     const about = box('about');
     const plans = box('plans');
-    const lab = box('lab');
+    const digest = box('digest');
     return {
       projected: getComputedStyle(element).transform.startsWith('matrix3d('),
       flatChildren: panels.every((panel) => getComputedStyle(panel).transform === 'none'),
       names: panels.map((panel) => panel.dataset.homePanel),
       middleAligned: projects.offsetTop === about.offsetTop && projects.offsetHeight === about.offsetHeight,
-      bottomAligned: plans.offsetTop === lab.offsetTop && plans.offsetHeight === lab.offsetHeight,
+      bottomAligned: plans.offsetTop === digest.offsetTop && plans.offsetHeight === digest.offsetHeight,
       middleGap: about.offsetLeft - projects.offsetLeft - projects.offsetWidth,
-      bottomGap: lab.offsetLeft - plans.offsetLeft - plans.offsetWidth
+      bottomGap: digest.offsetLeft - plans.offsetLeft - plans.offsetWidth
     };
   });
   expect(geometry.projected).toBe(true);
   expect(geometry.flatChildren).toBe(true);
-  expect(geometry.names).toEqual(['clock', 'blog', 'projects', 'about', 'recommendations', 'plans', 'lab']);
+  expect(geometry.names).toEqual(['clock', 'blog', 'projects', 'about', 'recommendations', 'plans', 'digest']);
   expect(geometry.middleAligned).toBe(true);
   expect(geometry.bottomAligned).toBe(true);
   for (const gap of [geometry.middleGap, geometry.bottomGap]) {
@@ -233,7 +242,7 @@ test('home recommendations use a full-height snippets card and the bottom row is
   expect(arrangement).toEqual({ fullHeight: true, headingToRight: true, bookmarkUnderHeading: true, pairedBottomRow: true });
   const auxiliary = page.locator('[data-home-auxiliary-slot]');
   await expect(auxiliary).toHaveCount(0);
-  for (const name of ['plans', 'lab']) {
+  for (const name of ['plans', 'digest']) {
     const link = page.locator(`[data-home-panel="${name}"] > a`);
     await expect(link).toHaveCount(1);
     expect(await link.evaluate((element) => {
@@ -642,6 +651,7 @@ test('home links open their independent pages', async ({ page }) => {
     ['友链', '/about/friends/'],
     ['留言板', '/guestbook/'],
     ['计划', '/plans/'],
+    ['资讯', '/digest/'],
     ['实验场', '/lab/']
   ];
   for (const [label, path] of entries) {

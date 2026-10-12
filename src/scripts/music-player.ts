@@ -1,44 +1,28 @@
 import { playlist } from '../data/playlist';
+import { shuffleQuoteOrder } from '../lib/quote-order';
 import type { Track } from '../types/content';
 
-type Preferences = {
-  volume: number;
-  index: number;
-};
-
 const STORAGE_KEY = 'hatrix-player';
+const RECORD_CLICK_DELAY = 320;
+const RECORD_SWAP_MIDPOINT = 440;
+const RECORD_SWAP_DURATION = 720;
 let audio: HTMLAudioElement | undefined;
 
-function readPreferences(): Preferences {
+function readTrackIndex(): number {
   try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Preferences>;
-
-    return {
-      volume: Math.max(0, Math.min(1, typeof value.volume === 'number' ? value.volume : 0.7)),
-      index: Number.isInteger(value.index) ? Math.max(0, value.index as number) : 0,
-    };
+    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as { index?: number };
+    return Number.isInteger(value.index) ? Math.max(0, value.index!) : 0;
   } catch {
-    return { volume: 0.7, index: 0 };
+    return 0;
   }
 }
 
-function savePreferences(preferences: Preferences): void {
+function saveTrackIndex(index: number): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ index }));
   } catch {
     // Storage is optional.
   }
-}
-
-function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) {
-    return '0:00';
-  }
-
-  const wholeSeconds = Math.floor(seconds);
-  const minutes = Math.floor(wholeSeconds / 60);
-  const remainder = wholeSeconds % 60;
-  return `${minutes}:${String(remainder).padStart(2, '0')}`;
 }
 
 function setExpanded(player: HTMLElement, expanded: boolean): void {
@@ -98,62 +82,24 @@ export function initializeMusicPlayer(
 
   synchronizeMusicPlayerLayout(player, root, pathname);
 
-  if (player.dataset.bound === 'true') {
-    return audio;
-  }
-
+  if (player.dataset.bound === 'true') return audio;
   player.dataset.bound = 'true';
 
-  const preferences = readPreferences();
-  const volume = player.querySelector<HTMLInputElement>('[data-player-volume]');
-  const progress = player.querySelector<HTMLInputElement>('[data-player-progress]');
-  const currentTimeLabel = player.querySelector<HTMLElement>('[data-player-current-time]');
-  const durationLabel = player.querySelector<HTMLElement>('[data-player-duration]');
   const toggle = player.querySelector<HTMLButtonElement>('[data-player-toggle]');
-  const collapse = player.querySelector<HTMLButtonElement>('[data-player-collapse]');
-  const previous = player.querySelector<HTMLButtonElement>('[data-player-prev]');
-  const playButton = player.querySelector<HTMLButtonElement>('[data-player-play]');
-  const next = player.querySelector<HTMLButtonElement>('[data-player-next]');
-  const title = player.querySelector<HTMLElement>('[data-player-title]');
-  const artist = player.querySelector<HTMLElement>('[data-player-artist]');
-  const state = {
-    volume: preferences.volume,
-  };
-
-  if (volume) volume.value = String(preferences.volume);
-  if (progress) {
-    progress.value = '0';
-    progress.style.setProperty('--played', '0%');
-  }
-  if (currentTimeLabel) currentTimeLabel.textContent = '0:00';
-  if (durationLabel) durationLabel.textContent = '0:00';
-  let index = Math.max(0, preferences.index);
-
-  const saveState = (): void => {
-    savePreferences({
-      volume: state.volume,
-      index,
-    });
-  };
-
+  const record = player.querySelector<HTMLButtonElement>('[data-player-record]');
+  const trackLabel = player.querySelector<HTMLElement>('[data-player-track]');
   toggle?.addEventListener('click', () => setExpanded(player, player.dataset.uiState !== 'expanded'));
-  collapse?.addEventListener('click', () => {
-    setExpanded(player, false);
-    toggle?.focus();
-  });
   player.addEventListener('click', (event) => {
     const target = event.target as Element | null;
-    if (target?.closest('button, input, label, a')) return;
+    if (target?.closest('button, a')) return;
     if (player.dataset.displayMode === 'dock' && player.dataset.uiState === 'expanded') {
       setExpanded(player, false);
     }
   });
   root.addEventListener?.call(root, 'click', (event: Event) => {
     if (player.dataset.displayMode !== 'dock' || player.dataset.uiState !== 'expanded') return;
-    if (!player.contains((event as MouseEvent).target as Node | null)) {
-      setExpanded(player, false);
-    }
-  }, { capture: false });
+    if (!player.contains((event as MouseEvent).target as Node | null)) setExpanded(player, false);
+  });
   root.defaultView?.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && player.dataset.displayMode === 'dock') {
       const focusWasInside = player.contains(root.activeElement);
@@ -161,111 +107,140 @@ export function initializeMusicPlayer(
       if (focusWasInside) toggle?.focus();
     }
   });
-
-  if (!tracks.length) return undefined;
-
-  index = Math.min(index, tracks.length - 1);
-
-  const advanceTrack = (): void => {
-    if (tracks.length > 1) {
-      let next = Math.floor(Math.random() * (tracks.length - 1));
-      if (next >= index) next++;
-      load(next);
-    } else {
-      load(0);
-    }
-    void audio!.play().catch(() => undefined);
-  };
-
-  const syncProgress = (): void => {
-    const current = Number.isFinite(audio!.currentTime) ? Math.max(0, audio!.currentTime) : 0;
-    const duration = Number.isFinite(audio!.duration) && audio!.duration > 0 ? audio!.duration : 0;
-    const safeCurrent = duration > 0 ? Math.min(current, duration) : current;
-
-    if (progress) {
-      progress.max = String(duration);
-      progress.value = String(safeCurrent);
-      progress.style.setProperty('--played', duration > 0 ? `${(safeCurrent / duration) * 100}%` : '0%');
-    }
-    if (currentTimeLabel) currentTimeLabel.textContent = formatTime(safeCurrent);
-    if (durationLabel) durationLabel.textContent = formatTime(duration);
-  };
-
-  const bindAudioEvents = (element: HTMLAudioElement): void => {
-    element.addEventListener('play', () => {
-      player.dataset.playbackState = 'playing';
-      playButton?.setAttribute('aria-pressed', 'true');
-      playButton?.setAttribute('aria-label', '暂停');
-      syncProgress();
-    });
-
-    element.addEventListener('pause', () => {
-      player.dataset.playbackState = 'paused';
-      playButton?.setAttribute('aria-pressed', 'false');
-      playButton?.setAttribute('aria-label', '播放');
-      syncProgress();
-    });
-
-    element.addEventListener('loadedmetadata', syncProgress);
-    element.addEventListener('durationchange', syncProgress);
-    element.addEventListener('timeupdate', syncProgress);
-    element.addEventListener('seeked', syncProgress);
-    element.addEventListener('ended', () => {
-      advanceTrack();
-    });
-  };
-
-  const load = (nextIndex: number): void => {
-    index = (nextIndex + tracks.length) % tracks.length;
-    const track = tracks[index]!;
-    const nextVolume = audio?.volume ?? state.volume;
-
-    audio?.pause();
-    audio = new Audio();
-    audio.volume = nextVolume;
-    bindAudioEvents(audio);
-    audio.src = track.src;
-    audio.load();
-    audio!.currentTime = 0;
-    if (title) {
-      title.textContent = track.title;
-      title.title = track.title;
-    }
-    if (artist) {
-      artist.textContent = track.artist;
-      artist.title = track.artist;
-    }
-
-    syncProgress();
-    saveState();
-  };
-
-  if (progress) {
-    progress.addEventListener('input', () => {
-      const nextTime = Number(progress.value);
-      if (Number.isFinite(nextTime)) {
-        audio!.currentTime = Math.max(0, nextTime);
-        syncProgress();
-      }
-    });
+  root.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') player.dataset.inputMode = 'keyboard';
+  });
+  for (const eventName of ['pointerenter', 'pointerleave', 'pointerdown']) {
+    record?.addEventListener(eventName, () => { player.dataset.inputMode = 'pointer'; });
   }
 
-  volume?.addEventListener('input', () => {
-    state.volume = Number(volume.value);
-    audio!.volume = state.volume;
-    saveState();
+  player.dataset.playbackState = 'paused';
+  if (!tracks.length) {
+    record?.setAttribute('aria-label', '歌单待添加');
+    if (record) record.disabled = true;
+    return undefined;
+  }
+
+  let index = Math.min(readTrackIndex(), tracks.length - 1);
+  const indices = tracks.map((_, trackIndex) => trackIndex);
+  let order = shuffleQuoteOrder(indices.filter((trackIndex) => trackIndex !== index));
+  audio = new Audio();
+  audio.volume = 0.7;
+  const playerAudio = audio;
+  let clickTimer: ReturnType<typeof setTimeout> | undefined;
+  let midpointTimer: ReturnType<typeof setTimeout> | undefined;
+  let nextPlayTimer: ReturnType<typeof setTimeout> | undefined;
+  let swapInProgress = false;
+
+  const setPlaying = (playing: boolean): void => {
+    player.dataset.playbackState = playing ? 'playing' : 'paused';
+    record?.setAttribute('aria-pressed', String(playing));
+    record?.setAttribute('aria-label', playing ? '暂停唱片，双击随机下一曲' : '播放唱片，双击随机下一曲');
+  };
+  const play = (): void => {
+    void playerAudio.play().catch(() => {
+      setPlaying(false);
+      if (trackLabel) trackLabel.textContent = '播放失败，请重试';
+    });
+  };
+  const load = (nextIndex: number): void => {
+    index = nextIndex;
+    const track = tracks[index]!;
+    playerAudio.pause();
+    playerAudio.src = track.src;
+    playerAudio.load();
+    playerAudio.currentTime = 0;
+    player.dataset.recordVariant = String(index % 3);
+    if (trackLabel) trackLabel.textContent = `${track.title}-${track.artist}`;
+    saveTrackIndex(index);
+  };
+  const advanceTrack = (): void => {
+    clearTimeout(clickTimer);
+    clickTimer = undefined;
+    clearTimeout(midpointTimer);
+    clearTimeout(nextPlayTimer);
+    if (order.length === 0) order = shuffleQuoteOrder(indices, index);
+    const nextIndex = order.shift() ?? index;
+    swapInProgress = true;
+    playerAudio.pause();
+    player.dataset.playbackState = 'changing';
+    record?.setAttribute('aria-pressed', 'false');
+    record?.setAttribute('aria-label', '正在更换唱片');
+    if (player.dataset.uiState === 'collapsed' || root.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      load(nextIndex);
+      swapInProgress = false;
+      play();
+      return;
+    }
+    player.dataset.recordSwap = 'true';
+    if (record) record.disabled = true;
+    midpointTimer = setTimeout(() => {
+      midpointTimer = undefined;
+      load(nextIndex);
+    }, RECORD_SWAP_MIDPOINT);
+    nextPlayTimer = setTimeout(() => {
+      nextPlayTimer = undefined;
+      delete player.dataset.recordSwap;
+      if (record) record.disabled = false;
+      swapInProgress = false;
+      play();
+    }, RECORD_SWAP_DURATION);
+  };
+
+  const togglePlayback = (): void => {
+    if (swapInProgress) return;
+    if (playerAudio.paused) {
+      play();
+    } else {
+      playerAudio.pause();
+    }
+  };
+
+  playerAudio.addEventListener('play', () => setPlaying(true));
+  playerAudio.addEventListener('pause', () => {
+    if (!swapInProgress) setPlaying(false);
+  });
+  playerAudio.addEventListener('ended', advanceTrack);
+  playerAudio.addEventListener('error', () => {
+    setPlaying(false);
+    if (trackLabel) trackLabel.textContent = '音频无法加载';
+  });
+  record?.addEventListener('click', (event) => {
+    if (swapInProgress || record.disabled) return;
+    if ((event as MouseEvent).detail >= 2) {
+      clearTimeout(clickTimer);
+      clickTimer = undefined;
+      advanceTrack();
+      return;
+    }
+    if ((event as MouseEvent).detail === 0) {
+      togglePlayback();
+      return;
+    }
+    if (clickTimer !== undefined) {
+      clearTimeout(clickTimer);
+      clickTimer = undefined;
+      advanceTrack();
+      return;
+    }
+    clickTimer = setTimeout(() => {
+      clickTimer = undefined;
+      togglePlayback();
+    }, RECORD_CLICK_DELAY);
+  });
+  record?.addEventListener('keydown', (event) => {
+    if (swapInProgress || record.disabled) return;
+    if (event.shiftKey && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      clearTimeout(clickTimer);
+      clickTimer = undefined;
+      advanceTrack();
+    }
   });
 
-  playButton?.addEventListener('click', () => {
-    if (audio!.paused) void audio!.play().catch(() => undefined);
-    else audio!.pause();
-  });
-
-  previous?.addEventListener('click', advanceTrack);
-  next?.addEventListener('click', advanceTrack);
-
+  setPlaying(false);
   load(index);
-  return audio;
+  return playerAudio;
 }
 
 if (typeof document !== 'undefined') {
@@ -275,17 +250,10 @@ if (typeof document !== 'undefined') {
       document.querySelector<HTMLElement>('[data-music-player]')?.setAttribute('data-layout-state', 'pending');
     }
   });
-  document.addEventListener('astro:after-swap', () => {
-    void initializeMusicPlayer();
-  });
-  document.addEventListener('astro:page-load', () => {
-    void initializeMusicPlayer();
-  });
+  document.addEventListener('astro:after-swap', () => { void initializeMusicPlayer(); });
+  document.addEventListener('astro:page-load', () => { void initializeMusicPlayer(); });
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) void initializeMusicPlayer();
   });
   initializeMusicPlayer();
 }
-
-
-

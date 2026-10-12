@@ -12,7 +12,7 @@ const routes = [
 for (const path of routes) {
   test(`${path} has stable responsive structure`, async ({ page }) => {
     test.setTimeout(path.startsWith('/posts/') ? 360_000 : 60_000);
-    await page.route('https://giscus.app/**', (route) => route.abort());
+    await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
     if (path === '/') {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.clock.install({ time: new Date('2026-10-02T00:00:00Z') });
@@ -106,7 +106,7 @@ for (const path of routes) {
       timeout: path.startsWith('/posts/') ? 300_000 : 20_000,
       maxDiffPixels: path.startsWith('/posts/') ? 2_000 : path === '/blog/' ? 10 : 0,
       mask: [
-        page.locator('[data-giscus-comments]'),
+        page.locator('[data-twikoo-comments]'),
         page.locator(
           'article[data-post] img[src*="v2-9dd69ab2c20ca721bc0979d7ebaa0253_720w.webp"]'
         ),

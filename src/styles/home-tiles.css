@@ -54,7 +54,7 @@
 .home-stage .tile-texture {
   position: absolute;
   inset: 0;
-  background-image: var(--tile-texture-image, url('/home-textures/workshop-panel.svg'));
+  background-image: var(--tile-texture-image, url('/assets/home-textures/workshop-panel.svg'));
   background-position: right top;
   background-size: var(--tile-texture-size, 240px 140px);
   background-repeat: repeat;
@@ -141,11 +141,12 @@
 .home-stage .tile--blog .tile-english { font-size: 37px; line-height: 1.05; }
 .home-stage .tile--blog .tile-glyph { right: 55px; width: 185px; height: 185px; opacity: .55; }
 
-.home-stage .tile--projects { --tile-bg: #24313fed; --tile-hover: #32485bf5; --tile-accent: #70cff1; --tile-glyph: #8adaf1; }
+.home-stage .tile--projects,
+.home-stage .tile--digest { --tile-bg: #24313fed; --tile-hover: #32485bf5; --tile-accent: #70cff1; --tile-glyph: #8adaf1; }
 .home-stage .tile--projects .tile-glyph { right: 14px; width: 88px; height: 88px; }
 .home-stage .tile--about { --tile-bg: #35243fed; --tile-hover: #493057f5; --tile-accent: #d07aef; --tile-glyph: #c894d8; }
 .home-stage .tile--plans { --tile-bg: #2b2936ed; --tile-hover: #3e344af5; --tile-accent: #e8af65; }
-.home-stage .tile--lab { --tile-bg: #24313fed; --tile-hover: #32485bf5; --tile-accent: #70cff1; --tile-glyph: #8adaf1; }
+.home-stage .tile--lab-shortcut { --tile-bg: #1d4142ed; --tile-hover: #2c5656f5; --tile-accent: #57decc; --tile-glyph: #87e1d5; }
 
 .home-stage .tile--snippets,
 .home-stage .tile--bookmark,
@@ -180,28 +181,34 @@
 .home-stage .tile--friends,
 .home-stage .tile--guestbook { --tile-bg: #30263ded; --tile-hover: #473451f5; --tile-accent: #d186df; --tile-glyph: #c590d2; }
 .home-stage .tile--friends::before,
-.home-stage .tile--guestbook::before { width: 36px; }
+.home-stage .tile--guestbook::before,
+.home-stage .tile--lab-shortcut::before { width: 36px; }
 .home-stage .tile--friends .tile-copy,
-.home-stage .tile--guestbook .tile-copy { left: 17px; gap: 1px; }
+.home-stage .tile--guestbook .tile-copy,
+.home-stage .tile--lab-shortcut .tile-copy { left: 17px; gap: 1px; }
 .home-stage .tile--friends .tile-title,
-.home-stage .tile--guestbook .tile-title { font-size: 31px; }
+.home-stage .tile--guestbook .tile-title,
+.home-stage .tile--lab-shortcut .tile-title { font-size: 31px; }
 .home-stage .tile--friends .tile-english,
-.home-stage .tile--guestbook .tile-english { font-size: 18px; }
+.home-stage .tile--guestbook .tile-english,
+.home-stage .tile--lab-shortcut .tile-english { font-size: 18px; }
 .home-stage .tile--friends .tile-glyph,
-.home-stage .tile--guestbook .tile-glyph { right: 11px; width: 45px; height: 45px; }
+.home-stage .tile--guestbook .tile-glyph,
+.home-stage .tile--lab-shortcut .tile-glyph { right: 11px; width: 45px; height: 45px; }
 .home-stage .tile--about,
 .home-stage .tile--friends,
 .home-stage .tile--snippets,
-.home-stage .tile--lab {
-  --tile-texture-image: url('/home-textures/microscheme.png');
+.home-stage .tile--digest {
+  --tile-texture-image: url('/assets/home-textures/microscheme.png');
   --tile-texture-size: 280px 280px;
   --tile-texture-opacity: .17;
   --tile-texture-hover-opacity: .24;
 }
 
 .home-stage .tile--projects,
-.home-stage .tile--plans {
-  --tile-texture-image: url('/home-textures/treadplate1.png');
+.home-stage .tile--plans,
+.home-stage .tile--lab-shortcut {
+  --tile-texture-image: url('/assets/home-textures/treadplate1.png');
   --tile-texture-size: 212px 212px;
   --tile-texture-opacity: .19;
   --tile-texture-hover-opacity: .26;
@@ -209,14 +216,14 @@
 
 .home-stage .tile--bookmark,
 .home-stage .tile--guestbook {
-  --tile-texture-image: url('/home-textures/conduit-led.svg');
+  --tile-texture-image: url('/assets/home-textures/conduit-led.svg');
   --tile-texture-size: 240px 160px;
   --tile-texture-opacity: .54;
   --tile-texture-hover-opacity: .64;
 }
 
 .home-stage .tile--software {
-  --tile-texture-image: url('/home-textures/blue-metal-plate.jpg');
+  --tile-texture-image: url('/assets/home-textures/blue-metal-plate.jpg');
   --tile-texture-size: 260px 260px;
   --tile-texture-opacity: .9;
   --tile-texture-hover-opacity: .9;

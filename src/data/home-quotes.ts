@@ -81,7 +81,8 @@ export const HOME_QUOTES = [
   { text: '一旦遇见过某个人，就不会真正忘记，只是一时想不起来。', source: '千与千寻' },
   { text: '愿原力与你同在。', source: '星球大战' },
   { text: '我曾以为自己的人生是一场悲剧，现在我才明白，它是一出喜剧。', source: '小丑' },
-  { text: '如果你手里只有一把锤子，那么一切看起来都像钉子。', source: '巴鲁克' }
+  { text: '如果你手里只有一把锤子，那么一切看起来都像钉子。', source: '巴鲁克' },
+  { text: '金牌选手不会从天而降，你必须用热爱、刻苦和投入来浇灌他们。', source: '行码棋' }
 ] as const;
 
 export const HOME_QUOTE_INTERVAL = 6_000;

@@ -1,7 +1,7 @@
 ---
 import 'katex/dist/katex.min.css';
 import { getCollection } from 'astro:content';
-import GiscusComments from '@/components/GiscusComments.astro';
+import TwikooComments from '@/components/TwikooComments.astro';
 import BackButton from '@/components/BackButton.astro';
 import BackToTop from '@/components/BackToTop.astro';
 import PostLink from '@/components/PostLink.astro';
@@ -78,7 +78,7 @@ const stats = buildSiteStats(posts);
             }
           </nav>
 
-          <GiscusComments />
+          <TwikooComments />
         </div>
         <aside class="post-sidebar"><TableOfContents headings={headings} /><LatestPostRail posts={posts} limit={latestPostLimit(headings.length)} /></aside>
       </div>
@@ -107,9 +107,43 @@ const stats = buildSiteStats(posts);
   }
 
   .post-intro {
+    position: relative;
     width: min(calc(100% - 48px), calc(var(--reading-width) + 280px));
     padding-top: 4rem;
+    padding-left: clamp(1rem, 2vw, 1.5rem);
+    border-left: 1px solid var(--chassis-edge);
     text-align: left;
+  }
+
+  .post-intro::before {
+    content: '';
+    position: absolute;
+    top: 3.35rem;
+    left: -1px;
+    width: min(46%, 340px);
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-copper), var(--color-accent) 24%, transparent);
+    box-shadow: 0 5px 16px rgb(255 210 0 / 16%);
+  }
+
+  .post-intro::after {
+    content: '';
+    position: absolute;
+    top: 3.02rem;
+    left: -8px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--chassis-edge);
+    background: var(--color-link);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove), 0 0 12px rgb(0 221 235 / 32%);
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+
+  .post-intro h1,
+  .post-intro :global(.post-meta) {
+    position: relative;
+    z-index: 1;
   }
 
   .post-intro :global(.post-meta) {
@@ -156,21 +190,41 @@ const stats = buildSiteStats(posts);
   }
 
   .adjacent-posts :global(a) {
+    position: relative;
     display: flex;
     min-width: 0;
     flex-direction: column;
     gap: 0.2rem;
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
+    border-radius: 3px;
     padding: 1rem;
-    background: var(--surface-sheen), var(--color-surface);
+    background: linear-gradient(110deg, rgb(0 221 235 / 6%), transparent 55%), var(--surface-sheen), var(--color-surface);
     box-shadow: var(--shadow-inset);
     transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
   }
 
-  .adjacent-posts :global(a:hover) {
-    border-color: var(--color-line-strong);
+  .adjacent-posts :global(a::before) {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    width: 65%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-copper), transparent);
+    transform: scaleX(0.54);
+    transform-origin: left;
+    transition: transform var(--duration-normal) var(--ease-out), background-color var(--duration-normal) ease;
+  }
+
+  .adjacent-posts :global(a:hover),
+  .adjacent-posts :global(a:focus-visible) {
+    border-color: var(--color-copper);
     background-color: var(--color-surface-raised);
+  }
+
+  .adjacent-posts :global(a:is(:hover, :focus-visible)::before) {
+    background: linear-gradient(90deg, var(--color-accent), var(--color-link), transparent);
+    transform: scaleX(1);
   }
 
   .adjacent-posts :global(a:last-child) {
@@ -231,6 +285,7 @@ const stats = buildSiteStats(posts);
       width: min(calc(100% - 32px), 1440px);
     }
   }
+
 
   @media (max-width: 600px) {
     .adjacent-posts {

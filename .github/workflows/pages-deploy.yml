@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 15
     env:
       HATRIX_CONTENT_DIR: tests/fixtures/private-content
+      HATRIX_SNIPPETS_DIR: tests/fixtures/private-snippets
       HATRIX_ADMIN_KEY: test-admin
     steps:
       - name: Checkout
@@ -76,6 +77,7 @@ jobs:
     timeout-minutes: 15
     env:
       HATRIX_CONTENT_DIR: .private-content
+      HATRIX_SNIPPETS_DIR: .private-snippets
     steps:
       - name: Checkout site
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -88,6 +90,7 @@ jobs:
         env:
           HATRIX_ADMIN_KEY: ${{ secrets.HATRIX_ADMIN_KEY }}
           HATRIX_CONTENT_TOKEN: ${{ secrets.HATRIX_CONTENT_TOKEN }}
+          HATRIX_SNIPPETS_DEPLOY_KEY: ${{ secrets.HATRIX_SNIPPETS_DEPLOY_KEY }}
         run: |
           if [[ -z "$HATRIX_ADMIN_KEY" ]]; then
             echo "::error::Required secret HATRIX_ADMIN_KEY is not configured."
@@ -99,6 +102,10 @@ jobs:
           fi
           if [[ -z "$HATRIX_CONTENT_TOKEN" ]]; then
             echo "::error::Required secret HATRIX_CONTENT_TOKEN is not configured."
+            exit 1
+          fi
+          if [[ -z "$HATRIX_SNIPPETS_DEPLOY_KEY" ]]; then
+            echo "::error::Required secret HATRIX_SNIPPETS_DEPLOY_KEY is not configured."
             exit 1
           fi
 
@@ -131,6 +138,15 @@ jobs:
           repository: HatrixXXX/hatrix-content
           token: ${{ secrets.HATRIX_CONTENT_TOKEN }}
           path: .private-content
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout private snippets
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: HatrixXXX/hatrix-snippets
+          ssh-key: ${{ secrets.HATRIX_SNIPPETS_DEPLOY_KEY }}
+          path: .private-snippets
           fetch-depth: 1
           persist-credentials: false
 

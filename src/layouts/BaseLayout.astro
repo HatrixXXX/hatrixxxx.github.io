@@ -7,7 +7,6 @@ import SiteHeader from '@/components/SiteHeader.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
 import SearchOverlay from '@/components/SearchOverlay.astro';
 import PageLoader from '@/components/PageLoader.astro';
-import CatAnimation from '@/components/ThemeTransition.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
 import CursorTrail from '@/components/CursorTrail.astro';
 import { isConfiguredLockedPage } from '@/config/protected-content';
@@ -18,7 +17,6 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import ibmPlexMono400Url from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
 import ibmPlexMono700Url from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-700-normal.woff2?url';
-import pageBackgroundSrc from '@/assets/home/liupin-workshop-v6.png';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
 import '@/styles/prose.css';
@@ -43,7 +41,7 @@ interface Props {
 const {
   title,
   description = SITE.description,
-  image = '/images/default-cover.svg',
+  image = '/assets/images/default-cover.svg',
   bodyClass,
   canonicalPath,
   noindex = false,
@@ -62,7 +60,8 @@ const defaultFooterStats = {
 const footerStats = siteFooterStats ?? defaultFooterStats;
 
 const isHome = pageKind === 'home';
-const pageBgStyle = !isHome ? `--page-bg-image: url("${pageBackgroundSrc.src}")` : undefined;
+const pageBackgroundSrc = '/assets/backgrounds/background.png';
+const pageBgStyle = !isHome ? `--page-bg-image: url("${pageBackgroundSrc}")` : undefined;
 const isLabPage = Astro.url.pathname === '/lab/';
 const isAboutPage = Astro.url.pathname === '/about' || Astro.url.pathname.startsWith('/about/');
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
@@ -74,7 +73,7 @@ const showSakanaCharacters = isAboutPage;
 ---
 
 <!doctype html>
-<html lang="zh-CN" data-page-kind={isHome ? 'home' : undefined}>
+<html lang="zh-CN" data-page-kind={isHome ? 'home' : undefined} transition:animate="none">
   <head>
     {
       import.meta.env.PROD && (
@@ -110,9 +109,8 @@ const showSakanaCharacters = isAboutPage;
     <meta name="theme-color" content="#17151d" />
     <meta name="msvalidate.01" content={SITE.verification.bing} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="alternate icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href="/assets/icons/favicon-transparent.png" type="image/png" sizes="64x64" />
+    <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.title} />
@@ -126,19 +124,20 @@ const showSakanaCharacters = isAboutPage;
     <meta name="twitter:image" content={socialImage} />
     <title>{pageTitle}</title>
     <ClientRouter />
+    <link rel="preload" href="/assets/transitions/mecha-shutter-v1.webp" as="image" fetchpriority="low" />
     <link rel="preload" href={ibmPlexMono400Url} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
-    {!isHome && <link rel="preload" href={pageBackgroundSrc.src} as="image" fetchpriority="high" />}
-    {image !== '/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
+    {!isHome && <link rel="preload" href={pageBackgroundSrc} as="image" fetchpriority="high" />}
+    {image !== '/assets/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
   <body class={bodyClass} style={pageBgStyle}>    <PageLoader />
+    <span data-magnetic-frame aria-hidden="true"></span>
     {!isHome && <SiteHeader />}
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
       <slot />
     </ProtectedContent>
     {showFooter && <SiteFooter stats={footerStats} />}
     {!isHome && showSakanaCharacters && <SakanaCharacters />}
-    <CatAnimation />
     {isLabPage && <CursorTrail />}
     <SearchOverlay />
     {!isHome && <MusicPlayer mode="dock" />}
@@ -153,14 +152,17 @@ const showSakanaCharacters = isAboutPage;
       import '@/scripts/lightbox';
       import '@/scripts/music-player';
       import '@/scripts/navigation';
-      import '@/scripts/giscus';
+      import '@/scripts/smooth-scroll';
+      import '@/scripts/nested-smooth-scroll';
+      import '@/scripts/magnetic-pointer';
+      import '@/scripts/twikoo';
       import '@/scripts/protected-content-bootstrap';
       import '@/scripts/cursor-trail';
       import '@/scripts/search';
       import '@/scripts/search-highlight';
-      import '@/scripts/theme';
       import '@/scripts/site-stats';
       import '@/scripts/page-loader';
+      import '@/scripts/document-title';
     </script>
     {showSakanaCharacters && (
       <script>

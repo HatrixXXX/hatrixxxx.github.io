@@ -14,6 +14,10 @@
   --color-copper: #d88c3c;
   --color-line: rgb(190 174 204 / 18%);
   --color-line-strong: #655770;
+  --chassis-edge: rgb(216 140 60 / 45%);
+  --chassis-groove: rgb(4 8 16 / 72%);
+  --chassis-signal: rgb(0 221 235 / 72%);
+  --chassis-glint: rgb(255 210 0 / 72%);
   --surface-sheen: linear-gradient(155deg, rgb(245 224 193 / 4%), transparent 48%);
   --shadow-panel: 0 6px 18px rgb(10 8 14 / 18%);
   --shadow-inset: inset 0 1px 0 rgb(248 231 207 / 5%), inset 0 -1px 0 rgb(0 0 0 / 15%);

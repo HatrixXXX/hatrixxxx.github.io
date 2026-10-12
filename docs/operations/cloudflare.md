@@ -64,7 +64,7 @@ curl.exe -sS -I https://hatrix.site/
 - DS 和 DNSKEY 都存在，算法一致；
 - HTTP 返回到 `https://hatrix.site/` 的 301；
 - HTTPS 返回 200，响应中有 `Server: cloudflare`、HSTS 和六项安全响应头；
-- 主页、文章、Giscus、Mermaid、灯箱、主题切换和加锁页面仍可使用。
+- 主页、文章、Twikoo、Mermaid、灯箱和加锁页面仍可使用。Twikoo 的 Worker、D1 和 `comments.hatrix.site` 按 `docs/operations/twikoo.md` 单独核对。
 
 ## 发布与缓存
 

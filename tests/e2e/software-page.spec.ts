@@ -20,7 +20,7 @@ test('toolbox presents nine readable colored cards per row', async ({ page }) =>
   await expect(first.locator('[data-tool-purpose]')).toHaveText('机械设计');
   await expect(first.locator('[data-tool-kind-badge]')).toHaveText('软件');
   await expect(first.locator('[data-tool-led]')).toHaveCount(2);
-  await expect(first.locator('img')).toHaveAttribute('src', '/tool-icons/solidworks.svg');
+  await expect(first.locator('img')).toHaveAttribute('src', '/assets/tool-icons/solidworks.svg');
 
   const cardBox = await first.boundingBox();
   const iconAreaBox = await first.locator('.tool-module__center').boundingBox();

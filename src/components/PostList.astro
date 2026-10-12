@@ -17,11 +17,11 @@ const { posts } = Astro.props;
   data-post-coverflow
 >
   <div class="coverflow-scene">
-    {posts.map((post, index) => <PostCard post={post} index={index} />)}
+    {posts.map((post, index) => <PostCard post={post} index={index} total={posts.length} />)}
   </div>
 </div>
 <p id="post-list-instructions" class="post-list-instructions">
-  滚动鼠标滚轮或使用方向键浏览文章，点击当前卡片进入文章，点击侧边卡片切换文章。
+  滚动鼠标滚轮、上下滑动或使用上下方向键浏览文章，点击当前卡片进入文章，点击相邻卡片切换文章。
 </p>
 
 <script>
@@ -53,21 +53,18 @@ const { posts } = Astro.props;
     overflow: hidden;
   }
 
-  /* Preserve the 1080p card proportions instead of stretching on taller displays. */
+  /* Long horizontal cards leave room for the surrounding depth layers. */
   .coverflow-scene :global([data-post-card]) {
-    --card-h: clamp(
-      360px,
-      calc(100dvh - var(--blog-header-height, 60px) - 2rem),
-      calc(1080px - var(--blog-header-height, 60px) - 2rem)
-    );
+    --card-w: min(1120px, calc(100vw - 7rem));
+    --card-h: clamp(240px, 31dvh, 270px);
     position: absolute;
     left: 50%;
     top: 50%;
     transform-origin: center center;
     transform-style: preserve-3d;
     will-change: transform, opacity;
-    width: clamp(280px, 28vw, 420px);
-    margin-left: calc(clamp(280px, 28vw, 420px) / -2);
+    width: var(--card-w);
+    margin-left: calc(var(--card-w) / -2);
     height: var(--card-h);
     margin-top: calc(var(--card-h) / -2);
     transition: opacity 0.1s linear;
@@ -88,13 +85,20 @@ const { posts } = Astro.props;
     white-space: nowrap;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 900px) and (min-width: 601px) {
+    .coverflow-scene :global([data-post-card]) {
+      --card-w: calc(100vw - 3rem);
+      --card-h: clamp(240px, 29dvh, 260px);
+    }
+  }
+
+  @media (max-width: 600px) {
     .coverflow-shell {
-      min-height: 360px;
+      min-height: 480px;
     }
     .coverflow-scene :global([data-post-card]) {
-      width: clamp(200px, 70vw, 300px);
-      margin-left: calc(clamp(200px, 70vw, 300px) / -2);
+      --card-w: calc(100vw - 2rem);
+      --card-h: min(350px, calc(100dvh - var(--blog-header-height, 60px) - 5rem));
     }
   }
 

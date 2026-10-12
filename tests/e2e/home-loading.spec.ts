@@ -78,7 +78,7 @@ test('keeps the cold-home splash when client modules and character start late', 
   await page.route('**/*', async (route) => {
     if (route.request().resourceType() === 'script') {
       await scriptsGate;
-    } else if (route.request().url().includes('/character-parts/foot_L.webp')) {
+    } else if (route.request().url().includes('/assets/home/character-parts/foot_L.webp')) {
       await characterGate;
     }
     await route.continue();
@@ -133,7 +133,7 @@ test('a pending background independently holds the loader', async ({ page }) => 
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
   let requested = false;
-  await page.route((url) => url.pathname.startsWith('/_image') && url.href.includes('liupin-workshop'), async (route) => {
+  await page.route('**/assets/home/cover.webp', async (route) => {
     requested = true;
     await gate;
     await route.continue();
@@ -157,7 +157,7 @@ test('keeps the homepage covered past the accessory deadline while its backgroun
   const gate = new Promise<void>((resolve) => { release = resolve; });
   let requested = false;
   await page.clock.install();
-  await page.route((url) => url.pathname.startsWith('/_image') && url.href.includes('liupin-workshop'), async (route) => {
+  await page.route('**/assets/home/cover.webp', async (route) => {
     requested = true;
     await gate;
     await route.continue();
@@ -180,7 +180,7 @@ test('keeps the loader over a non-home page until its background is ready', asyn
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
   let requested = false;
-  await page.route((url) => url.href.includes('liupin-workshop-v6.png'), async (route) => {
+  await page.route((url) => url.pathname.startsWith('/assets/backgrounds/'), async (route) => {
     requested = true;
     await gate;
     await route.continue();
@@ -207,7 +207,7 @@ test('keeps a click-through navigation covered while the destination background 
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
   let requested = false;
-  await page.route((url) => url.href.includes('liupin-workshop-v6.png'), async (route) => {
+  await page.route((url) => url.pathname.startsWith('/assets/backgrounds/'), async (route) => {
     requested = true;
     await gate;
     await route.continue();
@@ -233,7 +233,7 @@ test('does not reveal an unfinished background after the loading deadline', asyn
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
   await page.clock.install();
-  await page.route((url) => url.href.includes('liupin-workshop-v6.png'), async (route) => {
+  await page.route((url) => url.pathname.startsWith('/assets/backgrounds/'), async (route) => {
     await gate;
     await route.continue();
   });
@@ -286,7 +286,7 @@ test('keeps the persisted player aligned with the current homepage panel on retu
 test('holds the loader and character until every layer is decoded', async ({ page }) => {
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
-  await page.route('**/character-parts/foot_L.webp', async (route) => {
+  await page.route('**/assets/home/character-parts/foot_L.webp', async (route) => {
     await gate;
     await route.continue();
   });
@@ -309,7 +309,7 @@ test('holds the loader and character until every layer is decoded', async ({ pag
 });
 
 test('dismisses the loader but keeps a failed character hidden', async ({ page }) => {
-  await page.route('**/character-parts/foot_L.webp', (route) => route.abort());
+  await page.route('**/assets/home/character-parts/foot_L.webp', (route) => route.abort());
   await page.goto('/');
   await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'error');
   await expect(page.locator('[data-char-rig]')).toBeHidden();
@@ -322,7 +322,7 @@ test('keeps the splash until a late character layer decodes', async ({ page }) =
   const gate = new Promise<void>((resolve) => { release = resolve; });
   const imageRequested = new Promise<void>((resolve) => { requested = resolve; });
   await page.clock.install();
-  await page.route('**/character-parts/foot_L.webp', async (route) => {
+  await page.route('**/assets/home/character-parts/foot_L.webp', async (route) => {
     requested();
     await gate;
     await route.continue();
@@ -356,7 +356,7 @@ test('keeps the cold splash while an eager layer prevents window.load', async ({
   const gate = new Promise<void>((resolve) => { release = resolve; });
   const imageRequested = new Promise<void>((resolve) => { requested = resolve; });
   await page.clock.install();
-  await page.route('**/character-parts/head.webp', async (route) => {
+  await page.route('**/assets/home/character-parts/head.webp', async (route) => {
     requested();
     await gate;
     await route.continue();
@@ -430,7 +430,7 @@ test('a canceled return-home navigation keeps the dock player ready and usable',
     await expect(player).toBeVisible();
     await player.locator('[data-player-toggle]').click();
     await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-    await player.locator('[data-player-toggle]').click();
+    await player.click({ position: { x: 12, y: 12 } });
     await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
   } finally {
     release();
@@ -456,7 +456,7 @@ for (const outcome of ['ready', 'still-loading'] as const) {
     const navigationGate = new Promise<void>((resolve) => { releaseNavigation = resolve; });
     const requested = new Promise<void>((resolve) => { navigationRequested = resolve; });
     await page.clock.install();
-    await page.route('**/character-parts/foot_L.webp', async (route) => {
+    await page.route('**/assets/home/character-parts/foot_L.webp', async (route) => {
       await characterGate;
       await route.continue();
     });
@@ -482,7 +482,8 @@ for (const outcome of ['ready', 'still-loading'] as const) {
       }
       await expect(loader).toHaveClass(/pl-visible/);
       await expect(loader).not.toHaveClass(/pl-done/);
-      await expect(loader.locator('.pl-pct-num')).toHaveText('80%');
+      await expect(loader.locator('.pl-shutter-leaf')).toHaveCount(2);
+      await expect(loader.locator('.pl-pct-num')).toHaveCount(0);
     } finally {
       releaseCharacter();
       releaseNavigation();
@@ -498,7 +499,7 @@ for (const departure of ['pagehide', 'external', 'non-html'] as const) {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => { release = resolve; });
     await page.clock.install();
-    await page.route('**/character-parts/foot_L.webp', async (route) => {
+    await page.route('**/assets/home/character-parts/foot_L.webp', async (route) => {
       await gate;
       await route.continue();
     });

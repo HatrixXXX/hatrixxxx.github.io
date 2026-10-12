@@ -8,11 +8,11 @@ import {
 describe('navigation configuration', () => {
   it('defines the requested primary and secondary navigation labels', () => {
     expect(PRIMARY_NAV_ITEMS.map((item) => item.label)).toEqual([
-      '首页', '博客文章', '作品橱窗', '关于我', '随笔', '收藏夹', '工具箱', '计划', '实验场', '友链', '留言板'
+      '首页', '博客文章', '作品橱窗', '关于我', '随笔', '收藏夹', '工具箱', '计划', '资讯', '友链', '留言板', '实验场'
     ]);
     expect(PRIMARY_NAV_ITEMS.map((item) => item.href)).toEqual([
       '/', '/blog/', '/projects/', '/about/', '/snippets/', '/about/bookmarks/', '/about/software/',
-      '/plans/', '/lab/', '/about/friends/', '/guestbook/'
+      '/plans/', '/digest/', '/about/friends/', '/guestbook/', '/lab/'
     ]);
     expect(PRIMARY_NAV_ITEMS.filter((item) => 'children' in item).map((item) => item.label))
       .toEqual([]);
@@ -49,6 +49,7 @@ describe('navigation configuration', () => {
     expect(HOME_LINKS.bookmarks.label).toBe('收藏夹');
     expect(HOME_LINKS.bookmarks.href).toBe('/about/bookmarks/');
     expect(HOME_LINKS.software.href).toBe('/about/software/');
+    expect(HOME_LINKS.digest).toEqual({ label: '资讯', href: '/digest/' });
     expect(ABOUT_SECTION_LINKS.find((item) => item.slug === 'software')).toMatchObject({
       label: '工具箱'
     });

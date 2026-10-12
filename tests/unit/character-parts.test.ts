@@ -12,8 +12,8 @@ describe('character part assets', () => {
   it.each(['count', 'dimensions'] as const)('preserves existing outputs when source %s validation fails', async (invalid) => {
     const fixture = await mkdtemp(resolve('.character-parts-test-'));
     try {
-      const sources = join(fixture, 'src/assets/home/character-parts-source');
-      const outputs = join(fixture, 'public/character-parts');
+      const sources = join(fixture, 'public/assets/home/character-parts-source');
+      const outputs = join(fixture, 'public/assets/home/character-parts');
       const manifest = join(fixture, manifestPath);
       await mkdir(sources, { recursive: true });
       await mkdir(outputs, { recursive: true });
@@ -47,11 +47,11 @@ describe('character part assets', () => {
 
     const { CHARACTER_CANVAS, CHARACTER_PARTS } = await import('../../src/data/character-parts');
     const parts = Object.values(CHARACTER_PARTS);
-    const publicFiles = readdirSync('public/character-parts');
+    const publicFiles = readdirSync('public/assets/home/character-parts');
     const webpFiles = publicFiles.filter((file) => file.endsWith('.webp'));
     const pngFiles = publicFiles.filter((file) => file.endsWith('.png'));
     const encodedBytes = webpFiles.reduce(
-      (total, file) => total + statSync(`public/character-parts/${file}`).size,
+      (total, file) => total + statSync(`public/assets/home/character-parts/${file}`).size,
       0,
     );
     const decodedBytes = parts.reduce((total, part) => total + part.width * part.height * 4, 0);

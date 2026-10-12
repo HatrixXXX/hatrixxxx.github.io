@@ -94,7 +94,21 @@ async function mockProtectedEndpoints(page: Page, options: EndpointOptions = {})
       body: JSON.stringify(envelope)
     });
   });
-  await page.route('https://giscus.app/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    const calls: string[] = [];
+    const global = window as typeof window & {
+      twikoo: { init: (options: { el: string; path: string }) => Promise<void> };
+      __twikooCalls: string[];
+    };
+    global.__twikooCalls = calls;
+    global.twikoo = {
+      init: async ({ el, path }) => {
+        calls.push(path);
+        document.querySelector(el)?.closest('[data-twikoo-comments]')?.setAttribute('data-mock-path', path);
+      }
+    };
+  });
+  await page.route('https://comments.hatrix.site/**', (route) => route.abort());
 }
 
 async function injectSecondProtectedGate(page: Page): Promise<void> {
@@ -350,6 +364,7 @@ test('a page transition during credential persistence revokes prepared Blob URLs
 test('session unlock restores assets and integrations across navigation and refresh', async ({ page }) => {
   await mockProtectedEndpoints(page, { manifestDelayMs: 250 });
   await page.goto(FIRST_PAGE);
+  await expect(page.locator('[data-twikoo-comments]')).toHaveCount(0);
   await submitKey(page, TEST_KEY);
 
   await expect(page.locator('[data-unlock-status]')).toHaveText('正在验证…');
@@ -364,7 +379,10 @@ test('session unlock restores assets and integrations across navigation and refr
     'location'
   );
   await expect(page.locator('.mermaid svg')).toHaveCount(1);
-  await expect(page.locator('[data-giscus-comments] script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-mock-path', FIRST_PAGE);
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __twikooCalls: string[] }
+  ).__twikooCalls.length)).toBe(1);
   await expect(page.getByRole('button', { name: '退出管理员身份' })).toBeVisible();
 
   const oldBlobUrl = await image.getAttribute('src');
@@ -389,7 +407,10 @@ test('session unlock restores assets and integrations across navigation and refr
     document.dispatchEvent(new CustomEvent('hatrix:protected-content-ready'));
   });
   await expect(page.locator('.mermaid svg')).toHaveCount(1);
-  await expect(page.locator('[data-giscus-comments] script[src="https://giscus.app/client.js"]')).toHaveCount(1);
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-mock-path', SECOND_PAGE);
+  await expect.poll(() => page.evaluate(() => (
+    window as typeof window & { __twikooCalls: string[] }
+  ).__twikooCalls.length)).toBe(1);
 
   await page.goto('/');
   await expect(page.locator('[data-protected-gate]')).toHaveCount(0);

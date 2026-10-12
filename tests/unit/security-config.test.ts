@@ -10,16 +10,15 @@ describe('browser security policy', () => {
       "object-src 'none'",
       // Astro ClientRouter emits data: module scripts during client navigation.
       // hash-wasm compiles Argon2 in the browser without enabling general eval().
-      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://giscus.app https://events.vercount.one",
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' data: https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js https://events.vercount.one",
       "script-src-attr 'none'",
-      // Giscus injects its default.css into the host page.
-      "style-src 'self' 'unsafe-inline' https://giscus.app",
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://cdn.jsdelivr.net https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://events.vercount.one",
+      "connect-src 'self' https://comments.hatrix.site https://events.vercount.one",
       // Current pages generate data: media loads.
       "media-src 'self' data: blob:",
-      'frame-src https://giscus.app',
+      "frame-src 'none'",
       "worker-src 'self' blob:",
       "manifest-src 'self'",
       "form-action 'self'"

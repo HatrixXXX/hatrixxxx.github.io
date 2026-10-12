@@ -12,7 +12,7 @@ const latest = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDa
   <h2>最新文章</h2>
   <div class="latest-list">
     {latest.map((post) => <a class="latest-item" href={postPath(post.data.legacySlug)}>
-      <Image src={post.data.cover || '/images/default-cover.svg'} alt="" width={320} height={180} loading="lazy" decoding="async" />
+      <Image src={post.data.cover || '/assets/images/default-cover.svg'} alt="" width={320} height={180} loading="lazy" decoding="async" />
       <span>{post.data.title}</span>
     </a>)}
   </div>

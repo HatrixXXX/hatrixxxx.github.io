@@ -1,0 +1,100 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import ProjectArtwork from '@/components/ProjectArtwork.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  index: number;
+  total: number;
+}
+
+const { project, index, total } = Astro.props;
+const { title, description, category, theme, experience, moment } = project.data;
+const gallery = project.data.gallery as { src: string; alt: string; caption?: string }[];
+const tech = project.data.tech as string[];
+const links = project.data.links as { label: string; url: string }[];
+const dossierId = `project-dossier-${project.id}`;
+const hasDescription = description !== '项目介绍待补充。';
+---
+
+<article class="project-card" data-project-card data-project-theme={theme}>
+  <button class="project-card-trigger" type="button" aria-haspopup="dialog" aria-controls={dossierId} data-open-project>
+    <span class="project-card-corner" aria-hidden="true"></span>
+    <span class="project-card-readline" aria-hidden="true"></span>
+    <span class="project-card-top">
+      <span class="project-card-index">{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
+      <span class="project-card-category">{category}</span>
+    </span>
+    <span class="project-card-visual"><ProjectArtwork theme={theme} /></span>
+    <span class="project-card-bottom">
+      <strong>{title}</strong>
+      <span>{hasDescription ? description : '项目资料待补充'}</span>
+    </span>
+    <span class="project-card-action">读取档案 <span aria-hidden="true">↗</span></span>
+  </button>
+
+  <dialog id={dossierId} class="project-dossier" aria-labelledby={`${dossierId}-title`} data-project-dialog>
+    <div class="project-dossier-shell">
+      <div class="project-dossier-head">
+        <span class="project-dossier-code">HATRIX / {String(index + 1).padStart(2, '0')}</span>
+        <button class="project-dossier-close" type="button" aria-label="关闭档案" data-close-project>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5 19 19M19 5 5 19" /></svg>
+        </button>
+      </div>
+      <div class="project-dossier-content">
+        <div class="project-dossier-media">
+          <div class="project-gallery" data-project-gallery>
+            <div class="project-gallery-track" data-gallery-track>
+              {gallery.length > 0 ? gallery.map((photo) => (
+                <figure class="project-gallery-slide">
+                  <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
+                  {photo.caption && <figcaption>{photo.caption}</figcaption>}
+                </figure>
+              )) : (
+                <div class="project-gallery-slide project-gallery-empty">
+                  <ProjectArtwork theme={theme} />
+                  <span>照片待补充</span>
+                </div>
+              )}
+            </div>
+            {gallery.length > 1 && (
+              <div class="project-gallery-controls">
+                <button type="button" aria-label="上一张照片" data-gallery-prev>←</button>
+                <span data-gallery-count>01 / {String(gallery.length).padStart(2, '0')}</span>
+                <button type="button" aria-label="下一张照片" data-gallery-next>→</button>
+              </div>
+            )}
+          </div>
+        </div>
+        <div class="project-dossier-info">
+          <span class="project-dossier-category">{category}</span>
+          <h2 id={`${dossierId}-title`}>{title}</h2>
+          <section>
+            <h3>项目介绍</h3>
+            <p>{description}</p>
+          </section>
+          <section>
+            <h3>制作经历</h3>
+            <p>{experience || '制作经历待补充。'}</p>
+          </section>
+          <section>
+            <h3>过程趣事</h3>
+            <p>{moment || '过程趣事待补充。'}</p>
+          </section>
+          {tech.length > 0 && (
+            <div class="project-dossier-tech" aria-label="相关技术">
+              {tech.map((item) => <span>{item}</span>)}
+            </div>
+          )}
+          {links.length > 0 && (
+            <div class="project-dossier-links">
+              {links.map((link) => (
+                <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </dialog>
+</article>

@@ -1,19 +1,97 @@
 ---
+import { getCollection, type CollectionEntry } from 'astro:content';
 import BackButton from '@/components/BackButton.astro';
 import EmptyState from '@/components/EmptyState.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { snippetPath, sortSnippets } from '@/lib/snippets';
+import '@/styles/snippets-timeline.css';
+
+const snippets = sortSnippets(await getCollection('snippets') as CollectionEntry<'snippets'>[]);
+const formatDate = (date: Date) =>
+  `${date.getUTCFullYear()}.${String(date.getUTCMonth() + 1).padStart(2, '0')}.${String(date.getUTCDate()).padStart(2, '0')}`;
 ---
 
-<BaseLayout title="随笔" bodyClass="nav-content-page plain-page">
+<BaseLayout title="随笔" description="Hatrix 的随笔，沿时间线从新近的记录读到最早的一篇。" bodyClass="snippets-page plain-page nav-content-page">
   <BackButton href="/" label="返回主页" />
-  <main class="snippets-main container">
-    <EmptyState title="暂时没有公开的随笔" />
+  <main class="snippets-main container" data-snippets-timeline aria-label="随笔">
+    <section class="snippets-chronicle" aria-label="随笔时间线">
+      <div class="chronicle-crown" aria-hidden="true">
+        <svg viewBox="0 0 176 126" fill="none" focusable="false">
+          <path d="M13 30h32l14-13h58l14 13h32l-27 17-14-8H54l-14 8-27-17Z" class="crown-shell" />
+          <path d="M41 30h94M60 17l-8 13m64-13 8 13M88 20v34" class="crown-seam" />
+          <path d="M67 47h42l-7 19-14 14-14-14-7-19Z" class="crown-core" />
+          <path d="m78 54 10 12 10-12M88 80v34" class="crown-gold" />
+          <path d="M16 52h24l20 25h12M160 52h-24l-20 25h-12M47 69h13M129 69h-13" class="crown-wire" />
+          <path d="M80 104h16l-8 10-8-10Z" class="crown-tip" />
+          <circle cx="88" cy="32" r="3" class="crown-light" />
+        </svg>
+      </div>
+
+      <div class="chronicle-body" data-timeline-body>
+        <div class="chronicle-conduit" aria-hidden="true">
+          <span class="conduit-groove"></span>
+          <span class="conduit-liquid" data-timeline-liquid></span>
+          <span class="conduit-bubbles">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </span>
+          <span class="conduit-head">
+            <svg class="liquid-wave liquid-wave-back" viewBox="0 0 80 14" preserveAspectRatio="none"><path d="M0 7Q5 1 10 7T20 7T30 7T40 7T50 7T60 7T70 7T80 7V14H0Z" /></svg>
+            <svg class="liquid-wave liquid-wave-front" viewBox="0 0 80 14" preserveAspectRatio="none"><path d="M0 7Q5 1 10 7T20 7T30 7T40 7T50 7T60 7T70 7T80 7V14H0Z" /></svg>
+          </span>
+        </div>
+
+        {snippets.length > 0 ? (
+          <ol class="chronicle-list">
+            {snippets.map((entry, index) => (
+              <li class:list={['chronicle-entry', index % 2 === 0 ? 'entry-left' : 'entry-right']} data-timeline-entry>
+                <span class="entry-branch" aria-hidden="true"></span>
+                <span class="entry-junction" aria-hidden="true"><span></span></span>
+                <div class="snippet-reveal">
+                <a class="snippet-card" href={snippetPath(entry.id)} aria-label={`${entry.data.title}，${formatDate(entry.data.date)}`}>
+                  <span class="snippet-card-art" aria-hidden="true">
+                    {entry.data.cover && <img src={entry.data.cover} alt="" loading="lazy" decoding="async" />}
+                    <span class="art-corner art-corner-top"></span>
+                    <span class="art-corner art-corner-bottom"></span>
+                  </span>
+                  <span class="snippet-card-content">
+                    <time datetime={entry.data.date.toISOString()}>{formatDate(entry.data.date)}</time>
+                    <strong>{entry.data.title}</strong>
+                    {entry.data.description && <span class="snippet-summary">{entry.data.description}</span>}
+                    <span class="snippet-read">阅读随笔 <svg viewBox="0 0 30 12" fill="none" aria-hidden="true"><path d="M1 6h26m-7-5 7 5-7 5" /></svg></span>
+                  </span>
+                </a>
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div class="chronicle-empty">
+            <span class="empty-junction" aria-hidden="true"></span>
+            <span class="empty-branch" aria-hidden="true"></span>
+            <EmptyState title="还没有随笔" description="第一篇写好后，会从这里沿时间线展开。" />
+          </div>
+        )}
+      </div>
+
+      <div class="chronicle-terminal" aria-hidden="true">
+        <svg viewBox="0 0 560 190" fill="none" focusable="false">
+          <path d="M280 3v36m-12-17h24M252 41l28 17 28-17M280 58v19" class="terminal-flow" />
+          <path d="M280 76c-13 17-27 24-50 22l-17 18-42-2-17 18h-50l-20 14H20M280 76c13 17 27 24 50 22l17 18 42-2 17 18h50l20 14h64" class="terminal-circuit" />
+          <path d="M280 82 306 99l-2 25-24 20-24-20-2-25 26-17Z" class="terminal-core" />
+          <path d="m280 94 14 10-2 15-12 11-12-11-2-15 14-10Z" class="terminal-inner" />
+          <path d="M280 144v28m-29-16 29 16 29-16m-62-18 33 34 33-34" class="terminal-flow" />
+          <path d="M17 146h105l19 12h52l25-20 17 18h12M543 146H438l-19 12h-52l-25-20-17 18h-12" class="terminal-circuit" />
+          <path d="M110 132h44m252 0h44M191 114h22m134 0h22" class="terminal-accent" />
+          <circle cx="280" cy="111" r="5" class="terminal-light" />
+          <circle cx="94" cy="146" r="4" class="terminal-light" />
+          <circle cx="466" cy="146" r="4" class="terminal-light" />
+          <path d="M221 174h118M258 184h44" class="terminal-accent" />
+        </svg>
+      </div>
+    </section>
   </main>
 </BaseLayout>
 
-<style>
-  .snippets-main {
-    max-width: 920px;
-    padding-block: clamp(2.5rem, 6vw, 5rem);
-  }
-</style>
+<script>
+  import '@/scripts/snippets-timeline';
+</script>

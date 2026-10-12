@@ -1,0 +1,52 @@
+---
+interface Props {
+  theme: 'render' | 'notes' | 'robot' | 'dream' | 'wall';
+}
+
+const { theme } = Astro.props;
+---
+
+<svg class:list={['project-artwork', `project-artwork--${theme}`]} viewBox="0 0 480 300" fill="none" aria-hidden="true" focusable="false">
+  <path class="art-grid" d="M0 250H480M0 200H480M0 150H480M0 100H480M0 50H480M80 0V300M160 0V300M240 0V300M320 0V300M400 0V300" />
+  <path class="art-frame" d="M22 64V22H100M380 22H458V64M458 236V278H380M100 278H22V236" />
+  {theme === 'render' && (
+    <g class="art-subject">
+      <path d="M132 200 240 248 357 193 246 143Z M132 200V102L246 54 357 105V193M132 102l114 41 111-38M246 143V54M246 143v105" />
+      <circle cx="166" cy="118" r="11" /><circle cx="210" cy="102" r="7" /><circle cx="286" cy="91" r="12" />
+      <circle cx="314" cy="143" r="8" /><circle cx="259" cy="185" r="9" /><circle cx="186" cy="173" r="7" />
+      <path class="art-detail" d="m166 118 44-16 76-11 28 52-55 42-73-12-20-55Z" />
+      <path class="art-signal" d="M72 216h40m-20-20v40M372 76h40m-20-20v40" />
+    </g>
+  )}
+  {theme === 'notes' && (
+    <g class="art-subject">
+      <path d="M87 73h151v169H87zM243 91h150v150H243zM105 96h83M105 119h105M105 142h72M105 185h91M105 208h59" />
+      <path class="art-detail" d="M263 114h96M263 138h80M263 162h101M263 205h69M238 127h25M209 174h54" />
+      <circle cx="216" cy="126" r="6" /><circle cx="209" cy="174" r="6" /><circle cx="263" cy="174" r="6" />
+      <path class="art-signal" d="M316 67V45h67M76 226H54v33" />
+    </g>
+  )}
+  {theme === 'robot' && (
+    <g class="art-subject">
+      <path d="m139 103 101-43 101 43 22 94-35 36H152l-35-36zM139 103l31 57h140l31-57M170 160l-18 73M310 160l18 73M206 160l-12 73M274 160l12 73" />
+      <path class="art-detail" d="M180 101h120l-21 36h-78zM203 187h74M218 203h44M240 60V34m-14 0h28" />
+      <circle cx="240" cy="114" r="15" /><circle cx="240" cy="114" r="5" />
+      <path class="art-signal" d="M91 150H54m37-18v36M389 150h37m-37-18v36" />
+    </g>
+  )}
+  {theme === 'dream' && (
+    <g class="art-subject">
+      <circle cx="240" cy="150" r="82" /><circle cx="240" cy="150" r="54" />
+      <path d="m80 189 115-30 45-81 45 81 115 30-113 11-47 55-47-55z" />
+      <path class="art-detail" d="m146 147 67 15 27-84 27 84 67-15M195 159l45 96 45-96" />
+      <path class="art-signal" d="M68 231h88M324 231h88M240 31V17" />
+    </g>
+  )}
+  {theme === 'wall' && (
+    <g class="art-subject">
+      <path d="M62 67h356v173H62zM62 122h356M62 182h356M150 67v173M250 67v173M335 67v173" />
+      <path class="art-detail" d="m85 92 33-17 16 18-30 17zM175 81h53v27h-53zM270 79h43v29h-43zM351 81h49v27h-49zM82 143h48v25H82zM172 143h60v24h-60zM272 140l27 15-27 14zM352 144h47v23h-47zM83 202h48v24H83zM173 202h60v24h-60zM271 202h47v24h-47zM354 201h45v25h-45z" />
+      <path class="art-signal" d="M45 55V40h43M436 252v15h-43" />
+    </g>
+  )}
+</svg>
