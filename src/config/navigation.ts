@@ -25,15 +25,15 @@ export const HOME_LINKS = {
 } as const;
 
 export const PRIMARY_NAV_ITEMS = [
-  { label: '首页', href: '/' },
-  HOME_LINKS.blog,
-  HOME_LINKS.projects,
-  HOME_LINKS.about,
-  HOME_LINKS.bookmarks,
-  HOME_LINKS.software,
-  HOME_LINKS.gear,
-  HOME_LINKS.plans,
-  HOME_LINKS.lab,
-  HOME_LINKS.friends,
-  HOME_LINKS.guestbook
+  { label: '首页', href: '/', icon: 'home' },
+  { ...HOME_LINKS.blog, icon: 'blog' },
+  { ...HOME_LINKS.projects, icon: 'projects' },
+  { ...HOME_LINKS.about, icon: 'about' },
+  { ...HOME_LINKS.bookmarks, icon: 'bookmark' },
+  { ...HOME_LINKS.software, icon: 'software' },
+  { ...HOME_LINKS.gear, icon: 'gear' },
+  { ...HOME_LINKS.plans, icon: 'plans' },
+  { ...HOME_LINKS.lab, icon: 'lab' },
+  { ...HOME_LINKS.friends, icon: 'friends' },
+  { ...HOME_LINKS.guestbook, icon: 'guestbook' }
 ] as const;

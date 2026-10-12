@@ -1,12 +1,17 @@
 ---
 import { REFERENCE_ICON_PATHS } from '@/data/home-reference-icon-paths';
 
-type IconName = 'search' | 'blog' | 'projects' | 'about' | 'bookmark' | 'software' | 'gear' | 'plans' | 'lab' | 'friends' | 'guestbook';
+type IconName = 'search' | 'home' | 'blog' | 'projects' | 'about' | 'bookmark' | 'software' | 'gear' | 'plans' | 'lab' | 'friends' | 'guestbook';
 interface Props { name: IconName }
 const { name } = Astro.props;
 
 // Every card sign uses a 64px grid, a cut-metal silhouette, and a few readable inlays.
 const symbols = {
+  home: {
+    body: 'M32 5 58 28v31H6V28L32 5Zm0 7L11 31v23h13V36h16v18h13V31L32 12Zm-3 42h6V41h-6v13Z',
+    fill: 'M29 41h6v13h-6zM5 29l27-24 27 24-3 3L32 11 8 32l-3-3Z',
+    lines: 'M18 47h5M41 47h5'
+  },
   blog: {
     body: 'M12 7h31l10 10v40H12V7Zm5 5v40h31V20h-8v-8H17ZM6 14h4v44h34v4H6V14Z',
     fill: 'M43 7v10h10ZM22 22h18v3H22zM22 29h22v3H22z',

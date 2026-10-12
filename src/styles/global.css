@@ -12,10 +12,6 @@ html {
   -ms-overflow-style: none;
 }
 
-html[data-theme='light'] {
-  color-scheme: light;
-}
-
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
@@ -215,35 +211,6 @@ body.blog-page {
 body.blog-page > main.blog-main {
   height: 100dvh;
   padding-top: var(--blog-header-height);
-}
-
-html[data-theme='light'] body[style*="--page-bg-image"]::before {
-  background: linear-gradient(90deg, rgb(240 236 228 / 45%), rgb(240 236 228 / 58%) 45%, rgb(240 236 228 / 50%));
-}
-
-html[data-theme='light'] body.guestbook-page {
-  --color-bg: #17151d;
-  --color-surface: #211e29;
-  --color-surface-raised: #2c2735;
-  --color-inset: #19161f;
-  --color-text: #e9e4dc;
-  --color-heading: #f5f0e8;
-  --color-muted: #b9b0c2;
-  --color-accent: #f3bb62;
-  --color-accent-strong: #ffd28c;
-  --color-accent-soft: rgb(243 187 98 / 10%);
-  --color-on-accent: #241c13;
-  --color-link: #84d4c6;
-  --color-copper: #b58c65;
-  --color-line: rgb(190 174 204 / 18%);
-  --color-line-strong: #655770;
-  --surface-sheen: linear-gradient(155deg, rgb(245 224 193 / 4%), transparent 48%);
-  --shadow-panel: 0 6px 18px rgb(10 8 14 / 18%);
-  --shadow-inset: inset 0 1px 0 rgb(248 231 207 / 5%), inset 0 -1px 0 rgb(0 0 0 / 15%);
-}
-
-html[data-theme='light'] body.guestbook-page[style*="--page-bg-image"]::before {
-  background: linear-gradient(90deg, rgb(23 21 29 / 30%), rgb(23 21 29 / 48%) 45%, rgb(23 21 29 / 38%));
 }
 
 

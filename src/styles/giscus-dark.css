@@ -31,7 +31,7 @@ main {
   --color-prettylights-syntax-carriage-return-bg: #b62324;
   --color-prettylights-syntax-string-regexp: #7ee787;
   --color-prettylights-syntax-markup-list: #f2cc60;
-  --color-prettylights-syntax-markup-heading: #266f69;
+  --color-prettylights-syntax-markup-heading: #00737a;
   --color-prettylights-syntax-markup-italic: #c9d1d9;
   --color-prettylights-syntax-markup-bold: #c9d1d9;
   --color-prettylights-syntax-markup-deleted-text: #ffdcd7;
@@ -57,18 +57,18 @@ main {
   --color-btn-active-border: #7b6a84;
   --color-btn-selected-bg: rgb(44 39 53 / 78%);
   --color-btn-primary-text: #241c13;
-  --color-btn-primary-bg: #f3bb62;
+  --color-btn-primary-bg: #ffd200;
   --color-btn-primary-border: rgb(240 246 252 / 10%);
   --color-btn-primary-shadow: 0 0 transparent;
   --color-btn-primary-inset-shadow: 0 0 transparent;
-  --color-btn-primary-hover-bg: #ffd28c;
+  --color-btn-primary-hover-bg: #ffe360;
   --color-btn-primary-hover-border: rgb(240 246 252 / 10%);
   --color-btn-primary-selected-bg: #e9aa4a;
   --color-btn-primary-selected-shadow: 0 0 transparent;
   --color-btn-primary-disabled-text: #241c13;
-  --color-btn-primary-disabled-bg: rgb(243 187 98 / 35%);
+  --color-btn-primary-disabled-bg: rgb(255 210 0 / 35%);
   --color-btn-primary-disabled-border: rgb(240 246 252 / 10%);
-  --color-action-list-item-default-hover-bg: rgb(132 212 198 / 10%);
+  --color-action-list-item-default-hover-bg: rgb(0 221 235 / 10%);
   --color-segmented-control-bg: rgb(17 14 22 / 28%);
   --color-segmented-control-button-bg: transparent;
   --color-segmented-control-button-selected-border: #636e7b;
@@ -83,10 +83,10 @@ main {
   --color-border-muted: rgb(216 195 225 / 14%);
   --color-neutral-muted: rgb(110 118 129 / 20%);
   --color-neutral-subtle: rgb(110 118 129 / 10%);
-  --color-accent-fg: #84d4c6;
-  --color-accent-emphasis: #266f69;
-  --color-accent-muted: rgb(132 212 198 / 35%);
-  --color-accent-subtle: rgb(132 212 198 / 10%);
+  --color-accent-fg: #00ddeb;
+  --color-accent-emphasis: #00737a;
+  --color-accent-muted: rgb(0 221 235 / 35%);
+  --color-accent-subtle: rgb(0 221 235 / 10%);
   --color-success-fg: #3fb950;
   --color-attention-fg: #c69026;
   --color-attention-muted: rgb(174 124 20 / 40%);
@@ -131,8 +131,8 @@ main {
 
 .gsc-comment-box-textarea:focus,
 .gsc-reply-box button:focus-visible {
-  border-color: #f3bb62 !important;
-  box-shadow: 0 0 0 2px rgb(243 187 98 / 20%) !important;
+  border-color: #ffd200 !important;
+  box-shadow: 0 0 0 2px rgb(255 210 0 / 20%) !important;
 }
 
 .gsc-comment-header,
@@ -141,7 +141,7 @@ main {
 }
 
 .gsc-comment-author-avatar img {
-  border: 1px solid rgb(243 187 98 / 24%);
+  border: 1px solid rgb(255 210 0 / 24%);
 }
 
 .gsc-social-reaction-summary-item,

@@ -37,8 +37,6 @@
     background: #17151d;
     opacity: 1;
   }
-  :root[data-theme='light'] #page-loader.pl-visible,
-  :root[data-theme='light'][data-initial-page-loader='visible'] #page-loader { background: #f0ece4; }
 
   /* 淡出态 */
   #page-loader.pl-visible.pl-done {
@@ -65,42 +63,32 @@
 
   #page-loader .pl-track {
     fill: none;
-    stroke: #f3bb6218;
+    stroke: #ffd20018;
     stroke-width: 8;
   }
-  :root[data-theme='light'] #page-loader .pl-track { stroke: #75522618; }
 
   #page-loader .pl-arc {
     fill: none;
     stroke-linecap: round;
   }
   #page-loader .pl-arc--halo {
-    stroke: #f3bb6266;
+    stroke: #ffd20066;
     stroke-width: 20;
     filter: blur(8px);
     opacity: 0.7;
   }
-  :root[data-theme='light'] #page-loader .pl-arc--halo { stroke: #75522666; }
 
   #page-loader .pl-arc--tube {
-    stroke: #f3bb62;
+    stroke: #ffd200;
     stroke-width: 10;
-    filter: blur(2px) drop-shadow(0 0 6px #f3bb62bb) drop-shadow(0 0 14px #f3bb6244);
+    filter: blur(2px) drop-shadow(0 0 6px #ffd200bb) drop-shadow(0 0 14px #ffd20044);
     opacity: 0.88;
-  }
-  :root[data-theme='light'] #page-loader .pl-arc--tube {
-    stroke: #755226;
-    filter: blur(2px) drop-shadow(0 0 6px #755226bb) drop-shadow(0 0 14px #75522644);
   }
 
   #page-loader .pl-arc--body {
-    stroke: #f3bb62;
+    stroke: #ffd200;
     stroke-width: 7;
-    filter: drop-shadow(0 0 3px #f3bb62cc) drop-shadow(0 0 8px #f3bb6244);
-  }
-  :root[data-theme='light'] #page-loader .pl-arc--body {
-    stroke: #755226;
-    filter: drop-shadow(0 0 3px #755226cc) drop-shadow(0 0 8px #75522644);
+    filter: drop-shadow(0 0 3px #ffd200cc) drop-shadow(0 0 8px #ffd20044);
   }
 
   /* 百分比，绝对居中 */
@@ -113,10 +101,9 @@
     font-family: 'IBM Plex Mono', monospace;
     font-variant-numeric: tabular-nums;
     color: #f5f0e8;
-    filter: drop-shadow(0 0 6px #f3bb6266);
+    filter: drop-shadow(0 0 6px #ffd20066);
     pointer-events: none;
   }
-  :root[data-theme='light'] #page-loader .pl-pct { color: #322d38; filter: drop-shadow(0 0 6px #75522666); }
 
   #page-loader .pl-pct-num {
     font-size: clamp(22px, 5vw, 30px);
@@ -142,15 +129,15 @@
   }
   #page-loader .pl-text--halo {
     color: transparent;
-    -webkit-text-stroke: 5px #f3bb6255;
-    filter: blur(7px) drop-shadow(0 0 18px #f3bb6244);
+    -webkit-text-stroke: 5px #ffd20055;
+    filter: blur(7px) drop-shadow(0 0 18px #ffd20044);
     opacity: 0.85;
     animation-delay: 0s;
   }
   #page-loader .pl-text--tube {
-    color: #f3bb62;
-    -webkit-text-stroke: 1px #f3bb6299;
-    filter: blur(0.3px) drop-shadow(0 0 8px #f3bb6294);
+    color: #ffd200;
+    -webkit-text-stroke: 1px #ffd20099;
+    filter: blur(0.3px) drop-shadow(0 0 8px #ffd20094);
     animation-delay: -0.35s;
   }
   #page-loader .pl-text--core {
@@ -158,18 +145,6 @@
     filter: drop-shadow(0 0 3px #f5f0e86a);
     animation-delay: -0.6s;
   }
-
-  :root[data-theme='light'] #page-loader .pl-text--halo {
-    color: transparent;
-    -webkit-text-stroke-color: #75522655;
-    filter: blur(7px) drop-shadow(0 0 18px #75522444);
-  }
-  :root[data-theme='light'] #page-loader .pl-text--tube {
-    color: #755226;
-    -webkit-text-stroke-color: #75522699;
-    filter: blur(0.3px) drop-shadow(0 0 8px #75522694);
-  }
-  :root[data-theme='light'] #page-loader .pl-text--core { color: #322d38; }
 
   @keyframes pl-pulse {
     0%, 100% { opacity: 0.88; }

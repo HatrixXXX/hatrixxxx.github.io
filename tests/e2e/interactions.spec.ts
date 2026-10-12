@@ -110,221 +110,89 @@ test('post pages locate and temporarily highlight the searched paragraph', async
   await expect(hit).toHaveCSS('box-shadow', /inset/);
 });
 
-test('stored theme is applied and one click toggles it after client navigation', async ({ page }) => {
+test('saved light preference no longer changes the site after client navigation', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.goto('/projects/');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+  expect(await page.locator('html').getAttribute('data-theme')).toBeNull();
 
-  await page.getByRole('link', { name: '博客文章', exact: true }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByRole('button', { name: '切换主题' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
+  await page.locator('.desktop-nav a[href="/blog/"]').click();
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('light');
 });
 
-test('theme transition runs once and persists the destination theme', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+test('cat animation alternates night to day and day to night without changing the page colors', async ({ page }) => {
   await page.goto('/projects/');
+  const overlay = page.locator('[data-cat-animation]');
+  const button = page.locator('[data-cat-animation-trigger]');
+  const cat = overlay.locator('.cat-animation__cat');
+  const background = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
 
-  const overlay = page.locator('[data-theme-transition]');
-  const toggle = page.getByRole('button', { name: '切换主题' });
-  const cat = overlay.locator('.theme-transition__cat');
   await expect(overlay).toBeHidden();
-  await expect(cat.locator('.theme-transition__ear')).toHaveCount(0);
-  await expect(cat.locator('.theme-transition__whiskers')).toHaveCount(0);
-
-  const dayCat = await cat.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      width: style.width,
-      background: style.backgroundColor,
-      borderRadius: style.borderRadius,
-      boxShadow: style.boxShadow,
-      clipPath: style.clipPath
-    };
-  });
-  expect(dayCat).toMatchObject({
-    width: '108px',
-    background: 'rgb(112, 101, 117)',
-    borderRadius: '0px',
-    boxShadow: 'none'
-  });
-  expect(dayCat.clipPath).toContain('polygon');
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(
-    await cat.evaluate((element) => {
-      const style = getComputedStyle(element);
-      return { width: style.width, height: style.height };
-    })
-  ).toEqual({ width: '92px', height: '118px' });
-
-  await page.setViewportSize({ width: 3840, height: 1907 });
-  expect(parseFloat(await cat.evaluate((element) => getComputedStyle(element).width))).toBeCloseTo(
-    204,
-    0
-  );
-  await page.setViewportSize({ width: 1440, height: 900 });
-
-  const dayEye = await cat.locator('.theme-transition__eye').first().evaluate((element) => {
-    const style = getComputedStyle(element);
-    return { width: style.width, background: style.backgroundColor };
-  });
-  const dayPupil = await cat.locator('.theme-transition__pupil').first().evaluate((element) => {
-    const style = getComputedStyle(element);
-    return { width: style.width, height: style.height, background: style.backgroundColor };
-  });
-  expect(dayEye).toEqual({ width: '32px', background: 'rgb(243, 187, 98)' });
-  expect(dayPupil).toEqual({
-    width: '4px',
-    height: '30px',
-    background: 'rgb(33, 30, 41)'
-  });
-
-  await toggle.click();
+  await button.click();
   await expect(overlay).toBeVisible();
-  await expect(overlay).toHaveAttribute('data-from-theme', 'light');
-  await expect(overlay).toHaveAttribute('data-to-theme', 'dark');
-  await expect(toggle).toBeDisabled();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(button).toBeDisabled();
+  await expect(overlay).toHaveCSS('background-image', /linear-gradient/);
+  await expect(overlay.locator('.cat-animation__orbit')).toHaveCSS('animation-name', 'cat-animation-celestial-track');
+  await expect(cat).toHaveCSS('animation-name', 'cat-animation-cat-rise');
+  await expect(overlay).toHaveAttribute('data-from-sky', 'night');
+  await expect(overlay).toHaveAttribute('data-to-sky', 'day');
+  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('animation-name', 'cat-animation-night-out');
+  await expect(overlay.locator('.cat-animation__stars')).toHaveCSS('animation-name', 'cat-animation-stars-out');
+  await expect(cat.locator('.cat-animation__pupil').first()).toHaveCSS('animation-name', 'cat-animation-pupil-close');
+  await expect(overlay).toHaveAttribute('data-visible-sky', 'day');
+  await expect(overlay.locator('.cat-animation__sun')).toHaveCSS('opacity', '1');
+  await expect(overlay.locator('.cat-animation__moon')).toHaveCSS('opacity', '0');
+  await expect(page.locator('body')).toHaveCSS('background-color', background);
+  expect(await page.locator('html').getAttribute('data-theme')).toBeNull();
 
-  const celestial = await overlay.locator('.theme-transition__orbit').evaluate((element) => {
-    const animation = element.getAnimations()[0];
-    const effect = animation?.effect;
-    if (!(effect instanceof KeyframeEffect)) return null;
-    animation.pause();
-    animation.currentTime = 2_000;
-    const activeBody = element.querySelector<HTMLElement>(
-      element.closest('[data-to-theme="dark"]')
-        ? '.theme-transition__moon'
-        : '.theme-transition__sun'
-    );
-    if (!activeBody) return null;
-    const finalPosition = activeBody.getBoundingClientRect();
-    animation.currentTime = 2_900;
-    const holdPosition = activeBody.getBoundingClientRect();
-    return {
-      duration: Number(effect.getTiming().duration),
-      easing: getComputedStyle(element).animationTimingFunction,
-      frames: effect.getKeyframes().map((frame) => ({
-        offset: frame.offset,
-        transform: String(frame.transform)
-      })),
-      finalPosition: { left: finalPosition.left, top: finalPosition.top },
-      holdPosition: { left: holdPosition.left, top: holdPosition.top }
-    };
-  });
-  expect(celestial).not.toBeNull();
-  if (!celestial) throw new Error('celestial animation is missing');
-  expect(celestial.duration).toBe(2_000);
-  expect(celestial.easing).toBe('cubic-bezier(0.7, 0, 0, 1)');
-  expect(celestial.frames.map(({ transform }) => transform)).toEqual(['rotate(0deg)', 'rotate(360deg)']);
-  expect(celestial.finalPosition.left).toBeCloseTo(0.6 * 1_440);
-  expect(celestial.finalPosition.top).toBeCloseTo(0.14 * 900);
-  expect(celestial.holdPosition).toEqual(celestial.finalPosition);
-
-  const nightPupilFrames = await cat.locator('.theme-transition__pupil').first().evaluate((element) => {
-    const effect = element.getAnimations()[0]?.effect;
-    if (!(effect instanceof KeyframeEffect)) return [];
-    return effect.getKeyframes().map((frame) => ({
-      width: String(frame.width),
-      height: String(frame.height)
-    }));
-  });
-  expect(nightPupilFrames.at(-1)).toEqual({ width: '27px', height: '27px' });
-  await expect.poll(() => cat.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
-    'rgb(50, 45, 56)'
-  );
-
-  await toggle.dispatchEvent('click');
-  await expect(overlay).toHaveAttribute('data-to-theme', 'dark');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-
-  await expect(overlay).toBeHidden({ timeout: 4_000 });
-  await expect(toggle).toBeEnabled();
-  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
+  await expect(overlay).toBeHidden({ timeout: 5_000 });
+  await expect(button).toBeEnabled();
+  await button.click();
+  await expect(overlay).toBeVisible();
+  await expect(overlay).toHaveAttribute('data-from-sky', 'day');
+  await expect(overlay).toHaveAttribute('data-to-sky', 'night');
+  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('animation-name', 'cat-animation-night-in');
+  await expect(overlay.locator('.cat-animation__stars')).toHaveCSS('animation-name', 'cat-animation-stars-in');
+  await expect(cat.locator('.cat-animation__pupil').first()).toHaveCSS('animation-name', 'cat-animation-pupil-open');
+  await expect(overlay).toHaveAttribute('data-visible-sky', 'night');
+  await expect(overlay.locator('.cat-animation__sun')).toHaveCSS('opacity', '0');
+  await expect(overlay.locator('.cat-animation__moon')).toHaveCSS('opacity', '1');
+  await expect(page.locator('body')).toHaveCSS('background-color', background);
+  await expect(overlay).toBeHidden({ timeout: 5_000 });
 });
 
-test('theme transition matches the reference lifecycle timing', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
-  await page.clock.install();
+test('cat animation ends when client navigation replaces the page', async ({ page }) => {
   await page.goto('/projects/');
-  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1_000);
+  await page.locator('[data-cat-animation-trigger]').click();
+  await expect(page.locator('[data-cat-animation]')).toBeVisible();
 
-  const overlay = page.locator('[data-theme-transition]');
-  const toggle = page.getByRole('button', { name: '切换主题' });
-  const sun = overlay.locator('.theme-transition__sun');
-  const moon = overlay.locator('.theme-transition__moon');
-  const celestialOpacity = async () => ({
-    sun: await sun.evaluate((element) => getComputedStyle(element).opacity),
-    moon: await moon.evaluate((element) => getComputedStyle(element).opacity)
-  });
-  expect({
-    sun: await sun.evaluate((element) => getComputedStyle(element).width),
-    moon: await moon.evaluate((element) => getComputedStyle(element).width)
-  }).toEqual({ sun: '40px', moon: '24px' });
-  await toggle.click();
-
-  await page.clock.fastForward(409);
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  expect(await celestialOpacity()).toEqual({ sun: '1', moon: '0' });
-  await page.clock.fastForward(1);
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  expect(await celestialOpacity()).toEqual({ sun: '0', moon: '1' });
-  await page.clock.fastForward(2_499);
-  await expect(overlay).not.toHaveClass(/is-leaving/);
-  await page.clock.fastForward(1);
-  await expect(overlay).toHaveClass(/is-leaving/);
-  await page.clock.fastForward(199);
-  await expect(overlay).toBeVisible();
-  await page.clock.fastForward(1);
-  await expect(overlay).toBeHidden();
-  await expect(toggle).toBeEnabled();
-
-  await toggle.click();
-  await page.clock.fastForward(409);
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  expect(await celestialOpacity()).toEqual({ sun: '0', moon: '1' });
-  await page.clock.fastForward(1);
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  expect(await celestialOpacity()).toEqual({ sun: '1', moon: '0' });
-  await page.clock.fastForward(2_499);
-  await expect(overlay).not.toHaveClass(/is-leaving/);
-  await page.clock.fastForward(1);
-  await expect(overlay).toHaveClass(/is-leaving/);
-  await page.clock.fastForward(199);
-  await expect(overlay).toBeVisible();
-  await page.clock.fastForward(1);
-  await expect(overlay).toBeHidden();
-  await expect(toggle).toBeEnabled();
-});
-
-test('pending destination survives immediate client navigation', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
-  await page.goto('/projects/');
-
-  await page.getByRole('button', { name: '切换主题' }).click();
-  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
-
-  await page.getByRole('link', { name: '博客文章', exact: true }).dispatchEvent('click');
+  await page.locator('.desktop-nav a[href="/blog/"]').dispatchEvent('click');
   await expect(page).toHaveURL(/\/blog\/$/);
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('[data-theme-transition]')).toBeHidden();
-  await expect(page.getByRole('button', { name: '切换主题' })).toBeEnabled();
+  await expect(page.locator('[data-cat-animation]')).toBeHidden();
+  await expect(page.locator('[data-cat-animation-trigger]')).toBeEnabled();
 });
 
-test('reduced motion switches theme without showing the transition overlay', async ({ page }) => {
+test('reduced motion shows each target sky without moving the cat', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.goto('/projects/');
+  const overlay = page.locator('[data-cat-animation]');
+  const cat = overlay.locator('.cat-animation__cat');
 
-  const overlay = page.locator('[data-theme-transition]');
-  await expect(overlay).toHaveCount(1);
-  await page.getByRole('button', { name: '切换主题' }).click();
+  await page.locator('[data-cat-animation-trigger]').click();
+  await expect(overlay).toBeVisible();
+  await expect(overlay).toHaveAttribute('data-visible-sky', 'day');
+  await expect(overlay.locator('.cat-animation__sun')).toHaveCSS('opacity', '1');
+  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('opacity', '0');
+  await expect(cat).toHaveCSS('animation-name', 'none');
+  await expect(cat).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -54, 0)');
+  await expect(overlay).toBeHidden({ timeout: 2_000 });
 
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(overlay).toBeHidden();
-  expect(await page.evaluate(() => localStorage.getItem('hatrix-theme'))).toBe('dark');
+  await page.locator('[data-cat-animation-trigger]').click();
+  await expect(overlay).toHaveAttribute('data-visible-sky', 'night');
+  await expect(overlay.locator('.cat-animation__moon')).toHaveCSS('opacity', '1');
+  await expect(overlay.locator('.cat-animation__night')).toHaveCSS('opacity', '1');
+  await expect(overlay).toBeHidden({ timeout: 2_000 });
 });
 
 test('mobile menu toggles once and closes on Escape and navigation', async ({ page }) => {

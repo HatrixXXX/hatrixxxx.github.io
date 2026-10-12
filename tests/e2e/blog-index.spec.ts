@@ -170,13 +170,12 @@ test('reduced motion switches coverflow cards without a lingering animation', as
   await expect(activeCard.locator('h2')).toHaveText('Infra-微积分');
 });
 
-test('post headings remain readable in the light theme', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+test('post headings remain readable in the dark theme', async ({ page }) => {
   await page.goto('/blog/');
 
   await expect(page.locator('article[data-post-card] h2').first()).toHaveCSS(
     'color',
-    'rgb(50, 45, 56)'
+    'rgb(245, 240, 232)'
   );
 });
 

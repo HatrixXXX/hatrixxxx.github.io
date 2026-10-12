@@ -95,7 +95,6 @@ test('primary content surfaces align with the project cabinet below desktop navi
 });
 
 test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.route('https://giscus.app/**', (route) => route.abort());
   const response = await page.goto('/guestbook/');
 
@@ -117,7 +116,6 @@ test('guestbook uses pathname-mapped Giscus comments', async ({ page }) => {
   const comments = page.locator('[data-giscus-comments]');
   await expect(comments).toHaveAccessibleName('评论');
   await expect(comments).toHaveAttribute('data-giscus-mapping', 'pathname');
-  await expect(comments).toHaveAttribute('data-giscus-theme-mode', 'dark');
   const overlay = await page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
   expect(overlay).toContain('rgba(23, 21, 29');
   await expect(page.getByRole('link', { name: '首页', exact: true })).toHaveCSS('color', 'rgb(233, 228, 220)');
@@ -227,15 +225,14 @@ test('about sidebar exposes the requested profile and social links without stati
   await expect(page.locator('[data-site-stats]')).toHaveCount(0);
 });
 
-test('contextual sidebar cards remain readable in the light theme', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
+test('contextual sidebar cards remain readable in the dark theme', async ({ page }) => {
   await page.goto('/about/');
 
-  await expect(page.locator('.about-main article > h1')).toHaveCSS('color', 'rgb(50, 45, 56)');
+  await expect(page.locator('.about-main article > h1')).toHaveCSS('color', 'rgb(245, 240, 232)');
   await expect(page.locator('[data-profile-card]')).toHaveCount(0);
   await page.goto('/about/hobbies/');
-  await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(50, 45, 56)');
-  await expect(page.locator('[data-profile-card]').getByText('轻松即单纯，速成即精准')).toHaveCSS('color', 'rgb(101, 90, 107)');
+  await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(245, 240, 232)');
+  await expect(page.locator('[data-profile-card]').getByText('轻松即单纯，速成即精准')).toHaveCSS('color', 'rgb(185, 176, 194)');
   await expect(page.locator('[data-site-stats]')).toHaveCount(0);
 });
 

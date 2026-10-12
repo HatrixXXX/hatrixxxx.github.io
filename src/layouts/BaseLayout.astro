@@ -7,7 +7,7 @@ import SiteHeader from '@/components/SiteHeader.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
 import SearchOverlay from '@/components/SearchOverlay.astro';
 import PageLoader from '@/components/PageLoader.astro';
-import ThemeTransition from '@/components/ThemeTransition.astro';
+import CatAnimation from '@/components/ThemeTransition.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
 import CursorTrail from '@/components/CursorTrail.astro';
 import { isConfiguredLockedPage } from '@/config/protected-content';
@@ -74,7 +74,7 @@ const showSakanaCharacters = isAboutPage;
 ---
 
 <!doctype html>
-<html lang="zh-CN" data-theme="dark" data-page-kind={isHome ? 'home' : undefined}>
+<html lang="zh-CN" data-page-kind={isHome ? 'home' : undefined}>
   <head>
     {
       import.meta.env.PROD && (
@@ -82,15 +82,6 @@ const showSakanaCharacters = isAboutPage;
       )
     }
     <meta name="referrer" content={REFERRER_POLICY} />
-    <script is:inline>
-      (() => {
-        const stored = localStorage.getItem('hatrix-theme');
-        const theme = stored === 'light' || stored === 'dark'
-          ? stored
-          : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-        document.documentElement.dataset.theme = theme;
-      })();
-    </script>
     <script is:inline>
       (() => {
         const root = document.documentElement;
@@ -146,7 +137,7 @@ const showSakanaCharacters = isAboutPage;
     </ProtectedContent>
     {showFooter && <SiteFooter stats={footerStats} />}
     {!isHome && showSakanaCharacters && <SakanaCharacters />}
-    <ThemeTransition />
+    <CatAnimation />
     {isLabPage && <CursorTrail />}
     <SearchOverlay />
     {!isHome && <MusicPlayer mode="dock" />}

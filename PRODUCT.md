@@ -30,7 +30,7 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 - 加锁文章公开 metadata、Hero 和封面；正文与正文图片必须输出密文。密钥和私有正文不能进入公开源码、文档或构建日志。
 - 作品、歌单、计划和实验场允许为空。空状态如实说明，没有演示项目、虚构歌曲或补出的统计。
 - 音乐播放器全站只有一个实例，跨客户端导航保留 DOM 和 Audio。声音由读者主动开启。
-- 主题选择沿用 `hatrix-theme`，并同步 Giscus。搜索、评论、主题切换和播放器保留各自已实现的行为。
+- 全站固定使用深色配色。页头猫咪按钮播放昼夜动画；搜索、评论和播放器保留各自已实现的行为。
 - 部署、推送和远端设置变更需要用户明确要求。日常实现完成后保留本地预览。
 
 ## Brand Commitments
@@ -46,8 +46,8 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 - 项目边界、路由与协作规则：`AGENTS.md`。
 - 已发布文章：`.private-content/posts/`，位于独立私有仓库。这里只记录位置，不摘录私有正文或图片。
 - 作品与歌单数据：`src/content/projects/`、`src/data/playlist.ts`。
-- 已选定素材：`src/assets/home/hatrix-character-v5.png`、`src/assets/home/liupin-workshop-v5.png`。
-- 世界设定来源：`E:/WorkFlow/Project/blog_idea/留频街-世界观与主题设计指南.md`。这是本机参考文档，不是公开站点资源。
+- 已选定素材：`src/assets/home/hatrix-character-v5.png`、`src/assets/home/liupin-workshop-v6.png`。
+- 世界设定参考：`docs/design-references/homepage/留频街-世界观与主题设计指南.md`。该文件只作设计参考，不进入网页运行时资源。
 - 本轮实施依据：`docs/superpowers/specs/2026-09-25-liupin-visual-system-design.md` 与对应实现计划。
 
 ## Product Principles
@@ -59,6 +59,6 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 
 ## Accessibility & Inclusion
 
-核心操作支持键盘与可见焦点。颜色之外保留文字、图标或状态语义。首页金句每 6 秒按随机轮次自动切换，每轮完整播放全部语录，不提供手动切换或暂停控制。减少动态效果时直接呈现最终状态；首页金句仍每 6 秒换字，只取消切换动画，主题切换不显示过渡层。
+核心操作支持键盘与可见焦点。颜色之外保留文字、图标或状态语义。首页金句每 6 秒按随机轮次自动切换，每轮完整播放全部语录，不提供手动切换或暂停控制。减少动态效果时仍每 6 秒换字，只取消切换动画；猫咪按钮显示静态目标画面。
 
 桌面与手机都需要实际检查。首页固定画布在竖屏保留上下空白，这项布局选择不等于窄屏文字和触控已经通过无障碍验证。

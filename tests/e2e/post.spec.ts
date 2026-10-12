@@ -339,7 +339,6 @@ test('short desktop viewports lay out the full sidebar without internal scrollin
 test('Giscus uses the site dark theme and remounts once after client navigation', async ({
   page
 }) => {
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.route('https://giscus.app/theme-probe', (route) =>
     route.fulfill({
       contentType: 'text/html',
@@ -350,7 +349,7 @@ test('Giscus uses the site dark theme and remounts once after client navigation'
             <script>
               addEventListener('message', (event) => {
                 const theme = event.data?.giscus?.setConfig?.theme;
-                if (theme !== 'light' && !theme?.startsWith('data:text/css')) return;
+                if (!theme?.startsWith('data:text/css')) return;
                 document.documentElement.dataset.theme = theme;
                 document.documentElement.dataset.messageCount = String(
                   Number(document.documentElement.dataset.messageCount) + 1
@@ -383,16 +382,13 @@ test('Giscus uses the site dark theme and remounts once after client navigation'
   await expect(script).toHaveCount(1);
   const darkTheme = await page.locator('[data-giscus-comments]').getAttribute('data-giscus-dark-theme');
   expect(darkTheme).toMatch(/^data:text\/css/);
-  await expect(script).toHaveAttribute('data-theme', 'light');
-  const giscusFrame = page.locator('iframe.giscus-frame');
-  await expect(giscusFrame).toHaveCount(1);
-  const frameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
-  await expect(frameHtml).toHaveAttribute('data-message-count', '0');
+  await expect(script).toHaveAttribute('data-theme', darkTheme!);
+  await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
 
-  await page.getByRole('button', { name: '切换主题' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(frameHtml).toHaveAttribute('data-theme', darkTheme!);
-  await expect(frameHtml).toHaveAttribute('data-message-count', '1');
+  await page.locator('[data-cat-animation-trigger]').click();
+  await expect(page.locator('[data-cat-animation]')).toBeVisible();
+  await expect(script).toHaveAttribute('data-theme', darkTheme!);
+  await expect(page.frameLocator('iframe.giscus-frame').locator('html')).toHaveAttribute('data-message-count', '0');
 
   await page.locator('[data-adjacent-posts] a').first().click();
   await expect(page.locator('article[data-post]')).toBeVisible();
@@ -400,28 +396,14 @@ test('Giscus uses the site dark theme and remounts once after client navigation'
   await expect(script).toHaveCount(1);
   await expect(script).toHaveAttribute('data-theme', darkTheme!);
   await expect(page.locator('iframe.giscus-frame')).toHaveCount(1);
-  const remountedFrameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
-  await expect(remountedFrameHtml).toHaveAttribute('data-message-count', '0');
-
-  await page.getByRole('button', { name: '切换主题' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(remountedFrameHtml).toHaveAttribute('data-theme', 'light');
-  await expect(remountedFrameHtml).toHaveAttribute('data-message-count', '1');
 
   await page.goto('/guestbook/');
   const guestbookComments = page.locator('[data-giscus-comments]');
   const guestbookDarkTheme = await guestbookComments.getAttribute('data-giscus-dark-theme');
-  await expect(guestbookComments).toHaveAttribute('data-giscus-theme-mode', 'dark');
   const guestbookScript = guestbookComments.locator('script[src="https://giscus.app/client.js"]');
   await expect(guestbookScript).toHaveAttribute('data-theme', guestbookDarkTheme!);
-  const guestbookFrameHtml = page.frameLocator('iframe.giscus-frame').locator('html');
-
-  await page.getByRole('button', { name: '切换主题' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(guestbookFrameHtml).toHaveAttribute('data-theme', guestbookDarkTheme!);
-  await page.getByRole('button', { name: '切换主题' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(guestbookFrameHtml).toHaveAttribute('data-theme', guestbookDarkTheme!);
+  await page.locator('[data-cat-animation-trigger]').click();
+  await expect(guestbookScript).toHaveAttribute('data-theme', guestbookDarkTheme!);
 });
 
 test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ page }) => {

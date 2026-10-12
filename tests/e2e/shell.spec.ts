@@ -11,7 +11,7 @@ test('inner pages share the brandless centered navigation', async ({ page }) => 
     expect(box).not.toBeNull();
     expect(viewport).not.toBeNull();
     expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - (viewport?.width ?? 0) / 2)).toBeLessThan(1);
-    await expect(controls.locator('[data-open-search], [data-theme-toggle]')).toHaveCount(2);
+    await expect(controls.locator('[data-open-search], [data-cat-animation-trigger]')).toHaveCount(2);
   }
 });
 

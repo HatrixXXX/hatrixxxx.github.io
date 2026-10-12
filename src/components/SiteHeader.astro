@@ -1,5 +1,6 @@
 ---
 import { PRIMARY_NAV_ITEMS } from '@/config/navigation';
+import HomeIcon from '@/components/HomeIcon.astro';
 
 interface Props {
   homeMode?: boolean;
@@ -28,7 +29,8 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
               href={item.href}
               aria-current={isCurrent(item.href) ? 'page' : undefined}
             >
-              {item.label}
+              <span class="nav-icon" aria-hidden="true"><HomeIcon name={item.icon} /></span>
+              <span>{item.label}</span>
             </a>
           </li>
         ))}
@@ -51,16 +53,13 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
       <button
         class="header-action"
         type="button"
-        aria-label="切换主题"
-        data-theme-toggle
+        aria-label="播放猫咪动画"
+        data-cat-animation-trigger
       >
-        <span class="theme-icon" aria-hidden="true">
-          <svg class="theme-icon__sun" viewBox="0 0 24 24" width="20" height="20">
-            <circle cx="12" cy="12" r="4"></circle>
-            <path d="M12 1.75v2.2M12 20.05v2.2M1.75 12h2.2M20.05 12h2.2M4.75 4.75l1.55 1.55M17.7 17.7l1.55 1.55M19.25 4.75 17.7 6.3M6.3 17.7l-1.55 1.55"></path>
-          </svg>
-          <svg class="theme-icon__moon" viewBox="0 0 24 24" width="20" height="20">
-            <path d="M20.2 15.15A8.6 8.6 0 0 1 8.85 3.8a8.65 8.65 0 1 0 11.35 11.35Z"></path>
+        <span class="cat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M4 20V5l4 3 4-1 4 1 4-3v15Z"></path>
+            <path d="M8 13h.01M16 13h.01M11 17l1 1 1-1"></path>
           </svg>
         </span>
       </button>
@@ -87,7 +86,8 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
             href={item.href}
             aria-current={isCurrent(item.href) ? 'page' : undefined}
           >
-            {item.label}
+            <span class="nav-icon" aria-hidden="true"><HomeIcon name={item.icon} /></span>
+            <span>{item.label}</span>
           </a>
         </li>
       ))}
@@ -133,10 +133,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     -webkit-backdrop-filter: blur(12px) saturate(1.2);
   }
 
-  :global(html[data-theme='light'] body[style*="--page-bg-image"]) .site-header::before {
-    background: rgb(240 236 228 / 70%);
-  }
-
   .site-header .header-inner,
   .site-header .mobile-nav {
     position: relative;
@@ -162,7 +158,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     min-height: var(--site-header-height);
     align-items: center;
     gap: 0.875rem;
-    padding-inline: 36px;
+    padding-inline: 16px;
   }
 
   .desktop-nav ul,
@@ -175,7 +171,13 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   .desktop-nav > ul {
     display: flex;
     align-items: center;
-    gap: 0.15rem;
+    gap: 1.125rem;
+  }
+
+  @media (min-width: 1320px) {
+    .desktop-nav > ul {
+      gap: 1.5rem;
+    }
   }
 
   .desktop-nav > ul > li {
@@ -192,23 +194,40 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
 
   .desktop-nav > ul > li > a {
     display: flex;
+    min-height: 44px;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.65rem 0.8rem;
-    border-radius: var(--radius-control);
+    gap: 0.25rem;
+    padding-block: 0.4rem;
     color: var(--color-text);
-    font-size: 14.5px;
+    font-size: 16px;
     font-weight: 600;
     white-space: nowrap;
-    transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+    transition: color var(--duration-fast) ease;
+  }
+
+  .nav-icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-icon :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 
   .desktop-nav a:hover {
-    background: var(--color-accent-soft);
     color: var(--color-accent);
   }
 
-  .desktop-nav a[aria-current='page'] { color: var(--color-accent); box-shadow: inset 0 -1px var(--color-copper); }
+  .desktop-nav a[aria-current='page'] {
+    color: var(--color-accent);
+    box-shadow: inset 0 -2px var(--color-copper);
+  }
 
   .nav-caret {
     width: 0.4rem;
@@ -322,7 +341,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     stroke-width: 1.8;
   }
 
-  .theme-icon {
+  .cat-icon {
     display: grid;
     width: 20px;
     height: 20px;
@@ -330,37 +349,13 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     place-items: center;
   }
 
-  .theme-icon svg {
-    grid-area: 1 / 1;
+  .cat-icon svg {
     overflow: visible;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 1.8;
-    transition: opacity 180ms ease, transform 180ms ease;
-  }
-
-  .theme-icon__sun circle {
-    fill: currentColor;
-    stroke: none;
-  }
-
-  .theme-icon__moon {
-    fill: currentColor !important;
-    stroke: none !important;
-  }
-
-  :global(html[data-theme='dark']) .theme-icon__sun,
-  :global(html[data-theme='light']) .theme-icon__moon {
-    opacity: 0;
-    transform: rotate(-35deg) scale(0.65);
-  }
-
-  :global(html[data-theme='dark']) .theme-icon__moon,
-  :global(html[data-theme='light']) .theme-icon__sun {
-    opacity: 1;
-    transform: rotate(0) scale(1);
   }
 
   .menu-toggle,
@@ -417,7 +412,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
 
     .mobile-nav__list {
       display: grid;
-      gap: 0.25rem;
+      gap: 1rem;
       padding-block: 0.7rem 1rem;
     }
 
@@ -431,9 +426,11 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
       display: flex;
       min-height: 44px;
       align-items: center;
+      gap: 0.5rem;
       border-radius: var(--radius-control);
       padding: 0.55rem 0.75rem;
       color: var(--color-text);
+      font-size: 17px;
     }
 
     .mobile-nav .submenu a {
@@ -446,6 +443,9 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
       background: var(--color-accent-soft);
       color: var(--color-accent);
     }
-    .mobile-nav a[aria-current='page'] { color: var(--color-accent); }
+    .mobile-nav a[aria-current='page'] {
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+    }
   }
 </style>

@@ -125,13 +125,12 @@ test('open mobile navigation scrolls internally without enlarging the document',
   }
 });
 
-test('light-theme mobile navigation links meet WCAG AA contrast', async ({ page }) => {
+test('dark mobile navigation links meet WCAG AA contrast', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(() => localStorage.setItem('hatrix-theme', 'light'));
   await page.goto('/projects/');
   await page.getByRole('button', { name: '切换导航栏' }).click();
   const mobileMenu = page.locator('[data-mobile-menu]');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await expect(mobileMenu).toBeVisible();
   const background = await mobileMenu.evaluate((element) => getComputedStyle(element).backgroundColor);
   const linkColors = await mobileMenu.locator(':scope > ul > li > a').evaluateAll((links) =>

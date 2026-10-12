@@ -1,129 +1,67 @@
-const STORAGE_KEY = 'hatrix-theme';
-type Theme = 'dark' | 'light';
+const CAT_SKY_DELAY_MS = 410;
+const CAT_LEAVE_DELAY_MS = 2_910;
+const CAT_ANIMATION_END_MS = 3_110;
+const CAT_REDUCED_MOTION_END_MS = 800;
+type Sky = 'day' | 'night';
 
-const THEME_APPLY_DELAY_MS = 410;
-const THEME_LEAVE_DELAY_MS = 2_910;
-const THEME_TRANSITION_END_MS = 3_110;
-let transitionLocked = false;
-let transitionTimers: number[] = [];
+let animationLocked = false;
+let animationTimers: number[] = [];
+let nextSky: Sky = 'day';
 
-function currentTheme(): Theme {
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
-}
-
-function updateGiscusTheme(theme: Theme): void {
-  document.querySelectorAll<HTMLElement>('[data-giscus-comments]').forEach((section) => {
-    const darkTheme = section.dataset.giscusDarkTheme;
-    const giscusTheme = section.dataset.giscusThemeMode === 'dark'
-      ? darkTheme ?? 'dark'
-      : theme === 'dark'
-        ? darkTheme ?? 'dark'
-        : 'light';
-    section.querySelectorAll<HTMLIFrameElement>('iframe.giscus-frame').forEach((iframe) => {
-      iframe.contentWindow?.postMessage(
-        { giscus: { setConfig: { theme: giscusTheme } } },
-        'https://giscus.app'
-      );
-    });
+function syncTrigger(): void {
+  document.querySelectorAll<HTMLButtonElement>('[data-cat-animation-trigger]').forEach((button) => {
+    button.disabled = animationLocked;
   });
 }
 
-function themeToggles(): HTMLButtonElement[] {
-  return Array.from(document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]'));
-}
+function finishCatAnimation(): void {
+  animationTimers.forEach((timer) => window.clearTimeout(timer));
+  animationTimers = [];
 
-function syncThemeToggles(theme: Theme): void {
-  themeToggles().forEach((toggle) => {
-    toggle.disabled = transitionLocked;
-    toggle.setAttribute('aria-pressed', String(theme === 'dark'));
-  });
-}
-
-function applyTheme(theme: Theme): void {
-  const changed = currentTheme() !== theme;
-  document.documentElement.dataset.theme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute(
-    'content',
-    theme === 'dark' ? '#17151d' : '#f0ece4'
-  );
-  syncThemeToggles(theme);
-  if (changed) updateGiscusTheme(theme);
-}
-
-function restoreTheme(): void {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  applyTheme(stored === 'light' ? 'light' : stored === 'dark' ? 'dark' : currentTheme());
-}
-
-function storeAndApplyTheme(theme: Theme): void {
-  localStorage.setItem(STORAGE_KEY, theme);
-  applyTheme(theme);
-}
-
-function setTransitionLocked(locked: boolean): void {
-  transitionLocked = locked;
-  syncThemeToggles(currentTheme());
-}
-
-function scheduleTransitionStep(callback: () => void, delay: number): void {
-  transitionTimers.push(window.setTimeout(callback, delay));
-}
-
-function finishThemeTransition(
-  overlay = document.querySelector<HTMLElement>('[data-theme-transition]')
-): void {
-  transitionTimers.forEach((timer) => window.clearTimeout(timer));
-  transitionTimers = [];
-
+  const overlay = document.querySelector<HTMLElement>('[data-cat-animation]');
   if (overlay) {
     overlay.hidden = true;
-    overlay.classList.remove('is-active', 'is-leaving');
-    overlay.dataset.fromTheme = '';
-    overlay.dataset.toTheme = '';
-    overlay.dataset.visibleTheme = '';
+    overlay.classList.remove('is-active', 'is-leaving', 'is-static');
+    overlay.dataset.fromSky = '';
+    overlay.dataset.toSky = '';
+    overlay.dataset.visibleSky = '';
   }
 
-  setTransitionLocked(false);
+  animationLocked = false;
+  syncTrigger();
 }
 
-function runThemeTransition(theme: Theme): void {
-  const overlay = document.querySelector<HTMLElement>('[data-theme-transition]');
+function playCatAnimation(): void {
+  const overlay = document.querySelector<HTMLElement>('[data-cat-animation]');
+  if (!overlay) return;
+
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (!overlay || reduceMotion) {
-    storeAndApplyTheme(theme);
-    return;
-  }
-
-  const fromTheme = currentTheme();
-  localStorage.setItem(STORAGE_KEY, theme);
-  setTransitionLocked(true);
-  overlay.dataset.fromTheme = fromTheme;
-  overlay.dataset.toTheme = theme;
-  overlay.dataset.visibleTheme = fromTheme;
-  overlay.classList.remove('is-active', 'is-leaving');
+  const toSky = nextSky;
+  const fromSky: Sky = toSky === 'day' ? 'night' : 'day';
+  nextSky = fromSky;
+  animationLocked = true;
+  syncTrigger();
+  overlay.classList.remove('is-active', 'is-leaving', 'is-static');
+  overlay.dataset.fromSky = fromSky;
+  overlay.dataset.toSky = toSky;
+  overlay.dataset.visibleSky = reduceMotion ? toSky : fromSky;
   overlay.hidden = false;
   void overlay.offsetWidth;
-  overlay.classList.add('is-active');
+  overlay.classList.add(reduceMotion ? 'is-static' : 'is-active');
 
-  scheduleTransitionStep(() => {
-    overlay.dataset.visibleTheme = theme;
-    applyTheme(theme);
-  }, THEME_APPLY_DELAY_MS);
-  scheduleTransitionStep(() => overlay.classList.add('is-leaving'), THEME_LEAVE_DELAY_MS);
-  scheduleTransitionStep(() => finishThemeTransition(overlay), THEME_TRANSITION_END_MS);
+  if (!reduceMotion) {
+    animationTimers.push(window.setTimeout(() => { overlay.dataset.visibleSky = toSky; }, CAT_SKY_DELAY_MS));
+    animationTimers.push(window.setTimeout(() => overlay.classList.add('is-leaving'), CAT_LEAVE_DELAY_MS));
+  }
+  animationTimers.push(window.setTimeout(finishCatAnimation, reduceMotion ? CAT_REDUCED_MOTION_END_MS : CAT_ANIMATION_END_MS));
 }
 
 document.addEventListener('click', (event) => {
-  if (!(event.target instanceof Element) || !event.target.closest('[data-theme-toggle]')) return;
-  if (transitionLocked) return;
-  const theme: Theme = currentTheme() === 'dark' ? 'light' : 'dark';
-  runThemeTransition(theme);
+  if (!(event.target instanceof Element) || !event.target.closest('[data-cat-animation-trigger]')) return;
+  if (animationLocked) return;
+  playCatAnimation();
 });
 
 document.addEventListener('astro:after-swap', () => {
-  if (transitionLocked) finishThemeTransition();
-  restoreTheme();
+  if (animationLocked) finishCatAnimation();
 });
-document.addEventListener('astro:page-load', restoreTheme);
-restoreTheme();
