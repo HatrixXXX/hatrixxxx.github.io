@@ -1,7 +1,7 @@
 ---
 import { REFERENCE_ICON_PATHS } from '@/data/home-reference-icon-paths';
 
-type IconName = 'search' | 'home' | 'blog' | 'projects' | 'about' | 'bookmark' | 'software' | 'gear' | 'plans' | 'lab' | 'friends' | 'guestbook';
+type IconName = 'search' | 'home' | 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'plans' | 'lab' | 'friends' | 'guestbook';
 interface Props { name: IconName }
 const { name } = Astro.props;
 
@@ -31,6 +31,11 @@ const symbols = {
     body: 'M14 5h36v54L32 47 14 59V5Zm5 5v39l13-9 13 9V10H19Z',
     fill: 'm32 17 3.2 6.2 7 1-5.1 4.9 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-4.9 7-1L32 17ZM9 10h3v44H9z',
     lines: 'M23 13h18M25 43l7-5 7 5M24 20h4'
+  },
+  snippets: {
+    body: 'M21 28H12a9 9 0 0 0 0 18h39a4 4 0 0 1 0 8H28v5h23a9 9 0 0 0 0-18H12a4 4 0 0 1 0-8h9a7 7 0 0 0 0-14h-3v5h3a2 2 0 0 1 0 4ZM30 24l23-23 10 10-23 23H30V24Zm5 2v3h3l18-18-3-3-18 18Z',
+    fill: 'M48 6l5-5 10 10-5 5-10-10ZM30 29h8l-8 5v-5Z',
+    lines: 'M14 37h12M37 50h12M46 18l8-8'
   },
   lab: {
     body: 'M23 5h18v5h-4v18l16 23a5 5 0 0 1-4 8H15a5 5 0 0 1-4-8l16-23V10h-4V5Zm9 5v20L16 54h32L32 30V10Z',
@@ -62,10 +67,6 @@ const [planClockPath, planUpperLinePath, planLowerLinePath] = REFERENCE_ICON_PAT
   <path d={REFERENCE_ICON_PATHS.software[3]} fill="currentColor" stroke="currentColor" stroke-width="18" paint-order="stroke fill" />
   <circle cx="821" cy="836" r="50" fill="none" stroke="currentColor" stroke-width="27" />
 </svg>}
-{name === 'gear' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
-  <path d={REFERENCE_ICON_PATHS.gear[0]} fill="currentColor" stroke="currentColor" stroke-width="22" paint-order="stroke fill" />
-  <circle cx="512" cy="512" r="100" fill="currentColor" />
-</svg>}
 {name === 'plans' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
   <defs>
     <mask id="home-plans-binder-holes" maskUnits="userSpaceOnUse">
@@ -79,7 +80,7 @@ const [planClockPath, planUpperLinePath, planLowerLinePath] = REFERENCE_ICON_PAT
   <path d={planUpperLinePath} fill="currentColor" opacity=".55" />
   <path d={planLowerLinePath} fill="currentColor" />
 </svg>}
-{name !== 'search' && name !== 'software' && name !== 'gear' && name !== 'plans' && <svg viewBox="0 0 64 64" aria-hidden="true">
+{name !== 'search' && name !== 'software' && name !== 'plans' && <svg viewBox="0 0 64 64" aria-hidden="true">
   <path d={symbols[name].body} fill="currentColor" fill-rule="evenodd" />
   <path d={symbols[name].fill} fill="currentColor" opacity=".55" />
   <path d={symbols[name].lines} fill="none" stroke="currentColor" stroke-width={name === 'about' ? 3.2 : 2.4} stroke-linecap="square" stroke-linejoin="miter" />

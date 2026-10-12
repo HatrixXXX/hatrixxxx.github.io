@@ -5,6 +5,11 @@
   overflow-wrap: anywhere;
 }
 
+article[data-post] .prose {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .prose > :first-child {
   margin-top: 0;
 }

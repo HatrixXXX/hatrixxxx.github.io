@@ -147,35 +147,35 @@
 .home-stage .tile--plans { --tile-bg: #2b2936ed; --tile-hover: #3e344af5; --tile-accent: #e8af65; }
 .home-stage .tile--lab { --tile-bg: #24313fed; --tile-hover: #32485bf5; --tile-accent: #70cff1; --tile-glyph: #8adaf1; }
 
+.home-stage .tile--snippets,
 .home-stage .tile--bookmark,
-.home-stage .tile--software,
-.home-stage .tile--gear {
+.home-stage .tile--software {
   --tile-bg: #1d4142ed;
   --tile-hover: #2c5656f5;
   --tile-accent: #57decc;
   --tile-glyph: #87e1d5;
 }
 
-.home-stage .tile--bookmark { grid-area: bookmark; --tile-bg: #24504bed; }
+.home-stage .tile--snippets { grid-area: snippets; }
+.home-stage .tile--bookmark { grid-area: bookmark; }
 .home-stage .tile--software { grid-area: software; }
-.home-stage .tile--gear { grid-area: gear; }
+.home-stage .tile--snippets::before,
 .home-stage .tile--bookmark::before,
-.home-stage .tile--software::before,
-.home-stage .tile--gear::before { width: 56px; }
+.home-stage .tile--software::before { width: 56px; }
 
-.home-stage .tile--bookmark .tile-copy { top: auto; bottom: 17px; left: 19px; gap: 3px; transform: none; }
-.home-stage .tile--bookmark .tile-title { font-size: 44px; }
-.home-stage .tile--bookmark .tile-english { font-size: 24px; }
-.home-stage .tile--bookmark .tile-glyph { top: 17px; right: 13px; width: 74px; height: 74px; transform: none; }
+.home-stage .tile--snippets .tile-copy { top: auto; bottom: 17px; left: 19px; gap: 3px; transform: none; }
+.home-stage .tile--snippets .tile-title { font-size: 44px; }
+.home-stage .tile--snippets .tile-english { font-size: 24px; }
+.home-stage .tile--snippets .tile-glyph { top: 17px; right: 13px; width: 74px; height: 74px; transform: none; }
 
-.home-stage .tile--software .tile-copy,
-.home-stage .tile--gear .tile-copy { top: auto; bottom: 14px; left: 17px; gap: 2px; transform: none; }
-.home-stage .tile--software .tile-title,
-.home-stage .tile--gear .tile-title { font-size: 35px; }
-.home-stage .tile--software .tile-english,
-.home-stage .tile--gear .tile-english { font-size: 24px; }
-.home-stage .tile--software .tile-glyph,
-.home-stage .tile--gear .tile-glyph { top: 10px; right: 12px; width: 53px; height: 53px; transform: none; }
+.home-stage .tile--bookmark .tile-copy,
+.home-stage .tile--software .tile-copy { top: auto; bottom: 14px; left: 17px; gap: 2px; transform: none; }
+.home-stage .tile--bookmark .tile-title,
+.home-stage .tile--software .tile-title { font-size: 35px; }
+.home-stage .tile--bookmark .tile-english,
+.home-stage .tile--software .tile-english { font-size: 24px; }
+.home-stage .tile--bookmark .tile-glyph,
+.home-stage .tile--software .tile-glyph { top: 10px; right: 12px; width: 53px; height: 53px; transform: none; }
 
 .home-stage .tile--friends,
 .home-stage .tile--guestbook { --tile-bg: #30263ded; --tile-hover: #473451f5; --tile-accent: #d186df; --tile-glyph: #c590d2; }
@@ -191,7 +191,7 @@
 .home-stage .tile--guestbook .tile-glyph { right: 11px; width: 45px; height: 45px; }
 .home-stage .tile--about,
 .home-stage .tile--friends,
-.home-stage .tile--bookmark,
+.home-stage .tile--snippets,
 .home-stage .tile--lab {
   --tile-texture-image: url('/home-textures/microscheme.png');
   --tile-texture-size: 280px 280px;
@@ -207,7 +207,7 @@
   --tile-texture-hover-opacity: .26;
 }
 
-.home-stage .tile--software,
+.home-stage .tile--bookmark,
 .home-stage .tile--guestbook {
   --tile-texture-image: url('/home-textures/conduit-led.svg');
   --tile-texture-size: 240px 160px;
@@ -215,12 +215,20 @@
   --tile-texture-hover-opacity: .64;
 }
 
-.home-stage .tile--gear {
+.home-stage .tile--software {
   --tile-texture-image: url('/home-textures/blue-metal-plate.jpg');
-  --tile-texture-size: 320px 320px;
-  --tile-texture-opacity: .48;
-  --tile-texture-hover-opacity: .58;
+  --tile-texture-size: 260px 260px;
+  --tile-texture-opacity: .9;
+  --tile-texture-hover-opacity: .9;
 }
+.home-stage .tile--software .tile-texture {
+  background-position: center top;
+  mix-blend-mode: luminosity;
+  -webkit-mask-image: none;
+  mask-image: none;
+  transition: filter 160ms ease;
+}
+.home-stage .tile--software:is(:hover, :focus-visible) .tile-texture { filter: brightness(1.25); }
 
 @media (prefers-reduced-motion: reduce) {
   .home-stage .tile, .home-stage .tile-texture { transition: none; }

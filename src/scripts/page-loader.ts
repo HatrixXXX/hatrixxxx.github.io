@@ -32,7 +32,8 @@
  * --------
  * - 页面被导航到外部（RSS/锚点/下载）：visibilitychange + pageshow 检测到
  *   页面重新可见时若 pending 存在则立即 complete() 清理。
- * - The 8s deadline covers homepage accessories; backgrounds wait for decoding or failure.
+ * - The 8s deadline covers the player layout only; background, character, and fonts
+ *   wait for readiness or a real load error before the homepage is revealed.
  */
 
 const VISITED_KEY = 'hatrix-visited-pages';
@@ -228,10 +229,6 @@ function waitHomeDone(s: State): void {
   const accessoryDeadline = new Promise<void>((resolve) => {
     guard = window.setTimeout(() => {
       if (settled) return;
-      if (rig?.dataset.characterState === 'loading') {
-        rig.dataset.characterState = 'error';
-        document.dispatchEvent(new CustomEvent('hatrix:character-state', { detail: { state: 'error' } }));
-      }
       resolve();
     }, getRemainingHomeDeadline());
   });
@@ -239,11 +236,10 @@ function waitHomeDone(s: State): void {
 
   void Promise.all([
     waitForBackground(true),
+    document.fonts?.ready ?? Promise.resolve(),
+    waitForState(rig, 'characterState', ['ready', 'error'], 'hatrix:character-state', controller.signal),
     Promise.race([
-      Promise.all([
-        waitForState(rig, 'characterState', ['ready', 'error'], 'hatrix:character-state', controller.signal),
-        waitForState(player, 'layoutState', ['ready'], 'hatrix:player-layout-ready', controller.signal),
-      ]),
+      waitForState(player, 'layoutState', ['ready'], 'hatrix:player-layout-ready', controller.signal),
       accessoryDeadline,
     ]),
   ]).then(finish);

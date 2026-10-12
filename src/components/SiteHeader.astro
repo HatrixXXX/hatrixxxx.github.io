@@ -161,6 +161,12 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     padding-inline: 16px;
   }
 
+  /* Cropped crosshair keeps its 48px artwork and centered hotspot; fallback matches the site's pointer size. */
+  .header-inner :is(a[href], button:not(:disabled):not([aria-disabled='true'])) {
+    cursor: pointer !important;
+    cursor: image-set(url('/cursors/link-nav.png') 2x) 24 24, image-set(url('/cursors/pointer.cur') 2x) 2 3, pointer !important;
+  }
+
   .desktop-nav ul,
   .mobile-nav ul {
     margin: 0;
@@ -194,7 +200,7 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
 
   .desktop-nav > ul > li > a {
     display: flex;
-    min-height: 44px;
+    min-height: var(--site-header-height);
     align-items: center;
     gap: 0.25rem;
     padding-block: 0.4rem;

@@ -8,7 +8,7 @@ const generatedRoutes = [
   '/about/reading/',
   '/about/games/',
   '/about/albums/',
-  '/about/gear/',
+  '/snippets/',
   '/about/software/',
   '/about/bookmarks/',
   '/about/friends/',
@@ -23,6 +23,10 @@ for (const route of generatedRoutes) {
 
 test('/about/tools/ is replaced by the software route', async ({ request }) => {
   expect((await request.get('/about/tools/')).status()).toBe(404);
+});
+
+test('/about/gear/ is no longer generated', async ({ request }) => {
+  expect((await request.get('/about/gear/')).status()).toBe(404);
 });
 
 test('content index pages reflect migrated data', async ({ page, request }) => {

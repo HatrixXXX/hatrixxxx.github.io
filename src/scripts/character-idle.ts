@@ -33,7 +33,7 @@ export async function prepareCharacter(rig: HTMLElement, signal: AbortSignal): P
   if (rig.dataset.characterState === 'error') return;
   rig.dataset.characterState = 'loading';
   const images = [...rig.querySelectorAll<HTMLImageElement>('img')] as ReadinessImage[];
-  const state = await waitForImages(images, 8_000, signal);
+  const state = await waitForImages(images, undefined, signal);
   if (signal.aborted || rig.dataset.characterState === 'error') return;
   rig.dataset.characterState = state;
   document.dispatchEvent(new CustomEvent('hatrix:character-state', {

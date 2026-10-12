@@ -213,24 +213,24 @@ test('right-side cards share one perspective plane with aligned rows', async ({ 
   }
 });
 
-test('home recommendations use a full-height bookmark and the bottom row is fully linked', async ({ page }) => {
+test('home recommendations use a full-height snippets card and the bottom row is fully linked', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
   const group = page.locator('[data-home-panel="recommendations"] section');
   await expect(group).toHaveAccessibleName('效率提升');
   const arrangement = await group.evaluate((section) => {
+    const snippets = section.querySelector<HTMLAnchorElement>('a[href="/snippets/"]')!;
     const bookmark = section.querySelector<HTMLAnchorElement>('a[href="/about/bookmarks/"]')!;
     const software = section.querySelector<HTMLAnchorElement>('a[href="/about/software/"]')!;
-    const gear = section.querySelector<HTMLAnchorElement>('a[href="/about/gear/"]')!;
     const heading = section.querySelector<HTMLElement>('h2')!;
     return {
-      fullHeight: bookmark.offsetHeight === section.clientHeight,
-      headingToRight: heading.offsetLeft > bookmark.offsetLeft + bookmark.offsetWidth,
-      softwareUnderHeading: software.offsetTop > heading.offsetTop + heading.offsetHeight,
-      pairedBottomRow: software.offsetTop === gear.offsetTop && software.offsetHeight === gear.offsetHeight
+      fullHeight: snippets.offsetHeight === section.clientHeight,
+      headingToRight: heading.offsetLeft > snippets.offsetLeft + snippets.offsetWidth,
+      bookmarkUnderHeading: bookmark.offsetTop > heading.offsetTop + heading.offsetHeight,
+      pairedBottomRow: bookmark.offsetTop === software.offsetTop && bookmark.offsetHeight === software.offsetHeight
     };
   });
-  expect(arrangement).toEqual({ fullHeight: true, headingToRight: true, softwareUnderHeading: true, pairedBottomRow: true });
+  expect(arrangement).toEqual({ fullHeight: true, headingToRight: true, bookmarkUnderHeading: true, pairedBottomRow: true });
   const auxiliary = page.locator('[data-home-auxiliary-slot]');
   await expect(auxiliary).toHaveCount(0);
   for (const name of ['plans', 'lab']) {
@@ -636,9 +636,9 @@ test('home links open their independent pages', async ({ page }) => {
   const entries = [
     ['作品橱窗', '/projects/'],
     ['关于我', '/about/'],
-    ['收藏', '/about/bookmarks/'],
+    ['随笔', '/snippets/'],
+    ['收藏夹', '/about/bookmarks/'],
     ['工具箱', '/about/software/'],
-    ['装备铺', '/about/gear/'],
     ['友链', '/about/friends/'],
     ['留言板', '/guestbook/'],
     ['计划', '/plans/'],

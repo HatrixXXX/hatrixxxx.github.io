@@ -27,7 +27,7 @@ function waitForLoad(image: ReadinessImage, signal: AbortSignal): Promise<boolea
 
 export async function waitForImages(
   images: ReadinessImage[],
-  timeoutMs: number,
+  timeoutMs?: number,
   parentSignal?: AbortSignal,
 ): Promise<'ready' | 'error'> {
   if (parentSignal?.aborted) return 'error';
@@ -38,10 +38,10 @@ export async function waitForImages(
   const cancelled = new Promise<false>((resolve) => {
     controller.signal.addEventListener('abort', () => resolve(false), { once: true });
   });
-  let timeout!: ReturnType<typeof setTimeout>;
-  const deadline = new Promise<false>((resolve) => {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = timeoutMs === undefined ? [] : [new Promise<false>((resolve) => {
     timeout = globalThis.setTimeout(() => resolve(false), timeoutMs);
-  });
+  })];
   const settled = Promise.all(images.map(async (image) => {
     if (!(await waitForLoad(image, controller.signal)) || controller.signal.aborted) return false;
     try {
@@ -53,10 +53,10 @@ export async function waitForImages(
   })).then((results) => results.every(Boolean));
 
   try {
-    const ready = await Promise.race([settled, deadline, cancelled]);
+    const ready = await Promise.race([settled, cancelled, ...deadline]);
     return ready && !controller.signal.aborted ? 'ready' : 'error';
   } finally {
-    globalThis.clearTimeout(timeout);
+    if (timeout !== undefined) globalThis.clearTimeout(timeout);
     parentSignal?.removeEventListener('abort', onAbort);
     controller.abort();
   }

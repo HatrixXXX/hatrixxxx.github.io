@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '关于我', '收藏', '工具箱', '装备铺', '计划', '实验场', '友链', '留言板'];
+const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '关于我', '随笔', '收藏夹', '工具箱', '计划', '实验场', '友链', '留言板'];
 const DESKTOP_WIDTHS = [1200, 1440, 1920, 2560];
 
 const contrastRatio = (foreground: string, background: string) => {
@@ -64,7 +64,7 @@ test('desktop navigation stays at the viewport center with and without the admin
 
 
 
-test('narrow viewports center controls and retain all ten destinations in the mobile menu', async ({ page }) => {
+test('narrow viewports center controls and retain all eleven destinations in the mobile menu', async ({ page }) => {
   for (const width of [390, 768, 1024, 1199]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/projects/');
@@ -78,7 +78,8 @@ test('narrow viewports center controls and retain all ten destinations in the mo
     const mobileMenu = page.locator('[data-mobile-menu]');
     await expect(mobileMenu).toBeVisible();
     await expect(mobileMenu.locator(':scope > ul > li > a')).toHaveText(EXPECTED_PRIMARY_LINKS);
-    await expect(mobileMenu.getByRole('link', { name: '装备铺', exact: true })).toHaveAttribute('href', '/about/gear/');
+    await expect(mobileMenu.getByRole('link', { name: '随笔', exact: true })).toHaveAttribute('href', '/snippets/');
+    await expect(mobileMenu.getByRole('link', { name: '收藏夹', exact: true })).toHaveAttribute('href', '/about/bookmarks/');
     const homeLink = mobileMenu.getByRole('link', { name: '首页', exact: true });
     expect(await homeLink.evaluate((link) => {
       const box = link.getBoundingClientRect();

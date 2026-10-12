@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('covers the homepage before client modules can run', async ({ page }) => {
+test('covers the homepage until client modules finish even after eight seconds', async ({ page }) => {
   let releaseScripts!: () => void;
   const scriptsGate = new Promise<void>((resolve) => { releaseScripts = resolve; });
   await page.clock.install();
@@ -22,7 +22,7 @@ test('covers the homepage before client modules can run', async ({ page }) => {
     await page.clock.runFor(7_000);
     await expect(loader).toBeVisible();
     await page.clock.runFor(1_100);
-    await expect(loader).toBeHidden();
+    await expect(loader).toBeVisible();
   } finally {
     releaseScripts();
     await page.clock.resume();
@@ -33,7 +33,43 @@ test('covers the homepage before client modules can run', async ({ page }) => {
   await expect(loader).not.toHaveClass(/pl-visible/);
 });
 
-test('keeps the cold-load deadline when client modules start late', async ({ page }) => {
+test('holds the cold-home splash until its display font is ready', async ({ page }) => {
+  let releaseFont!: () => void;
+  let fontRequested!: () => void;
+  const fontGate = new Promise<void>((resolve) => { releaseFont = resolve; });
+  const requested = new Promise<void>((resolve) => { fontRequested = resolve; });
+  await page.route(/orbitron-latin-800-normal\.woff2/, async (route) => {
+    fontRequested();
+    await fontGate;
+    await route.continue();
+  });
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const loader = page.locator('#page-loader');
+  try {
+    await requested;
+    await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'ready');
+    await expect(page.locator('[data-music-player]')).toHaveAttribute('data-layout-state', 'ready');
+    await page.evaluate(async () => {
+      const value = document.querySelector<HTMLElement>('[data-home-canvas]')!.style.getPropertyValue('--home-background-image');
+      const src = value.match(/url\("([^\"]+)"\)/)?.[1];
+      if (!src) throw new Error('Missing home background URL');
+      const image = new Image();
+      image.src = src;
+      await image.decode();
+    });
+    await page.waitForTimeout(700);
+    expect(await page.evaluate(() => document.fonts.status)).toBe('loading');
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(loader).not.toHaveClass(/pl-done/);
+  } finally {
+    releaseFont();
+  }
+  await expect(loader).not.toHaveClass(/pl-visible/);
+  expect(await page.evaluate(() => document.fonts.check('800 64px Orbitron'))).toBe(true);
+});
+
+test('keeps the cold-home splash when client modules and character start late', async ({ page }) => {
   let releaseScripts!: () => void;
   let releaseCharacter!: () => void;
   const scriptsGate = new Promise<void>((resolve) => { releaseScripts = resolve; });
@@ -61,13 +97,16 @@ test('keeps the cold-load deadline when client modules start late', async ({ pag
     await expect(loader).toHaveClass(/pl-visible/);
     await expect(rig).toHaveAttribute('data-character-state', 'loading');
     await page.clock.runFor(9_000);
-    await expect(rig).toHaveAttribute('data-character-state', 'error');
-    await expect(loader).not.toHaveClass(/pl-visible/);
+    await expect(rig).toHaveAttribute('data-character-state', 'loading');
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(loader).not.toHaveClass(/pl-done/);
   } finally {
     releaseScripts();
     releaseCharacter();
     await page.clock.resume();
   }
+  await expect(rig).toHaveAttribute('data-character-state', 'ready');
+  await expect(loader).not.toHaveClass(/pl-visible/);
 });
 
 test('a pending player layout independently holds the loader', async ({ page }) => {
@@ -277,7 +316,7 @@ test('dismisses the loader but keeps a failed character hidden', async ({ page }
   await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
 });
 
-test('dismisses after the deadline and never reveals a late character', async ({ page }) => {
+test('keeps the splash until a late character layer decodes', async ({ page }) => {
   let release!: () => void;
   let requested!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
@@ -296,8 +335,9 @@ test('dismisses after the deadline and never reveals a late character', async ({
     await expect(loader).toHaveClass(/pl-visible/);
     await expect(rig).toHaveAttribute('data-character-state', 'loading');
     await page.clock.runFor(9_000);
-    await expect(rig).toHaveAttribute('data-character-state', 'error');
-    await expect(loader).not.toHaveClass(/pl-visible/);
+    await expect(rig).toHaveAttribute('data-character-state', 'loading');
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(loader).not.toHaveClass(/pl-done/);
   } finally {
     release();
     await page.clock.resume();
@@ -305,11 +345,12 @@ test('dismisses after the deadline and never reveals a late character', async ({
   await expect.poll(() => rig.locator('[data-part="foot_L"]').evaluate((element: HTMLImageElement) =>
     element.complete && element.naturalWidth > 0)).toBe(true);
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
-  await expect(rig).toHaveAttribute('data-character-state', 'error');
-  await expect(rig).toBeHidden();
+  await expect(rig).toHaveAttribute('data-character-state', 'ready');
+  await expect(rig).toBeVisible();
+  await expect(loader).not.toHaveClass(/pl-visible/);
 });
 
-test('starts the cold-load deadline before an eager layer permits window.load', async ({ page }) => {
+test('keeps the cold splash while an eager layer prevents window.load', async ({ page }) => {
   let release!: () => void;
   let requested!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
@@ -329,8 +370,9 @@ test('starts the cold-load deadline before an eager layer permits window.load', 
     await expect(loader).toHaveClass(/pl-visible/);
     await expect(rig).toHaveAttribute('data-character-state', 'loading');
     await page.clock.runFor(9_000);
-    await expect(rig).toHaveAttribute('data-character-state', 'error');
-    await expect(loader).not.toHaveClass(/pl-visible/);
+    await expect(rig).toHaveAttribute('data-character-state', 'loading');
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(loader).not.toHaveClass(/pl-done/);
     expect(await page.evaluate(() => document.readyState)).toBe('interactive');
   } finally {
     release();
@@ -339,8 +381,9 @@ test('starts the cold-load deadline before an eager layer permits window.load', 
   await page.waitForLoadState('load');
   await expect.poll(() => rig.locator('[data-part="head"]').evaluate((element: HTMLImageElement) =>
     element.complete && element.naturalWidth > 0)).toBe(true);
-  await expect(rig).toHaveAttribute('data-character-state', 'error');
-  await expect(rig).toBeHidden();
+  await expect(rig).toHaveAttribute('data-character-state', 'ready');
+  await expect(rig).toBeVisible();
+  await expect(loader).not.toHaveClass(/pl-visible/);
   await expect(loader).not.toHaveClass(/pl-visible/);
 });
 
@@ -404,7 +447,7 @@ test('a canceled return-home navigation keeps the dock player ready and usable',
     (window as unknown as { __playerAudioInstances: HTMLAudioElement[] }).__playerAudioInstances.length)).toBe(1);
 });
 
-for (const outcome of ['ready', 'deadline'] as const) {
+for (const outcome of ['ready', 'still-loading'] as const) {
   test(`a superseded home ${outcome} cannot dismiss the next navigation loader`, async ({ page }) => {
     let releaseCharacter!: () => void;
     let releaseNavigation!: () => void;

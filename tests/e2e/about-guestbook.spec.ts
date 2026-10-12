@@ -25,7 +25,7 @@ const compactContentSurfaces = [
   { path: '/about/', selector: '.about-main > article' },
   { path: '/about/bookmarks/', selector: '.empty-state' },
   { path: '/about/software/', selector: '[data-tool-deck]' },
-  { path: '/about/gear/', selector: '.empty-state' },
+  { path: '/snippets/', selector: '.empty-state' },
   { path: '/plans/', selector: '.empty-state' },
   { path: '/lab/', selector: '.empty-state' },
   { path: '/about/friends/', selector: '[data-profile-card]' },
@@ -157,11 +157,11 @@ test('profile and article routes retain their contextual sidebar with one separa
 });
 
 test('selected about routes omit the profile sidebar and let content use the full container', async ({ page }) => {
-  for (const path of ['/about/', '/about/bookmarks/', '/about/software/', '/about/gear/']) {
+  for (const path of ['/about/', '/about/bookmarks/', '/about/software/', '/snippets/']) {
     await page.goto(path);
     await expect(page.locator('[data-sidebar-stack], [data-profile-card]')).toHaveCount(0);
     const main = page.locator('main.container');
-    const content = path === '/about/software/'
+    const content = path === '/about/software/' || path === '/snippets/'
       ? main
       : main.locator(':scope > article, :scope > .about-content');
     const [mainBox, contentBox] = await Promise.all([main.boundingBox(), content.boundingBox()]);

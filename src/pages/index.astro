@@ -11,6 +11,7 @@ import HomeTile from '@/components/HomeTile.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
 import CharacterIdle from '@/components/CharacterIdle.astro';
 import { projectPanel, projectRectOnPanelPlane, type Point } from '@/lib/home-projection';
+import '@fontsource/orbitron/latin-800.css';
 import '../styles/home-tiles.css';
 
 const clockTemplate = '0000/00/00 00:00:00';
@@ -118,9 +119,9 @@ const rightPanels = {
           <HomePanel name="recommendations" {...rightPanels.recommendations}>
             <section class="recommendations" aria-labelledby="recommendations-title">
               <h2 id="recommendations-title">效率提升</h2>
+              <HomeTile name="snippets" {...HOME_LINKS.snippets} />
               <HomeTile name="bookmark" {...HOME_LINKS.bookmarks} />
               <HomeTile name="software" {...HOME_LINKS.software} />
-              <HomeTile name="gear" {...HOME_LINKS.gear} />
             </section>
           </HomePanel>
           <HomePanel name="plans" {...rightPanels.plans}>
@@ -189,7 +190,7 @@ const rightPanels = {
   .level-label { width: 84px; margin-top: 9px; padding-top: 6px; border-top: 1px solid #adb5ba80; font-size: 23px; line-height: 1; text-align: center; }
   .level-fallback { margin: 8px -40px 0; font-size: 18px; text-align: center; }
   .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; background: transparent; }
-  .identity-name h1 { margin: 0; color: var(--home-ink); font: 500 64px/1 'IBM Plex Mono', monospace; letter-spacing: -.035em; }
+  .identity-name h1 { margin: 0; color: var(--home-ink); font: 800 64px/1 'Orbitron', Arial, sans-serif; letter-spacing: .025em; text-shadow: 0 0 16px color-mix(in srgb, var(--color-link) 35%, transparent); }
   .quote-card { position: relative; display: flex; width: 100%; height: 100%; align-items: center; background: #202b3bf2; border: 1px solid #21d8eacc; border-radius: var(--home-panel-radius); box-shadow: inset 0 1px #b7e0e71a; color: #ecf2f0; }
   .quote-window { overflow: hidden; width: 100%; padding: 0 24px; }
   .quote-row { display: flex; min-width: 0; width: 100%; align-items: flex-end; gap: 12px; }
@@ -205,7 +206,7 @@ const rightPanels = {
   .clock-fallback { font-size: 17px; }
   .recommendations {
     position: relative; height: 100%; display: grid; gap: 4px;
-    grid-template: 'bookmark heading heading' 22fr 'bookmark software gear' 78fr / 32fr 34fr 34fr;
+    grid-template: 'snippets heading heading' 22fr 'snippets bookmark software' 78fr / 32fr 34fr 34fr;
   }
   .recommendations h2 { grid-area: heading; display: flex; align-items: center; margin: 0; padding: 0 17px; border: 1px solid #c8c7cab3; border-radius: var(--home-panel-radius); color: var(--home-ink); background: #25212ef2; font-size: 26px; font-weight: 400; line-height: 1; }
   .home-stage :global([data-music-player][data-display-mode='home']) { --player-ink: #e9e4dc; --player-muted: #c5bacb; --player-accent: #ffd200; --player-accent-hover: #ffe360; --player-on-accent: #241c13; --player-track: #655770; --color-inset: #19161f; --color-surface-raised: #2c2735; --color-copper: #d88c3c; --color-line: #b8a6c14d; --color-line-strong: #655770; background: #26232ff2; border-color: var(--color-copper); }

@@ -28,6 +28,8 @@ body {
   text-rendering: optimizeLegibility;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 ::selection {
@@ -58,6 +60,14 @@ input,
 textarea {
   caret-color: var(--color-accent);
   accent-color: var(--color-link);
+}
+
+input,
+textarea,
+select,
+[contenteditable]:not([contenteditable='false']) {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 input::placeholder,

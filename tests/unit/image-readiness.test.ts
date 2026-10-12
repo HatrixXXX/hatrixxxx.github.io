@@ -46,6 +46,21 @@ describe('image readiness', () => {
     await expect(result).resolves.toBe('error');
   });
 
+  it('waits for a slow image when no deadline is requested', async () => {
+    vi.useFakeTimers();
+    const image = new FakeImage();
+    const settled = vi.fn();
+    const result = waitForImages([image], undefined).then(settled);
+    await vi.advanceTimersByTimeAsync(9_000);
+    expect(settled).not.toHaveBeenCalled();
+    image.complete = true;
+    image.naturalWidth = 100;
+    image.dispatchEvent(new Event('load'));
+    await result;
+    expect(settled).toHaveBeenCalledWith('ready');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('decodes an already loaded image', async () => {
     const image = new FakeImage();
     image.complete = true;
@@ -140,12 +155,13 @@ describe('character preparation terminal errors', () => {
     vi.useRealTimers();
   });
 
-  it('keeps the DOM-ready character wait and deadline on the later page-load', async () => {
+  it('keeps waiting for a slow character decode across the later page-load', async () => {
     vi.useFakeTimers();
     const image = new FakeImage();
     image.complete = true;
     image.naturalWidth = 100;
-    image.decode.mockImplementation(() => new Promise<void>(() => {}));
+    let finishDecode!: () => void;
+    image.decode.mockImplementation(() => new Promise<void>((resolve) => { finishDecode = resolve; }));
     const rig = {
       dataset: { characterState: 'loading' },
       querySelector: () => ({}),
@@ -169,12 +185,13 @@ describe('character preparation terminal errors', () => {
     await import('../../src/scripts/character-idle');
 
     documentTarget.dispatchEvent(new Event('DOMContentLoaded'));
-    await vi.advanceTimersByTimeAsync(4_000);
+    await vi.advanceTimersByTimeAsync(9_000);
     documentTarget.dispatchEvent(new Event('astro:page-load'));
-    await vi.advanceTimersByTimeAsync(4_000);
-
     expect(image.decode).toHaveBeenCalledOnce();
-    expect(rig.dataset.characterState).toBe('error');
+    expect(rig.dataset.characterState).toBe('loading');
+    finishDecode();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(rig.dataset.characterState).toBe('ready');
     windowTarget.dispatchEvent(new Event('pagehide'));
     expect(vi.getTimerCount()).toBe(0);
   });

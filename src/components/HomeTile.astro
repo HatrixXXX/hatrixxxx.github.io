@@ -1,7 +1,7 @@
 ---
 import HomeIcon from './HomeIcon.astro';
 
-type TileName = 'blog' | 'projects' | 'about' | 'bookmark' | 'software' | 'gear' | 'plans' | 'lab' | 'friends' | 'guestbook';
+type TileName = 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'plans' | 'lab' | 'friends' | 'guestbook';
 
 interface Props {
   name: TileName;
@@ -14,9 +14,9 @@ const english: Record<TileName, string> = {
   blog: 'Blogs',
   projects: 'Creation',
   about: 'About',
+  snippets: 'Snippets',
   bookmark: 'Favorites',
   software: 'Toolbox',
-  gear: 'Equipment',
   plans: 'Plans',
   lab: 'Playground',
   friends: 'Friends',
