@@ -1,0 +1,227 @@
+.home-stage .tile {
+  --tile-bg: #272831ed;
+  --tile-hover: #363740f2;
+  --tile-ink: #f2ede5;
+  --tile-english: #d4c9bb;
+  --tile-accent: #d5a977;
+  --tile-glyph: #c1ad96;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--tile-border, color-mix(in srgb, var(--tile-accent) 85%, transparent));
+  border-radius: var(--home-panel-radius);
+  background: radial-gradient(circle at 83% 42%, color-mix(in srgb, var(--tile-accent) 14%, transparent), transparent 47%), linear-gradient(115deg, #efe1cc0e, transparent 56%), var(--tile-bg);
+  box-shadow: inset 0 1px #f8ebd415, 0 8px 18px #0b081826;
+  color: var(--tile-ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.home-stage .tile::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  width: 94px;
+  height: 1px;
+  background: var(--tile-accent);
+}
+
+.home-stage .tile::after {
+  content: '';
+  position: absolute;
+  right: 17px;
+  bottom: 16px;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid var(--tile-accent);
+  border-bottom: 1px solid var(--tile-accent);
+  opacity: .75;
+}
+
+.home-stage .tile:hover {
+  --tile-bg: var(--tile-hover);
+  border-color: var(--tile-hover-border, var(--tile-accent));
+}
+
+.home-stage .tile:active { box-shadow: inset 0 2px 8px #0b08184d; }
+
+.home-stage .tile-texture {
+  position: absolute;
+  inset: 0;
+  background-image: var(--tile-texture-image, url('/home-textures/workshop-panel.svg'));
+  background-position: right top;
+  background-size: var(--tile-texture-size, 240px 140px);
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  opacity: var(--tile-texture-opacity, .52);
+  -webkit-mask-image: radial-gradient(ellipse 68% 94% at 78% 50%, #000 8%, #000b 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse 68% 94% at 78% 50%, #000 8%, #000b 55%, transparent 100%);
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.home-stage .tile:hover .tile-texture { opacity: var(--tile-texture-hover-opacity, .62); }
+
+.home-stage .tile-copy {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 28px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.home-stage .tile-title {
+  color: var(--tile-ink);
+  font-size: 57px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.025em;
+}
+
+.home-stage .tile-english {
+  color: var(--tile-english);
+  font: 700 33px/1.05 Arial, 'Segoe UI', sans-serif;
+  letter-spacing: -.035em;
+}
+
+.home-stage .tile-glyph {
+  position: absolute;
+  right: 23px;
+  top: 50%;
+  display: block;
+  width: 106px;
+  height: 106px;
+  transform: translateY(-50%);
+  color: var(--tile-glyph);
+  opacity: .7;
+  pointer-events: none;
+}
+
+.home-stage .tile-glyph svg { display: block; width: 100%; height: 100%; }
+
+.home-stage .tile-note {
+  position: absolute;
+  z-index: 1;
+  bottom: 27px;
+  left: 43px;
+  min-width: 305px;
+  padding-top: 9px;
+  border-top: 1px solid color-mix(in srgb, var(--tile-accent) 65%, transparent);
+  color: var(--tile-english);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .06em;
+}
+
+.home-stage .tile--blog {
+  --tile-bg: #2b2932f5;
+  --tile-hover: #3b3540fa;
+  --tile-ink: #f5eee4;
+  --tile-english: #dac6aa;
+  --tile-accent: #d0ae80;
+  --tile-glyph: #c5b294;
+}
+
+.home-stage .tile--blog::before { top: 16px; left: 43px; width: 185px; }
+.home-stage .tile--blog .tile-copy { top: 44%; left: 43px; gap: 8px; transform: translateY(-50%); }
+.home-stage .tile--blog .tile-title { font-size: 64px; }
+.home-stage .tile--blog .tile-english { font-size: 37px; line-height: 1.05; }
+.home-stage .tile--blog .tile-glyph { right: 55px; width: 185px; height: 185px; opacity: .55; }
+
+.home-stage .tile--projects { --tile-bg: #243236ed; --tile-hover: #34464af5; --tile-accent: #86b6ad; --tile-glyph: #8eb5ac; }
+.home-stage .tile--projects .tile-glyph { right: 14px; width: 88px; height: 88px; }
+.home-stage .tile--about { --tile-bg: #302b37ed; --tile-hover: #403849f5; --tile-accent: #c5a6c1; --tile-glyph: #baa2bd; }
+.home-stage .tile--plans { --tile-bg: #2b2b34ed; --tile-hover: #3b3945f5; --tile-accent: #bca797; }
+.home-stage .tile--lab { --tile-bg: #292d36ed; --tile-hover: #3b434af5; --tile-accent: #96b5c5; --tile-glyph: #9cb9c5; }
+
+.home-stage .tile--bookmark,
+.home-stage .tile--software,
+.home-stage .tile--gear {
+  --tile-bg: #29423eed;
+  --tile-hover: #385650f5;
+  --tile-accent: #91c1b3;
+  --tile-glyph: #9fc4ba;
+}
+
+.home-stage .tile--bookmark { grid-area: bookmark; --tile-bg: #30514bed; }
+.home-stage .tile--software { grid-area: software; }
+.home-stage .tile--gear { grid-area: gear; }
+.home-stage .tile--bookmark::before,
+.home-stage .tile--software::before,
+.home-stage .tile--gear::before { width: 56px; }
+
+.home-stage .tile--bookmark .tile-copy { top: auto; bottom: 17px; left: 19px; gap: 3px; transform: none; }
+.home-stage .tile--bookmark .tile-title { font-size: 44px; }
+.home-stage .tile--bookmark .tile-english { font-size: 24px; }
+.home-stage .tile--bookmark .tile-glyph { top: 17px; right: 13px; width: 74px; height: 74px; transform: none; }
+
+.home-stage .tile--software .tile-copy,
+.home-stage .tile--gear .tile-copy { top: auto; bottom: 14px; left: 17px; gap: 2px; transform: none; }
+.home-stage .tile--software .tile-title,
+.home-stage .tile--gear .tile-title { font-size: 35px; }
+.home-stage .tile--software .tile-english,
+.home-stage .tile--gear .tile-english { font-size: 24px; }
+.home-stage .tile--software .tile-glyph,
+.home-stage .tile--gear .tile-glyph { top: 10px; right: 12px; width: 53px; height: 53px; transform: none; }
+
+.home-stage .tile--friends,
+.home-stage .tile--guestbook { --tile-bg: #292733ed; --tile-hover: #3a3543f5; --tile-accent: #c0a4bb; --tile-glyph: #c3aec4; }
+.home-stage .tile--friends::before,
+.home-stage .tile--guestbook::before { width: 36px; }
+.home-stage .tile--friends .tile-copy,
+.home-stage .tile--guestbook .tile-copy { left: 17px; gap: 1px; }
+.home-stage .tile--friends .tile-title,
+.home-stage .tile--guestbook .tile-title { font-size: 31px; }
+.home-stage .tile--friends .tile-english,
+.home-stage .tile--guestbook .tile-english { font-size: 18px; }
+.home-stage .tile--friends .tile-glyph,
+.home-stage .tile--guestbook .tile-glyph { right: 11px; width: 45px; height: 45px; }
+.home-stage .tile--about,
+.home-stage .tile--friends,
+.home-stage .tile--bookmark,
+.home-stage .tile--lab {
+  --tile-texture-image: url('/home-textures/microscheme.png');
+  --tile-texture-size: 280px 280px;
+  --tile-texture-opacity: .17;
+  --tile-texture-hover-opacity: .24;
+}
+
+.home-stage .tile--projects,
+.home-stage .tile--plans {
+  --tile-texture-image: url('/home-textures/treadplate1.png');
+  --tile-texture-size: 212px 212px;
+  --tile-texture-opacity: .19;
+  --tile-texture-hover-opacity: .26;
+}
+
+.home-stage .tile--software,
+.home-stage .tile--guestbook {
+  --tile-texture-image: url('/home-textures/conduit-led.svg');
+  --tile-texture-size: 240px 160px;
+  --tile-texture-opacity: .54;
+  --tile-texture-hover-opacity: .64;
+}
+
+.home-stage .tile--gear {
+  --tile-texture-image: url('/home-textures/blue-metal-plate.jpg');
+  --tile-texture-size: 320px 320px;
+  --tile-texture-opacity: .48;
+  --tile-texture-hover-opacity: .58;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-stage .tile, .home-stage .tile-texture { transition: none; }
+}

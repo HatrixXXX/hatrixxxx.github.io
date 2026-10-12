@@ -17,7 +17,7 @@ const stats = posts.length > 0 ? buildSiteStats(posts) : null;
   <main class="friends-main container">
     <SidebarStack posts={[]} showClock={false} showStats={false}>
       <ProfileSidebar />
-      {stats && <SiteStats stats={stats} showClock={false} />}
+      {stats && <SiteStats stats={stats} showClock={false} visitorLabel="访问数" />}
     </SidebarStack>
     <div class="friends-content">
       <ul class="friends-grid" role="list">

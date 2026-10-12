@@ -126,7 +126,7 @@ Argon2id 当前参数为 19 MiB 内存、2 次迭代、单路并行，输出 32 
 
 远程图片预检与保护审计是两条不同的检查链：
 
-- `pnpm check:images` 处理 jsDelivr inventory 和网络可用性，报告在忽略提交的 `reports/image-check.json`。如果只是远程图片偶发失败，先看报告并重跑；恢复后删除忽略目录 `.astro/`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要更新 inventory 或视觉基线掩盖网络故障。
+- `pnpm check:images` 处理 jsDelivr inventory 和网络可用性，报告在忽略提交的 `reports/image-check.json`。如果只是远程图片偶发失败，先看报告并重跑；恢复后清理根目录 `.astro/` 和 `node_modules/.astro/data-store.json`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要更新 inventory 或视觉基线掩盖网络故障。
 - `pnpm check:protected` 检查已经存在的 `dist/`。加锁正文远程图片通常会更早在 Astro 渲染时失败；保护审计还会报告明文、原始图片字节或文件名、索引和 sitemap 泄漏。应修正文引用或加密边界，不得放宽检查、替换期望密文或把泄漏结果写成新基线。
 
 正式构建还会因缺少私有内容目录、`HATRIX_ADMIN_KEY` 未配置或少于 8 个字符、内容 schema 错误和私有 token 无权读取目标仓库而失败。排障时只确认 Secret 是否存在以及权限范围，不打印 Secret 值。

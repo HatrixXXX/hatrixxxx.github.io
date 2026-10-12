@@ -8,7 +8,7 @@ import {
 describe('navigation configuration', () => {
   it('defines the requested primary and secondary navigation labels', () => {
     expect(PRIMARY_NAV_ITEMS.map((item) => item.label)).toEqual([
-      '首页', '博客文章', '作品橱窗', '关于我', '书签', '工具箱', '装备铺', '计划', '实验场', '友链', '留言板'
+      '首页', '博客文章', '作品橱窗', '关于我', '收藏', '工具箱', '装备铺', '计划', '实验场', '友链', '留言板'
     ]);
     expect(PRIMARY_NAV_ITEMS.map((item) => item.href)).toEqual([
       '/', '/blog/', '/projects/', '/about/', '/about/bookmarks/', '/about/software/', '/about/gear/',
@@ -24,7 +24,7 @@ describe('navigation configuration', () => {
       '相簿',
       '装备铺',
       '工具箱',
-      '书签',
+      '收藏',
       '友链'
     ]);
   });

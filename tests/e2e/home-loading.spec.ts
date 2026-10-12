@@ -53,12 +53,14 @@ test('keeps the cold-load deadline when client modules start late', async ({ pag
   const rig = page.locator('[data-char-rig]');
   try {
     await expect(page.locator('[data-home-stage]')).toBeAttached();
-    await page.clock.runFor(7_500);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    const remaining = await page.evaluate(() => 8_000 - (Date.now() - Number(document.documentElement.dataset.initialPageLoaderStartedAt)));
+    await page.clock.runFor(Math.max(0, remaining - 500));
     await expect(loader).toBeVisible();
     releaseScripts();
     await expect(loader).toHaveClass(/pl-visible/);
     await expect(rig).toHaveAttribute('data-character-state', 'loading');
-    await page.clock.runFor(1_500);
+    await page.clock.runFor(9_000);
     await expect(rig).toHaveAttribute('data-character-state', 'error');
     await expect(loader).not.toHaveClass(/pl-visible/);
   } finally {
@@ -108,6 +110,106 @@ test('a pending background independently holds the loader', async ({ page }) => 
   } finally {
     release();
   }
+  await expect(loader).not.toHaveClass(/pl-visible/);
+});
+
+test('keeps the homepage covered past the accessory deadline while its background loads', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let requested = false;
+  await page.clock.install();
+  await page.route((url) => url.pathname.startsWith('/_image') && url.href.includes('liupin-workshop'), async (route) => {
+    requested = true;
+    await gate;
+    await route.continue();
+  });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const loader = page.locator('#page-loader');
+  try {
+    await expect.poll(() => requested).toBe(true);
+    await expect(loader).toHaveClass(/pl-visible/);
+    await page.clock.runFor(9_000);
+    await expect(loader).toHaveClass(/pl-visible/);
+  } finally {
+    release();
+    await page.clock.resume();
+  }
+  await expect(loader).not.toHaveClass(/pl-visible/);
+});
+
+test('keeps the loader over a non-home page until its background is ready', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let requested = false;
+  await page.route((url) => url.href.includes('liupin-workshop-v6.png'), async (route) => {
+    requested = true;
+    await gate;
+    await route.continue();
+  });
+
+  await page.goto('/blog/', { waitUntil: 'domcontentloaded' });
+  const loader = page.locator('#page-loader');
+  try {
+    await expect.poll(() => requested).toBe(true);
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(page.locator('html')).toHaveAttribute('data-page-background', 'loading');
+    expect(await page.locator('body').evaluate((body) => getComputedStyle(body).backgroundImage)).toBe('none');
+    await page.waitForTimeout(700);
+    await expect(loader).not.toHaveClass(/pl-done/);
+  } finally {
+    release();
+  }
+  await expect(page.locator('html')).not.toHaveAttribute('data-page-background', 'loading', { timeout: 3_000 });
+  await expect(loader).not.toHaveClass(/pl-visible/);
+});
+
+test('keeps a click-through navigation covered while the destination background loads', async ({ page }) => {
+  await page.goto('/');
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  let requested = false;
+  await page.route((url) => url.href.includes('liupin-workshop-v6.png'), async (route) => {
+    requested = true;
+    await gate;
+    await route.continue();
+  });
+  await page.locator('[data-home-blog]').click();
+  const loader = page.locator('#page-loader');
+  try {
+    await expect(page).toHaveURL('/blog/');
+    await expect.poll(() => requested).toBe(true);
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(page.locator('html')).toHaveAttribute('data-page-background', 'loading');
+    expect(await page.locator('body').evaluate((body) => getComputedStyle(body).backgroundImage)).toBe('none');
+    await page.waitForTimeout(700);
+    await expect(loader).not.toHaveClass(/pl-done/);
+  } finally {
+    release();
+  }
+  await expect(page.locator('html')).not.toHaveAttribute('data-page-background', 'loading');
+  await expect(loader).not.toHaveClass(/pl-visible/);
+});
+
+test('does not reveal an unfinished background after the loading deadline', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.clock.install();
+  await page.route((url) => url.href.includes('liupin-workshop-v6.png'), async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.goto('/blog/', { waitUntil: 'domcontentloaded' });
+  const loader = page.locator('#page-loader');
+  try {
+    await expect(loader).toHaveClass(/pl-visible/);
+    await page.clock.runFor(9_000);
+    await expect(loader).toHaveClass(/pl-visible/);
+    await expect(page.locator('html')).toHaveAttribute('data-page-background', 'loading');
+  } finally {
+    release();
+    await page.clock.resume();
+  }
+  await expect(page.locator('html')).not.toHaveAttribute('data-page-background', 'loading');
   await expect(loader).not.toHaveClass(/pl-visible/);
 });
 

@@ -10,6 +10,29 @@ tool-icons/LICENSE-dashboard-icons.txt. Devicon assets are distributed with
 their MIT license in tool-icons/LICENSE-devicon.txt. Simple Icons and SVG Logos
 assets are available under CC0-1.0.
 
+Homepage card textures
+----------------------
+Seamless Microscheme Texture by HorrorPen (2012).
+Source: https://opengameart.org/content/seamless-microscheme-texture
+License: Creative Commons Attribution 3.0
+https://creativecommons.org/licenses/by/3.0/
+Local file: home-textures/microscheme.png
+
+Tileable metal textures by nublet (2019): treadplate1.png.
+Source: https://opengameart.org/content/tileable-metal-textures
+License: Creative Commons CC0 1.0
+https://creativecommons.org/publicdomain/zero/1.0/
+Local file: home-textures/treadplate1.png
+
+Blue Metal Plate by Rob Tuytel / Poly Haven.
+Source: https://polyhaven.com/a/blue_metal_plate
+License: Creative Commons CC0 1.0
+https://creativecommons.org/publicdomain/zero/1.0/
+Local file: home-textures/blue-metal-plate.jpg
+
+The original images are repeated at fixed sizes and blended into homepage cards
+with opacity gradients.
+
 Sakana 1.0.8
 ------------
 Project: https://github.com/itorr/sakana

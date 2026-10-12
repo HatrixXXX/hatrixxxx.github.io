@@ -184,6 +184,10 @@ body[style*="--page-bg-image"] {
   background-repeat: no-repeat;
 }
 
+html[data-page-background='loading'] body[style*="--page-bg-image"] {
+  background-image: none;
+}
+
 body[style*="--page-bg-image"]::before {
   content: "";
   position: fixed;

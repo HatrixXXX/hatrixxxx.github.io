@@ -222,14 +222,14 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:images` | 168 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、37 页静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章路由、CNAME、1628 条站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 214 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
+| `pnpm check:site` | 文章路由、CNAME、1662 条站内链接和发布体积 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 222 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
 
 2026-09-25 本次发布检查通过 316 项单元测试、55 项相关浏览器回归、Astro 检查、生产依赖审计、完整构建、保护审计和 3976 条站内链接检查。浏览器回归覆盖首页、导航、各页面返回路径、键盘操作和无脚本访问。
 
-完整浏览器套件当前收集 214 项。博客路径、文章数量、普通页页脚、Coverflow、实验场 CursorTrail、About 装饰层和 18 张视觉基线均按当前实现校验。
+完整浏览器套件当前收集 222 项。博客路径、文章数量、普通页页脚、Coverflow、实验场 CursorTrail、About 装饰层和 18 张视觉基线均按当前实现校验。
 新增或删除页面、导航项等内容后，如果站内链接总量发生了合理变化，先核对构建产物，再同步更新 `scripts/check-built-site.ts` 中的期望值；未更新时 `pnpm check:site` 会失败。
 
 ## 安全边界
@@ -275,7 +275,7 @@ Giscus 深色主题源码位于 `src/styles/giscus-dark.css`。本地开发时�
 
 先区分图片预检和保护审计：
 
-- `pnpm check:images` 检查 jsDelivr inventory 和远程地址，把结果写入 `reports/image-check.json`。如果视觉差异只发生在含远程图片的文章，先看报告。网络恢复后重跑 `pnpm check:images`，删除忽略目录 `.astro/`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要用 inventory 或视觉基线更新掩盖远程图片失败。
+- `pnpm check:images` 检查 jsDelivr inventory 和远程地址，把结果写入 `reports/image-check.json`。如果视觉差异只发生在含远程图片的文章，先看报告。网络恢复后重跑 `pnpm check:images`，清理根目录 `.astro/` 和 `node_modules/.astro/data-store.json`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要用 inventory 或视觉基线更新掩盖远程图片失败。
 - `pnpm check:protected` 检查现有 `dist/` 是否含加锁正文片段、原图片字节、原文件名、错误的索引规则或 sitemap URL。加锁正文使用远程图片、绝对路径或越界相对路径时，Astro 渲染会先失败。修正文或加密边界；不要放宽审计、替换期望密文，或把泄漏输出当成新基线。
 
 生产构建还可能因 `.private-content/posts/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。

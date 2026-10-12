@@ -6,7 +6,7 @@ export const ABOUT_SECTION_LINKS = [
   { label: '相簿', slug: 'albums', href: '/about/albums/' },
   { label: '装备铺', slug: 'gear', href: '/about/gear/' },
   { label: '工具箱', slug: 'software', href: '/about/software/' },
-  { label: '书签', slug: 'bookmarks', href: '/about/bookmarks/' },
+  { label: '收藏', slug: 'bookmarks', href: '/about/bookmarks/' },
   { label: '友链', slug: 'friends', href: '/about/friends/' }
 ] as const;
 
@@ -17,7 +17,7 @@ export const HOME_LINKS = {
   about: { label: '关于我', href: '/about/' },
   guestbook: { label: '留言板', href: '/guestbook/' },
   friends: { label: '友链', href: ABOUT_SECTION_LINKS[8].href },
-  bookmarks: { label: '书签', href: ABOUT_SECTION_LINKS[7].href },
+  bookmarks: { label: '收藏', href: ABOUT_SECTION_LINKS[7].href },
   software: { label: '工具箱', href: ABOUT_SECTION_LINKS[6].href },
   gear: { label: '装备铺', href: ABOUT_SECTION_LINKS[5].href },
   plans: { label: '计划', href: '/plans/' },

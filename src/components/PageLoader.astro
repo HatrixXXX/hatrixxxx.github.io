@@ -36,7 +36,6 @@
     gap: 22px;
     background: #17151d;
     opacity: 1;
-    transition: opacity 0.5s cubic-bezier(.4, 0, .2, 1);
   }
   :root[data-theme='light'] #page-loader.pl-visible,
   :root[data-theme='light'][data-initial-page-loader='visible'] #page-loader { background: #f0ece4; }
@@ -45,6 +44,7 @@
   #page-loader.pl-visible.pl-done {
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(.4, 0, .2, 1);
   }
 
   /* 圆弧容器 */

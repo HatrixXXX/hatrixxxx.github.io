@@ -7,9 +7,11 @@ import { HOME_QUOTES } from '@/data/home-quotes';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HomePanel from '@/components/HomePanel.astro';
 import HomeIcon from '@/components/HomeIcon.astro';
+import HomeTile from '@/components/HomeTile.astro';
 import MusicPlayer from '@/components/MusicPlayer.astro';
 import CharacterIdle from '@/components/CharacterIdle.astro';
 import { projectPanel, projectRectOnPanelPlane, type Point } from '@/lib/home-projection';
+import '../styles/home-tiles.css';
 
 const clockTemplate = '0000/00/00 00:00:00';
 const homeBackground = await getImage({ src: homeWorkshop, format: 'webp', quality: 65 });
@@ -19,7 +21,7 @@ const leftPanels = {
   search: { width: 44, height: 44, corners: [[14, 16], [58, 16], [58, 60], [14, 60]] },
   identity: { width: 180, height: 180, corners: [[72, 355], [252, 355], [252, 535], [72, 535]] },
   identityName: { x: 264, y: 389, width: 300, height: 112 },
-  quote: { width: 600, height: 110, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: -392, y: -114, width: 600, height: 110 }) },
+  quote: { width: 600, height: 70, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: -392, y: -74, width: 600, height: 70 }) },
   music: { width: 380, height: 172, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: -392, y: 0, width: 380, height: 172 }) },
   friends: { width: 208, height: 88, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: 0, y: 0, width: 208, height: 88 }) },
   guestbook: { width: 208, height: 80, corners: projectRectOnPanelPlane(lowerLeftPlane.width, lowerLeftPlane.height, lowerLeftPlane.corners, { x: 0, y: 92, width: 208, height: 80 }) }
@@ -68,25 +70,29 @@ const rightPanels = {
         <HomePanel name="identity-name" {...leftPanels.identityName}>
           <div class="identity-name"><h1 id="home-title" data-home-title>Hatrix</h1></div>
         </HomePanel>
-        <HomePanel name="quote" {...leftPanels.quote}>
-          <div class="quote-card">
-            <div class="quote-window" data-home-quote role="status" aria-live="polite" aria-atomic="true">
-              <span class="quote-text-window" data-quote-text-window>
-                <span data-quote-text>{HOME_QUOTES[0].text}</span>
-              </span>
-              <span data-quote-source>— {HOME_QUOTES[0].source}</span>
+        <div class="home-left-cards" data-home-tilt="left">
+          <HomePanel name="quote" {...leftPanels.quote}>
+            <div class="quote-card">
+              <div class="quote-window" data-home-quote role="status" aria-live="polite" aria-atomic="true">
+                <span class="quote-row">
+                  <span class="quote-text-window" data-quote-text-window>
+                    <span data-quote-text>{HOME_QUOTES[0].text}</span>
+                  </span>
+                  <span data-quote-source>— {HOME_QUOTES[0].source}</span>
+                </span>
+              </div>
             </div>
-          </div>
-        </HomePanel>
+          </HomePanel>
           <MusicPlayer mode="home" />
-        <HomePanel name="music" {...leftPanels.music}>
-        </HomePanel>
-        <HomePanel name="friends" {...leftPanels.friends}>
-          <a class="tile small-tile" data-astro-prefetch="tap" href={HOME_LINKS.friends.href}><HomeIcon name="friends" /><span>友链</span></a>
-        </HomePanel>
-        <HomePanel name="guestbook" {...leftPanels.guestbook}>
-          <a class="tile small-tile" data-astro-prefetch="tap" href={HOME_LINKS.guestbook.href}><HomeIcon name="guestbook" /><span>留言板</span></a>
-        </HomePanel>
+          <HomePanel name="music" {...leftPanels.music}>
+          </HomePanel>
+          <HomePanel name="friends" {...leftPanels.friends}>
+            <HomeTile name="friends" {...HOME_LINKS.friends} />
+          </HomePanel>
+          <HomePanel name="guestbook" {...leftPanels.guestbook}>
+            <HomeTile name="guestbook" {...HOME_LINKS.guestbook} />
+          </HomePanel>
+        </div>
       </div>
       <div class="home-side home-side--right" data-home-side="right">
         <div class="right-plane" data-home-plane="right" style={`width:${rightPlane.width}px;height:${rightPlane.height}px;transform:${rightTransform}`}>
@@ -101,30 +107,27 @@ const rightPanels = {
             </div>
           </HomePanel>
           <HomePanel name="blog" {...rightPanels.blog}>
-            <a class="tile blog-tile" data-astro-prefetch="tap" data-home-blog href={HOME_LINKS.blog.href}>
-              <HomeIcon name="blog" /><span>博客文章</span>
-              <svg class="blog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
-            </a>
+            <HomeTile name="blog" {...HOME_LINKS.blog} />
           </HomePanel>
           <HomePanel name="projects" {...rightPanels.projects}>
-            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.projects.href}><HomeIcon name="projects" /><span>作品橱窗</span></a>
+            <HomeTile name="projects" {...HOME_LINKS.projects} />
           </HomePanel>
           <HomePanel name="about" {...rightPanels.about}>
-            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.about.href}><HomeIcon name="about" /><span>关于我</span></a>
+            <HomeTile name="about" {...HOME_LINKS.about} />
           </HomePanel>
           <HomePanel name="recommendations" {...rightPanels.recommendations}>
             <section class="recommendations" aria-labelledby="recommendations-title">
               <h2 id="recommendations-title">效率提升</h2>
-              <a class="tile bookmark-tile" data-astro-prefetch="tap" href={HOME_LINKS.bookmarks.href}><HomeIcon name="bookmark" /><span>书签</span></a>
-              <a class="tile software-tile" data-astro-prefetch="tap" href={HOME_LINKS.software.href}><HomeIcon name="software" /><span>工具箱</span></a>
-              <a class="tile gear-tile" data-astro-prefetch="tap" href={HOME_LINKS.gear.href}><HomeIcon name="gear" /><span>装备铺</span></a>
+              <HomeTile name="bookmark" {...HOME_LINKS.bookmarks} />
+              <HomeTile name="software" {...HOME_LINKS.software} />
+              <HomeTile name="gear" {...HOME_LINKS.gear} />
             </section>
           </HomePanel>
           <HomePanel name="plans" {...rightPanels.plans}>
-            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.plans.href}><HomeIcon name="plans" /><span>计划</span></a>
+            <HomeTile name="plans" {...HOME_LINKS.plans} />
           </HomePanel>
           <HomePanel name="lab" {...rightPanels.lab}>
-            <a class="tile" data-astro-prefetch="tap" href={HOME_LINKS.lab.href}><HomeIcon name="lab" /><span>实验场</span></a>
+            <HomeTile name="lab" {...HOME_LINKS.lab} />
           </HomePanel>
         </div>
       </div>
@@ -165,6 +168,7 @@ const rightPanels = {
   .home-side { position: absolute; inset: 0; pointer-events: none; }
   .home-side--left { transform: translateX(calc(-1 * var(--home-side-offset))); }
   .home-side--right { transform: translateX(var(--home-side-offset)); }
+  .home-left-cards { position: absolute; inset: 0; pointer-events: none; transform-origin: 0 0; }
   .home-side :global([data-home-panel]) { pointer-events: auto; }
   .home-side :global([data-music-player][data-display-mode='home']) { pointer-events: auto; }
   .right-plane { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
@@ -173,22 +177,7 @@ const rightPanels = {
   .home-stage :is(button, a, summary) { -webkit-tap-highlight-color: transparent; }
   .home-stage :is(button, a, summary):focus-visible { outline: 4px solid #f6d28e; outline-offset: -7px; }
   .home-stage ::selection { background: var(--home-accent); color: #172329; }
-  .tile, .search-button {
-    position: relative; display: flex; width: 100%; height: 100%; align-items: center;
-    border: 1px solid #b8a6c14d; padding: 24px 32px;
-    background: var(--home-surface); color: var(--home-ink);
-    border-radius: var(--home-panel-radius);
-    background-image: linear-gradient(155deg, #f5e0c10a, transparent 48%);
-    box-shadow: inset 0 1px #f8e7cf12, inset 0 -1px #0b081833;
-    text-decoration: none; cursor: pointer; overflow: hidden;
-    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-  }
-  .tile:hover, .search-button:hover { background-color: var(--home-surface-hover); border-color: #c8a16f8c; }
-  .tile:active { box-shadow: inset 0 2px 6px #0b081844; }
-  .tile::before { content: ''; position: absolute; left: 12px; top: 18px; bottom: 18px; width: 1px; background: var(--home-accent); }
-  .tile span { position: relative; z-index: 1; font-size: 43px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
-  .tile :global(svg) { position: absolute; right: 22px; width: 125px; height: 130px; color: var(--home-icon); opacity: .2; pointer-events: none; }
-  .search-button { justify-content: center; padding: 0; border: 0; background: transparent; color: var(--home-ink); }
+  .search-button { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; padding: 0; border: 0; background: transparent; color: var(--home-ink); cursor: pointer; }
   .search-button:hover { background: transparent; color: #f6d28e; }
   .search-button :global(svg) { width: 24px; height: 24px; }
   .level-badge { position: relative; width: 100%; height: 100%; color: var(--home-ink); }
@@ -201,42 +190,26 @@ const rightPanels = {
   .level-fallback { margin: 8px -40px 0; font-size: 18px; text-align: center; }
   .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; background: transparent; }
   .identity-name h1 { margin: 0; color: var(--home-ink); font: 500 64px/1 'IBM Plex Mono', monospace; letter-spacing: -.035em; }
-  .quote-card { position: relative; width: 100%; height: 100%; background: #26232ff2; border: 1px solid #b8a6c14d; border-radius: var(--home-panel-radius); box-shadow: inset 0 1px #f8e7cf0d; }
-  .quote-window { display: grid; overflow: hidden; width: 100%; height: 100%; grid-template-rows: minmax(0, 1fr) auto; padding: 8px 24px; }
-  .quote-text-window { display: flex; overflow: hidden; min-width: 0; width: 100%; height: 100%; align-items: center; }
-  [data-quote-text] { display: block; overflow: hidden; min-width: 0; width: 100%; font-size: 22px; line-height: 1.65; white-space: nowrap; }
-  [data-quote-source] { overflow: hidden; min-width: 0; max-width: 100%; align-self: end; justify-self: end; color: #c5bacb; font-size: 15px; line-height: 1.2; letter-spacing: .02em; text-overflow: ellipsis; white-space: nowrap; }
-  .small-tile { padding: 14px 20px 14px 65px; }
-  .small-tile span { font-size: 32px; }
-  .small-tile :global(svg) { width: 42px; height: 45px; left: 15px; right: auto; opacity: .6; }
-  .small-tile::before { display: none; }
-  .clock-card { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; height: 100%; place-items: center; background: #28232ced; border: 1px solid #c8a16f40; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf12; padding: 8px 22px; }
+  .quote-card { position: relative; display: flex; width: 100%; height: 100%; align-items: center; background: #252730f2; border: 1px solid #86b6c6cc; border-radius: var(--home-panel-radius); box-shadow: inset 0 1px #b7e0e71a; color: #ecf2f0; }
+  .quote-window { overflow: hidden; width: 100%; padding: 0 24px; }
+  .quote-row { display: flex; min-width: 0; width: 100%; align-items: flex-end; gap: 12px; }
+  .quote-text-window { display: flex; overflow: hidden; min-width: 0; flex: 1 1 0; align-items: center; }
+  [data-quote-text] { display: block; overflow: hidden; min-width: 0; width: 100%; font-size: 17px; line-height: 1.25; white-space: nowrap; }
+  [data-quote-source] { overflow: hidden; min-width: 0; max-width: 35%; flex: 0 0 auto; color: #b3ccd5; font-size: 10.506px; line-height: 1.25; letter-spacing: .02em; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+  .clock-card { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; height: 100%; place-items: center; background: #28232ced; border: 1px solid #c8a16fd9; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf12; padding: 8px 22px; }
   [data-home-clock] { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; gap: 5px; white-space: nowrap; }
   .nixie-tube { position: relative; display: grid; flex: 1 1 0; min-width: 0; place-items: center; height: 76px; border: 1px solid #c8b4a575; border-radius: 20px 20px 11px 11px; background: #201a17; box-shadow: inset 3px 0 5px #ffffff14, inset -3px 0 5px #0008; font: 400 51px/1 'IBM Plex Mono', monospace; color: #ffbc79; text-shadow: 0 0 3px #ff7c38, 0 0 12px #ff7929b3; }
   .nixie-tube::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -5px; height: 5px; border-bottom: 2px solid #b6906f; background: #32251b; }
   .clock-separator { flex: 0 0 auto; color: #f5b47b; font: 36px/1 'IBM Plex Mono', monospace; }
   .clock-space { width: 14px; }
   .clock-fallback { font-size: 17px; }
-  .blog-tile { --home-icon: #675c70; padding-left: 44px; background: linear-gradient(155deg, #eee7dc12, #9081740a), #ddd6caf5; color: #322d38; border-color: #f6ecdc8c; box-shadow: inset 0 1px #fff9eb99, inset 0 -1px #50443026; }
-  .blog-tile:hover { background-color: #eee7db; }
-  .blog-tile span { font-size: 78px; }
-  .blog-tile :global(svg) { width: 198px; height: 208px; right: 65px; }
-  .blog-tile .blog-chevron { width: 34px; height: 34px; right: 22px; bottom: 20px; opacity: 1; fill: none; stroke: currentColor; stroke-width: 2; }
   .recommendations {
     position: relative; height: 100%; display: grid; gap: 4px;
     grid-template: 'bookmark heading heading' 22fr 'bookmark software gear' 78fr / 32fr 34fr 34fr;
   }
-  .recommendations h2 { grid-area: heading; display: flex; align-items: center; margin: 0; padding: 0 17px; color: var(--home-ink); background: #25212ef2; font-size: 26px; font-weight: 400; line-height: 1; }
-  .recommendations .tile { --home-icon: #a7d4c8; min-width: 0; min-height: 0; padding: 23px; align-items: flex-end; background: #294641f2; border-color: #94c0b64d; }
-  .recommendations .tile:hover { background: #42665e; }
-  .recommendations .tile::before { display: none; }
-  .recommendations .tile :global(svg) { width: 96px; height: 102px; right: 10px; top: 12px; }
-  .recommendations .bookmark-tile { grid-area: bookmark; background: #36574ff2; }
-  .recommendations .bookmark-tile:hover { background: #496e64; }
-  .software-tile { grid-area: software; }
-  .gear-tile { grid-area: gear; }
-  .home-stage :global([data-music-player][data-display-mode='home']) { --player-ink: #e9e4dc; --player-muted: #c5bacb; --player-accent: #e9b66c; --player-accent-hover: #ffd28c; --player-on-accent: #241c13; --player-track: #655770; --color-inset: #19161f; --color-surface-raised: #2c2735; --color-copper: #b58c65; --color-line: #b8a6c14d; --color-line-strong: #655770; background: #26232ff2; border-color: #b8a6c14d; }
-  @media (prefers-reduced-motion: reduce) { .tile, .search-button { transition: none; } }
+  .recommendations h2 { grid-area: heading; display: flex; align-items: center; margin: 0; padding: 0 17px; border: 1px solid #c8c7cab3; border-radius: var(--home-panel-radius); color: var(--home-ink); background: #25212ef2; font-size: 26px; font-weight: 400; line-height: 1; }
+  .home-stage :global([data-music-player][data-display-mode='home']) { --player-ink: #e9e4dc; --player-muted: #c5bacb; --player-accent: #e9b66c; --player-accent-hover: #ffd28c; --player-on-accent: #241c13; --player-track: #655770; --color-inset: #19161f; --color-surface-raised: #2c2735; --color-copper: #b58c65; --color-line: #b8a6c14d; --color-line-strong: #655770; background: #26232ff2; border-color: var(--color-copper); }
+  @media (prefers-reduced-motion: reduce) { .search-button { transition: none; } }
 </style>
 
 <script is:inline>

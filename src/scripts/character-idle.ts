@@ -2,32 +2,10 @@
  * character-idle.ts
  * Controls the CharacterIdle rig:
  *  - Pauses CSS animations when the page/rig is hidden (performance)
- *  - Cursor parallax on desktop (smooth, small amplitude)
  *  - ?characterMeshDebug=1 overlay
  */
 
 import { waitForImages, type ReadinessImage } from '@/lib/image-readiness';
-
-const PARALLAX_X_MAX = 2.5;
-const PARALLAX_Y_MAX = 1.5;
-const PARALLAX_SMOOTH = 0.06;
-
-const PARALLAX_LAYERS: { selector: string; depthX: number; depthY: number }[] = [
-  { selector: '.char-coat-back',     depthX: 0.30, depthY: 0.20 },
-  { selector: '.char-coat-front',    depthX: 0.40, depthY: 0.25 },
-  { selector: '.char-legs',          depthX: 0.50, depthY: 0.30 },
-  { selector: '.char-feet',          depthX: 0.55, depthY: 0.35 },
-  { selector: '.char-torso',         depthX: 1.00, depthY: 1.00 },
-  { selector: '.char-head',          depthX: 1.10, depthY: 1.05 },
-  { selector: '.char-arm-r',         depthX: 1.05, depthY: 1.00 },
-  { selector: '.char-arm-l',         depthX: 1.05, depthY: 1.00 },
-  { selector: '.char-torso-devices', depthX: 1.00, depthY: 1.00 },
-  { selector: '.char-cable',         depthX: 1.00, depthY: 1.00 },
-  { selector: '.char-cable-arm',     depthX: 1.05, depthY: 1.00 },
-  { selector: '.char-waist',         depthX: 0.90, depthY: 0.90 },
-  { selector: '.char-waist-devices', depthX: 0.90, depthY: 0.90 },
-  { selector: '.char-leg-devices',   depthX: 0.80, depthY: 0.80 },
-];
 
 const DEBUG_JOINTS = [
   { name: 'torso',     x: 480, y: 350 },
@@ -49,10 +27,6 @@ function cleanupCharacterIdle(): void {
   activeCleanup?.();
   activeCleanup = null;
   activeRig = null;
-}
-
-function isMobile(): boolean {
-  return window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768;
 }
 
 export async function prepareCharacter(rig: HTMLElement, signal: AbortSignal): Promise<void> {
@@ -103,46 +77,6 @@ function initCharacterIdle(): void {
   }, { threshold: 0 });
   observer.observe(rig);
   cleanupFns.push(() => observer.disconnect());
-
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!isMobile() && !prefersReducedMotion) {
-    const rigEl: HTMLElement = rig;
-    const layers = PARALLAX_LAYERS.map(({ selector, depthX, depthY }) => {
-      const el = rigEl.querySelector<HTMLElement>(selector);
-      return el ? { el, depthX, depthY } : null;
-    }).filter((item): item is { el: HTMLElement; depthX: number; depthY: number } => item !== null);
-
-    let targetNX = 0;
-    let targetNY = 0;
-    let currentNX = 0;
-    let currentNY = 0;
-    let rafId = 0;
-
-    function applyParallax(): void {
-      currentNX += (targetNX - currentNX) * PARALLAX_SMOOTH;
-      currentNY += (targetNY - currentNY) * PARALLAX_SMOOTH;
-      for (const { el, depthX, depthY } of layers) {
-        el.style.setProperty('--par-x', (currentNX * PARALLAX_X_MAX * depthX).toFixed(3) + 'px');
-        el.style.setProperty('--par-y', (currentNY * PARALLAX_Y_MAX * depthY).toFixed(3) + 'px');
-      }
-      rafId = requestAnimationFrame(applyParallax);
-    }
-
-    function onMouseMove(event: MouseEvent): void {
-      const rect = rigEl.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      targetNX = Math.max(-1, Math.min(1, (event.clientX - cx) / (rect.width / 2)));
-      targetNY = Math.max(-1, Math.min(1, (event.clientY - cy) / (rect.height / 2)));
-    }
-
-    document.addEventListener('mousemove', onMouseMove, { signal });
-    document.addEventListener('mouseleave', () => { targetNX = 0; targetNY = 0; }, { signal });
-    rafId = requestAnimationFrame(applyParallax);
-    cleanupFns.push(() => cancelAnimationFrame(rafId));
-  }
-
-
 
   const debugParam = new URLSearchParams(window.location.search).get('characterMeshDebug');
   if (debugParam === '1') {

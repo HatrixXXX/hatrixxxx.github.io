@@ -32,7 +32,7 @@
  * --------
  * - 页面被导航到外部（RSS/锚点/下载）：visibilitychange + pageshow 检测到
  *   页面重新可见时若 pending 存在则立即 complete() 清理。
- * - 8s 兜底防止永久卡住。
+ * - The 8s deadline covers homepage accessories; backgrounds wait for decoding or failure.
  */
 
 const VISITED_KEY = 'hatrix-visited-pages';
@@ -126,24 +126,30 @@ function fakeProgress(s: State, target: number, ms = 2400): void {
 
 // ── Show / Complete ───────────────────────────────────────────────────────────
 
+let activeLoader: State | null = null;
+
 function showLoader(): State | null {
   const el = document.getElementById('page-loader');
   if (!el) return null;
   el.innerHTML = INNER_HTML;
+  el.classList.remove('pl-done');
   el.classList.add('pl-visible');
   delete document.documentElement.dataset.initialPageLoader;
   const s = buildState(el);
+  activeLoader = s;
   applyPct(s, 0);
   return s;
 }
 
 function complete(s: State): void {
-  if (s.finished) return;
+  if (s.finished || activeLoader !== s) return;
   s.finished = true;
   cancelAnimationFrame(s.raf);
   applyPct(s, 100);
   s.el.classList.add('pl-done');
   const cleanup = (): void => {
+    if (activeLoader !== s) return;
+    activeLoader = null;
     delete document.documentElement.dataset.initialPageLoader;
     delete document.documentElement.dataset.initialPageLoaderStartedAt;
     s.el.classList.remove('pl-visible', 'pl-done');
@@ -174,17 +180,14 @@ function waitForState(
   });
 }
 
-function waitForBackground(): Promise<void> {
-  const canvas = document.querySelector<HTMLElement>('[data-home-canvas]');
-  const value = canvas?.style.getPropertyValue('--home-background-image') ?? '';
+function waitForBackground(isHome: boolean): Promise<boolean> {
+  const element = isHome ? document.querySelector<HTMLElement>('[data-home-canvas]') : document.body;
+  const value = element?.style.getPropertyValue(isHome ? '--home-background-image' : '--page-bg-image') ?? '';
   const src = value.replace(/^url\(["']?/, '').replace(/["']?\)$/, '').trim();
-  if (!src) return Promise.resolve();
-  return new Promise((resolve) => {
-    const probe = new Image();
-    probe.onload = probe.onerror = () => resolve();
-    probe.src = src;
-    if (probe.complete) resolve();
-  });
+  if (!src) return Promise.resolve(false);
+  const probe = new Image();
+  probe.src = src;
+  return probe.decode().then(() => true, () => false);
 }
 
 function getRemainingHomeDeadline(): number {
@@ -200,6 +203,7 @@ function waitHomeDone(s: State): void {
   const player = document.querySelector<HTMLElement>('[data-music-player]');
   const controller = new AbortController();
   let settled = false;
+  let guard = 0;
   const dispose = (resetOverlay = false) => {
     if (settled) return;
     settled = true;
@@ -208,6 +212,7 @@ function waitHomeDone(s: State): void {
     cancelAnimationFrame(s.raf);
     if (resetOverlay) {
       s.finished = true;
+      if (activeLoader === s) activeLoader = null;
       delete document.documentElement.dataset.initialPageLoader;
       delete document.documentElement.dataset.initialPageLoaderStartedAt;
       s.el.classList.remove('pl-visible', 'pl-done');
@@ -220,20 +225,27 @@ function waitHomeDone(s: State): void {
     dispose();
     complete(s);
   };
-  const guard = window.setTimeout(() => {
-    if (settled) return;
-    if (rig?.dataset.characterState === 'loading') {
-      rig.dataset.characterState = 'error';
-      document.dispatchEvent(new CustomEvent('hatrix:character-state', { detail: { state: 'error' } }));
-    }
-    finish();
-  }, getRemainingHomeDeadline());
+  const accessoryDeadline = new Promise<void>((resolve) => {
+    guard = window.setTimeout(() => {
+      if (settled) return;
+      if (rig?.dataset.characterState === 'loading') {
+        rig.dataset.characterState = 'error';
+        document.dispatchEvent(new CustomEvent('hatrix:character-state', { detail: { state: 'error' } }));
+      }
+      resolve();
+    }, getRemainingHomeDeadline());
+  });
   cancelHomeWait = dispose;
 
   void Promise.all([
-    waitForBackground(),
-    waitForState(rig, 'characterState', ['ready', 'error'], 'hatrix:character-state', controller.signal),
-    waitForState(player, 'layoutState', ['ready'], 'hatrix:player-layout-ready', controller.signal),
+    waitForBackground(true),
+    Promise.race([
+      Promise.all([
+        waitForState(rig, 'characterState', ['ready', 'error'], 'hatrix:character-state', controller.signal),
+        waitForState(player, 'layoutState', ['ready'], 'hatrix:player-layout-ready', controller.signal),
+      ]),
+      accessoryDeadline,
+    ]),
   ]).then(finish);
 }
 
@@ -241,6 +253,15 @@ function waitHomeDone(s: State): void {
 
 let pending: State | null = null;
 let initialHomeBootstrapped = false;
+let pageBackgroundWait = 0;
+
+function waitPageBackgroundDone(s: State, background: Promise<boolean>, minimumMs = 0): void {
+  const wait = ++pageBackgroundWait;
+  fakeProgress(s, 85);
+  void Promise.all([background, new Promise((resolve) => window.setTimeout(resolve, minimumMs))]).then(() => {
+    if (wait === pageBackgroundWait) complete(s);
+  });
+}
 
 /** 清理悬空的 pending（页面重新可见时调用） */
 function drainPending(): void {
@@ -261,11 +282,16 @@ document.addEventListener('astro:before-preparation', (raw) => {
   if (!to || !replacesOverlay || (!supersedesHomeWait && hasVisited(to.pathname))) return;
   const s = showLoader();
   if (!s) return;
+  pageBackgroundWait += 1;
   fakeProgress(s, 80);
   pending = s;
 });
 
-document.addEventListener('astro:before-swap', () => {
+document.addEventListener('astro:before-swap', (raw) => {
+  const next = (raw as unknown as { newDocument?: Document }).newDocument;
+  if (next?.body.style.getPropertyValue('--page-bg-image')) {
+    next.documentElement.dataset.pageBackground = 'loading';
+  }
   initialHomeBootstrapped = false;
   cancelHomeWait?.();
 });
@@ -276,13 +302,20 @@ window.addEventListener('pagehide', () => cancelHomeWait?.(true));
 function onPageLoad(): void {
   const path   = location.pathname;
   const isHome = document.documentElement.dataset.pageKind === 'home';
+  const body = document.body;
+  const background = !isHome
+    ? waitForBackground(false).then((ready) => {
+        if (ready && document.body === body) delete document.documentElement.dataset.pageBackground;
+        return ready;
+      })
+    : null;
 
   if (pending) {
     // VT 导航完成，消费 pending
     const s = pending;
     pending = null;
     markVisited(path);
-    if (isHome) { waitHomeDone(s); } else { complete(s); }
+    if (isHome) { waitHomeDone(s); } else { waitPageBackgroundDone(s, background!); }
     return;
   }
 
@@ -306,8 +339,7 @@ function onPageLoad(): void {
     fakeProgress(s, 85);
     waitHomeDone(s);
   } else {
-    fakeProgress(s, 100, 500);
-    window.setTimeout(() => complete(s), 550);
+    waitPageBackgroundDone(s, background!, 550);
   }
 }
 

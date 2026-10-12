@@ -48,3 +48,35 @@ export function projectRectOnPanelPlane(
     transformPoint(matrix, [rect.x, rect.y + rect.height]),
   ];
 }
+
+/** Reproject a fixed panel plane as the viewer turns their head around the camera eye. */
+export function createPanelView(
+  width: number,
+  height: number,
+  corners: readonly Point[],
+  focalLength: number,
+): (yawDegrees: number, pitchDegrees: number, center: Point) => number[] {
+  const base = projectPanel(width, height, corners);
+  const localCorners: Point[] = [[0, 0], [width, 0], [width, height], [0, height]];
+
+  return (yawDegrees, pitchDegrees, [centerX, centerY]) => {
+    const yaw = yawDegrees * Math.PI / 180;
+    const pitch = pitchDegrees * Math.PI / 180;
+    const cosYaw = Math.cos(yaw);
+    const sinYaw = Math.sin(yaw);
+    const cosPitch = Math.cos(pitch);
+    const sinPitch = Math.sin(pitch);
+    const viewedCorners = localCorners.map(([x, y]): Point => {
+      const w = base[3] * x + base[7] * y + 1;
+      const worldX = base[0] * x + base[4] * y + base[12] - centerX * w;
+      const worldY = base[1] * x + base[5] * y + base[13] - centerY * w;
+      const worldZ = -focalLength * w;
+      const turnedX = cosYaw * worldX + sinYaw * worldZ;
+      const turnedZ = -sinYaw * worldX + cosYaw * worldZ;
+      const turnedY = cosPitch * worldY + sinPitch * turnedZ;
+      const depth = sinPitch * worldY - cosPitch * turnedZ;
+      return [centerX + focalLength * turnedX / depth, centerY + focalLength * turnedY / depth];
+    });
+    return projectPanel(width, height, viewedCorners);
+  };
+}

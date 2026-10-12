@@ -103,7 +103,7 @@ test('lower stack shares one vertical-sided parallelogram plane with exact gaps 
     };
   });
   const expectedCorners = {
-    quote: [[8.88462, 676.61538], [606, 642], [606, 752], [8.88462, 786.61538]],
+    quote: [[8.88462, 716.61538], [606, 682], [606, 752], [8.88462, 786.61538]],
     music: [[8.88462, 790.61538], [387.05769, 768.69231], [387.05769, 940.69231], [8.88462, 962.61538]],
     friends: [[399, 768], [606, 756], [606, 844], [399, 856]],
     guestbook: [[399, 860], [606, 848], [606, 928], [399, 940]]
@@ -358,48 +358,54 @@ test('home quote is a non-interactive live region without manual switching', asy
   await expect(text).toHaveText(firstQuote);
 });
 
-test('home quote keeps the sentence above its bottom-right source', async ({ page }) => {
+test('home quote has matching projected insets and aligns with the source bottom', async ({ page }) => {
   await page.goto('/');
   const positions = await page.evaluate(() => {
-    const card = document.querySelector<HTMLElement>('.quote-card')!.getBoundingClientRect();
-    const text = document.querySelector<HTMLElement>('[data-quote-text]')!.getBoundingClientRect();
-    const source = document.querySelector<HTMLElement>('[data-quote-source]')!.getBoundingClientRect();
+    const card = document.querySelector<HTMLElement>('.quote-card')!;
+    const panel = document.querySelector<HTMLElement>('[data-home-panel="quote"]')!;
+    const text = document.querySelector<HTMLElement>('[data-quote-text]')!;
+    const source = document.querySelector<HTMLElement>('[data-quote-source]')!;
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(panel).transform);
+    const alongTopEdge = Math.hypot(matrix.m11, matrix.m12);
+    const alongSideEdge = Math.hypot(matrix.m21, matrix.m22);
     return {
-      cardCenterY: card.top + card.height / 2,
-      textCenterY: text.top + text.height / 2,
-      sourceCenterX: source.left + source.width / 2,
-      sourceTop: source.top,
-      sourceBottom: source.bottom,
-      cardCenterX: card.left + card.width / 2,
-      cardBottom: card.bottom,
+      cardWidth: card.offsetWidth,
+      textBottom: text.offsetTop + text.offsetHeight,
+      sourceBottom: source.offsetTop + source.offsetHeight,
+      textLeft: text.offsetLeft,
+      textRight: text.offsetLeft + text.offsetWidth,
+      sourceLeft: source.offsetLeft,
+      sourceRight: source.offsetLeft + source.offsetWidth,
+      visualLeft: (text.offsetLeft + card.clientLeft) * alongTopEdge,
+      visualTop: (text.offsetTop + card.clientTop) * alongSideEdge,
+      visualBottom: (card.offsetHeight - card.clientTop - text.offsetTop - text.offsetHeight) * alongSideEdge,
     };
   });
-  expect(positions.textCenterY).toBeLessThan(positions.cardCenterY);
-  expect(positions.sourceTop).toBeGreaterThan(positions.textCenterY);
-  expect(positions.sourceCenterX).toBeGreaterThan(positions.cardCenterX);
-  expect(positions.sourceBottom).toBeLessThan(positions.cardBottom);
+  expect(Math.abs(positions.textLeft - (positions.cardWidth - positions.sourceRight))).toBeLessThan(3);
+  expect(positions.textRight).toBeLessThan(positions.sourceLeft);
+  expect(Math.abs(positions.textBottom - positions.sourceBottom)).toBeLessThan(2);
+  expect(Math.abs(positions.visualTop - positions.visualBottom)).toBeLessThan(2);
+  expect(Math.abs(positions.visualTop - positions.visualLeft)).toBeLessThan(2);
 
   const longContent = await page.evaluate(() => {
     const textNode = document.querySelector<HTMLElement>('[data-quote-text]')!;
-    const textWindow = document.querySelector<HTMLElement>('[data-quote-text-window]')!;
     const sourceNode = document.querySelector<HTMLElement>('[data-quote-source]')!;
-    textNode.textContent = '即使金句变成两行内容，也要与右下角的出处保持清楚分隔，不发生重叠。';
+    textNode.textContent = '即使金句变长，也要与出处保持清楚分隔，不发生重叠。';
     sourceNode.textContent = `— ${'很长的出处'.repeat(20)}`;
     const windowNode = document.querySelector<HTMLElement>('.quote-window')!;
     return {
       contentWidth: windowNode.clientWidth,
-      textBottom: textWindow.offsetTop + textNode.offsetTop + textNode.offsetHeight,
+      textRight: textNode.offsetLeft + textNode.offsetWidth,
       sourceLeft: sourceNode.offsetLeft,
-      sourceTop: sourceNode.offsetTop,
       sourceRight: sourceNode.offsetLeft + sourceNode.offsetWidth,
     };
   });
-  expect(longContent.textBottom).toBeLessThanOrEqual(longContent.sourceTop);
+  expect(longContent.textRight).toBeLessThan(longContent.sourceLeft);
   expect(longContent.sourceLeft).toBeGreaterThanOrEqual(0);
   expect(longContent.sourceRight).toBeLessThanOrEqual(longContent.contentWidth);
 });
 
-test('long home quotes shrink to stay on one line', async ({ page }) => {
+test('long home quotes shrink with their sources to stay on one line', async ({ page }) => {
   const target = HOME_QUOTES.reduce((longest, quote) =>
     [...quote.text].length > [...longest.text].length ? quote : longest);
   const targetIndex = HOME_QUOTES.indexOf(target);
@@ -419,12 +425,16 @@ test('long home quotes shrink to stay on one line', async ({ page }) => {
       lineHeight: Number.parseFloat(style.lineHeight),
       scrollWidth: element.scrollWidth,
       whiteSpace: style.whiteSpace,
+      sourceFontSize: Number.parseFloat(getComputedStyle(document.querySelector<HTMLElement>('[data-quote-source]')!).fontSize),
+      cardHeight: document.querySelector<HTMLElement>('[data-home-panel="quote"]')!.offsetHeight,
     };
   });
   expect(layout.whiteSpace).toBe('nowrap');
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
   expect(layout.clientHeight).toBeLessThanOrEqual(layout.lineHeight + 1);
-  expect(layout.fontSize).toBeLessThan(22);
+  expect(layout.fontSize).toBeLessThan(17);
+  expect(layout.sourceFontSize / layout.fontSize).toBeCloseTo(0.618, 2);
+  expect(layout.cardHeight).toBe(70);
 });
 
 test('home quote advances automatically after six seconds with running vertical animation', async ({ page }) => {
@@ -555,22 +565,34 @@ test('home reduced motion changes quotes without animated scrolling', async ({ p
   expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 0 });
 });
 
-test('home quote and player share their surface and the friend card radius', async ({ page }) => {
+test('home quote uses a distinct dark surface and keeps the friend card radius', async ({ page }) => {
   await page.goto('/');
   const surfaces = await page.evaluate(() => {
     const expected = document.createElement('div');
-    expected.style.backgroundColor = '#26232ff2';
+    expected.style.backgroundColor = '#252730f2';
+    expected.style.borderColor = '#86b6c6cc';
+    expected.style.color = '#ecf2f0';
     document.body.append(expected);
-    const expectedBackground = getComputedStyle(expected).backgroundColor;
+    const expectedStyle = getComputedStyle(expected);
+    const expectedBackground = expectedStyle.backgroundColor;
+    const expectedBorder = expectedStyle.borderColor;
+    const expectedInk = expectedStyle.color;
     expected.remove();
     const quote = getComputedStyle(document.querySelector('.quote-card')!);
     const player = getComputedStyle(document.querySelector('[data-music-player]')!);
     const friend = getComputedStyle(document.querySelector('[data-home-panel="friends"] .tile')!);
-    return { expectedBackground, background: quote.backgroundColor, playerBackground: player.backgroundColor, border: quote.borderColor, playerBorder: player.borderColor, quoteRadius: quote.borderRadius, friendRadius: friend.borderRadius };
+    const guestbook = getComputedStyle(document.querySelector('[data-home-panel="guestbook"] .tile')!);
+    const source = getComputedStyle(document.querySelector('[data-quote-source]')!);
+    return { expectedBackground, expectedBorder, expectedInk, background: quote.backgroundColor, playerBackground: player.backgroundColor, friendBackground: friend.backgroundColor, guestbookBackground: guestbook.backgroundColor, border: quote.borderColor, playerBorder: player.borderColor, ink: quote.color, sourceInk: source.color, quoteRadius: quote.borderRadius, friendRadius: friend.borderRadius };
   });
   expect.soft(surfaces.background).toBe(surfaces.expectedBackground);
-  expect.soft(surfaces.background).toBe(surfaces.playerBackground);
-  expect.soft(surfaces.border).toBe(surfaces.playerBorder);
+  expect.soft(surfaces.border).toBe(surfaces.expectedBorder);
+  expect.soft(surfaces.ink).toBe(surfaces.expectedInk);
+  expect.soft(surfaces.sourceInk).toBe('rgb(179, 204, 213)');
+  expect.soft(surfaces.background).not.toBe(surfaces.playerBackground);
+  expect.soft(surfaces.background).not.toBe(surfaces.friendBackground);
+  expect.soft(surfaces.background).not.toBe(surfaces.guestbookBackground);
+  expect.soft(surfaces.border).not.toBe(surfaces.playerBorder);
   expect.soft(surfaces.quoteRadius).toBe('3px');
   expect(surfaces.friendRadius).toBe('3px');
 });
@@ -614,7 +636,7 @@ test('home links open their independent pages', async ({ page }) => {
   const entries = [
     ['作品橱窗', '/projects/'],
     ['关于我', '/about/'],
-    ['书签', '/about/bookmarks/'],
+    ['收藏', '/about/bookmarks/'],
     ['工具箱', '/about/software/'],
     ['装备铺', '/about/gear/'],
     ['友链', '/about/friends/'],

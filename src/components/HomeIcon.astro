@@ -1,18 +1,81 @@
 ---
-interface Props { name: 'search' | 'blog' | 'projects' | 'about' | 'bookmark' | 'software' | 'gear' | 'plans' | 'lab' | 'friends' | 'guestbook' }
+import { REFERENCE_ICON_PATHS } from '@/data/home-reference-icon-paths';
+
+type IconName = 'search' | 'blog' | 'projects' | 'about' | 'bookmark' | 'software' | 'gear' | 'plans' | 'lab' | 'friends' | 'guestbook';
+interface Props { name: IconName }
 const { name } = Astro.props;
-const paths = {
-  search: 'M27 27 41 41 M31 19a12 12 0 1 1-24 0 12 12 0 0 1 24 0',
-  blog: 'M9 6h23l8 8v28H9Z M31 6v10h9 M16 24h17 M16 31h17',
-  projects: 'M24 5 43 16v22L24 48 5 38V16Z M5 16l19 11 19-11 M24 27v21 M15 10l19 11',
-  about: 'M33 14a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M7 44v-5a17 17 0 0 1 34 0v5',
-  bookmark: 'M12 5h24v39L24 34 12 44Z',
-  software: 'M7 7h34v28H7Z M16 44h16 M24 35v9 M17 16l-5 5 5 5 M31 16l5 5-5 5',
-  gear: 'M6 15 24 5l18 10v21L24 46 6 36Z M16 20h16v13H16Z M24 5v7 M42 15l-7 4 M42 36l-7-4 M24 46v-7 M6 36l7-4 M6 15l7 4',
-  plans: 'M12 7h29v37H12 M5 16l4 4 8-9 M5 32l4 4 8-9 M24 17h10 M24 33h10',
-  lab: 'M17 5h14 M20 5v15L7 39a4 4 0 0 0 3 6h28a4 4 0 0 0 3-6L28 20V5 M14 30h20 M19 36h1 M28 39h1',
-  friends: 'M19 30 30 19 M16 25l-5 5a8 8 0 0 0 11 11l8-8a8 8 0 0 0 0-11 M32 24l5-5A8 8 0 0 0 26 8l-8 8a8 8 0 0 0 0 11',
-  guestbook: 'M6 7h36v27H23L12 44V34H6Z M14 17h20 M14 24h13'
+
+// Every card sign uses a 64px grid, a cut-metal silhouette, and a few readable inlays.
+const symbols = {
+  blog: {
+    body: 'M12 7h31l10 10v40H12V7Zm5 5v40h31V20h-8v-8H17ZM6 14h4v44h34v4H6V14Z',
+    fill: 'M43 7v10h10ZM22 22h18v3H22zM22 29h22v3H22z',
+    lines: 'M22 37h20M22 43h14M19 16h8'
+  },
+  projects: {
+    body: 'M8 8h18v5H13v13H8V8Zm30 0h18v18h-5V13H38V8ZM8 38h5v13h13v5H8V38Zm43 0h5v18H38v-5h13V38ZM22 22h20v20H22V22Zm5 5v10h10V27H27Z',
+    fill: 'M27 27h10v10H27zM5 29h6v6H5zM53 29h6v6h-6z',
+    lines: 'M17 32h10M37 32h10M32 17v10M32 37v10'
+  },
+  about: {
+    body: 'M32 56 11 39C2 31 4 16 14 11c7-4 14-2 18 3 4-5 11-7 18-3 10 5 12 20 3 28L32 56Zm0-5 17-15c8-7 7-16 0-21-6-4-12-2-17 4-5-6-11-8-17-4-7 5-8 14 0 21L32 51Z',
+    fill: 'M18 23h28v2.4H18z',
+    lines: 'M22 35c5 7 15 7 20 0'
+  },
+  bookmark: {
+    body: 'M14 5h36v54L32 47 14 59V5Zm5 5v39l13-9 13 9V10H19Z',
+    fill: 'm32 17 3.2 6.2 7 1-5.1 4.9 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-4.9 7-1L32 17ZM9 10h3v44H9z',
+    lines: 'M23 13h18M25 43l7-5 7 5M24 20h4'
+  },
+  lab: {
+    body: 'M23 5h18v5h-4v18l16 23a5 5 0 0 1-4 8H15a5 5 0 0 1-4-8l16-23V10h-4V5Zm9 5v20L16 54h32L32 30V10Z',
+    fill: 'M20 46c8-6 15 3 23-3l6 11H16l4-8ZM44 13a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM17 27a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z',
+    lines: 'M23 38h17M19 57h26M25 47h3M35 50h3'
+  },
+  friends: {
+    body: 'M22 9a16 16 0 1 1 0 32 16 16 0 0 1 0-32Zm0 6a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm20 8a16 16 0 1 1 0 32 16 16 0 0 1 0-32Zm0 6a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z',
+    fill: 'M25 30h14v6H25zM17 6h10v4H17zM37 54h10v4H37zM18 24a4 4 0 1 1 0 8 4 4 0 0 1 0-8ZM42 34a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z',
+    lines: 'M22 25h20M22 39h20M8 45h9M47 18h9'
+  },
+  guestbook: {
+    body: 'M9 16h40v32H30L18 57v-9H9V16Zm5 5v22h9v4l5-4h16V21H14ZM19 7h38v31h-5V12H19V7Z',
+    fill: 'M21 26a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm10 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm10 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM28 14h18v3H28z',
+    lines: 'M18 38h23M46 24h5M18 35h29'
+  }
 };
+
+const softwareDetailPath = REFERENCE_ICON_PATHS.software[2].slice(REFERENCE_ICON_PATHS.software[2].indexOf('M421.807'));
+const [planClockPath, planUpperLinePath, planLowerLinePath] = REFERENCE_ICON_PATHS.plans[1].split(/(?=M\d)/);
 ---
-<svg viewBox="0 0 48 50" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={paths[name]} /></svg>
+
+{name === 'search' && <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="21" cy="21" r="12" /><path d="m30 30 11 11" /></svg>}
+{name === 'software' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
+  <path d="M185 856 696 342" fill="none" stroke="currentColor" stroke-width="70" stroke-linecap="round" />
+  <path d={REFERENCE_ICON_PATHS.software[0]} fill="currentColor" stroke="currentColor" stroke-width="18" paint-order="stroke fill" />
+  <path d={REFERENCE_ICON_PATHS.software[1]} fill="currentColor" stroke="currentColor" stroke-width="18" paint-order="stroke fill" />
+  <path d={softwareDetailPath} fill="currentColor" />
+  <path d={REFERENCE_ICON_PATHS.software[3]} fill="currentColor" stroke="currentColor" stroke-width="18" paint-order="stroke fill" />
+  <circle cx="821" cy="836" r="50" fill="none" stroke="currentColor" stroke-width="27" />
+</svg>}
+{name === 'gear' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
+  <path d={REFERENCE_ICON_PATHS.gear[0]} fill="currentColor" stroke="currentColor" stroke-width="22" paint-order="stroke fill" />
+  <circle cx="512" cy="512" r="100" fill="currentColor" />
+</svg>}
+{name === 'plans' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
+  <defs>
+    <mask id="home-plans-binder-holes" maskUnits="userSpaceOnUse">
+      <path d="M0 0h1024v1024H0z" fill="white" />
+      <rect x="110" y="320" width="85" height="66" rx="20" fill="black" />
+      <rect x="110" y="604" width="85" height="66" rx="20" fill="black" />
+    </mask>
+  </defs>
+  <path d={REFERENCE_ICON_PATHS.plans[0]} fill="currentColor" stroke="currentColor" stroke-width="32" paint-order="stroke fill" mask="url(#home-plans-binder-holes)" />
+  <path d={planClockPath} fill="currentColor" opacity=".55" />
+  <path d={planUpperLinePath} fill="currentColor" opacity=".55" />
+  <path d={planLowerLinePath} fill="currentColor" />
+</svg>}
+{name !== 'search' && name !== 'software' && name !== 'gear' && name !== 'plans' && <svg viewBox="0 0 64 64" aria-hidden="true">
+  <path d={symbols[name].body} fill="currentColor" fill-rule="evenodd" />
+  <path d={symbols[name].fill} fill="currentColor" opacity=".55" />
+  <path d={symbols[name].lines} fill="none" stroke="currentColor" stroke-width={name === 'about' ? 3.2 : 2.4} stroke-linecap="square" stroke-linejoin="miter" />
+</svg>}

@@ -5,9 +5,10 @@ import { formatSiteDate, runningDaysAt, type BuiltSiteStats } from '@/lib/site-s
 interface Props {
   stats: BuiltSiteStats;
   showClock: boolean;
+  visitorLabel?: string;
 }
 
-const { stats, showClock } = Astro.props;
+const { stats, showClock, visitorLabel = '访客' } = Astro.props;
 const now = new Date();
 const clockText = formatClockTime(now);
 ---
@@ -18,7 +19,7 @@ const clockText = formatClockTime(now);
     <div><dt>文章</dt><dd data-stat="posts">{stats.postCount}</dd></div>
     <div><dt>字数</dt><dd data-stat="words">{stats.wordCount.toLocaleString('zh-CN')}</dd></div>
     <div><dt>运行天数</dt><dd data-stat="running-days">{runningDaysAt(now)}</dd></div>
-    <div><dt>访客</dt><dd data-stat="visitors">—</dd></div>
+    <div><dt>{visitorLabel}</dt><dd data-stat="visitors">—</dd></div>
   </dl>
   <p>
     最后更新
