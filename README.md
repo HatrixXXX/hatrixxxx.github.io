@@ -187,7 +187,7 @@ order: 10
 
 ## 添加音乐
 
-在 `src/data/playlist.ts` 中加入符合 `Track` 类型的数据：
+将音频文件放入 `public/assets/audio/`，再在 `src/data/playlist.ts` 中加入符合 `Track` 类型的数据：
 
 ```ts
 import type { Track } from '../types/content';
@@ -203,7 +203,7 @@ export const playlist: readonly Track[] = [
 ];
 ```
 
-`id`、`title`、`artist` 和 `src` 必填，`cover` 可省略。首页播放器嵌在左下透视卡片内，始终展开。所有非首页页面默认折叠到左侧，只露出半张唱片；点击唱片展开，点击卡片空白、标题或收起按钮可折叠，播放、进度和音量控件不会触发折叠。播放器通过 `transition:persist` 保留 DOM 和 Audio，客户端页面导航时继续播放，并按当前路径切换首页或侧边模式。播放列表为空时不会创建 `Audio` 对象，也不会请求音频文件。
+`id`、`title`、`artist` 和 `src` 必填，`cover` 可省略。文件名含空格、中文或 `+` 等字符时，可用 `encodeURI(filename)` 生成 `src` 中的文件名部分。首页播放器嵌在左下透视卡片内，始终展开。非首页页面默认折叠到左侧，只露出半张唱片；点击入口展开，点击卡片空白或按 Escape 折叠。单击唱片播放或暂停，双击随机下一曲。播放器通过 `transition:persist` 保留 DOM 和 Audio，客户端页面导航时继续播放，并按当前路径切换首页或侧边模式。播放列表为空时不会创建 `Audio` 对象，也不会请求音频文件。
 
 ## 图片策略
 

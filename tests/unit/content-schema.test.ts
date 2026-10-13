@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import matter from 'gray-matter';
@@ -41,12 +42,14 @@ describe('content contracts', () => {
   });
 
   it('keeps the configured playlist entries valid', () => {
-    expect(playlist).toHaveLength(3);
-    expect(playlist.map(({ id }) => id)).toEqual([
-      'xue-zhiqian-qishi',
-      'xue-zhiqian-tianwailaiwu',
-      'xue-zhiqian-yanyuan'
-    ]);
+    expect(playlist).toHaveLength(20);
+    expect(new Set(playlist.map(({ id }) => id)).size).toBe(playlist.length);
+    for (const track of playlist) {
+      expect(track.title.trim()).not.toBe('');
+      expect(track.artist.trim()).not.toBe('');
+      expect(track.src).toMatch(/^\/assets\/audio\/.+\.(mp3|ogg)$/);
+      expect(existsSync(join('public', decodeURIComponent(track.src).slice(1)))).toBe(true);
+    }
   });
 
   it('uses the dedicated Twikoo endpoint for comments', () => {
