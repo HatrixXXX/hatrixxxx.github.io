@@ -275,7 +275,7 @@ const rightPanels = {
   [data-quote-text] { display: block; overflow: visible; min-width: 0; width: max-content; font-size: 17px; line-height: 1.25; white-space: nowrap; }
   [data-quote-source] { overflow: visible; min-width: 0; max-width: 35%; flex: 0 0 auto; color: #a9e7f0; font-size: 10.506px; line-height: 1.25; letter-spacing: .02em; text-align: left; white-space: nowrap; }
   .quote-card[data-quote-cursor='text'] [data-quote-text]::after,
-  .quote-card[data-quote-cursor='source'] [data-quote-source]::after { display: inline-block; width: 7px; height: 17px; margin-left: 3px; background: #8adaf1; clip-path: polygon(0 0, 100% 0, 100% 12%, 70% 12%, 70% 88%, 100% 88%, 100% 100%, 0 100%, 0 88%, 30% 88%, 30% 12%, 0 12%); filter: drop-shadow(0 0 4px #8adaf1); content: ''; vertical-align: -.25em; animation: quote-caret-blink .7s steps(1, end) infinite; }
+  .quote-card[data-quote-cursor='source'] [data-quote-source]::after { display: inline-block; width: 2px; height: 17px; margin-left: 3px; background: #8adaf1; content: ''; vertical-align: -.25em; animation: quote-caret-blink 1.2s steps(1, end) infinite; }
   @keyframes quote-caret-blink { 50% { opacity: .25; } }
   .clock-card { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; height: 100%; place-items: center; background: #28232ced; border: 1px solid #ffd200d9; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf12; padding: 8px 22px; }
   [data-home-clock] { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; gap: 5px; white-space: nowrap; }

@@ -621,7 +621,7 @@ test('long home quotes shrink with their sources to stay on one line', async ({ 
   expect(layout.rowOverflow).toBe(false);
 });
 
-test('home quote erases and types its source with a blinking I caret', async ({ page }) => {
+test('home quote erases and types its source with a blinking bar caret', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await installQuoteProbe(page);
   await page.goto('/');
@@ -681,11 +681,13 @@ test('home quote erases and types its source with a blinking I caret', async ({ 
   await expect(quote).toHaveAttribute('data-quote-cursor', 'source');
   const caret = await page.locator('[data-quote-source]').evaluate((node) => {
     const style = getComputedStyle(node, '::after');
-    return { width: Number.parseFloat(style.width), height: Number.parseFloat(style.height), animation: style.animationName };
+    return { width: Number.parseFloat(style.width), height: Number.parseFloat(style.height), clipPath: style.clipPath, animation: style.animationName, duration: style.animationDuration };
   });
-  expect(caret.width).toBeGreaterThanOrEqual(7);
+  expect(caret.width).toBe(2);
   expect(caret.height).toBeGreaterThanOrEqual(17);
+  expect(caret.clipPath).toBe('none');
   expect(caret.animation).toBe('quote-caret-blink');
+  expect(caret.duration).toBe('1.2s');
   await page.clock.runFor(700);
   await expect(quote).toHaveAttribute('data-quote-cursor', 'source');
   expect(await page.locator('[data-quote-source]').evaluate((node) => getComputedStyle(node, '::after').animationName)).toBe('quote-caret-blink');

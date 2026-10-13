@@ -66,10 +66,10 @@ const [planClockPath, planUpperLinePath, planLowerLinePath] = REFERENCE_ICON_PAT
 {name === 'search' && <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="21" cy="21" r="12" /><path d="m30 30 11 11" /></svg>}
 {name === 'software' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
   <path d="M185 856 696 342" fill="none" stroke="currentColor" stroke-width="70" stroke-linecap="round" />
-  <path d={REFERENCE_ICON_PATHS.software[0]} fill="currentColor" stroke="currentColor" stroke-width="18" paint-order="stroke fill" />
-  <path d={REFERENCE_ICON_PATHS.software[1]} fill="currentColor" stroke="currentColor" stroke-width="18" paint-order="stroke fill" />
+  <path d={REFERENCE_ICON_PATHS.software[0]} fill="currentColor" />
+  <path d={REFERENCE_ICON_PATHS.software[1]} fill="currentColor" />
   <path d={softwareDetailPath} fill="currentColor" />
-  <path d={REFERENCE_ICON_PATHS.software[3]} fill="currentColor" stroke="currentColor" stroke-width="18" paint-order="stroke fill" />
+  <path d={REFERENCE_ICON_PATHS.software[3]} fill="currentColor" />
   <circle cx="821" cy="836" r="50" fill="none" stroke="currentColor" stroke-width="27" />
 </svg>}
 {name === 'plans' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
@@ -80,7 +80,7 @@ const [planClockPath, planUpperLinePath, planLowerLinePath] = REFERENCE_ICON_PAT
       <rect x="110" y="604" width="85" height="66" rx="20" fill="black" />
     </mask>
   </defs>
-  <path d={REFERENCE_ICON_PATHS.plans[0]} fill="currentColor" stroke="currentColor" stroke-width="32" paint-order="stroke fill" mask="url(#home-plans-binder-holes)" />
+  <path d={REFERENCE_ICON_PATHS.plans[0]} fill="currentColor" mask="url(#home-plans-binder-holes)" />
   <path d={planClockPath} fill="currentColor" opacity=".55" />
   <path d={planUpperLinePath} fill="currentColor" opacity=".55" />
   <path d={planLowerLinePath} fill="currentColor" />
