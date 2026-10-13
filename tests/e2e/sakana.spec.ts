@@ -40,7 +40,7 @@ async function readSakanaLayout(page: import('@playwright/test').Page) {
 }
 
 test('mounts the decoration only on About routes', async ({ page }) => {
-  for (const route of ['/projects/', '/']) {
+  for (const route of ['/creation/', '/']) {
     await page.goto(route);
     await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
   }
@@ -109,7 +109,7 @@ test('keeps the decoration hidden from accessibility and pointer interaction', a
 });
 
 test('mounts and unmounts with client-side navigation', async ({ page }) => {
-  await page.goto('/projects/');
+  await page.goto('/creation/');
   await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
 
   await page.locator('.desktop-nav a[href="/about/"]').click();
@@ -118,8 +118,8 @@ test('mounts and unmounts with client-side navigation', async ({ page }) => {
   await expect(layer).toHaveCount(1);
   await layer.evaluate((element) => element.setAttribute('data-navigation-probe', 'mounted'));
 
-  await page.locator('.desktop-nav a[href="/projects/"]').click();
-  await expect(page).toHaveURL(/\/projects\/$/);
+  await page.locator('.desktop-nav a[href="/creation/"]').click();
+  await expect(page).toHaveURL(/\/creation\/$/);
   await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
 
   await page.locator('.desktop-nav a[href="/about/"]').click();

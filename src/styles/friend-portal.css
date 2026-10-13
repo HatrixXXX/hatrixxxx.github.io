@@ -1,0 +1,228 @@
+.portal-stage {
+  position: relative;
+  width: min(100%, 940px, calc(100dvh - var(--header-height) - 2rem));
+}
+
+.friend-portal {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.friend-portal:focus-visible {
+  outline: none;
+}
+
+.portal-aperture {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: polygon(40% 18.4%, 60% 18.4%, 72.3% 29.6%, 72.3% 77.8%, 67.9% 81.5%, 32.1% 81.5%, 27.7% 77.8%, 27.7% 29.6%);
+  pointer-events: none;
+  transition: filter 180ms ease;
+}
+
+.portal-vortex {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 77%;
+  height: auto;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  animation: portal-vortex-turn 22s linear infinite;
+}
+
+.portal-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  pointer-events: none;
+  transition: filter 180ms ease;
+}
+
+.friend-portal:is(:hover, :focus-visible) .portal-frame {
+  filter: drop-shadow(0 0 10px rgb(0 221 235 / 38%));
+}
+
+.portal-hover-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: #68d7ff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px #34bfff) drop-shadow(0 0 14px rgb(24 136 255 / 85%));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.portal-hover-ring path {
+  vector-effect: non-scaling-stroke;
+}
+
+.friend-portal:focus-visible .portal-hover-ring,
+.friend-portal[data-state='charging'] .portal-hover-ring,
+.friend-portal[data-state='opening'] .portal-hover-ring {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .friend-portal:hover .portal-hover-ring {
+    opacity: 1;
+  }
+}
+
+.friend-portal:focus-visible .portal-hint {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.portal-readout {
+  position: absolute;
+  inset: 35% 24%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.portal-hint {
+  grid-area: 1 / 1;
+  max-width: 100%;
+  padding: .55rem .9rem;
+  border: 1px solid rgb(0 221 235 / 66%);
+  border-radius: 3px;
+  background: rgb(4 22 34 / 82%);
+  box-shadow: inset 0 0 14px rgb(0 221 235 / 18%), 0 0 16px rgb(0 14 27 / 65%);
+  color: var(--color-heading);
+  font-size: clamp(.9rem, 1.6vw, 1.15rem);
+  font-weight: 650;
+  letter-spacing: .08em;
+  line-height: 1.4;
+  text-shadow: 0 0 8px rgb(0 221 235 / 65%);
+  animation: portal-hint-flash 1.8s ease-in-out infinite alternate;
+}
+
+.portal-progress {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  width: clamp(102px, 12vw, 148px);
+  aspect-ratio: 1;
+  color: var(--color-heading);
+  font-family: var(--font-data);
+  font-size: clamp(.95rem, 1.4vw, 1.2rem);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px #061926;
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity 120ms ease, transform 160ms var(--ease-out);
+}
+
+.portal-progress svg,
+.portal-progress > span {
+  grid-area: 1 / 1;
+}
+
+.portal-progress > span {
+  display: grid;
+  place-items: center;
+  width: 55%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgb(3 22 37 / 70%);
+}
+
+.portal-progress circle {
+  fill: none;
+  stroke-width: 5;
+}
+
+.progress-track {
+  stroke: rgb(5 29 46 / 80%);
+}
+
+.progress-value {
+  stroke: var(--color-accent);
+  stroke-linecap: round;
+  stroke-dasharray: 289.03;
+  stroke-dashoffset: 289.03;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 0 5px var(--color-accent));
+}
+
+.friend-portal[data-state='charging'] .portal-hint,
+.friend-portal[data-state='opening'] .portal-hint {
+  visibility: hidden;
+}
+
+.friend-portal[data-state='charging'] .portal-progress,
+.friend-portal[data-state='opening'] .portal-progress {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.friend-portal[data-state='charging'] .portal-aperture {
+  filter: brightness(1.3) saturate(1.18);
+}
+
+.friend-portal[data-state='opening'] .portal-aperture {
+  filter: brightness(1.75) saturate(1.3);
+}
+
+.friend-portal[data-hidden='true'] .portal-vortex {
+  animation-play-state: paused;
+}
+
+.friend-portal[data-state='blocked'] .portal-hint {
+  animation: none;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+@media (max-width: 600px) and (min-height: 700px) {
+  .portal-stage {
+    transform: translateY(-4.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.portal-vortex, .portal-hint) {
+    animation: none;
+  }
+
+  .portal-hint {
+    opacity: 1;
+  }
+
+  .portal-frame,
+  .portal-hover-ring,
+  .portal-aperture,
+  .portal-progress {
+    transition: none;
+  }
+}
+
+@keyframes portal-vortex-turn {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes portal-hint-flash {
+  from { opacity: .62; box-shadow: inset 0 0 8px rgb(0 221 235 / 10%), 0 0 7px rgb(0 14 27 / 45%); }
+  to { opacity: 1; box-shadow: inset 0 0 18px rgb(0 221 235 / 30%), 0 0 18px rgb(0 221 235 / 40%); }
+}

@@ -50,7 +50,7 @@ test('search loads its index once, limits results and closes with Escape', async
   await expect(searchbox).toBeHidden();
 
   await page.getByRole('link', { name: '作品橱窗', exact: true }).click();
-  await expect(page).toHaveURL('/projects/');
+  await expect(page).toHaveURL('/creation/');
   await page.keyboard.press('Control+K');
   await expect(page.getByRole('searchbox', { name: '搜索文章' })).toBeFocused();
   expect(indexRequests).toBe(1);
@@ -111,18 +111,18 @@ test('post pages locate and temporarily highlight the searched paragraph', async
 });
 
 test('site stays dark after client navigation', async ({ page }) => {
-  await page.goto('/projects/');
+  await page.goto('/creation/');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   expect(await page.locator('html').getAttribute('data-theme')).toBeNull();
 
-  await page.locator('.desktop-nav a[href="/blog/"]').click();
+  await page.locator('.desktop-nav a[href="/blogs/"]').click();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   expect(await page.locator('html').getAttribute('data-theme')).toBeNull();
 });
 
 test('mobile menu toggles once and closes on Escape and navigation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/projects/');
+  await page.goto('/creation/');
   const menuButton = page.getByRole('button', { name: '切换导航栏' });
 
   await menuButton.click();

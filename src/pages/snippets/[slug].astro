@@ -32,11 +32,10 @@ const date = new Intl.DateTimeFormat('zh-CN', {
   canonicalPath={canonicalPath}
   bodyClass="snippet-entry-page plain-page"
 >
-  <BackButton href="/" label="返回主页" belowHeader={true} />
+  <BackButton href="/snippets/" label="返回随笔总览" belowHeader={true} />
   <main class="snippet-entry-main container">
     <article data-post>
       <header class="snippet-entry-header">
-        <p class="snippet-entry-kicker">随笔 / SNIPPETS</p>
         <h1>{snippet.data.title}</h1>
         <time datetime={snippet.data.date.toISOString()}>{date}</time>
       </header>
@@ -57,14 +56,6 @@ const date = new Intl.DateTimeFormat('zh-CN', {
     border-bottom: 1px solid var(--color-copper);
   }
 
-  .snippet-entry-kicker {
-    margin: 0 0 0.75rem;
-    color: var(--color-accent);
-    font-family: var(--font-data);
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
-  }
-
   .snippet-entry-header h1 {
     margin: 0 0 1rem;
     color: var(--color-heading);
@@ -81,3 +72,16 @@ const date = new Intl.DateTimeFormat('zh-CN', {
     .snippet-entry-main { padding-top: 7rem; }
   }
 </style>
+
+<script>
+  const bindSnippetReturn = () => {
+    const back = document.querySelector<HTMLAnchorElement>('body.snippet-entry-page [data-back-button]');
+    if (!back || back.dataset.snippetReturnBound) return;
+    back.dataset.snippetReturnBound = 'true';
+    back.addEventListener('click', () => {
+      try { sessionStorage.setItem('hatrix:snippets:return', '1'); } catch { /* The link still navigates. */ }
+    });
+  };
+  document.addEventListener('astro:page-load', bindSnippetReturn);
+  bindSnippetReturn();
+</script>

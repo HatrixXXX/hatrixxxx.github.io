@@ -49,7 +49,7 @@ const stats = buildSiteStats(posts);
     runningDuration: formatRunningDurationAt(new Date())
   }}
 >
-  <BackButton href="/blog/" label="返回博客文章" belowHeader={true} />
+  <BackButton href="/blogs/" label="返回博客文章" belowHeader={true} />
   <article data-post>
     <div class="post-intro container">
       <h1>{post.data.title}</h1>
@@ -57,7 +57,7 @@ const stats = buildSiteStats(posts);
     </div>
 
     <ProtectedContent locked={post.data.locked} route={canonicalPath} title={post.data.title}>
-      <div class="post-grid container" data-cursor-trail-region>
+      <div class="post-grid container">
         <div class="post-column">
           <div class="prose">
             <slot />

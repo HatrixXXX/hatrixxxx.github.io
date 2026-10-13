@@ -1,0 +1,33 @@
+---
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import BackButton from '@/components/BackButton.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const sceneHtml = readFileSync(resolve(process.cwd(), 'src/lab.html'), 'utf8');
+const sceneStyles = [...sceneHtml.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)]
+  .map((match) => match[1])
+  .join('\n');
+const sceneBody = sceneHtml.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)?.[1];
+if (!sceneBody) throw new Error('The lab scene HTML must include a body.');
+---
+
+<BaseLayout title="实验场" bodyClass="lab-page" showMusicPlayer={false}>
+  <BackButton href="/" label="返回主页" />
+  <style is:global set:html={sceneStyles} />
+  <main class="lab-main" aria-label="复古电子工作台">
+    <Fragment set:html={sceneBody} />
+  </main>
+</BaseLayout>
+
+<style>
+  .lab-main {
+    padding-top: 88px;
+  }
+
+  @media (max-width: 1199px) {
+    .lab-main {
+      padding-top: 76px;
+    }
+  }
+</style>

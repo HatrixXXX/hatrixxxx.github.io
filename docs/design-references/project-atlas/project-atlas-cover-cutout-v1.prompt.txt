@@ -1,0 +1,6 @@
+Use case: background-extraction.
+Edit target: the supplied Hatrix mechanical project atlas concept image. This image is the exact book design selected by the user.
+Primary request: isolate the complete book as a transparent-background cutout for use as an interactive website cover. Remove only the workshop wall, floor, lamps, and all scenery behind and around it. Preserve the book's original appearance as closely as possible: the same near-front slight tilt, exact outer silhouette, left armored spine, right and bottom thick page block, steel armor panels, copper-gold seams, cyan indicator lights, central multi-ring instrument, lighting, scratches, material texture, and proportions. Preserve any book pixels right up to its edges.
+Composition: the entire book visible, with a small transparent margin on every side. No cast shadow outside the book; the website will render its own dynamic shadow.
+Transparency: genuine alpha transparency around the book, including cutouts between any protrusions, with clean natural edges. Do not paint a checkerboard or a replacement background.
+Constraints: no additions, no redesign, no magical motifs, no text, no logos, no new parts, no crops of spine or page edges. The user wants the same book, separated from its background.

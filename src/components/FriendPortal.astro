@@ -1,0 +1,195 @@
+---
+import { FRIENDS } from '@/data/friends';
+import '@/styles/friend-portal.css';
+---
+
+<div class="portal-stage">
+  <button
+    class="friend-portal"
+    type="button"
+    aria-label="长按 1 秒，随机打开一个友链"
+    data-friend-portal
+    data-state="idle"
+    data-destinations={JSON.stringify(FRIENDS.map(({ url }) => url))}
+  >
+    <span class="portal-aperture" aria-hidden="true">
+      <img
+        class="portal-vortex"
+        src="/assets/friends/portal-vortex.webp"
+        alt=""
+        width="1254"
+        height="1254"
+        decoding="async"
+      />
+    </span>
+    <img
+      class="portal-frame"
+      src="/assets/friends/portal-frame.png"
+      alt=""
+      width="1254"
+      height="1254"
+      decoding="async"
+      fetchpriority="high"
+    />
+    <svg class="portal-hover-ring" viewBox="0 0 1254 1254" aria-hidden="true" focusable="false">
+      <path d="M535 15 L519 37 517 59 390 88 306 162 293 191 233 251 221 298 116 474 116 610 133 635 140 664 165 693 166 755 150 794 150 862 161 904 156 950 119 996 117 1026 20 1128 20 1160 38 1184 195 1205 H1064 L1214 1184 1233 1160 1233 1129 1193 1094 1132 1022 1133 996 1095 947 1091 904 1102 862 1102 794 1086 756 1087 692 1113 663 1119 635 1136 610 1136 473 1031 298 1020 253 995 219 962 194 954 170 868 91 736 59 734 37 706 15 Z" />
+    </svg>
+    <span class="portal-readout">
+      <span class="portal-hint" data-portal-hint>长按随机传送</span>
+      <span class="portal-progress" aria-hidden="true">
+        <svg viewBox="0 0 112 112">
+          <circle class="progress-track" cx="56" cy="56" r="46" />
+          <circle class="progress-value" cx="56" cy="56" r="46" data-progress-circle />
+        </svg>
+        <span data-progress-value>0%</span>
+      </span>
+    </span>
+  </button>
+  <span class="visually-hidden" role="status" aria-live="polite" data-portal-status></span>
+</div>
+
+<script>
+  import { shuffleQuoteOrder } from '@/lib/quote-order';
+
+  const HOLD_MS = 1000;
+  const CIRCUMFERENCE = 2 * Math.PI * 46;
+  const runtime = window as Window & { __friendPortalCleanup?: () => void };
+
+  function initFriendPortal() {
+    runtime.__friendPortalCleanup?.();
+    const previousPortal = document.querySelector<HTMLButtonElement>('[data-friend-portal]');
+    if (!previousPortal) return;
+    const portal = previousPortal.dataset.portalInitialized === 'true'
+      ? previousPortal.cloneNode(true) as HTMLButtonElement
+      : previousPortal;
+    if (portal !== previousPortal) previousPortal.replaceWith(portal);
+    portal.dataset.portalInitialized = 'true';
+    const progress = portal.querySelector<SVGCircleElement>('[data-progress-circle]');
+    const value = portal.querySelector<HTMLElement>('[data-progress-value]');
+    const hint = portal.querySelector<HTMLElement>('[data-portal-hint]');
+    const status = document.querySelector<HTMLElement>('[data-portal-status]');
+    const destinations = JSON.parse(portal.dataset.destinations ?? '[]') as string[];
+    if (!progress || !value || !hint || !status || destinations.length === 0) return;
+    const indices = destinations.map((_, index) => index);
+    let order = shuffleQuoteOrder(indices);
+    let previousIndex: number | undefined;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+    let frame = 0;
+    let openTimer = 0;
+    let startedAt = 0;
+    let heldPointer: number | null = null;
+    let heldKey: string | null = null;
+
+    function reset() {
+      cancelAnimationFrame(frame);
+      clearTimeout(openTimer);
+      frame = 0;
+      openTimer = 0;
+      startedAt = 0;
+      heldPointer = null;
+      heldKey = null;
+      portal!.dataset.state = 'idle';
+      progress!.style.strokeDashoffset = String(CIRCUMFERENCE);
+      value!.textContent = '0%';
+      hint!.textContent = '长按随机传送';
+      status!.textContent = '';
+    }
+
+    function openRandomFriend() {
+      portal!.dataset.state = 'opening';
+      status!.textContent = '传送门已开启，正在打开友链';
+      if (order.length === 0) order = shuffleQuoteOrder(indices, previousIndex);
+      const destination = destinations[order[0]];
+      const newTab = window.open('', '_blank');
+      if (!newTab) {
+        portal!.dataset.state = 'blocked';
+        hint!.textContent = '新标签页被拦截，请允许弹出窗口后重试';
+        status!.textContent = hint!.textContent;
+        openTimer = window.setTimeout(reset, 3000);
+        return;
+      }
+      newTab.opener = null;
+      newTab.location.replace(destination);
+      previousIndex = order.shift();
+      reset();
+      newTab.focus();
+    }
+
+    function tick(now: number) {
+      const fraction = Math.min((now - startedAt) / HOLD_MS, 1);
+      progress!.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - fraction));
+      value!.textContent = `${Math.floor(fraction * 100)}%`;
+      if (fraction < 1) {
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+      openRandomFriend();
+    }
+
+    function start() {
+      if (portal!.dataset.state !== 'idle') return;
+      startedAt = performance.now();
+      portal!.dataset.state = 'charging';
+      status!.textContent = '正在充能，持续按住 1 秒';
+      frame = requestAnimationFrame(tick);
+    }
+
+    portal.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || portal.dataset.state !== 'idle') return;
+      heldPointer = event.pointerId;
+      start();
+    }, { signal });
+    window.addEventListener('pointerup', (event) => {
+      if (event.pointerId === heldPointer && portal.dataset.state === 'charging') reset();
+    }, { signal });
+    portal.addEventListener('pointerleave', () => {
+      if (heldPointer !== null && portal.dataset.state === 'charging') reset();
+    }, { signal });
+    window.addEventListener('pointercancel', (event) => {
+      if (event.pointerId === heldPointer) reset();
+    }, { signal });
+    portal.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        reset();
+        return;
+      }
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        if (!event.repeat && portal.dataset.state === 'idle') {
+          heldKey = event.key;
+          start();
+        }
+      }
+    }, { signal });
+    portal.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') event.preventDefault();
+      if (event.key === heldKey && portal.dataset.state === 'charging') reset();
+    }, { signal });
+    portal.addEventListener('blur', () => {
+      if (portal.dataset.state === 'charging') reset();
+    }, { signal });
+    portal.addEventListener('contextmenu', (event) => event.preventDefault(), { signal });
+    document.addEventListener('visibilitychange', () => {
+      portal.dataset.hidden = String(document.hidden);
+      if (document.hidden && portal.dataset.state !== 'idle') reset();
+    }, { signal });
+    window.addEventListener('pageshow', reset, { signal });
+    window.addEventListener('focus', () => {
+      if (portal.dataset.state === 'opening') reset();
+    }, { signal });
+
+    portal.dataset.hidden = String(document.hidden);
+    reset();
+    const cleanup = () => {
+      reset();
+      controller.abort();
+      if (runtime.__friendPortalCleanup === cleanup) delete runtime.__friendPortalCleanup;
+    };
+    runtime.__friendPortalCleanup = cleanup;
+  }
+
+  document.addEventListener('astro:page-load', initFriendPortal);
+  document.addEventListener('astro:before-swap', () => runtime.__friendPortalCleanup?.());
+</script>

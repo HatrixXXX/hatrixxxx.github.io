@@ -23,14 +23,11 @@ const expectedSocials = [
 
 const compactContentSurfaces = [
   { path: '/about/', selector: '.about-main > article' },
-  { path: '/about/bookmarks/', selector: '.empty-state' },
-  { path: '/about/software/', selector: '[data-tool-deck]' },
+  { path: '/favorites/', selector: '[data-bookmark-console]' },
+  { path: '/toolbox/', selector: '[data-tool-deck]' },
   { path: '/snippets/', selector: '.empty-state' },
   { path: '/plans/', selector: '.empty-state' },
   { path: '/digest/', selector: '.empty-state' },
-  { path: '/lab/', selector: '.empty-state' },
-  { path: '/about/friends/', selector: '[data-profile-card]' },
-  { path: '/about/friends/', selector: '.friend-card' },
   { path: '/guestbook/', selector: '[data-guestbook-shell]' }
 ] as const;
 
@@ -41,44 +38,243 @@ test('about section routes keep their document titles without title banners', as
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(new RegExp(`^${section.label} \\|`));
     await expect(page.locator('[data-hero]')).toHaveCount(0);
-    if (section.slug === 'friends') {
-      await expect(page.locator('.friend-card')).toHaveCount(17);
-      await expect(page.getByRole('link', { name: 'KraHsu' })).toHaveAttribute(
-        'href',
-        'https://blog.krahsu.top/'
-      );
-    } else if (section.slug !== 'software') {
-      await expect(page.getByText('内容还在整理')).toBeVisible();
-    }
+    await expect(page.getByText('内容还在整理')).toBeVisible();
   }
 });
 
-test('friend sidebar cards wrap their content with the declared bottom padding', async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/about/friends/');
+test('friend portal cancels an early release and opens a new tab at one second without release', async ({ page, context }) => {
+  await page.goto('/friends/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const portal = page.locator('[data-friend-portal]');
+  await expect(portal).toBeVisible();
+  await expect(portal.locator('img.portal-frame')).toHaveAttribute('src', '/assets/friends/portal-frame.png');
+  await expect(portal.locator('img.portal-vortex')).toHaveAttribute('src', '/assets/friends/portal-vortex.webp');
+  const box = await portal.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await expect(portal).toHaveAttribute('data-state', 'charging');
+  await page.waitForTimeout(300);
+  await page.mouse.up();
+  await expect(portal).toHaveAttribute('data-state', 'idle');
+  await page.waitForTimeout(850);
+  await expect(page).toHaveURL(/\/friends\/$/);
+  expect(context.pages()).toHaveLength(1);
 
-  const bottomSpacing = await page.locator('[data-profile-card], [data-site-stats]').evaluateAll((cards) =>
-    cards.map((card) => {
-      const lastChild = card.lastElementChild as HTMLElement;
-      const cardRect = card.getBoundingClientRect();
-      const childRect = lastChild.getBoundingClientRect();
-      const style = getComputedStyle(card);
-      return {
-        actual: cardRect.bottom - childRect.bottom - Number.parseFloat(style.borderBottomWidth),
-        expected: Number.parseFloat(style.paddingBottom)
-      };
-    })
-  );
+  await context.route('https://**/*', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Friend</title>' }));
+  const popupPromise = context.waitForEvent('page');
+  await page.mouse.down();
+  const popup = await popupPromise;
+  await expect(popup).toHaveURL(/^https:\/\/(www\.cnblogs\.com\/sasasatori|polaris\.xn--6qq986b3xl\/|penry\.asia\/|blog\.krahsu\.top\/)/, { timeout: 5000 });
+  await expect.poll(() => popup.evaluate(() => document.hasFocus())).toBe(true);
+  await expect(page).toHaveURL(/\/friends\/$/);
+  await page.bringToFront();
+  await expect(portal).toHaveAttribute('data-state', 'idle');
+  await expect(page.locator('[data-progress-value]')).toHaveText('0%');
+  await page.mouse.up();
+  expect(Number(await portal.locator('[data-progress-circle]').evaluate((element) => (element as SVGCircleElement).style.strokeDashoffset))).toBeGreaterThan(280);
+  await page.waitForTimeout(1300);
+  await expect(page.locator('[data-progress-value]')).toHaveText('0%');
+  await expect(page).toHaveURL(/\/friends\/$/);
+});
 
-  expect(bottomSpacing).toHaveLength(2);
-  for (const spacing of bottomSpacing) {
-    expect(Math.abs(spacing.actual - spacing.expected)).toBeLessThan(2);
+test('friend portal waits for its artwork before ending a client navigation', async ({ page }) => {
+  await page.route('**/assets/friends/portal-*', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 9000));
+    await route.continue();
+  });
+  await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.locator('a[href="/friends/"]').first().click();
+  await expect(page).toHaveURL(/\/friends\/$/);
+
+  await page.waitForTimeout(5500);
+  await expect(page.locator('#page-loader')).toBeVisible();
+  await expect.poll(() => page.locator('.portal-frame').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+  await expect.poll(() => page.locator('.portal-vortex').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+  await expect(page.locator('#page-loader')).toBeHidden();
+});
+
+test('friend portal retries artwork after a failed image request', async ({ page }) => {
+  const failed = new Set<string>();
+  await page.route('**/assets/friends/portal-*', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (!failed.has(path)) {
+      failed.add(path);
+      return route.abort('failed');
+    }
+    return route.continue();
+  });
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.locator('a[href="/friends/"]').first().click();
+  await expect(page).toHaveURL(/\/friends\/$/);
+
+  await expect.poll(() => page.locator('.portal-frame').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+  await expect.poll(() => page.locator('.portal-vortex').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+  await expect(page.locator('#page-loader')).toBeHidden();
+  expect(failed.size).toBe(2);
+});
+
+test('friend portal reports an artwork failure instead of showing an empty doorway', async ({ page }) => {
+  await page.route('**/assets/friends/portal-*', (route) => route.abort('failed'));
+  await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.locator('a[href="/friends/"]').first().click();
+  await expect(page).toHaveURL(/\/friends\/$/);
+  await expect(page.locator('[data-friend-portal]')).toHaveAttribute('data-state', 'blocked');
+  await expect(page.locator('[data-portal-hint]')).toHaveText('传送门图片加载失败，请刷新页面重试');
+  await expect(page.locator('#page-loader')).toBeHidden();
+});
+
+test('friend portal retries artwork on a previously visited hard navigation', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('hatrix-visited-pages', JSON.stringify(['/friends/']));
+  });
+  const failed = new Set<string>();
+  await page.route('**/assets/friends/portal-*', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (!failed.has(path)) {
+      failed.add(path);
+      return route.abort('failed');
+    }
+    return route.continue();
+  });
+  await page.goto('/friends/');
+  await expect.poll(() => page.locator('.portal-frame').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+  await expect.poll(() => page.locator('.portal-vortex').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+  expect(failed.size).toBe(2);
+});
+
+test('friend portal keeps its artwork node during client navigation', async ({ page }) => {
+  await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.evaluate(() => {
+    document.addEventListener('astro:after-swap', () => {
+      (window as Window & { portalAtSwap?: Element | null }).portalAtSwap = document.querySelector('[data-friend-portal]');
+    }, { once: true });
+  });
+  await page.locator('a[href="/friends/"]').first().click();
+  await expect(page).toHaveURL(/\/friends\/$/);
+  await expect(page.locator('#page-loader')).toBeHidden();
+  expect(await page.evaluate(() => (window as Window & { portalAtSwap?: Element | null }).portalAtSwap === document.querySelector('[data-friend-portal]'))).toBe(true);
+});
+
+test('friend portal loads from the home card without replacing its artwork', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.evaluate(() => {
+    document.addEventListener('astro:after-swap', () => {
+      (window as Window & { portalAtSwap?: Element | null }).portalAtSwap = document.querySelector('[data-friend-portal]');
+    }, { once: true });
+  });
+  await page.locator('a[href="/friends/"]').first().click();
+  await expect(page).toHaveURL(/\/friends\/$/);
+  await expect(page.locator('#page-loader')).toBeHidden();
+  expect(await page.evaluate(() => (window as Window & { portalAtSwap?: Element | null }).portalAtSwap === document.querySelector('[data-friend-portal]'))).toBe(true);
+  await expect.poll(() => page.locator('.portal-frame').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+  await expect.poll(() => page.locator('.portal-vortex').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+});
+
+test('friend portal keeps its size after leaving and entering again', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+
+  for (let visit = 0; visit < 2; visit += 1) {
+    await page.locator('a[href="/friends/"]').first().click();
+    await expect(page).toHaveURL(/\/friends\/$/);
+    await expect(page.locator('#page-loader')).toBeHidden();
+    await expect.poll(() => page.locator('.portal-stage').evaluate((stage) => stage.getBoundingClientRect().width)).toBeGreaterThan(400);
+    await expect.poll(() => page.locator('.portal-frame').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1254);
+    await page.locator('a[href="/"]').first().click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('#page-loader')).toBeHidden();
   }
+});
+
+test('friend portal page does not scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/friends/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await expect(page.locator('body')).toHaveCSS('overflow-y', 'hidden');
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('friend portal opens at one second while the keyboard key stays down', async ({ page, context }) => {
+  await page.goto('/friends/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await context.route('https://**/*', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Friend</title>' }));
+  const portal = page.locator('[data-friend-portal]');
+  await portal.focus();
+  await page.keyboard.down('Space');
+  const popupPromise = context.waitForEvent('page');
+  const popup = await popupPromise;
+  await expect(popup).toHaveURL(/^https:\/\//);
+  await page.bringToFront();
+  await expect(portal).toHaveAttribute('data-state', 'idle');
+  await expect(page.locator('[data-progress-value]')).toHaveText('0%');
+  await page.keyboard.up('Space');
+});
+
+test('friend portal visits every destination once per shuffled round without a boundary repeat', async ({ page, context }) => {
+  await page.addInitScript(() => { Math.random = () => 0.999_999; });
+  await page.goto('/friends/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await context.route('https://**/*', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Friend</title>' }));
+  const portal = page.locator('[data-friend-portal]');
+  const destinations = JSON.parse((await portal.getAttribute('data-destinations')) ?? '[]') as string[];
+  const visited: string[] = [];
+
+  for (let turn = 0; turn <= destinations.length; turn += 1) {
+    await portal.focus();
+    const popupPromise = context.waitForEvent('page');
+    await page.keyboard.down('Space');
+    const popup = await popupPromise;
+    await popup.waitForURL(/^https:\/\//);
+    visited.push(popup.url());
+    await page.bringToFront();
+    await page.keyboard.up('Space');
+    await popup.close();
+  }
+
+  expect(new Set(visited.slice(0, destinations.length)).size).toBe(destinations.length);
+  expect(visited[destinations.length]).not.toBe(visited[destinations.length - 1]);
+});
+
+test('friend portal shows its blue outline on hover', async ({ page }) => {
+  await page.goto('/friends/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const portal = page.locator('[data-friend-portal]');
+  const outline = portal.locator('.portal-hover-ring');
+  await expect(outline).toHaveCSS('opacity', '0');
+  await portal.hover();
+  await expect(outline).toHaveCSS('opacity', '1');
+  await page.mouse.move(0, 0);
+  await expect(outline).toHaveCSS('opacity', '0');
+});
+
+test('friend portal removes listeners left by an earlier page script', async ({ page }) => {
+  await page.goto('/friends/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const portal = page.locator('[data-friend-portal]');
+  await portal.evaluate((element) => {
+    element.addEventListener('pointerdown', () => {
+      element.setAttribute('data-legacy-fired', 'true');
+      window.setTimeout(() => window.location.assign('/about/'), 1500);
+    });
+  });
+
+  await page.evaluate(() => document.dispatchEvent(new Event('astro:page-load')));
+  await portal.click();
+  await expect(portal).not.toHaveAttribute('data-legacy-fired', 'true');
+  await page.waitForTimeout(1700);
+  await expect(page).toHaveURL(/\/friends\/$/);
 });
 
 test('primary content surfaces align with the project cabinet below desktop navigation', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/projects/');
+  await page.goto('/creation/');
 
   const projectCabinetTop = await page.locator('.project-cabinet').evaluate((element) => {
     const mainTop = element.getBoundingClientRect().top;
@@ -189,8 +385,8 @@ test('Twikoo runtime styles survive client navigation to guestbook and an articl
   await expect(avatar).toHaveCSS('width', '40px');
   await expect(page.locator('style[data-twikoo]')).toHaveCount(1);
 
-  await page.locator('.desktop-nav a[href="/blog/"]').click();
-  await page.waitForURL('**/blog/');
+  await page.locator('.desktop-nav a[href="/blogs/"]').click();
+  await page.waitForURL('**/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.locator('[data-post-card][data-active="true"] h2 a').click();
   await page.waitForURL((url) => url.pathname.startsWith('/posts/'));
@@ -228,11 +424,11 @@ test('profile and article routes retain their contextual sidebar with one separa
 });
 
 test('selected about routes omit the profile sidebar and let content use the full container', async ({ page }) => {
-  for (const path of ['/about/', '/about/bookmarks/', '/about/software/', '/snippets/']) {
+  for (const path of ['/about/', '/favorites/', '/toolbox/', '/snippets/']) {
     await page.goto(path);
     await expect(page.locator('[data-sidebar-stack], [data-profile-card]')).toHaveCount(0);
     const main = page.locator('main.container');
-    const content = path === '/about/software/' || path === '/snippets/'
+    const content = path === '/toolbox/' || path === '/snippets/'
       ? main
       : main.locator(':scope > article, :scope > .about-content');
     const [mainBox, contentBox] = await Promise.all([main.boundingBox(), content.boundingBox()]);

@@ -1,0 +1,30 @@
+---
+import BackButton from '@/components/BackButton.astro';
+import FriendPortal from '@/components/FriendPortal.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="友链" description="长按传送门，随机前往一位朋友的站点。" bodyClass="friends-page nav-content-page plain-page">
+  <BackButton href="/" label="返回主页" />
+  <main class="friends-main container" aria-label="友链随机传送">
+    <FriendPortal />
+  </main>
+</BaseLayout>
+
+<style>
+  :global(body.friends-page) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  :global(body.friends-page.nav-content-page.plain-page) > main.friends-main {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    padding-block: calc(var(--header-height) + 1rem) 1rem;
+  }
+
+  :global(body.friends-page [data-sakana-layer]) {
+    display: none;
+  }
+</style>

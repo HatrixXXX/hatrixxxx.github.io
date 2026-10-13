@@ -81,6 +81,9 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
     card.style.transform = `translateY(${translateY.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) rotateX(${rotateX.toFixed(2)}deg) scale(${scaleFactor.toFixed(4)})`;
     card.style.opacity = String(opacity.toFixed(3));
     card.style.zIndex = String(Math.round(100 - absOffset * 10));
+    const centerProximity = Number(Math.max(0, 1 - absOffset).toFixed(3));
+    card.style.setProperty('--center-proximity', String(centerProximity));
+    card.toggleAttribute('data-near-center', centerProximity > 0);
     card.setAttribute('data-active', absOffset < 0.5 ? 'true' : 'false');
     card.inert = false;
     const titleLink = card.querySelector<HTMLAnchorElement>('h2 a');
@@ -174,7 +177,7 @@ document.addEventListener('astro:before-preparation', (e) => {
   const fromPath = event.from.pathname;
   const toPath   = event.to.pathname;
 
-  const isBlogList = (p: string) => p === '/blog/' || p === '/blog/all/';
+  const isBlogList = (p: string) => p === '/blogs/';
 
   if (isBlogList(fromPath) && toPath.startsWith('/posts/')) {
     // Leaving the blog list → entering a post: persist the current index.

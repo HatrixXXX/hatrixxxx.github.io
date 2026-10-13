@@ -14,24 +14,20 @@ export function getStaticPaths() {
 }
 
 const { section } = Astro.props;
-const showProfileSidebar = !['bookmarks', 'software'].includes(section.slug);
-const usesCompactNavGap = section.slug === 'bookmarks';
 ---
 
 <BaseLayout
   title={section.label}
-  bodyClass={usesCompactNavGap ? 'nav-content-page plain-page' : 'plain-page'}
+  bodyClass="plain-page"
 >
   <BackButton href="/" label="返回主页" />
-  <main class:list={['about-section', 'container', { 'about-section--with-sidebar': showProfileSidebar }]}>
+  <main class="about-section container about-section--with-sidebar">
     <div class="about-content">
       <EmptyState title="内容还在整理" description="整理好后会更新到这个页面。" />
     </div>
-    {showProfileSidebar && (
-      <SidebarStack posts={[]} showClock={false} showStats={false}>
-        <ProfileSidebar />
-      </SidebarStack>
-    )}
+    <SidebarStack posts={[]} showClock={false} showStats={false}>
+      <ProfileSidebar />
+    </SidebarStack>
   </main>
 </BaseLayout>
 

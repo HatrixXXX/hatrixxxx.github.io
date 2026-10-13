@@ -186,7 +186,7 @@ test('keeps the loader over a non-home page until its background is ready', asyn
     await route.continue();
   });
 
-  await page.goto('/blog/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/blogs/', { waitUntil: 'domcontentloaded' });
   const loader = page.locator('#page-loader');
   try {
     await expect.poll(() => requested).toBe(true);
@@ -215,7 +215,7 @@ test('keeps a click-through navigation covered while the destination background 
   await page.locator('[data-home-blog]').click();
   const loader = page.locator('#page-loader');
   try {
-    await expect(page).toHaveURL('/blog/');
+    await expect(page).toHaveURL('/blogs/');
     await expect.poll(() => requested).toBe(true);
     await expect(loader).toHaveClass(/pl-visible/);
     await expect(page.locator('html')).toHaveAttribute('data-page-background', 'loading');
@@ -237,7 +237,7 @@ test('does not reveal an unfinished background after the loading deadline', asyn
     await gate;
     await route.continue();
   });
-  await page.goto('/blog/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/blogs/', { waitUntil: 'domcontentloaded' });
   const loader = page.locator('#page-loader');
   try {
     await expect(loader).toHaveClass(/pl-visible/);
@@ -460,7 +460,7 @@ for (const outcome of ['ready', 'still-loading'] as const) {
       await characterGate;
       await route.continue();
     });
-    await page.route('**/blog/', async (route) => {
+    await page.route('**/blogs/', async (route) => {
       navigationRequested();
       await navigationGate;
       await route.continue();
@@ -489,7 +489,7 @@ for (const outcome of ['ready', 'still-loading'] as const) {
       releaseNavigation();
       await page.clock.resume();
     }
-    await expect(page).toHaveURL(/\/blog\/$/);
+    await expect(page).toHaveURL(/\/blogs\/$/);
     await expect(loader).not.toHaveClass(/pl-visible/);
   });
 }

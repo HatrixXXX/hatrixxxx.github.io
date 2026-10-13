@@ -1,0 +1,86 @@
+---
+import type { Bookmark } from '@/data/bookmarks';
+
+interface Props {
+  bookmarks: Bookmark[];
+}
+
+const { bookmarks } = Astro.props;
+const monogramFor = (title: string) => title.match(/[\p{L}\p{N}]/gu)?.slice(0, 2).join('').toUpperCase() ?? '?';
+---
+
+<section class="bookmark-console" data-bookmark-console aria-label="网址档案架">
+  <div class="bookmark-console__status">
+    <span class="bookmark-console__signal" aria-hidden="true"></span>
+    <span>网址档案</span>
+    <span class="bookmark-console__current" data-bookmark-current aria-live="polite">
+      {bookmarks.length > 0 ? bookmarks[0].title : '暂无档案'}
+    </span>
+    <span class="bookmark-console__hint">方向键切换 · Enter 查看 · Esc 返回</span>
+  </div>
+
+  {bookmarks.length > 0 ? (
+    <>
+      <div class="bookmark-shelf" data-bookmark-shelf aria-label="网址档案">
+        {bookmarks.map((bookmark, index) => (
+          <button
+            type="button"
+            class="bookmark-file"
+            data-bookmark-file
+            data-selected={index === 0 ? '' : undefined}
+            data-title={bookmark.title}
+            data-category={bookmark.category}
+            data-description={bookmark.description}
+            data-url={bookmark.url}
+            data-monogram={monogramFor(bookmark.title)}
+            aria-haspopup="dialog"
+            aria-label={`查看 ${bookmark.title} 的档案`}
+          >
+            <span class="bookmark-file__spine" aria-hidden="true"></span>
+            <span class="bookmark-file__top">
+              <span>{bookmark.category}</span>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+            </span>
+            <span class="bookmark-file__emblem" aria-hidden="true">
+              <span>{monogramFor(bookmark.title)}</span>
+            </span>
+            <span class="bookmark-file__foot">
+              <strong>{bookmark.title}</strong>
+              <span>{new URL(bookmark.url).hostname.replace(/^www\./, '')}</span>
+            </span>
+            <span class="bookmark-file__latch" aria-hidden="true"></span>
+          </button>
+        ))}
+      </div>
+      <div class="bookmark-console__footer">
+        <span>移动或聚焦档案以选择</span>
+        <span>点击档案读取介绍</span>
+      </div>
+      <dialog class="bookmark-dossier" data-bookmark-dialog data-lenis-prevent aria-labelledby="bookmark-dossier-title">
+        <div class="bookmark-dossier__shell">
+          <header class="bookmark-dossier__head">
+            <span data-bookmark-category></span>
+            <button type="button" class="bookmark-dossier__close" data-bookmark-close aria-label="返回档案总览">返回总览 <span aria-hidden="true">×</span></button>
+          </header>
+          <div class="bookmark-dossier__body">
+            <div class="bookmark-dossier__mark" data-bookmark-monogram aria-hidden="true"></div>
+            <div class="bookmark-dossier__copy">
+              <h2 id="bookmark-dossier-title" data-bookmark-title></h2>
+              <p data-bookmark-description></p>
+              <span class="bookmark-dossier__url" data-bookmark-url></span>
+              <a class="bookmark-dossier__visit" data-bookmark-visit target="_blank" rel="noopener noreferrer">访问网站 <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+        </div>
+      </dialog>
+    </>
+  ) : (
+    <div class="bookmark-console__empty">
+      <span class="bookmark-console__empty-slot" aria-hidden="true"></span>
+      <div>
+        <h2>档案架还空着</h2>
+        <p>收藏的网址录入后会在这里逐一陈列。</p>
+      </div>
+    </div>
+  )}
+</section>

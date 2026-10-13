@@ -10,11 +10,12 @@ const QUOTE_MIN_FONT_SIZE = 10;
 function fitQuoteText(element: HTMLElement, source: HTMLElement): void {
   element.style.fontSize = `${QUOTE_MAX_FONT_SIZE}px`;
   source.style.fontSize = `${(QUOTE_MAX_FONT_SIZE * 0.618).toFixed(2)}px`;
-  const availableWidth = element.clientWidth;
-  const requiredWidth = element.scrollWidth;
+  const row = element.closest<HTMLElement>('.quote-row')!;
+  const availableWidth = row.clientWidth - Number.parseFloat(getComputedStyle(row).columnGap) - 4;
+  const requiredWidth = element.scrollWidth + source.scrollWidth;
   const fittedSize = availableWidth === 0 || requiredWidth <= availableWidth
     ? QUOTE_MAX_FONT_SIZE
-    : Math.max(QUOTE_MIN_FONT_SIZE, QUOTE_MAX_FONT_SIZE * (availableWidth - 2) / requiredWidth);
+    : Math.max(QUOTE_MIN_FONT_SIZE, QUOTE_MAX_FONT_SIZE * availableWidth / requiredWidth);
   element.style.fontSize = `${fittedSize.toFixed(2)}px`;
   source.style.fontSize = `${(fittedSize * 0.618).toFixed(2)}px`;
 }
@@ -117,6 +118,167 @@ function initializePanelMotion(stage: HTMLElement, motion: MediaQueryList, signa
   };
 }
 
+function initializeLevelSpin(stage: HTMLElement, motion: MediaQueryList, signal: AbortSignal): () => void {
+  const button = stage.querySelector<HTMLButtonElement>('[data-level-impulse]')!;
+  const wheels = [
+    stage.querySelector<SVGGElement>('.level-tick-wheel')!,
+    stage.querySelector<SVGGElement>('.level-armor-wheel')!,
+  ];
+  const pushRates = [120, 190];
+  const maxChargeMs = 3_000;
+  const haloSpreadMs = 900;
+  let animations: Animation[] = [];
+  let energy = 0;
+  let initialEnergy = 0;
+  let releaseGlow = 0;
+  let frame = 0;
+  let lastTime = 0;
+  let highlightTimer = 0;
+  let chargeFrame = 0;
+  let chargeStart = 0;
+  let pressSource: 'pointer' | 'keyboard' | undefined;
+  let pointerId = -1;
+  let ignoreKeyboardClick = false;
+
+  const stop = (): void => {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    energy = 0;
+    window.clearTimeout(highlightTimer);
+    highlightTimer = 0;
+    animations.forEach((animation) => animation.updatePlaybackRate(1));
+    animations = [];
+    button.removeAttribute('data-impulsing');
+    button.style.removeProperty('--impulse-strength');
+    button.style.removeProperty('--release-glow');
+    button.style.removeProperty('--release-spread');
+  };
+  const cancelCharge = (): void => {
+    cancelAnimationFrame(chargeFrame);
+    chargeFrame = 0;
+    pressSource = undefined;
+    pointerId = -1;
+    button.removeAttribute('data-charging');
+    button.removeAttribute('data-charge-full');
+    button.style.removeProperty('--charge');
+    button.style.removeProperty('--charge-spread');
+    button.style.removeProperty('--charge-glow');
+  };
+  const updateCharge = (time: number): void => {
+    chargeFrame = 0;
+    if (!pressSource) return;
+    const progress = Math.min((time - chargeStart) / maxChargeMs, 1);
+    button.style.setProperty('--charge', String(progress));
+    button.style.setProperty('--charge-spread', String(Math.min((time - chargeStart) / haloSpreadMs, 1)));
+    button.style.setProperty('--charge-glow', String(1 - (1 - progress) ** 3));
+    if (progress >= 1) button.setAttribute('data-charge-full', '');
+    else chargeFrame = requestAnimationFrame(updateCharge);
+  };
+  const step = (time: number): void => {
+    frame = 0;
+    energy *= Math.exp(-Math.min(time - lastTime, 64) / 780);
+    lastTime = time;
+    if (energy < 0.001 || motion.matches || document.hidden) {
+      stop();
+      return;
+    }
+    button.style.setProperty('--impulse-strength', String(energy / initialEnergy));
+    button.style.setProperty('--release-glow', String(releaseGlow * energy / initialEnergy));
+    animations.forEach((animation, index) => animation.updatePlaybackRate(1 + pushRates[index] * energy));
+    frame = requestAnimationFrame(step);
+  };
+  const push = (force: number, glow = 0): void => {
+    window.clearTimeout(highlightTimer);
+    highlightTimer = 0;
+    button.setAttribute('data-impulsing', '');
+    initialEnergy = force;
+    releaseGlow = glow;
+    button.style.setProperty('--impulse-strength', '1');
+    button.style.setProperty('--release-glow', String(glow));
+    if (motion.matches) {
+      highlightTimer = window.setTimeout(stop, 320);
+      return;
+    }
+    animations = wheels.map((wheel) => wheel.getAnimations()[0]).filter((animation): animation is Animation => !!animation);
+    if (animations.length !== wheels.length) {
+      highlightTimer = window.setTimeout(stop, 320);
+      return;
+    }
+    energy = force;
+    animations.forEach((animation, index) => animation.updatePlaybackRate(1 + pushRates[index] * energy));
+    lastTime = performance.now();
+    if (!frame) frame = requestAnimationFrame(step);
+  };
+  const beginCharge = (source: 'pointer' | 'keyboard'): void => {
+    if (pressSource) return;
+    pressSource = source;
+    chargeStart = performance.now();
+    button.style.setProperty('--charge', '0');
+    button.style.setProperty('--charge-spread', '0');
+    button.style.setProperty('--charge-glow', '0');
+    button.setAttribute('data-charging', '');
+    chargeFrame = requestAnimationFrame(updateCharge);
+  };
+  const releaseCharge = (source: 'pointer' | 'keyboard'): void => {
+    if (pressSource !== source) return;
+    const progress = Math.min((performance.now() - chargeStart) / maxChargeMs, 1);
+    const glow = Number(getComputedStyle(button, '::before').opacity);
+    const spread = button.style.getPropertyValue('--charge-spread');
+    cancelCharge();
+    button.style.setProperty('--release-spread', spread);
+    push(0.25 + progress, glow);
+  };
+  button.disabled = false;
+  button.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary || event.button !== 0) return;
+    if (pressSource) return;
+    beginCharge('pointer');
+    pointerId = event.pointerId;
+    button.setPointerCapture(event.pointerId);
+  }, { signal });
+  button.addEventListener('pointerup', (event) => {
+    if (event.pointerId === pointerId) releaseCharge('pointer');
+  }, { signal });
+  button.addEventListener('pointercancel', () => {
+    if (pressSource === 'pointer') cancelCharge();
+  }, { signal });
+  button.addEventListener('lostpointercapture', () => {
+    if (pressSource === 'pointer') cancelCharge();
+  }, { signal });
+  button.addEventListener('keydown', (event) => {
+    if (event.key !== ' ' && event.key !== 'Enter') return;
+    event.preventDefault();
+    if (!event.repeat) beginCharge('keyboard');
+  }, { signal });
+  button.addEventListener('keyup', (event) => {
+    if (event.key !== ' ' && event.key !== 'Enter') return;
+    event.preventDefault();
+    if (pressSource !== 'keyboard') return;
+    releaseCharge('keyboard');
+    ignoreKeyboardClick = true;
+    window.setTimeout(() => { ignoreKeyboardClick = false; }, 0);
+  }, { signal });
+  button.addEventListener('click', (event) => {
+    if (event.detail !== 0 || ignoreKeyboardClick || pressSource) return;
+    push(0.25);
+  }, { signal });
+  button.addEventListener('contextmenu', (event) => event.preventDefault(), { signal });
+  button.addEventListener('blur', () => {
+    if (pressSource === 'keyboard') cancelCharge();
+  }, { signal });
+  motion.addEventListener('change', () => { if (motion.matches) stop(); }, { signal });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      cancelCharge();
+      stop();
+    }
+  }, { signal });
+  return () => {
+    cancelCharge();
+    stop();
+  };
+}
+
 function initializeHomeDashboard(): void {
   cleanup?.();
   cleanup = undefined;
@@ -130,10 +292,17 @@ function initializeHomeDashboard(): void {
   const levelNumber = stage.querySelector<HTMLElement>('[data-level-number]')!;
   const levelRing = stage.querySelector<SVGCircleElement>('[data-level-progress]')!;
   const quote = stage.querySelector<HTMLElement>('[data-home-quote]')!;
+  quote.removeAttribute('disabled');
   const quoteText = quote.querySelector<HTMLElement>('[data-quote-text]')!;
   const quoteSource = quote.querySelector<HTMLElement>('[data-quote-source]')!;
+  const quoteAnnouncement = stage.querySelector<HTMLElement>('[data-quote-announcement]')!;
+  const fitQuote = (): void => {
+    quoteSource.style.width = '';
+    fitQuoteText(quoteText, quoteSource);
+  };
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const stopPanelMotion = initializePanelMotion(stage, motion, signal);
+  const stopLevelSpin = initializeLevelSpin(stage, motion, signal);
   const allQuoteIndices = Array.from({ length: HOME_QUOTES.length }, (_, index) => index);
   let quoteIndex = HOME_QUOTES.findIndex(({ text, source }) =>
     quoteText.textContent === text && quoteSource.textContent === `— ${source}`);
@@ -142,10 +311,11 @@ function initializeHomeDashboard(): void {
     quoteText.textContent = HOME_QUOTES[0].text;
     quoteSource.textContent = `— ${HOME_QUOTES[0].source}`;
   }
-  fitQuoteText(quoteText, quoteSource);
+  fitQuote();
   let quoteOrder = shuffleQuoteOrder(allQuoteIndices.filter((index) => index !== quoteIndex));
-  let animation: Animation | undefined;
+  let typingTimer: number | undefined;
   let quoteTimer: number | undefined;
+  let lastActivationAt = -Infinity;
   let displayedLevelDay = '';
 
   const updateLevel = (now: Date): void => {
@@ -159,6 +329,7 @@ function initializeHomeDashboard(): void {
     levelRing.setAttribute('stroke-dashoffset', String(100 * (1 - progress)));
     levelBadge.setAttribute('aria-valuenow', String(percent));
     levelBadge.setAttribute('aria-valuetext', description);
+    levelBadge.closest('button')?.setAttribute('aria-label', `${description}；按住最多 3 秒蓄力，松开推动圆环`);
     levelBadge.title = description;
   };
 
@@ -175,49 +346,112 @@ function initializeHomeDashboard(): void {
     });
   };
 
+  const queueTyping = (step: () => void, delay: number): void => {
+    typingTimer = window.setTimeout(step, delay);
+  };
+  const showQuote = (index: number, initial = false): void => {
+    window.clearTimeout(typingTimer);
+    const next = HOME_QUOTES[index];
+    const finish = (): void => {
+      quote.removeAttribute('data-quote-phase');
+      quote.dataset.quoteCursor = 'source';
+      quoteAnnouncement.textContent = `${next.text}，出处：${next.source}`;
+    };
+    if (motion.matches || document.hidden) {
+      quoteText.textContent = next.text;
+      quoteSource.textContent = `— ${next.source}`;
+      fitQuote();
+      finish();
+      return;
+    }
+    const type = (): void => {
+      quoteSource.textContent = `— ${next.source}`;
+      quoteText.textContent = next.text;
+      fitQuote();
+      quoteText.textContent = '';
+      quoteSource.textContent = '';
+      quote.dataset.quotePhase = 'typing';
+      const typeInto = (element: HTMLElement, value: string, done: () => void): void => {
+        const characters = Array.from(value);
+        let position = 0;
+        const step = (): void => {
+          position += 1;
+          element.textContent = characters.slice(0, position).join('');
+          if (position < characters.length) queueTyping(step, 55);
+          else done();
+        };
+        queueTyping(step, 55);
+      };
+      quote.dataset.quoteCursor = 'text';
+      typeInto(quoteText, next.text, () => {
+        quote.dataset.quoteCursor = 'source';
+        typeInto(quoteSource, `— ${next.source}`, finish);
+      });
+    };
+    if (initial) {
+      type();
+      return;
+    }
+    quote.dataset.quotePhase = 'deleting';
+    const erase = (element: HTMLElement, done: () => void): void => {
+      const characters = Array.from(element.textContent ?? '');
+      if (characters.length === 0) {
+        done();
+        return;
+      }
+      characters.pop();
+      element.textContent = characters.join('');
+      queueTyping(() => erase(element, done), 18);
+    };
+    quote.dataset.quoteCursor = 'source';
+    erase(quoteSource, () => {
+      quote.dataset.quoteCursor = 'text';
+      erase(quoteText, type);
+    });
+  };
   const scheduleQuote = (): void => {
     window.clearTimeout(quoteTimer);
-    if (HOME_QUOTES.length > 1 && !document.hidden) {
-      quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
-    }
+    if (HOME_QUOTES.length > 1 && !document.hidden) quoteTimer = window.setTimeout(nextQuote, HOME_QUOTE_INTERVAL);
   };
   const nextQuote = (): void => {
-    animation?.cancel();
+    lastActivationAt = -Infinity;
     if (quoteOrder.length === 0) {
       quoteOrder = shuffleQuoteOrder(allQuoteIndices, quoteIndex);
     }
     quoteIndex = quoteOrder.shift() ?? quoteIndex;
-    const next = HOME_QUOTES[quoteIndex];
-    quoteText.textContent = next.text;
-    quoteSource.textContent = `— ${next.source}`;
-    fitQuoteText(quoteText, quoteSource);
-    if (!motion.matches) {
-      animation = quoteText.animate([
-        { transform: 'translateY(100%)', opacity: 0 },
-        { transform: 'translateY(0)', opacity: 1 },
-      ], { duration: 420, easing: 'cubic-bezier(.16, 1, .3, 1)' });
-    }
+    showQuote(quoteIndex);
     scheduleQuote();
   };
 
+  quote.addEventListener('click', (event) => {
+    if (quote.hasAttribute('data-quote-phase') || event.detail !== 0) return;
+    const now = performance.now();
+    if (now - lastActivationAt < 350) nextQuote();
+    else lastActivationAt = now;
+  }, { signal });
+  quote.addEventListener('dblclick', () => {
+    if (!quote.hasAttribute('data-quote-phase')) nextQuote();
+  }, { signal });
   document.addEventListener('visibilitychange', () => {
     updateClock();
+    if (document.hidden) showQuote(quoteIndex);
     scheduleQuote();
   }, { signal });
   motion.addEventListener('change', () => {
-    if (!motion.matches) return;
-    animation?.cancel();
+    if (motion.matches) showQuote(quoteIndex);
   }, { signal });
 
+  showQuote(quoteIndex, true);
   scheduleQuote();
   updateClock();
   const clockTimer = window.setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
   cleanup = () => {
     controller.abort();
     stopPanelMotion();
+    stopLevelSpin();
     window.clearInterval(clockTimer);
     window.clearTimeout(quoteTimer);
-    animation?.cancel();
+    window.clearTimeout(typingTimer);
   };
 }
 

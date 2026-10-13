@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('header keyboard navigation exposes a visible focus outline', async ({ page }) => {
-  await page.goto('/blog/all/');
+  await page.goto('/blogs/');
   await page.waitForLoadState('networkidle');
 
   for (let index = 0; index < 4; index += 1) {
@@ -34,7 +34,7 @@ test('home keyboard navigation reaches the spatial controls at every viewport', 
   await blog.focus();
   await expect(blog).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/blog/');
+  await expect(page).toHaveURL('/blogs/');
 });
 
 test('about decorations remain inert when reduced motion is requested', async ({ page }) => {

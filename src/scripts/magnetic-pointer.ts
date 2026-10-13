@@ -27,7 +27,7 @@ function syncFrame(): void {
   hideFrame();
   pageFrame = document.querySelector<HTMLElement>('body > [data-magnetic-frame]');
   activeFrame = pageFrame;
-  homeTiles = [...document.querySelectorAll<HTMLElement>('.home-stage .tile[href]')];
+  homeTiles = [...document.querySelectorAll<HTMLElement>('.home-stage .tile[href], .home-stage [data-home-magnetic]')];
   pageFrame?.setAttribute('data-magnetic-ready', '');
 }
 
@@ -63,7 +63,7 @@ function interactiveTarget(element: Element): Element | null {
 }
 
 function frameFor(target: Element): { element: HTMLElement; originX: number; originY: number; tile?: HTMLElement; panel?: HTMLElement } | null {
-  if (target.matches('.home-stage .tile')) {
+  if (target.matches('.home-stage .tile, .home-stage [data-home-magnetic]')) {
     const tile = target as HTMLElement;
     const panel = tile.closest<HTMLElement>('[data-home-panel]');
     if (!panel) return null;

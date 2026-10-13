@@ -19,7 +19,11 @@ function markdownFiles(directory: string): string[] {
 
 function sitemapExcludedRoutes(): Set<string> {
   const postsRoot = contentRoot('posts');
-  const routes = new Set(LOCKED_PAGE_PATHS.map(normalizeRoutePath));
+  const legacyRedirectPaths = [
+    '/blog/', '/blog/all/', '/projects/', '/about/bookmarks/',
+    '/about/software/', '/about/friends/', '/lab/'
+  ];
+  const routes = new Set([...LOCKED_PAGE_PATHS, ...legacyRedirectPaths].map(normalizeRoutePath));
 
   if (!existsSync(postsRoot)) return routes;
   for (const file of markdownFiles(postsRoot)) {

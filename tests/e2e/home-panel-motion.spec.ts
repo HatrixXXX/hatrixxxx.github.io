@@ -86,10 +86,10 @@ test('reprojected panels keep their links clickable', async ({ page }) => {
   await page.goto('/');
   await page.mouse.move(1760, 190);
   await page.locator('[data-home-panel="blog"] a').click();
-  await expect(page).toHaveURL('/blog/');
+  await expect(page).toHaveURL('/blogs/');
 
   await page.goto('/');
   await page.mouse.move(500, 800);
   await page.locator('[data-home-panel="friends"] a').click();
-  await expect(page).toHaveURL('/about/friends/');
+  await expect(page).toHaveURL('/friends/');
 });

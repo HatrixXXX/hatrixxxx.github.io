@@ -283,11 +283,64 @@ function waitHomeDone(s: State): void {
 let pending: State | null = null;
 let initialHomeBootstrapped = false;
 let pageBackgroundWait = 0;
+const portalArtworkPromises = new WeakMap<HTMLElement, Promise<void>>();
+
+function waitForPortalArtwork(): Promise<void> {
+  const portal = document.querySelector<HTMLElement>('[data-friend-portal]');
+  if (!portal) return Promise.resolve();
+  const existing = portalArtworkPromises.get(portal);
+  if (existing) return existing;
+  const promise = (async () => {
+    const images = [...portal.querySelectorAll<HTMLImageElement>('img')];
+    await Promise.all(images.map(async (image) => {
+      try {
+        await image.decode();
+      } catch {
+        if (!image.isConnected) return;
+        const retry = new URL(image.currentSrc || image.src, location.href);
+        retry.searchParams.set('retry', String(Date.now()));
+        image.src = retry.href;
+        try { await image.decode(); } catch { /* Show an error after both attempts fail. */ }
+      }
+    }));
+    if (images.every((image) => image.naturalWidth > 0) || !portal.isConnected) return;
+    portal.dataset.state = 'blocked';
+    const message = '传送门图片加载失败，请刷新页面重试';
+    const hint = portal.querySelector<HTMLElement>('[data-portal-hint]');
+    const status = document.querySelector<HTMLElement>('[data-portal-status]');
+    if (hint) hint.textContent = message;
+    if (status) status.textContent = message;
+  })();
+  portalArtworkPromises.set(portal, promise);
+  return promise;
+}
+
+function waitForLabScene(): Promise<void> {
+  if (location.pathname !== '/playground/') return Promise.resolve();
+  const canvas = document.querySelector<HTMLCanvasElement>('#scene');
+  if (!canvas || canvas.dataset.ready === 'true') return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (canvas.dataset.ready !== 'true') return;
+      finish();
+    });
+    const finish = () => {
+      observer.disconnect();
+      window.clearTimeout(timeout);
+      resolve();
+    };
+    const timeout = window.setTimeout(finish, 8_000);
+    observer.observe(canvas, { attributes: true, attributeFilter: ['data-ready'] });
+  });
+}
 
 function waitPageBackgroundDone(s: State, background: Promise<boolean>, minimumMs = 0): void {
   const wait = ++pageBackgroundWait;
   fakeProgress(s, 85);
-  void Promise.all([background, new Promise((resolve) => window.setTimeout(resolve, minimumMs))]).then(() => {
+  const portalArtwork = document.body.classList.contains('friends-page')
+    ? waitForPortalArtwork()
+    : Promise.resolve();
+  void Promise.all([background, portalArtwork, waitForLabScene(), new Promise((resolve) => window.setTimeout(resolve, minimumMs))]).then(() => {
     if (wait === pageBackgroundWait) complete(s);
   });
 }
@@ -408,6 +461,7 @@ document.addEventListener('astro:page-load', () => {
     return;
   }
   onPageLoad();
+  void waitForPortalArtwork();
 });
 
 // ── 防止 pending 泄漏：页面重新可见时清理 ───────────────────────────────────

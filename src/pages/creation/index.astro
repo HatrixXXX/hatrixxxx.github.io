@@ -1,0 +1,17 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import ProjectBook from '@/components/ProjectBook.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import '@/styles/project-book.css';
+
+const projects = (await getCollection('projects')) as CollectionEntry<'projects'>[];
+projects.sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout title="作品橱窗" description="Hatrix 的项目图鉴与制作记录。" bodyClass="projects-page plain-page nav-content-page">
+  <ProjectBook projects={projects} />
+</BaseLayout>
+
+<script>
+  import '@/scripts/project-book';
+</script>

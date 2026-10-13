@@ -32,7 +32,7 @@ test('home keeps its independent About entry without the shared header', async (
 test('desktop navigation stays at the viewport center with and without the admin action', async ({ page }) => {
   for (const width of DESKTOP_WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/projects/');
+    await page.goto('/creation/');
     await page.evaluate(() => document.fonts.ready);
     const navigation = page.locator('.desktop-nav');
     await expect(navigation).toBeVisible();
@@ -67,7 +67,7 @@ test('desktop navigation stays at the viewport center with and without the admin
 test('narrow viewports center controls and retain all twelve destinations in the mobile menu', async ({ page }) => {
   for (const width of [390, 768, 1024, 1199]) {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto('/projects/');
+    await page.goto('/creation/');
     await expect(page.locator('.desktop-nav')).toBeHidden();
     const toggle = page.locator('[data-menu-toggle]');
     await expect(toggle).toBeVisible();
@@ -79,7 +79,7 @@ test('narrow viewports center controls and retain all twelve destinations in the
     await expect(mobileMenu).toBeVisible();
     await expect(mobileMenu.locator(':scope > ul > li > a')).toHaveText(EXPECTED_PRIMARY_LINKS);
     await expect(mobileMenu.getByRole('link', { name: '随笔', exact: true })).toHaveAttribute('href', '/snippets/');
-    await expect(mobileMenu.getByRole('link', { name: '收藏夹', exact: true })).toHaveAttribute('href', '/about/bookmarks/');
+    await expect(mobileMenu.getByRole('link', { name: '收藏夹', exact: true })).toHaveAttribute('href', '/favorites/');
     const homeLink = mobileMenu.getByRole('link', { name: '首页', exact: true });
     expect(await homeLink.evaluate((link) => {
       const box = link.getBoundingClientRect();
@@ -102,7 +102,7 @@ test('narrow viewports center controls and retain all twelve destinations in the
 test('open mobile navigation scrolls internally without enlarging the document', async ({ page }) => {
   for (const height of [844, 600]) {
     await page.setViewportSize({ width: 390, height });
-    await page.goto('/projects/');
+    await page.goto('/creation/');
     const beforeHeight = await page.evaluate(() => document.documentElement.scrollHeight);
     await page.getByRole('button', { name: '切换导航栏' }).click();
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(beforeHeight);
@@ -128,7 +128,7 @@ test('open mobile navigation scrolls internally without enlarging the document',
 
 test('dark mobile navigation links meet WCAG AA contrast', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/projects/');
+  await page.goto('/creation/');
   await page.getByRole('button', { name: '切换导航栏' }).click();
   const mobileMenu = page.locator('[data-mobile-menu]');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');

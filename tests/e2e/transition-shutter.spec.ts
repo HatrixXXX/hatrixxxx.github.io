@@ -11,14 +11,14 @@ test('a client navigation closes both shutter leaves before swapping pages, then
   let navigationRequested!: () => void;
   const gate = new Promise<void>((resolve) => { releaseNavigation = resolve; });
   const requested = new Promise<void>((resolve) => { navigationRequested = resolve; });
-  await page.route('**/blog/', async (route) => {
+  await page.route('**/blogs/', async (route) => {
     navigationRequested();
     await gate;
     await route.continue();
   });
 
   try {
-    await page.locator('a[href="/blog/"]').first().click();
+    await page.locator('a[href="/blogs/"]').first().click();
     await requested;
     await expect(loader).toBeVisible();
     await expect(loader.locator('.pl-shutter-leaf')).toHaveCount(2);
@@ -35,7 +35,7 @@ test('a client navigation closes both shutter leaves before swapping pages, then
     releaseNavigation();
   }
 
-  await expect(page).toHaveURL('/blog/');
+  await expect(page).toHaveURL('/blogs/');
   await expect(loader).toBeHidden();
 });
 
@@ -47,14 +47,14 @@ test('the shutter covers a tall mobile viewport through the menu navigation', as
 
   let releaseNavigation!: () => void;
   const gate = new Promise<void>((resolve) => { releaseNavigation = resolve; });
-  await page.route('**/blog/', async (route) => {
+  await page.route('**/blogs/', async (route) => {
     await gate;
     await route.continue();
   });
 
   try {
     await page.getByRole('button', { name: '切换导航栏' }).click();
-    await page.locator('#mobile-menu a[href="/blog/"]').click();
+    await page.locator('#mobile-menu a[href="/blogs/"]').click();
     await expect(loader.locator('.pl-shutter-leaf')).toHaveCount(2);
     await expect.poll(async () => loader.evaluate((element) => {
       const leaves = Array.from(element.querySelectorAll<HTMLElement>('.pl-shutter-leaf'));
@@ -67,7 +67,7 @@ test('the shutter covers a tall mobile viewport through the menu navigation', as
     releaseNavigation();
   }
 
-  await expect(page).toHaveURL('/blog/');
+  await expect(page).toHaveURL('/blogs/');
   await expect(loader).toBeHidden();
 });
 
@@ -79,13 +79,13 @@ test('reduced motion still covers navigation without a sliding animation', async
 
   let releaseNavigation!: () => void;
   const gate = new Promise<void>((resolve) => { releaseNavigation = resolve; });
-  await page.route('**/blog/', async (route) => {
+  await page.route('**/blogs/', async (route) => {
     await gate;
     await route.continue();
   });
 
   try {
-    await page.locator('a[href="/blog/"]').first().click();
+    await page.locator('a[href="/blogs/"]').first().click();
     await expect(loader.locator('.pl-shutter-leaf')).toHaveCount(2);
     expect(await loader.locator('.pl-shutter-leaf').first().evaluate((leaf) =>
       getComputedStyle(leaf).transitionDuration)).toBe('0s');
@@ -93,6 +93,6 @@ test('reduced motion still covers navigation without a sliding animation', async
     releaseNavigation();
   }
 
-  await expect(page).toHaveURL('/blog/');
+  await expect(page).toHaveURL('/blogs/');
   await expect(loader).toBeHidden();
 });

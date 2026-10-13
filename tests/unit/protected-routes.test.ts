@@ -160,7 +160,7 @@ describe('protected rendering source contracts', () => {
     expect(baseLayout).toContain('isConfiguredLockedPage(Astro.url.pathname)');
     expect(baseLayout).toContain('<ProtectedContent');
     expect(postLayout.indexOf('<header class="post-hero" data-hero>')).toBeLessThan(gateStart);
-    expect(postLayout.indexOf('<div class="post-grid container" data-cursor-trail-region>')).toBeGreaterThan(gateStart);
+    expect(postLayout.indexOf('<div class="post-grid container">')).toBeGreaterThan(gateStart);
     expect(postLayout).toContain('locked={post.data.locked}');
   });
 

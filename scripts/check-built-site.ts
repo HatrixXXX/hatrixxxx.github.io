@@ -19,7 +19,7 @@ import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 // Includes the static noscript character fallback as well as the runtime layers.
-export const EXPECTED_LOCAL_LINKS = 1799;
+export const EXPECTED_LOCAL_LINKS = 1785;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js'
@@ -216,7 +216,7 @@ function imageSourceErrors(attribute: string, value: string, route: string): str
       errors.push(diagnostic(route, 'Found dangerous data document', attribute, candidate));
     }
   }
-  if (route !== '/about/friends/') {
+  if (route !== '/friends/') {
     errors.push(...resourceErrors('Found unapproved remote image', attribute, value, route, candidates));
   }
   return errors;

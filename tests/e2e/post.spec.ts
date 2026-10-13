@@ -44,7 +44,7 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
     'href',
     /^\/posts\//
   );
-  await expect(page.locator('[data-back-button]')).toHaveAttribute('href', '/blog/');
+  await expect(page.locator('[data-back-button]')).toHaveAttribute('href', '/blogs/');
   await expect(page.locator('.breadcrumbs')).toHaveCount(0);
   await expect(page.locator('.post-tags')).toHaveCount(0);
   await expect(page.locator('a[href^="/categories/"], a[href^="/tags/"]')).toHaveCount(0);
@@ -53,14 +53,14 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
 test('blog navigation and the home entry target the blog index', async ({ page }) => {
   await page.goto('/');
   const homeEntry = page.locator('[data-home-blog]');
-  await expect(homeEntry).toHaveAttribute('href', '/blog/');
+  await expect(homeEntry).toHaveAttribute('href', '/blogs/');
   await homeEntry.click();
-  await expect(page).toHaveURL('/blog/');
+  await expect(page).toHaveURL('/blogs/');
 
   const blogNavigation = page
     .getByRole('navigation', { name: '主导航' })
     .getByRole('link', { name: '博客文章', exact: true });
-  await expect(blogNavigation).toHaveAttribute('href', '/blog/');
+  await expect(blogNavigation).toHaveAttribute('href', '/blogs/');
   await expect(blogNavigation).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('[data-post-coverflow]')).toBeVisible();
 });
@@ -85,7 +85,7 @@ test('all legacy slugs resolve and the merged FPGA route stays available', async
     expect(response.status(), slug).toBe(200);
   }
 
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   const mergedFpgaCard = page.locator('[data-post-card]', {
     has: page.locator('h2 a[href="/posts/Xilinx FPGA开发/"]')
   });
@@ -203,7 +203,7 @@ test('post back-to-top button appears after scrolling and returns to the page st
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(backToTop).toBeHidden();
 
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   await expect(page.getByRole('button', { name: '回到顶部' })).toHaveCount(0);
 });
 

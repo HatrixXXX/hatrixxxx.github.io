@@ -12,16 +12,16 @@ test('home stage fills the viewport without a wave divider', async ({ page }) =>
 
 test('primary navigation pages omit title and subtitle banners while article pages keep their own intro', async ({ page }) => {
   const routes = [
-    '/blog/',
-    '/projects/',
+    '/blogs/',
+    '/creation/',
     '/about/',
-    '/about/bookmarks/',
-    '/about/software/',
+    '/favorites/',
+    '/toolbox/',
     '/snippets/',
     '/plans/',
     '/digest/',
-    '/lab/',
-    '/about/friends/',
+    '/playground/',
+    '/friends/',
     '/guestbook/'
   ] as const;
 

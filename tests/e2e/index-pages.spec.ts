@@ -1,17 +1,19 @@
 import { expect, test } from '@playwright/test';
 
 const generatedRoutes = [
-  '/blog/',
+  '/blogs/',
   '/blog/all/',
+  '/creation/',
   '/about/hobbies/',
   '/about/research/',
   '/about/reading/',
   '/about/games/',
   '/about/albums/',
   '/snippets/',
-  '/about/software/',
-  '/about/bookmarks/',
-  '/about/friends/',
+  '/toolbox/',
+  '/favorites/',
+  '/friends/',
+  '/playground/',
   '/guestbook/'
 ];
 
@@ -21,7 +23,22 @@ for (const route of generatedRoutes) {
   });
 }
 
-test('/about/tools/ is replaced by the software route', async ({ request }) => {
+for (const [legacyRoute, canonicalRoute] of [
+  ['/blog/', '/blogs/'],
+  ['/blog/all/', '/blogs/'],
+  ['/projects/', '/creation/'],
+  ['/about/bookmarks/', '/favorites/'],
+  ['/about/software/', '/toolbox/'],
+  ['/about/friends/', '/friends/'],
+  ['/lab/', '/playground/']
+] as const) {
+  test(`${legacyRoute} redirects to ${canonicalRoute}`, async ({ page }) => {
+    await page.goto(legacyRoute);
+    await expect(page).toHaveURL(canonicalRoute);
+  });
+}
+
+test('/about/tools/ is no longer generated', async ({ request }) => {
   expect((await request.get('/about/tools/')).status()).toBe(404);
 });
 
@@ -37,9 +54,9 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
     expect((await request.get(route)).status()).toBe(404);
   }
 
-  await page.goto('/projects/');
+  await page.goto('/creation/');
   await expect(page.getByText('作品内容还没添加')).toHaveCount(0);
-  await expect(page.locator('[data-project-card]')).toHaveCount(5);
+  await expect(page.locator('[data-project-page]')).toHaveCount(5);
 
   await page.goto('/about/hobbies/');
   await expect(page.locator('main').getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', /HatrixXXX/);
@@ -61,10 +78,10 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
 
 test('ordinary index pages omit contextual sidebars and keep the docked player', async ({ page }) => {
   for (const path of [
-    '/blog/',
+    '/blogs/',
     '/blog/all/',
     '/archives/',
-    '/projects/',
+    '/creation/',
     '/guestbook/',
     '/404.html'
   ]) {

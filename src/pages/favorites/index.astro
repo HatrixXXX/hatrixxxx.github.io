@@ -1,0 +1,29 @@
+---
+import BackButton from '@/components/BackButton.astro';
+import BookmarkArchive from '@/components/BookmarkArchive.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { BOOKMARKS } from '@/data/bookmarks';
+import '@/styles/bookmark-archive.css';
+---
+
+<BaseLayout
+  title="收藏夹"
+  description="收藏的网址与简要介绍。"
+  bodyClass="bookmarks-page plain-page nav-content-page"
+>
+  <BackButton href="/" label="返回主页" />
+  <main class="bookmark-atlas container" aria-labelledby="bookmark-heading">
+    <header class="bookmark-atlas__head">
+      <div>
+        <h1 id="bookmark-heading">收藏夹</h1>
+        <p>把值得再访的网站，放进一格格档案里。</p>
+      </div>
+      <span class="bookmark-atlas__count">{BOOKMARKS.length} 份档案</span>
+    </header>
+    <BookmarkArchive bookmarks={BOOKMARKS} />
+  </main>
+</BaseLayout>
+
+<script>
+  import '@/scripts/bookmark-archive';
+</script>

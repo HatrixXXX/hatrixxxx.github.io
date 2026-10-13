@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('blank blog space keeps the site cursor', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
 
   const cursor = await page.evaluate(() => {
@@ -13,7 +13,7 @@ test('blank blog space keeps the site cursor', async ({ page }) => {
 });
 
 test('top header controls use the normal-sized diagonal link crosshair across their full hit areas', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
 
   const cursors = await page.evaluate(() => [
@@ -44,7 +44,7 @@ test('top header controls use the normal-sized diagonal link crosshair across th
 });
 
 test('magnetic frame stays on navigation, search, and back controls', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
   const frame = page.locator('[data-magnetic-frame]');
   await expect(frame).toHaveAttribute('data-magnetic-ready', '');
@@ -76,7 +76,7 @@ test('magnetic frame stays on navigation, search, and back controls', async ({ p
 
 test('magnetic frame is static with reduced motion and absent on touch', async ({ page, browser }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
   const link = page.locator('.desktop-nav > ul > li > a').first();
   const frame = page.locator('[data-magnetic-frame]');
@@ -93,7 +93,7 @@ test('magnetic frame is static with reduced motion and absent on touch', async (
 
   const touchContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const touchPage = await touchContext.newPage();
-  await touchPage.goto(new URL('/blog/', page.url()).href);
+  await touchPage.goto(new URL('/blogs/', page.url()).href);
   await expect(touchPage.locator('#page-loader')).toBeHidden();
   await touchPage.locator('.header-actions [data-open-search]').tap();
   await expect(touchPage.locator('[data-magnetic-frame]')).not.toHaveAttribute('data-active', '');
@@ -106,11 +106,11 @@ test('magnetic frame covers links, cards, and other site controls', async ({ pag
   await page.locator('[data-home-blog]').hover();
   await expect(page.locator('[data-home-panel="blog"] > [data-home-tile-frame]')).toHaveAttribute('data-active', '');
 
-  await page.goto('/about/software/');
+  await page.goto('/toolbox/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.locator('[data-tool-module]').first().hover();
   await expect(page.locator('[data-magnetic-frame]')).toHaveAttribute('data-active', '');
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
   const sideCard = page.locator('[data-post-card][data-active="false"]').first();
   await sideCard.hover();
@@ -153,6 +153,20 @@ test('home card magnetic frames inherit their perspective planes', async ({ page
     return Math.abs(frameBox.x + frameBox.width / 2 - tileBox.x - tileBox.width / 2) < 10
       && Math.abs(frameBox.y + frameBox.height / 2 - tileBox.y - tileBox.height / 2) < 10;
   }).toBe(true);
+});
+
+test('home level, name, and quote attract their own panel frames', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  for (const [panel, selector] of [
+    ['identity', '.level-badge'],
+    ['identity-name', '.identity-name'],
+    ['quote', '[data-home-quote]'],
+  ]) {
+    await page.locator(`[data-home-panel="${panel}"] ${selector}`).hover();
+    await expect(page.locator(`[data-home-panel="${panel}"] > [data-home-tile-frame]`)).toHaveAttribute('data-active', '');
+    await expect(page.locator('body > [data-magnetic-frame]')).not.toHaveAttribute('data-active', '');
+  }
 });
 
 test('home card frame is attracted before the pointer enters the card', async ({ page }) => {
@@ -200,7 +214,7 @@ test('home card frame is attracted before the pointer enters the card', async ({
 });
 
 test('blog magnetic frame covers the selected card and visible edge cards', async ({ page }) => {
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.evaluate(() => document.querySelector('astro-dev-toolbar')?.remove());
   const rail = page.locator('[data-post-coverflow]');

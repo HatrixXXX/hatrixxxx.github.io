@@ -2,10 +2,10 @@ import { expect, test } from '@playwright/test';
 
 const routes = [
   '/',
-  '/blog/',
+  '/blogs/',
   '/posts/Infra-线性代数/',
   '/archives/',
-  '/projects/',
+  '/creation/',
   '/404.html'
 ];
 
@@ -99,12 +99,14 @@ for (const path of routes) {
     expect(metrics.duplicateVisibleCardLinks).toBe(0);
     if (path === '/') expect(metrics.visiblePostCards).toBe(0);
 
-    const snapshotName = path === '/' ? 'home.png' : `${path.replaceAll('/', '_')}.png`;
+    // Route changes do not rename the existing visual baselines.
+    const snapshotPath = path === '/blogs/' ? '/blog/' : path === '/creation/' ? '/projects/' : path;
+    const snapshotName = path === '/' ? 'home.png' : `${snapshotPath.replaceAll('/', '_')}.png`;
     await expect(page).toHaveScreenshot(snapshotName, {
       fullPage: !path.startsWith('/posts/'),
       animations: 'disabled',
       timeout: path.startsWith('/posts/') ? 300_000 : 20_000,
-      maxDiffPixels: path.startsWith('/posts/') ? 2_000 : path === '/blog/' ? 10 : 0,
+      maxDiffPixels: path.startsWith('/posts/') ? 2_000 : path === '/blogs/' ? 10 : 0,
       mask: [
         page.locator('[data-twikoo-comments]'),
         page.locator(

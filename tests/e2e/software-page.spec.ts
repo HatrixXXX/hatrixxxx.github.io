@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { SOFTWARE_TOOLS } from '../../src/data/software-tools';
 
 test('toolbox presents nine readable colored cards per row', async ({ page }) => {
-  await page.goto('/about/software/');
+  await page.goto('/toolbox/');
 
   const cards = page.locator('[data-tool-module]');
   await expect(page.locator('[data-tool-readout]')).toHaveCount(0);
@@ -59,7 +59,7 @@ test('toolbox presents nine readable colored cards per row', async ({ page }) =>
 });
 
 test('full descriptions appear above a card on hover and keyboard focus', async ({ page }) => {
-  await page.goto('/about/software/');
+  await page.goto('/toolbox/');
   await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
 
   const solidWorks = page.getByRole('link', { name: /SolidWorks.*三维机械设计/ });
@@ -91,7 +91,7 @@ test('phone cards retain readable labels and avoid horizontal overflow', async (
     viewport: { width: 390, height: 844 }
   });
   const page = await context.newPage();
-  await page.goto('/about/software/');
+  await page.goto('/toolbox/');
 
   const columns = await page.locator('[data-tool-grid]').evaluate((grid) =>
     getComputedStyle(grid).gridTemplateColumns.split(' ').length

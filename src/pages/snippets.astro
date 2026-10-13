@@ -34,10 +34,7 @@ const formatDate = (date: Date) =>
           <span class="conduit-bubbles">
             <span></span><span></span><span></span><span></span><span></span><span></span>
           </span>
-          <span class="conduit-head">
-            <svg class="liquid-wave liquid-wave-back" viewBox="0 0 80 14" preserveAspectRatio="none"><path d="M0 7Q5 1 10 7T20 7T30 7T40 7T50 7T60 7T70 7T80 7V14H0Z" /></svg>
-            <svg class="liquid-wave liquid-wave-front" viewBox="0 0 80 14" preserveAspectRatio="none"><path d="M0 7Q5 1 10 7T20 7T30 7T40 7T50 7T60 7T70 7T80 7V14H0Z" /></svg>
-          </span>
+          <span class="conduit-tip"></span>
         </div>
 
         {snippets.length > 0 ? (
@@ -57,7 +54,6 @@ const formatDate = (date: Date) =>
                     <time datetime={entry.data.date.toISOString()}>{formatDate(entry.data.date)}</time>
                     <strong>{entry.data.title}</strong>
                     {entry.data.description && <span class="snippet-summary">{entry.data.description}</span>}
-                    <span class="snippet-read">阅读随笔 <svg viewBox="0 0 30 12" fill="none" aria-hidden="true"><path d="M1 6h26m-7-5 7 5-7 5" /></svg></span>
                   </span>
                 </a>
                 </div>

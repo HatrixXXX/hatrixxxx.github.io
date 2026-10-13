@@ -55,7 +55,8 @@ const rightPanels = {
           </button>
         </HomePanel>
         <HomePanel name="identity" {...leftPanels.identity}>
-          <div class="level-badge" data-home-level role="meter" aria-label="等级年度进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="启用 JavaScript 后显示等级">
+          <button class="level-badge" type="button" data-home-magnetic data-level-impulse aria-label="推动等级圆环" aria-description="按住最多 3 秒蓄力，松开释放" disabled>
+            <div class="level-meter" data-home-level role="meter" aria-label="等级年度进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="启用 JavaScript 后显示等级">
             <svg class="level-ring" viewBox="0 0 180 180" aria-hidden="true">
               <defs>
                 <linearGradient id="level-shell-metal" x1="0" y1="0" x2="1" y2="1">
@@ -74,6 +75,7 @@ const rightPanels = {
               <g class="level-tick-wheel">
                 <circle class="level-minor-ticks" cx="90" cy="90" r="73" pathLength="120" stroke-dasharray=".55 1.45" transform="rotate(-90 90 90)" />
                 <circle class="level-major-ticks" cx="90" cy="90" r="73" pathLength="24" stroke-dasharray=".65 1.35" transform="rotate(-90 90 90)" />
+                <path class="level-tick-index" d="M85 11h10l-5 11Z" />
               </g>
               <circle class="level-track" cx="90" cy="90" r="65" />
               <circle class="level-progress" data-level-progress cx="90" cy="90" r="65" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" transform="rotate(-90 90 90)" />
@@ -84,30 +86,36 @@ const rightPanels = {
                 <path class="level-axis" d="M90 6v9M90 165v9M6 90h9M165 90h9" />
                 <circle class="level-rivet" cx="28" cy="40" r="2" /><circle class="level-rivet" cx="152" cy="40" r="2" />
                 <circle class="level-rivet" cx="28" cy="140" r="2" /><circle class="level-rivet" cx="152" cy="140" r="2" />
+                <path class="level-armor-index" d="M160 85h12l-5 5 5 5h-12Z" />
               </g>
             </svg>
             <div class="level-readout" aria-hidden="true">
               <span class="level-number" data-level-number>—</span>
               <span class="level-label">LV</span>
             </div>
-          </div>
+            </div>
+          </button>
           <noscript><p class="level-fallback">启用 JavaScript 后显示等级</p></noscript>
         </HomePanel>
         <HomePanel name="identity-name" {...leftPanels.identityName}>
-          <div class="identity-name"><h1 id="home-title" data-home-title>Hatrix</h1></div>
+          <div class="identity-name">
+            <h1 id="home-title" data-home-title>Hatrix</h1>
+            <button class="identity-trigger" type="button" data-home-magnetic aria-label="点亮 Hatrix" disabled></button>
+          </div>
         </HomePanel>
         <div class="home-left-cards" data-home-tilt="left">
           <HomePanel name="quote" {...leftPanels.quote}>
-            <div class="quote-card">
-              <div class="quote-window" data-home-quote role="status" aria-live="polite" aria-atomic="true">
+            <button class="quote-card" type="button" data-home-quote data-home-magnetic data-quote-cursor="source" aria-label="语句卡片" aria-description="双击或连续按两次 Enter／空格切换语句" aria-describedby="quote-announcement" disabled>
+              <span class="quote-window">
                 <span class="quote-row">
                   <span class="quote-text-window" data-quote-text-window>
-                    <span data-quote-text>{HOME_QUOTES[0].text}</span>
+                    <span data-quote-text aria-hidden="true">{HOME_QUOTES[0].text}</span>
                   </span>
-                  <span data-quote-source>— {HOME_QUOTES[0].source}</span>
+                  <span data-quote-source aria-hidden="true">— {HOME_QUOTES[0].source}</span>
                 </span>
-              </div>
-            </div>
+              </span>
+            </button>
+            <span id="quote-announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-quote-announcement>{HOME_QUOTES[0].text}，出处：{HOME_QUOTES[0].source}</span>
           </HomePanel>
           <MusicPlayer mode="home" />
           <HomePanel name="music" {...leftPanels.music}>
@@ -209,7 +217,22 @@ const rightPanels = {
   .search-button { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; padding: 0; border: 0; background: transparent; color: var(--home-ink); cursor: pointer; }
   .search-button:hover { background: transparent; color: #ffe360; }
   .search-button :global(svg) { width: 24px; height: 24px; }
-  .level-badge { position: relative; width: 100%; height: 100%; color: var(--home-ink); filter: drop-shadow(3px 6px 6px #0b0a12a6); }
+  .level-badge { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; color: var(--home-ink); filter: drop-shadow(3px 6px 6px #0b0a12a6); isolation: isolate; touch-action: none; transition: filter 180ms ease, transform 180ms var(--ease-out); }
+  .level-badge::before { --halo-spread: var(--charge-spread, var(--release-spread, 0)); position: absolute; z-index: -1; inset: -62px; border-radius: 50%; background: radial-gradient(circle, #ffd200a6 0, #ffd20085 88px, #ffd20052 98px, transparent calc(105px + var(--halo-spread) * 43px)); content: ''; opacity: 0; pointer-events: none; filter: blur(calc(3px + var(--halo-spread) * 9px)); }
+  .level-meter { width: 100%; height: 100%; }
+  .level-badge:focus-visible { filter: drop-shadow(3px 6px 8px #0b0a12a6) drop-shadow(0 0 8px #ffd20080); }
+  .level-badge[data-charging]::before { opacity: calc(.22 + var(--charge-glow, 0) * .78); }
+  .level-badge[data-charge-full]::before { animation: level-charge-ready .26s ease-in-out infinite alternate; }
+  .level-badge[data-impulsing]:not([data-charging])::before { opacity: var(--release-glow, 0); }
+  .level-badge[data-impulsing] { filter: drop-shadow(3px 6px 8px #0b0a12a6) drop-shadow(0 0 11px rgb(255 210 0 / calc(var(--impulse-strength, 0) * .7))) drop-shadow(0 0 6px rgb(255 210 0 / calc(var(--impulse-strength, 0) * .5))); }
+  .level-badge[data-impulsing]:focus-visible:not([data-charging]) { filter: drop-shadow(3px 6px 8px #0b0a12a6) drop-shadow(0 0 11px rgb(255 210 0 / calc(.5 + var(--impulse-strength, 0) * .2))) drop-shadow(0 0 6px rgb(255 210 0 / calc(var(--impulse-strength, 0) * .5))); }
+  @media (hover: hover) {
+    .level-badge:hover { filter: drop-shadow(3px 6px 8px #0b0a12a6) drop-shadow(0 0 8px #ffd20080); }
+    .level-badge[data-impulsing]:hover:not([data-charging]) { filter: drop-shadow(3px 6px 8px #0b0a12a6) drop-shadow(0 0 11px rgb(255 210 0 / calc(.5 + var(--impulse-strength, 0) * .2))) drop-shadow(0 0 6px rgb(255 210 0 / calc(var(--impulse-strength, 0) * .5))); }
+  }
+  .level-badge[data-charging] { filter: drop-shadow(3px 6px 6px #0b0a12a6); transition: none; }
+  .level-badge:not([data-impulsing]):active { transform: scale(.97); }
+  @keyframes level-charge-ready { from { opacity: 1; } to { opacity: .42; } }
   .level-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
   .level-tick-wheel, .level-armor-wheel { transform-box: view-box; transform-origin: center; }
   .level-tick-wheel { animation: level-spin 90s linear infinite; }
@@ -220,6 +243,7 @@ const rightPanels = {
   .level-minor-ticks, .level-major-ticks, .level-track, .level-progress { fill: none; }
   .level-minor-ticks { stroke: #9e8f83; stroke-width: 2.5; opacity: .7; }
   .level-major-ticks { stroke: #e0b46d; stroke-width: 5; }
+  .level-tick-index { fill: #ffd200; stroke: #332717; stroke-width: 1; }
   .level-track { stroke: #403945; stroke-width: 8; }
   .level-progress { stroke: #ffd200; stroke-width: 7; filter: drop-shadow(0 0 4px #ffd200a6); }
   .level-core { fill: url(#level-core-metal); stroke: #d88c3c9c; stroke-width: 1.5; }
@@ -227,18 +251,32 @@ const rightPanels = {
   .level-seams { fill: none; stroke: #ffdc88; stroke-width: 1.5; opacity: .8; }
   .level-axis { fill: none; stroke: #00ddeb; stroke-width: 2.5; }
   .level-rivet { fill: #d88c3c; stroke: #17151d; stroke-width: 1; }
+  .level-armor-index { fill: #00ddeb; stroke: #182229; stroke-width: 1; }
   .level-readout { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 5px; font-family: 'Orbitron', Arial, sans-serif; }
   .level-number { color: #fff1d1; font-size: 61px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -.035em; text-shadow: 0 2px 2px #000, 0 0 12px #ffd20073; }
   .level-label { width: 60px; margin-top: 3px; padding-top: 7px; border-top: 1px solid #d88c3c; color: #ffd200; font-size: 17px; font-weight: 800; line-height: 1; letter-spacing: .15em; text-align: center; }
   .level-fallback { margin: 8px -40px 0; font-size: 18px; text-align: center; }
-  .identity-name { display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; background: transparent; }
-  .identity-name h1 { margin: 0; color: var(--home-ink); font: 800 64px/1 'Orbitron', Arial, sans-serif; letter-spacing: .025em; text-shadow: 0 0 16px color-mix(in srgb, var(--color-link) 35%, transparent); }
-  .quote-card { position: relative; display: flex; width: 100%; height: 100%; align-items: center; background: #202b3bf2; border: 1px solid #21d8eacc; border-radius: var(--home-panel-radius); box-shadow: inset 0 1px #b7e0e71a; color: #ecf2f0; }
-  .quote-window { overflow: hidden; width: 100%; padding: 0 24px; }
-  .quote-row { display: flex; min-width: 0; width: 100%; align-items: flex-end; gap: 12px; }
-  .quote-text-window { display: flex; overflow: hidden; min-width: 0; flex: 1 1 0; align-items: center; }
-  [data-quote-text] { display: block; overflow: hidden; min-width: 0; width: 100%; font-size: 17px; line-height: 1.25; white-space: nowrap; }
-  [data-quote-source] { overflow: hidden; min-width: 0; max-width: 35%; flex: 0 0 auto; color: #a9e7f0; font-size: 10.506px; line-height: 1.25; letter-spacing: .02em; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+  .identity-name { position: relative; display: flex; width: 100%; height: 100%; align-items: center; padding-left: 28px; background: transparent; }
+  .identity-name h1 { position: relative; z-index: 1; margin: 0; color: var(--home-ink); font: 800 64px/1 'Orbitron', Arial, sans-serif; letter-spacing: .025em; text-shadow: 0 0 16px color-mix(in srgb, var(--color-link) 35%, transparent); transition: color 180ms ease, text-shadow 180ms ease, transform 120ms ease; }
+  .identity-trigger { position: absolute; z-index: 2; inset: 0; padding: 0; border: 0; background: transparent; }
+  .identity-name:is(:hover, :focus-within) h1 { color: #fff1d1; text-shadow: 0 0 18px #00ddebab, 0 0 6px #ffd20080; }
+  .identity-name:active h1 { transform: translateY(2px); }
+  @property --hatrix-glow-radius { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  .identity-name h1::after { position: absolute; inset: 0; content: 'Hatrix'; color: transparent; opacity: 0; pointer-events: none; text-shadow: 0 0 9px #00ddebd9, 0 0 20px #00ddeb9c; mask-image: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), #000 calc(var(--hatrix-glow-radius) - 22px), transparent calc(var(--hatrix-glow-radius) + 30px)); }
+  .identity-name[data-rippling] h1 { animation: hatrix-glow-pulse 800ms ease-out both; }
+  .identity-name[data-rippling] h1::after { animation: hatrix-glow-spread 800ms ease-out both; }
+  @keyframes hatrix-glow-spread { 0% { --hatrix-glow-radius: 0px; opacity: 0; } 22% { opacity: .7; } 65% { opacity: .38; } 100% { --hatrix-glow-radius: 230px; opacity: 0; } }
+  @keyframes hatrix-glow-pulse { 0%, 100% { text-shadow: 0 0 16px color-mix(in srgb, var(--color-link) 35%, transparent); } 27% { text-shadow: 0 0 17px #00ddeb94, 0 0 24px #00ddeb4d; } 52% { text-shadow: 0 0 20px #00ddebaf, 0 0 29px #00ddeb55; } 75% { text-shadow: 0 0 17px #00ddeb91, 0 0 23px #00ddeb42; } }
+  .quote-card { position: relative; display: flex; overflow: hidden; width: 100%; height: 100%; align-items: center; padding: 0; background: #202b3bf2; border: 1px solid #21d8eacc; border-radius: var(--home-panel-radius); box-shadow: inset 0 1px #b7e0e71a; color: #ecf2f0; font: inherit; text-align: left; touch-action: manipulation; transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease; }
+  .quote-card:is(:hover, :focus-visible) { border-color: #82f5ff; background: #26394bf2; box-shadow: inset 0 1px #b7e0e740, 0 0 12px #00ddeb40; }
+  .quote-window { z-index: 1; overflow: visible; width: 100%; padding: 0 24px; }
+  .quote-row { display: flex; min-width: 0; width: 100%; align-items: flex-end; gap: 8px; }
+  .quote-text-window { display: flex; overflow: visible; min-width: 0; flex: 0 1 auto; align-items: center; }
+  [data-quote-text] { display: block; overflow: visible; min-width: 0; width: max-content; font-size: 17px; line-height: 1.25; white-space: nowrap; }
+  [data-quote-source] { overflow: visible; min-width: 0; max-width: 35%; flex: 0 0 auto; color: #a9e7f0; font-size: 10.506px; line-height: 1.25; letter-spacing: .02em; text-align: left; white-space: nowrap; }
+  .quote-card[data-quote-cursor='text'] [data-quote-text]::after,
+  .quote-card[data-quote-cursor='source'] [data-quote-source]::after { display: inline-block; width: 7px; height: 17px; margin-left: 3px; background: #8adaf1; clip-path: polygon(0 0, 100% 0, 100% 12%, 70% 12%, 70% 88%, 100% 88%, 100% 100%, 0 100%, 0 88%, 30% 88%, 30% 12%, 0 12%); filter: drop-shadow(0 0 4px #8adaf1); content: ''; vertical-align: -.25em; animation: quote-caret-blink .7s steps(1, end) infinite; }
+  @keyframes quote-caret-blink { 50% { opacity: .25; } }
   .clock-card { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; height: 100%; place-items: center; background: #28232ced; border: 1px solid #ffd200d9; border-radius: 3px; box-shadow: inset 0 1px #f8e7cf12; padding: 8px 22px; }
   [data-home-clock] { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; gap: 5px; white-space: nowrap; }
   .nixie-tube { position: relative; display: grid; flex: 1 1 0; min-width: 0; place-items: center; height: 76px; border: 1px solid #c8b4a575; border-radius: 20px 20px 11px 11px; background: #201a17; box-shadow: inset 3px 0 5px #ffffff14, inset -3px 0 5px #0008; font: 400 51px/1 'IBM Plex Mono', monospace; color: #ffd36a; text-shadow: 0 0 3px #ff7c38, 0 0 12px #ff7929b3; }
@@ -255,6 +293,13 @@ const rightPanels = {
   @media (prefers-reduced-motion: reduce) {
     .search-button { transition: none; }
     .level-tick-wheel, .level-armor-wheel { animation: none; }
+    .level-badge[data-charge-full]::before { animation: none; opacity: 1; }
+    .level-badge, .identity-name h1, .quote-card { transition: none; }
+    .level-badge:active, .identity-name:active h1 { transform: none; }
+    .quote-card[data-quote-cursor='text'] [data-quote-text]::after,
+    .quote-card[data-quote-cursor='source'] [data-quote-source]::after { animation: none; }
+    .identity-name[data-rippling] h1, .identity-name[data-rippling] h1::after { animation: none; }
+    .identity-name[data-rippling] h1 { color: #fff1d1; text-shadow: 0 0 19px #00ddeb80; }
   }
 </style>
 
@@ -298,6 +343,7 @@ const rightPanels = {
 
 <script>
   import '@/scripts/home-dashboard';
+  import '@/scripts/home-title-ripple';
 </script>
 
 

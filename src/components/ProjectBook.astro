@@ -1,0 +1,133 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import ProjectArtwork from '@/components/ProjectArtwork.astro';
+
+interface Props {
+  projects: CollectionEntry<'projects'>[];
+}
+
+const { projects } = Astro.props;
+const total = projects.length;
+---
+
+<main class="project-book-stage" data-project-book data-current-page="0" aria-label="作品图鉴" tabindex="-1">
+  <h1 class="visually-hidden">作品橱窗</h1>
+  <div class="book-float">
+    <div class="book-spread">
+      <div class="book-underlay book-underlay--left" aria-hidden="true"></div>
+      <div class="book-underlay book-underlay--right" aria-hidden="true"></div>
+      <div class="book-page-edges" aria-hidden="true"></div>
+      <div class="book-spine" aria-hidden="true"><i></i><i></i><i></i></div>
+
+      <div class="book-leaf book-leaf--cover" data-book-leaf data-index="0" data-active style="--leaf-index: 0">
+        <div class="book-face book-cover">
+          <button class="book-cover-button" type="button" data-open-book aria-label="翻开作品图鉴">
+            <img
+              class="book-cover-image"
+              src="/assets/projects/project-atlas-cover-v1.webp"
+              width="1024"
+              height="1220"
+              alt=""
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+              draggable="false"
+              data-book-cover-image
+            />
+            <span class="book-cover-core" aria-hidden="true"></span>
+            <span class="book-cover-latch" aria-hidden="true"><i></i></span>
+            <span class="book-cover-sheen" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="book-face book-verso book-verso--cover" aria-hidden="true">
+          <span class="book-verso-seal"></span>
+          <div class="book-verso-index">
+            <span>HATRIX / ARCHIVE INDEX</span>
+            <ol>{projects.map((project, index) => <li><b>{String(index + 1).padStart(2, '0')}</b>{project.data.title}</li>)}</ol>
+          </div>
+        </div>
+      </div>
+
+      {projects.map((project, index) => {
+        const { title, description, category, theme, experience, moment } = project.data;
+        const gallery = project.data.gallery as { src: string; alt: string; caption?: string }[];
+        const tech = project.data.tech as string[];
+        const links = project.data.links as { label: string; url: string }[];
+        const number = index + 1;
+        return (
+          <div
+            class="book-leaf book-leaf--project"
+            data-book-leaf
+            data-index={number}
+            style={`--leaf-index: ${number}`}
+            aria-hidden="true"
+            inert
+          >
+            <div class="book-face book-project-face" data-project-page={number} data-project-theme={theme}>
+              <div class="folio-head">
+                <span>HATRIX / 作品档案</span>
+                <strong>{String(number).padStart(2, '0')} <i>/</i> {String(total).padStart(2, '0')}</strong>
+              </div>
+              <div class="folio-scroll" data-lenis-prevent>
+                <div class="folio-media">
+                  <div class="folio-gallery-track" data-gallery-track data-lenis-prevent-horizontal>
+                    {gallery.length > 0 ? gallery.map((photo) => (
+                      <figure class="folio-gallery-slide">
+                        <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
+                        {photo.caption && <figcaption>{photo.caption}</figcaption>}
+                      </figure>
+                    )) : (
+                      <div class="folio-gallery-slide folio-gallery-empty">
+                        <ProjectArtwork theme={theme} />
+                        <span>照片待补充</span>
+                      </div>
+                    )}
+                  </div>
+                  {gallery.length > 1 && (
+                    <div class="folio-gallery-controls">
+                      <button type="button" data-gallery-prev aria-label="上一张照片">‹</button>
+                      <span data-gallery-count>01 / {String(gallery.length).padStart(2, '0')}</span>
+                      <button type="button" data-gallery-next aria-label="下一张照片">›</button>
+                    </div>
+                  )}
+                  <span class="folio-scan-line" aria-hidden="true"></span>
+                </div>
+                <div class="folio-details">
+                  <span class="folio-category">{category}</span>
+                  <h2 tabindex="-1">{title}</h2>
+                  <p class="folio-description">{description}</p>
+                  <div class="folio-story">
+                    <section><h3>制作经历</h3><p>{experience || '制作经历待补充。'}</p></section>
+                    <section><h3>过程趣事</h3><p>{moment || '过程趣事待补充。'}</p></section>
+                  </div>
+                  {tech.length > 0 && <div class="folio-tech" aria-label="相关技术">{tech.map((item) => <span>{item}</span>)}</div>}
+                  {links.length > 0 && (
+                    <div class="folio-links">
+                      {links.map((link) => <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <nav class="folio-navigation" aria-label={`${title} 翻页`}>
+                <button type="button" data-turn-prev aria-label={number === 1 ? '返回封面' : '上一页'}><span aria-hidden="true">‹</span>{number === 1 ? '封面' : '上一页'}</button>
+                <span class="folio-page-number">{String(number).padStart(2, '0')}</span>
+                {number < total ? <button type="button" data-turn-next aria-label="下一页">下一页<span aria-hidden="true">›</span></button> : <span class="folio-end">档案终页</span>}
+              </nav>
+            </div>
+            <div class="book-face book-verso" aria-hidden="true">
+              <span class="book-verso-seal"></span>
+              <div class="book-verso-art"><ProjectArtwork theme={theme} /></div>
+              <span>{String(number).padStart(2, '0')} / {title}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+  <p class="visually-hidden" role="status" aria-live="polite" data-book-status>图鉴封面</p>
+  <noscript>
+    <div class="book-nojs">
+      {projects.map((project) => <section><h2>{project.data.title}</h2><p>{project.data.description}</p></section>)}
+    </div>
+  </noscript>
+</main>

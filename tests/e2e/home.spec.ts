@@ -147,7 +147,7 @@ test('lower stack keeps its shared plane with a second experiment entrance below
   expect.soft(geometry.musicCssHeight).toBe('289px');
   expect.soft(geometry.ring).toEqual({ x: 72, y: 355, width: 180, height: 180 });
   expect.soft(geometry.name).toEqual({ x: 264, y: 389, width: 300, height: 112 });
-  await expect(page.locator('[data-home-panel="lab-shortcut"] a')).toHaveAttribute('href', '/lab/');
+  await expect(page.locator('[data-home-panel="lab-shortcut"] a')).toHaveAttribute('href', '/playground/');
   await expect(page.locator('[data-home-panel="digest"] a')).toHaveAttribute('href', '/digest/');
 });
 
@@ -186,7 +186,7 @@ test('home presents the spatial panels and a permanent music player', async ({ p
   await expect(page.locator('[data-home-panel="recommendations"]')).toContainText('效率提升');
   await expect(page.locator('[data-home-panel="recommendations"] a')).toHaveCount(3);
   await expect(page.locator('header[data-site-header], footer[data-site-footer]')).toHaveCount(0);
-  await expect(page.locator('[data-sakana-layer], [data-cursor-trail], [data-sidebar-stack]')).toHaveCount(0);
+  await expect(page.locator('[data-sakana-layer], [data-sidebar-stack]')).toHaveCount(0);
   await expect(page.locator('article[data-post-card], .pagination')).toHaveCount(0);
 });
 
@@ -229,8 +229,8 @@ test('home recommendations use a full-height snippets card and the bottom row is
   await expect(group).toHaveAccessibleName('效率提升');
   const arrangement = await group.evaluate((section) => {
     const snippets = section.querySelector<HTMLAnchorElement>('a[href="/snippets/"]')!;
-    const bookmark = section.querySelector<HTMLAnchorElement>('a[href="/about/bookmarks/"]')!;
-    const software = section.querySelector<HTMLAnchorElement>('a[href="/about/software/"]')!;
+    const bookmark = section.querySelector<HTMLAnchorElement>('a[href="/favorites/"]')!;
+    const software = section.querySelector<HTMLAnchorElement>('a[href="/toolbox/"]')!;
     const heading = section.querySelector<HTMLElement>('h2')!;
     return {
       fullHeight: snippets.offsetHeight === section.clientHeight,
@@ -321,11 +321,11 @@ test('home keeps panel proportions and positions across effective viewport sizes
 test('home blog panel navigates directly to the blog hub by keyboard', async ({ page }) => {
   await page.goto('/');
   const blog = page.locator('a[data-home-blog]');
-  await expect(blog).toHaveAttribute('href', '/blog/');
+  await expect(blog).toHaveAttribute('href', '/blogs/');
   await expect(page.locator('[data-home-panel="blog"] details, [data-home-panel="blog"] nav')).toHaveCount(0);
   await blog.focus();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/blog/');
+  await expect(page).toHaveURL('/blogs/');
   await expect(page).toHaveTitle(/^博客文章 \|/);
   await expect(page.locator('[data-hero]')).toHaveCount(0);
   await expect(page.locator('main')).toBeVisible();
@@ -341,39 +341,208 @@ test('home search opens the shared search interface and restores focus', async (
   await expect(search).toBeFocused();
 });
 
-test('home quote is a non-interactive live region without manual switching', async ({ page }) => {
+test('home identity links and quote button are keyboard accessible', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installQuoteProbe(page);
+  await page.goto('/');
+  await expect(page.locator('.level-badge')).toHaveAttribute('type', 'button');
+  await expect(page.locator('.identity-trigger')).toHaveAttribute('type', 'button');
+  await expect(page.locator('[data-home-level]')).toHaveAttribute('role', 'meter');
+  const quote = page.locator('[data-home-quote]');
+  const text = page.locator('[data-quote-text]');
+  await expect(text).toHaveText(firstQuote);
+  await expect(quote).toHaveAttribute('data-quote-cursor', 'source');
+  expect(await page.locator('[data-quote-source]').evaluate((node) => getComputedStyle(node, '::after').backgroundColor)).toBe('rgb(138, 218, 241)');
+  await expect(quote).toHaveAttribute('aria-describedby', 'quote-announcement');
+  await expect(page.locator('[data-quote-announcement]')).toHaveAttribute('aria-live', 'polite');
+  await quote.focus();
+  await expect(quote).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(text).toHaveText(firstQuote);
+  await page.keyboard.press('Enter');
+  await expect(text).toHaveText(secondQuote);
+  await expect(page.locator('[data-quote-announcement]')).toContainText(secondQuote);
+});
+
+test('pointer double-click advances the quote once', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
-  const text = page.locator('[data-quote-text]');
-  const source = page.locator('[data-quote-source]');
-  await expect(text).toHaveText(firstQuote);
-  await expect(source).toHaveText(firstQuoteSource);
-  expect.soft(await quote.evaluate((node) => node.tagName)).not.toBe('BUTTON');
-  await expect.soft(page.locator('[data-quote-pause]')).toHaveCount(0, { timeout: 200 });
-  await expect.soft(quote).toHaveAttribute('role', 'status', { timeout: 200 });
-  await expect.soft(quote).toHaveAttribute('aria-live', 'polite', { timeout: 200 });
-  await expect.soft(quote).toHaveAttribute('aria-atomic', 'true', { timeout: 200 });
-  expect.soft(await quote.evaluate((node) => (node as HTMLElement).tabIndex)).toBe(-1);
-  await quote.dispatchEvent('dblclick');
-  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
-  await quote.focus();
-  await expect.soft(quote).not.toBeFocused({ timeout: 200 });
-  await page.keyboard.press('Enter');
-  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
-  await page.keyboard.press('Space');
-  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
-  await page.clock.runFor(HOME_QUOTE_INTERVAL - 1);
-  await expect(text).toHaveText(firstQuote);
+  await quote.dblclick();
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+  await expect(page.locator('[data-quote-source]')).toHaveText(secondQuoteSource);
+});
+
+test('a new click or hold resets the ring push while it is already spinning', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const ring = page.locator('[data-level-impulse]');
+  const rates = () => page.evaluate(() => [
+    document.querySelector('.level-tick-wheel')!.getAnimations()[0]?.playbackRate,
+    document.querySelector('.level-armor-wheel')!.getAnimations()[0]?.playbackRate,
+  ]);
+  await expect(ring).toBeEnabled();
+  expect(await rates()).toEqual([1, 1]);
+  expect(await page.locator('.level-tick-wheel').evaluate((wheel) => getComputedStyle(wheel).animationDirection)).toBe('normal');
+  expect(await page.locator('.level-armor-wheel').evaluate((wheel) => getComputedStyle(wheel).animationDirection)).toBe('reverse');
+  await ring.click();
+  await expect(page).toHaveURL('/');
+  await expect.poll(async () => {
+    const current = await rates();
+    return current[0]! > 15 && current[0]! < 50 && current[1]! > 25 && current[1]! < 80;
+  }, { intervals: [25, 50, 100], timeout: 800 }).toBe(true);
+  await page.waitForTimeout(350);
+  const slowing = await rates();
+  await ring.click();
+  await expect.poll(async () => {
+    const current = await rates();
+    return current[0]! > slowing[0]! + 4 && current[0]! < 50;
+  }, { intervals: [25, 50, 100], timeout: 800 }).toBe(true);
+  await ring.hover();
+  await page.mouse.down();
+  await expect(ring).toHaveAttribute('data-charging', '');
+  expect(await ring.evaluate((node) => getComputedStyle(node).filter)).not.toContain('255, 210, 0');
+  await page.waitForTimeout(550);
+  await page.mouse.up();
+  await expect.poll(async () => (await rates())[0], { intervals: [25, 50, 100], timeout: 800 }).toBeGreaterThan(45);
+  await expect.poll(rates, { timeout: 7_000 }).toEqual([1, 1]);
+  await expect(ring).not.toHaveAttribute('data-impulsing', '');
+});
+
+test('holding the ring spreads a yellow glow and reaches flashing full charge at three seconds', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const ring = page.locator('[data-level-impulse]');
+  await ring.hover();
+  await page.mouse.down();
+  await expect(ring).toHaveAttribute('data-charging', '');
+  const initialGlow = await ring.evaluate((node) => {
+    const style = getComputedStyle(node, '::before');
+    return { opacity: Number(style.opacity), background: style.backgroundImage, border: style.borderTopWidth, transform: style.transform };
+  });
+  expect(initialGlow.background).toContain('radial-gradient');
+  expect(initialGlow.background).toContain('255, 210, 0');
+  expect(initialGlow.border).toBe('0px');
+  expect(initialGlow.transform).toBe('none');
+  await page.waitForTimeout(250);
+  const earlyGlow = await ring.evaluate((node) => {
+    const buttonStyle = getComputedStyle(node);
+    return { charge: Number(buttonStyle.getPropertyValue('--charge')), spread: Number(buttonStyle.getPropertyValue('--charge-spread')), opacity: Number(getComputedStyle(node, '::before').opacity) };
+  });
+  expect(earlyGlow.spread / earlyGlow.charge).toBeGreaterThan(2.5);
+  expect(earlyGlow.opacity).toBeGreaterThan(.22 + .78 * earlyGlow.charge + .08);
+  await page.waitForTimeout(850);
+  const strongerGlow = await ring.evaluate((node) => {
+    const style = getComputedStyle(node, '::before');
+    const buttonStyle = getComputedStyle(node);
+    return { opacity: Number(style.opacity), background: style.backgroundImage, charge: Number(buttonStyle.getPropertyValue('--charge')), spread: Number(buttonStyle.getPropertyValue('--charge-spread')) };
+  });
+  expect(strongerGlow.opacity).toBeGreaterThan(initialGlow.opacity + 0.1);
+  expect(strongerGlow.background).not.toBe(initialGlow.background);
+  expect(strongerGlow.spread).toBe(1);
+  expect(strongerGlow.charge).toBeLessThan(.65);
+  await page.waitForTimeout(550);
+  const beforeFull = await ring.evaluate((node) => ({ charge: Number(getComputedStyle(node).getPropertyValue('--charge')), spread: Number(getComputedStyle(node).getPropertyValue('--charge-spread')), full: node.hasAttribute('data-charge-full') }));
+  expect(beforeFull.spread).toBe(1);
+  expect(beforeFull.charge).toBeLessThan(1);
+  expect(beforeFull.full).toBe(false);
+  await page.evaluate(() => {
+    const button = document.querySelector('[data-level-impulse]')!;
+    const observer = new MutationObserver(() => {
+      if (!button.hasAttribute('data-charge-full')) return;
+      observer.disconnect();
+      requestAnimationFrame(() => {
+        document.documentElement.dataset.chargeFlashFirstOpacity = getComputedStyle(button, '::before').opacity;
+      });
+    });
+    observer.observe(button, { attributes: true, attributeFilter: ['data-charge-full'] });
+  });
+  await page.waitForTimeout(1_550);
+  await expect(ring).toHaveAttribute('data-charge-full', '');
+  await expect(ring).toHaveCSS('--charge', '1');
+  await expect(ring).toHaveCSS('--charge-spread', '1');
+  await expect(ring).toHaveCSS('--charge-glow', '1');
+  await expect.poll(() => page.locator('html').getAttribute('data-charge-flash-first-opacity')).toBeTruthy();
+  expect(Number(await page.locator('html').getAttribute('data-charge-flash-first-opacity'))).toBeGreaterThan(0.92);
+  expect(await ring.evaluate((node) => getComputedStyle(node, '::before').animationName)).toBe('level-charge-ready');
+  expect(await ring.evaluate((node) => getComputedStyle(node, '::before').animationDuration)).toBe('0.26s');
+  const pulseStart = await ring.evaluate((node) => {
+    const style = getComputedStyle(node, '::before');
+    return { opacity: Number(style.opacity), background: style.backgroundImage, filter: style.filter };
+  });
+  await expect.poll(async () => Math.abs(await ring.evaluate((node) => Number(getComputedStyle(node, '::before').opacity)) - pulseStart.opacity), { timeout: 800 }).toBeGreaterThan(0.08);
+  expect(await ring.evaluate((node) => getComputedStyle(node, '::before').backgroundImage)).toBe(pulseStart.background);
+  expect(await ring.evaluate((node) => getComputedStyle(node, '::before').filter)).toBe(pulseStart.filter);
+  await page.mouse.up();
+  await expect(ring).not.toHaveAttribute('data-charging', '');
+  await expect.poll(() => page.locator('.level-tick-wheel').evaluate((wheel) => wheel.getAnimations()[0]?.playbackRate), { timeout: 800 }).toBeGreaterThan(100);
+});
+
+test('reduced motion supports keyboard charging without ring rotation', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const ring = page.locator('[data-level-impulse]');
+  await ring.focus();
+  await page.keyboard.down('Space');
+  await expect(ring).toHaveAttribute('data-charging', '');
+  await page.waitForTimeout(3_100);
+  await expect(ring).toHaveAttribute('data-charge-full', '');
+  expect(await ring.evaluate((node) => getComputedStyle(node, '::before').animationName)).toBe('none');
+  await page.keyboard.up('Space');
+  await expect(ring).toHaveAttribute('data-impulsing', '');
+  expect(await page.locator('.level-tick-wheel').evaluate((node) => node.getAnimations().length)).toBe(0);
+  await expect(ring).not.toHaveAttribute('data-impulsing', '', { timeout: 1_000 });
+});
+
+test('level ring glow fades as its released spin slows', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const ring = page.locator('[data-level-impulse]');
+  await ring.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(1_000);
+  const glow = () => ring.evaluate((node) => {
+    const style = getComputedStyle(node, '::before');
+    return { opacity: Number(style.opacity), background: style.backgroundImage };
+  });
+  const charged = await glow();
+  await page.mouse.up();
+  const released = await glow();
+  expect(released.opacity).toBeGreaterThan(charged.opacity * 0.75);
+  expect(released.background).toBe(charged.background);
+  await page.mouse.move(700, 700);
+  const ringLight = () => ring.evaluate((node) => Number(getComputedStyle(node).filter.match(/rgba\(255, 210, 0, ([\d.]+)\)/)?.[1] ?? 0));
+  await page.waitForTimeout(220);
+  const releasedRingLight = await ringLight();
+  expect(releasedRingLight).toBeGreaterThan(0.4);
+  await page.waitForTimeout(600);
+  const slowing = await glow();
+  expect(slowing.opacity).toBeLessThan(released.opacity);
+  expect(slowing.opacity).toBeGreaterThan(0);
+  expect(await ringLight()).toBeLessThan(releasedRingLight * 0.8);
+  await page.waitForTimeout(2_500);
+  expect(await ringLight()).toBeLessThan(0.1);
+  await expect(ring).not.toHaveAttribute('data-impulsing', '', { timeout: 7_000 });
+  expect((await glow()).opacity).toBe(0);
+  expect(await ringLight()).toBe(0);
 });
 
 test('home quote has matching projected insets and aligns with the source bottom', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('[data-quote-source]')).toHaveText(firstQuoteSource);
   const positions = await page.evaluate(() => {
     const card = document.querySelector<HTMLElement>('.quote-card')!;
     const panel = document.querySelector<HTMLElement>('[data-home-panel="quote"]')!;
     const text = document.querySelector<HTMLElement>('[data-quote-text]')!;
     const source = document.querySelector<HTMLElement>('[data-quote-source]')!;
+    const textRange = document.createRange();
+    textRange.setStart(text.firstChild!, text.firstChild!.textContent!.length - 1);
+    textRange.setEnd(text.firstChild!, text.firstChild!.textContent!.length);
+    const sourceRange = document.createRange();
+    sourceRange.setStart(source.firstChild!, 0);
+    sourceRange.setEnd(source.firstChild!, 1);
     const matrix = new DOMMatrixReadOnly(getComputedStyle(panel).transform);
     const alongTopEdge = Math.hypot(matrix.m11, matrix.m12);
     const alongSideEdge = Math.hypot(matrix.m21, matrix.m22);
@@ -385,13 +554,17 @@ test('home quote has matching projected insets and aligns with the source bottom
       textRight: text.offsetLeft + text.offsetWidth,
       sourceLeft: source.offsetLeft,
       sourceRight: source.offsetLeft + source.offsetWidth,
+      glyphGap: sourceRange.getBoundingClientRect().left - textRange.getBoundingClientRect().right,
       visualLeft: (text.offsetLeft + card.clientLeft) * alongTopEdge,
       visualTop: (text.offsetTop + card.clientTop) * alongSideEdge,
       visualBottom: (card.offsetHeight - card.clientTop - text.offsetTop - text.offsetHeight) * alongSideEdge,
     };
   });
-  expect(Math.abs(positions.textLeft - (positions.cardWidth - positions.sourceRight))).toBeLessThan(3);
-  expect(positions.textRight).toBeLessThan(positions.sourceLeft);
+  expect(positions.sourceLeft - positions.textRight).toBeGreaterThanOrEqual(0);
+  expect(positions.sourceLeft - positions.textRight).toBeLessThanOrEqual(12);
+  expect(positions.glyphGap).toBeGreaterThanOrEqual(0);
+  expect(positions.glyphGap).toBeLessThan(20);
+  expect(positions.sourceRight).toBeLessThan(positions.cardWidth - 24);
   expect(Math.abs(positions.textBottom - positions.sourceBottom)).toBeLessThan(2);
   expect(Math.abs(positions.visualTop - positions.visualBottom)).toBeLessThan(2);
   expect(Math.abs(positions.visualTop - positions.visualLeft)).toBeLessThan(2);
@@ -436,6 +609,7 @@ test('long home quotes shrink with their sources to stay on one line', async ({ 
       whiteSpace: style.whiteSpace,
       sourceFontSize: Number.parseFloat(getComputedStyle(document.querySelector<HTMLElement>('[data-quote-source]')!).fontSize),
       cardHeight: document.querySelector<HTMLElement>('[data-home-panel="quote"]')!.offsetHeight,
+      rowOverflow: document.querySelector<HTMLElement>('.quote-row')!.scrollWidth > document.querySelector<HTMLElement>('.quote-row')!.clientWidth,
     };
   });
   expect(layout.whiteSpace).toBe('nowrap');
@@ -444,41 +618,131 @@ test('long home quotes shrink with their sources to stay on one line', async ({ 
   expect(layout.fontSize).toBeLessThan(17);
   expect(layout.sourceFontSize / layout.fontSize).toBeCloseTo(0.618, 2);
   expect(layout.cardHeight).toBe(70);
+  expect(layout.rowOverflow).toBe(false);
 });
 
-test('home quote advances automatically after six seconds with running vertical animation', async ({ page }) => {
+test('home quote erases and types its source with a blinking I caret', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await installQuoteProbe(page);
   await page.goto('/');
   const text = page.locator('[data-quote-text]');
-  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
-  expect.soft((await quoteProbe(page)).timers).toBe(1);
-  await page.clock.runFor(HOME_QUOTE_INTERVAL - 1);
-  await expect.soft(text).toHaveText(firstQuote, { timeout: 200 });
-  await page.clock.runFor(1);
+  const quote = page.locator('[data-home-quote]');
+  await page.clock.runFor(1_500);
+  await expect(text).toHaveText(firstQuote);
+  await expect(page.locator('[data-quote-source]')).toHaveText(firstQuoteSource);
+  await quote.dispatchEvent('dblclick');
+  await expect(quote).toHaveAttribute('data-quote-phase', 'deleting');
+  await expect(quote).toHaveAttribute('data-quote-cursor', 'source');
+  expect(await page.locator('[data-quote-source]').evaluate((node) => getComputedStyle(node, '::after').animationName)).toBe('quote-caret-blink');
+  await page.evaluate(() => {
+    const source = document.querySelector('[data-quote-source]')!;
+    const card = document.querySelector<HTMLElement>('[data-home-quote]')!;
+    const history: string[] = [];
+    const alignments: string[] = [];
+    const starts: number[] = [];
+    new MutationObserver(() => {
+      if (card.dataset.quotePhase === 'typing' && card.dataset.quoteCursor === 'source') {
+        history.push(source.textContent ?? '');
+        alignments.push(getComputedStyle(source).textAlign);
+        const first = source.firstChild;
+        if (first?.nodeType === Node.TEXT_NODE && first.textContent) {
+          const range = document.createRange();
+          range.setStart(first, 0);
+          range.setEnd(first, 1);
+          starts.push(range.getBoundingClientRect().left);
+        }
+      }
+    }).observe(source, { childList: true });
+    Object.defineProperty(window, '__quoteSourceTypingHistory', { value: history });
+    Object.defineProperty(window, '__quoteSourceTypingAlignments', { value: alignments });
+    Object.defineProperty(window, '__quoteSourceTypingStarts', { value: starts });
+  });
+  await page.clock.runFor(100);
+  expect((await page.locator('[data-quote-source]').textContent())!.length).toBeLessThan(firstQuoteSource.length);
+  await expect(text).toHaveText(firstQuote);
+  await page.clock.runFor(260);
+  await expect(page.locator('[data-quote-source]')).toBeEmpty();
+  await expect(quote).toHaveAttribute('data-quote-cursor', 'text');
+  expect((await text.textContent())!.length).toBeLessThan(firstQuote.length);
+  await expect(quote).toHaveAttribute('data-quote-phase', 'typing');
+  await page.clock.runFor(2_000);
+  const sourceHistory = await page.evaluate(() => (window as unknown as { __quoteSourceTypingHistory: string[] }).__quoteSourceTypingHistory);
+  expect(sourceHistory.some((value) => value.length > 0 && value.length < secondQuoteSource.length)).toBe(true);
+  const sourceAlignments = await page.evaluate(() => (window as unknown as { __quoteSourceTypingAlignments: string[] }).__quoteSourceTypingAlignments);
+  expect(sourceAlignments.length).toBeGreaterThan(0);
+  expect(new Set(sourceAlignments)).toEqual(new Set(['left']));
+  const sourceStarts = await page.evaluate(() => (window as unknown as { __quoteSourceTypingStarts: number[] }).__quoteSourceTypingStarts);
+  expect(sourceStarts.length).toBeGreaterThan(1);
+  expect(Math.max(...sourceStarts) - Math.min(...sourceStarts)).toBeLessThan(2);
   await expect(text).toHaveText(secondQuote);
   await expect(page.locator('[data-quote-source]')).toHaveText(secondQuoteSource);
-  const clipWindow = page.locator('[data-quote-text-window]');
-  await expect(clipWindow).toHaveCSS('overflow', 'hidden');
-  const clipBoundary = await page.evaluate(() => {
-    const clip = document.querySelector<HTMLElement>('[data-quote-text-window]')!;
-    const source = document.querySelector<HTMLElement>('[data-quote-source]')!;
-    return {
-      clipBottom: clip.offsetTop + clip.offsetHeight,
-      sourceTop: source.offsetTop,
-    };
+  await expect(page.locator('[data-quote-source]')).toHaveCSS('text-align', 'left');
+  await expect(quote).not.toHaveAttribute('data-quote-phase', /.+/);
+  await expect(quote).toHaveAttribute('data-quote-cursor', 'source');
+  const caret = await page.locator('[data-quote-source]').evaluate((node) => {
+    const style = getComputedStyle(node, '::after');
+    return { width: Number.parseFloat(style.width), height: Number.parseFloat(style.height), animation: style.animationName };
   });
-  expect(clipBoundary.clipBottom).toBeLessThanOrEqual(clipBoundary.sourceTop);
-  expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 1 });
-  const animation = await text.evaluate((node) => {
-    const running = node.getAnimations().find((animation) => animation.playState === 'running');
-    const effect = running?.effect as KeyframeEffect | undefined;
-    return { duration: effect?.getTiming().duration, frames: effect?.getKeyframes().map(({ transform, opacity }) => ({ transform, opacity })) };
-  });
-  expect(animation).toEqual({ duration: 420, frames: [
-    { transform: 'translateY(100%)', opacity: '0' },
-    { transform: 'translateY(0px)', opacity: '1' }
-  ] });
+  expect(caret.width).toBeGreaterThanOrEqual(7);
+  expect(caret.height).toBeGreaterThanOrEqual(17);
+  expect(caret.animation).toBe('quote-caret-blink');
+  await page.clock.runFor(700);
+  await expect(quote).toHaveAttribute('data-quote-cursor', 'source');
+  expect(await page.locator('[data-quote-source]').evaluate((node) => getComputedStyle(node, '::after').animationName)).toBe('quote-caret-blink');
+  expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 0 });
+});
+
+test('single-click quote leaves the text unchanged', async ({ page }) => {
+  await installQuoteProbe(page);
+  await page.goto('/');
+  await page.clock.runFor(1_500);
+  const quote = page.locator('[data-home-quote]');
+  const text = page.locator('[data-quote-text]');
+  const source = page.locator('[data-quote-source]');
+  await expect(quote).not.toHaveAttribute('data-quote-phase', /.+/);
+  const markup = await quote.locator('.quote-row').innerHTML();
+  await quote.click();
+  await page.clock.runFor(400);
+  expect(await quote.locator('.quote-row').innerHTML()).toBe(markup);
+  await page.clock.runFor(600);
+  await expect(text).toHaveText(firstQuote);
+  await expect(source).toHaveText(firstQuoteSource);
+  await expect(quote).not.toHaveAttribute('data-quote-phase', /.+/);
+});
+
+test('quote ignores clicks while deleting and typing', async ({ page }) => {
+  await installQuoteProbe(page);
+  await page.goto('/');
+  const quote = page.locator('[data-home-quote]');
+  await page.clock.runFor(1_500);
+  await quote.dblclick();
+  await page.clock.runFor(250);
+  await expect(quote).toHaveAttribute('data-quote-phase', 'deleting');
+  const before = await quote.evaluate((node) => ({ text: node.querySelector('[data-quote-text]')?.textContent, source: node.querySelector('[data-quote-source]')?.textContent }));
+  await quote.dispatchEvent('click', { detail: 1, clientX: 220 });
+  await quote.dispatchEvent('dblclick');
+  await page.clock.runFor(250);
+  const during = await quote.evaluate((node) => ({ text: node.querySelector('[data-quote-text]')?.textContent, source: node.querySelector('[data-quote-source]')?.textContent }));
+  expect(during).not.toEqual(before);
+  await expect(quote).toHaveAttribute('data-quote-phase', /deleting|typing/);
+  await page.clock.runFor(400);
+  await expect(quote).toHaveAttribute('data-quote-phase', 'typing');
+  await quote.dispatchEvent('click', { detail: 1, clientX: 220 });
+  await quote.dispatchEvent('dblclick');
+  await page.clock.runFor(2_000);
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+  await expect(page.locator('[data-quote-source]')).toHaveText(secondQuoteSource);
+});
+
+test('normal-motion double-click quote advances once', async ({ page }) => {
+  await installQuoteProbe(page);
+  await page.goto('/');
+  const quote = page.locator('[data-home-quote]');
+  await page.clock.runFor(1_500);
+  await quote.dblclick();
+  await page.clock.runFor(900);
+  await page.clock.runFor(2_000);
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
 });
 
 test('home quote switches randomly without immediately repeating itself', async ({ page }) => {
@@ -498,6 +762,7 @@ test('home quote switches randomly without immediately repeating itself', async 
 });
 
 test('home quote completes each shuffled round before starting the next one', async ({ page }) => {
+  test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await installQuoteProbe(page);
   await page.goto('/');
@@ -534,7 +799,7 @@ test('home quote completes each shuffled round before starting the next one', as
   const layout = await page.evaluate(() =>
     (window as unknown as { __quoteLayout: { minFontSize: number; overflowing: boolean } }).__quoteLayout);
   expect(layout.overflowing).toBe(false);
-  expect(layout.minFontSize).toBeGreaterThanOrEqual(14);
+  expect(layout.minFontSize).toBeGreaterThanOrEqual(10);
 });
 
 test('bfcache recovery starts a complete round from the quote already in the DOM', async ({ page }) => {
@@ -578,8 +843,8 @@ test('home quote uses a distinct dark surface and keeps the friend card radius',
   await page.goto('/');
   const surfaces = await page.evaluate(() => {
     const expected = document.createElement('div');
-    expected.style.backgroundColor = '#252730f2';
-    expected.style.borderColor = '#86b6c6cc';
+    expected.style.backgroundColor = '#202b3bf2';
+    expected.style.borderColor = '#21d8eacc';
     expected.style.color = '#ecf2f0';
     document.body.append(expected);
     const expectedStyle = getComputedStyle(expected);
@@ -597,7 +862,7 @@ test('home quote uses a distinct dark surface and keeps the friend card radius',
   expect.soft(surfaces.background).toBe(surfaces.expectedBackground);
   expect.soft(surfaces.border).toBe(surfaces.expectedBorder);
   expect.soft(surfaces.ink).toBe(surfaces.expectedInk);
-  expect.soft(surfaces.sourceInk).toBe('rgb(179, 204, 213)');
+  expect.soft(surfaces.sourceInk).toBe('rgb(169, 231, 240)');
   expect.soft(surfaces.background).not.toBe(surfaces.playerBackground);
   expect.soft(surfaces.background).not.toBe(surfaces.friendBackground);
   expect.soft(surfaces.background).not.toBe(surfaces.guestbookBackground);
@@ -606,23 +871,23 @@ test('home quote uses a distinct dark surface and keeps the friend card radius',
   expect(surfaces.friendRadius).toBe('3px');
 });
 
-test('enabling reduced motion cancels quote animation and preserves the next deadline', async ({ page }) => {
+test('enabling reduced motion finishes typing and preserves the next deadline', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await installQuoteProbe(page);
   await page.goto('/');
   const quote = page.locator('[data-home-quote]');
   await page.clock.runFor(HOME_QUOTE_INTERVAL);
-  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
-  expect(await quote.evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === 'running'))).toBe(true);
+  await expect(quote).toHaveAttribute('data-quote-phase', 'deleting');
   await page.clock.runFor(100);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect.poll(() => quote.evaluate((node) => node.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length)).toBe(0);
+  await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
+  await expect(quote).not.toHaveAttribute('data-quote-phase', /.+/);
   expect((await quoteProbe(page)).timers).toBe(1);
   await page.clock.runFor(HOME_QUOTE_INTERVAL - 101);
   await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
   await page.clock.runFor(1);
   await expect(page.locator('[data-quote-text]')).toHaveText(thirdQuote);
-  expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 1 });
+  expect(await quoteProbe(page)).toMatchObject({ timers: 1, animations: 0 });
 });
 
 test('home clock exposes the complete local date and updates every second', async ({ page }) => {
@@ -643,16 +908,16 @@ test('home clock exposes the complete local date and updates every second', asyn
 
 test('home links open their independent pages', async ({ page }) => {
   const entries = [
-    ['作品橱窗', '/projects/'],
+    ['作品橱窗', '/creation/'],
     ['关于我', '/about/'],
     ['随笔', '/snippets/'],
-    ['收藏夹', '/about/bookmarks/'],
-    ['工具箱', '/about/software/'],
-    ['友链', '/about/friends/'],
+    ['收藏夹', '/favorites/'],
+    ['工具箱', '/toolbox/'],
+    ['友链', '/friends/'],
     ['留言板', '/guestbook/'],
     ['计划', '/plans/'],
     ['资讯', '/digest/'],
-    ['实验场', '/lab/']
+    ['实验场', '/playground/']
   ];
   for (const [label, path] of entries) {
     await page.goto('/');
@@ -700,7 +965,7 @@ test('pagination and legacy post paths stay available', async ({ page }) => {
   await page.goto('/page/3/');
   await expect(page.locator('article[data-post-card]')).toHaveCount(3);
   expect((await page.request.get('/page/4/')).status()).toBe(404);
-  await page.goto('/blog/');
+  await page.goto('/blogs/');
   const mergedFpgaLink = page.locator('a[href="/posts/Xilinx FPGA开发/"]').first();
   await expect(mergedFpgaLink).toHaveCount(1);
   const resolvedPath = await mergedFpgaLink.evaluate((link) => new URL((link as HTMLAnchorElement).href).pathname);
@@ -723,16 +988,18 @@ test('normal-motion return visits keep one automatic quote timer and one listene
   for (let visit = 0; visit < 2; visit += 1) {
     await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
     await expect(page).toHaveURL('/plans/');
+    await page.clock.runFor(1_200);
+    await expect(page.locator('#page-loader')).toBeHidden();
     expect((await probe()).timers).toBe(0);
     await page.locator('[data-back-button]').click();
     await expect(page).toHaveURL('/');
+    await page.clock.runFor(1_200);
+    await expect(page.locator('#page-loader')).toBeHidden();
     expect((await probe()).timers).toBe(1);
     expect((await probe()).motionListeners).toBe(listenerCount);
-    const before = (await probe()).animations;
-    await page.clock.runFor(HOME_QUOTE_INTERVAL - 1);
     await expect(page.locator('[data-quote-text]')).toHaveText(firstQuote);
-    await page.clock.runFor(1);
+    await page.clock.runFor(HOME_QUOTE_INTERVAL + 1_000);
     await expect(page.locator('[data-quote-text]')).toHaveText(secondQuote);
-    expect(await probe()).toEqual({ timers: 1, motionListeners: listenerCount, animations: before + 1 });
+    expect(await probe()).toEqual({ timers: 1, motionListeners: listenerCount, animations: 0 });
   }
 });

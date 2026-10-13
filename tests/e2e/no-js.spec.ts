@@ -32,7 +32,7 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   expect(hrefs.length).toBe(11);
   expect(hrefs.every((href) => href?.startsWith('/') && href !== '#')).toBe(true);
   await page.locator('a[data-home-blog]').click();
-  await page.waitForURL('**/blog/');
+  await page.waitForURL('**/blogs/');
   await expect(page.locator('[data-post-coverflow]')).toBeVisible();
   await expect(page.locator('[data-post-coverflow] [data-post-card]')).toHaveCount(16);
   await expect(page.locator('[data-blog-view-toggle], [data-blog-archive-view]')).toHaveCount(0);
@@ -45,12 +45,16 @@ test('articles and ordinary navigation remain usable without JavaScript', async 
   expect(commentsText).toContain('评论需要 JavaScript');
 });
 
-for (const route of ['/archives/', '/projects/']) {
+for (const route of ['/archives/', '/creation/']) {
   test(`${route} remains directly readable without JavaScript`, async ({ page }) => {
     const response = await page.goto(route);
     expect(response?.status()).toBe(200);
     await expect(page.locator('main')).toBeVisible();
     await expect(page.locator('main')).not.toBeEmpty();
+    if (route === '/creation/') {
+      await expect(page.locator('.book-nojs')).toBeVisible();
+      await expect(page.locator('.book-nojs')).toContainText('FPGA-3DGS渲染');
+    }
   });
 }
 

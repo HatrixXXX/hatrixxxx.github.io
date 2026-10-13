@@ -127,7 +127,6 @@ function mount(): void {
   const selectors = [
     '.search-results',
     '.mobile-nav',
-    '.project-dossier-content',
     ...(compactFriends.matches
       ? ['.friends-main']
       : ['.friends-content', '.friends-main [data-sidebar-stack]']),

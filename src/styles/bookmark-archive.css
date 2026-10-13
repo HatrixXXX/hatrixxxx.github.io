@@ -1,0 +1,414 @@
+.bookmark-atlas {
+  padding-bottom: clamp(2.5rem, 5vw, 5rem);
+}
+
+.bookmark-atlas__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: .8rem 0 1.35rem;
+}
+
+.bookmark-atlas__head h1 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  line-height: 1.2;
+}
+
+.bookmark-atlas__head p {
+  margin: .55rem 0 0;
+  color: var(--color-muted);
+  font-size: .94rem;
+}
+
+.bookmark-atlas__count {
+  flex: none;
+  color: var(--color-link);
+  font: 700 .9rem/1.5 var(--font-data);
+  white-space: nowrap;
+}
+
+.bookmark-console {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--chassis-edge);
+  border-radius: 3px;
+  background:
+    linear-gradient(135deg, rgb(0 221 235 / 5%), transparent 38%),
+    linear-gradient(0deg, rgb(9 14 23 / 94%), rgb(31 29 38 / 96%));
+  box-shadow: inset 0 0 0 5px var(--chassis-groove), inset 0 0 0 6px rgb(216 140 60 / 20%), 0 18px 40px rgb(4 5 10 / 28%);
+}
+
+.bookmark-console::before,
+.bookmark-console::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  width: 94px;
+  height: 3px;
+  pointer-events: none;
+}
+
+.bookmark-console::before {
+  left: 16px;
+  background: linear-gradient(90deg, var(--color-copper), var(--color-accent), transparent);
+}
+
+.bookmark-console::after {
+  right: 16px;
+  background: linear-gradient(270deg, var(--color-link), var(--color-copper), transparent);
+}
+
+.bookmark-console__status,
+.bookmark-console__footer {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding-inline: clamp(1.2rem, 3.2vw, 2.4rem);
+}
+
+.bookmark-console__status {
+  min-height: 66px;
+  border-bottom: 1px solid rgb(216 140 60 / 30%);
+  color: var(--color-heading);
+  font-weight: 650;
+}
+
+.bookmark-console__signal {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-accent);
+  background: var(--color-on-accent);
+  box-shadow: 0 0 0 3px rgb(255 210 0 / 12%);
+}
+
+.bookmark-console__current {
+  min-width: 0;
+  overflow: hidden;
+  padding-left: .85rem;
+  border-left: 1px solid var(--chassis-edge);
+  color: var(--color-link);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmark-console__hint {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: .78rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.bookmark-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 28px 14px;
+  padding: clamp(2rem, 4vw, 3rem) clamp(1.2rem, 3.2vw, 2.4rem) clamp(2.1rem, 4vw, 3rem);
+  background: repeating-linear-gradient(180deg, transparent 0 215px, rgb(216 140 60 / 32%) 215px 216px, #131c27 216px 228px, transparent 228px 234px);
+  background-position: 0 39px;
+}
+
+.bookmark-file {
+  --bookmark-edge: var(--color-link);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 206px;
+  overflow: visible;
+  border: 1px solid rgb(170 156 177 / 48%);
+  border-radius: 2px;
+  padding: 12px 12px 15px;
+  background:
+    linear-gradient(125deg, rgb(239 227 207 / 8%), transparent 38%),
+    linear-gradient(180deg, #343341, #202631 57%, #151b25);
+  box-shadow: inset 0 0 0 4px rgb(7 10 17 / 50%), inset 0 0 0 5px rgb(216 140 60 / 15%), 0 8px 15px rgb(0 0 0 / 24%);
+  color: var(--color-text);
+  text-align: left;
+  transform: translateY(0);
+  transition: transform 190ms var(--ease-out), border-color 150ms ease, box-shadow 190ms ease;
+  clip-path: polygon(0 11px, 11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%);
+}
+
+.bookmark-file[data-category='技术博客'],
+.bookmark-file[data-category='开源项目'] { --bookmark-edge: var(--color-copper); }
+.bookmark-file[data-category='交互练习'],
+.bookmark-file[data-category='学习路线'] { --bookmark-edge: var(--color-accent); }
+
+.bookmark-file::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  bottom: 9px;
+  left: 9px;
+  border: 1px solid rgb(216 140 60 / 23%);
+  clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+
+.bookmark-file::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -10px;
+  left: -1px;
+  height: 8px;
+  border: 1px solid rgb(216 140 60 / 36%);
+  border-top: 0;
+  background: #131923;
+  box-shadow: 0 5px 10px rgb(0 0 0 / 25%);
+  pointer-events: none;
+}
+
+.bookmark-file:hover,
+.bookmark-file[data-selected] {
+  z-index: 2;
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 4px rgb(7 10 17 / 50%), inset 0 0 0 5px rgb(255 210 0 / 35%), 0 18px 22px rgb(0 0 0 / 38%);
+  transform: translateY(-15px);
+}
+
+.bookmark-file:active { transform: translateY(-8px) scale(.98); }
+.bookmark-file:focus-visible { outline-offset: -5px; }
+
+.bookmark-file__spine {
+  position: absolute;
+  top: 27px;
+  bottom: 23px;
+  left: 0;
+  width: 4px;
+  background: linear-gradient(var(--color-copper), var(--bookmark-edge) 58%, var(--color-copper));
+  opacity: .72;
+}
+
+.bookmark-file__top,
+.bookmark-file__foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+}
+
+.bookmark-file__top {
+  justify-content: space-between;
+  gap: .4rem;
+  color: var(--color-muted);
+  font-size: .75rem;
+  line-height: 1.25;
+}
+
+.bookmark-file__top span:last-child {
+  color: var(--color-copper);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.bookmark-file__emblem {
+  display: grid;
+  flex: 1;
+  min-height: 85px;
+  place-items: center;
+}
+
+.bookmark-file__emblem > span {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  place-items: center;
+  border: 1px solid var(--bookmark-edge);
+  background: rgb(5 15 24 / 55%);
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
+  color: var(--color-heading);
+  font: 700 1.5rem/1 var(--font-data);
+}
+
+.bookmark-file__foot {
+  flex-direction: column;
+  gap: 3px;
+  min-height: 56px;
+  padding-top: 8px;
+  border-top: 1px solid rgb(216 140 60 / 32%);
+}
+
+.bookmark-file__foot strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-heading);
+  font-size: .9rem;
+  line-height: 1.32;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.bookmark-file__foot > span {
+  display: block;
+  overflow: hidden;
+  color: var(--color-muted);
+  font: 400 .75rem/1.4 var(--font-data);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmark-file__latch {
+  position: absolute;
+  top: 37px;
+  right: -1px;
+  width: 6px;
+  height: 25px;
+  border: 1px solid var(--color-copper);
+  background: var(--color-inset);
+}
+
+.bookmark-file[data-selected] .bookmark-file__latch,
+.bookmark-file:hover .bookmark-file__latch { background: var(--color-accent); }
+
+.bookmark-console__footer {
+  justify-content: space-between;
+  min-height: 42px;
+  border-top: 1px solid rgb(216 140 60 / 30%);
+  color: var(--color-muted);
+  font-size: .75rem;
+}
+
+.bookmark-console__empty {
+  display: grid;
+  grid-template-columns: minmax(130px, 220px) minmax(0, 1fr);
+  gap: clamp(1.5rem, 5vw, 4rem);
+  align-items: center;
+  min-height: 310px;
+  padding: clamp(2rem, 6vw, 4rem);
+}
+
+.bookmark-console__empty-slot {
+  height: 200px;
+  border: 1px dashed var(--color-line-strong);
+  clip-path: polygon(0 11px, 11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%);
+  background: rgb(8 13 22 / 42%);
+}
+
+.bookmark-console__empty h2 { margin: 0; color: var(--color-heading); }
+.bookmark-console__empty p { margin: .5rem 0 0; color: var(--color-muted); }
+
+.bookmarks-page--dialog-open { overflow: hidden; }
+
+.bookmark-dossier {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(680px, calc(100dvh - 32px));
+  overflow: auto;
+  border: 1px solid var(--color-copper);
+  border-radius: 3px;
+  padding: 0;
+  background: #1c222e;
+  color: var(--color-text);
+  box-shadow: 0 30px 70px rgb(0 0 0 / 55%), inset 0 0 0 5px var(--chassis-groove);
+}
+
+.bookmark-dossier::backdrop { background: rgb(5 7 13 / 78%); }
+
+.bookmark-dossier[open] { animation: bookmark-reveal 210ms var(--ease-out) both; }
+
+@keyframes bookmark-reveal {
+  from { opacity: .4; transform: translateY(14px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bookmark-dossier__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 66px;
+  padding: .7rem clamp(1.2rem, 4vw, 2.2rem);
+  border-bottom: 1px solid rgb(216 140 60 / 35%);
+  color: var(--color-link);
+  font-size: .9rem;
+}
+
+.bookmark-dossier__close {
+  flex: none;
+  min-height: 44px;
+  border: 1px solid var(--chassis-edge);
+  border-radius: var(--radius-control);
+  padding: .4rem .75rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.bookmark-dossier__close:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.bookmark-dossier__close span { margin-left: .45rem; font-size: 1.25rem; line-height: 0; }
+
+.bookmark-dossier__body {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  align-items: start;
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+}
+
+.bookmark-dossier__mark {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--chassis-edge);
+  background: linear-gradient(150deg, #393847, #121d29);
+  box-shadow: inset 0 0 0 6px var(--chassis-groove);
+}
+
+.bookmark-dossier__mark {
+  color: var(--color-heading);
+  font: 700 3rem/1 var(--font-data);
+}
+
+.bookmark-dossier__copy { min-width: 0; }
+.bookmark-dossier__copy h2 { margin: 0; color: var(--color-heading); font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.3; }
+.bookmark-dossier__copy p { margin: 1rem 0 1.25rem; line-height: 1.75; }
+.bookmark-dossier__url { display: block; overflow-wrap: anywhere; color: var(--color-muted); font: .82rem/1.5 var(--font-data); }
+
+.bookmark-dossier__visit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  min-height: 44px;
+  margin-top: 1.5rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-control);
+  padding: .5rem 1rem;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.bookmark-dossier__visit:hover { background: var(--color-accent-strong); }
+
+@media (max-width: 850px) {
+  .bookmark-console__hint { display: none; }
+}
+
+@media (max-width: 600px) {
+  .bookmark-atlas__head { align-items: start; flex-direction: column; gap: .5rem; }
+  .bookmark-shelf { grid-template-columns: 1fr; gap: 14px; padding-left: clamp(5.2rem, 24vw, 6.2rem); padding-right: .8rem; background: repeating-linear-gradient(180deg, transparent 0 121px, rgb(216 140 60 / 32%) 121px 122px, #131c27 122px 134px, transparent 134px 142px); background-position: 0 39px; }
+  .bookmark-file { display: grid; grid-template-columns: 56px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); column-gap: 8px; height: 128px; padding: 10px; }
+  .bookmark-file__top { grid-column: 1 / -1; }
+  .bookmark-file__emblem { grid-column: 1; grid-row: 2; min-height: 0; }
+  .bookmark-file__emblem > span { width: 52px; height: 52px; font-size: 1.1rem; }
+  .bookmark-file__foot { grid-column: 2; grid-row: 2; min-height: 0; align-self: end; padding-top: 4px; }
+  .bookmark-file[data-selected], .bookmark-file:hover { transform: translateY(-7px); }
+  .bookmark-console__footer { flex-wrap: wrap; gap: .2rem .8rem; padding-block: .6rem; }
+  .bookmark-dossier__body { grid-template-columns: 1fr; }
+  .bookmark-dossier__mark { display: none; }
+  .bookmark-console__empty { grid-template-columns: 1fr; }
+  .bookmark-console__empty-slot { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmark-file { transition: none; }
+  .bookmark-file:hover, .bookmark-file[data-selected], .bookmark-file:active { transform: none; }
+  .bookmark-dossier[open] { animation: none; }
+}

@@ -1,0 +1,5 @@
+project-atlas-cover-v1.webp
+Source: Hatrix mechanical atlas image selected by the user, at docs/design-references/project-atlas/project-atlas-mecha-concept-v1.png.
+Derivative: transparent-background cutout produced with the built-in imagegen tool on 2026-10-13; cropped to the complete book bounds and encoded as WebP with Sharp. The selected reference image remains unchanged.
+Prompt for the selected image: docs/design-references/project-atlas/project-atlas-mecha-concept-v1.prompt.txt
+Prompt for the cutout: docs/design-references/project-atlas/project-atlas-cover-cutout-v1.prompt.txt

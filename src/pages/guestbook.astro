@@ -7,11 +7,22 @@ import BackButton from '@/components/BackButton.astro';
 <BaseLayout title="留言板" bodyClass="guestbook-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" />
   <main class="guestbook-main container">
-    <section class="guestbook-shell" aria-label="留言板" data-guestbook-shell>
-      <div class="guestbook-board">
-        <TwikooComments variant="guestbook" />
+    <div class="guestbook-stage" data-guestbook-stage>
+      <div class="guestbook-float">
+        <div class="guestbook-rig" data-guestbook-rig>
+          <div class="guestbook-side guestbook-side--right" aria-hidden="true"></div>
+          <div class="guestbook-side guestbook-side--bottom" aria-hidden="true"></div>
+          <section class="guestbook-shell" aria-label="留言板" data-guestbook-shell>
+            <div class="guestbook-rail" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div class="guestbook-screen">
+              <div class="guestbook-board">
+                <TwikooComments variant="guestbook" />
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
-    </section>
+    </div>
   </main>
 </BaseLayout>
 
@@ -19,26 +30,84 @@ import BackButton from '@/components/BackButton.astro';
   .guestbook-main {
     max-width: 1120px;
     min-height: 100svh;
-    padding-bottom: clamp(3rem, 7vw, 6rem);
+    padding-bottom: clamp(4rem, 8vw, 7rem);
+  }
+
+  .guestbook-stage {
+    position: relative;
+    padding: 10px 22px 36px 8px;
+    perspective: 1800px;
+  }
+
+  .guestbook-stage::before {
+    position: absolute;
+    right: 5%;
+    bottom: 5px;
+    left: 5%;
+    height: 42px;
+    border-radius: 50%;
+    background: rgb(1 5 11 / 65%);
+    filter: blur(24px);
+    content: '';
+    pointer-events: none;
+  }
+
+  .guestbook-float {
+    animation: guestbook-hover 8s ease-in-out infinite;
+  }
+
+  .guestbook-rig {
+    --tilt-x: 0.5deg;
+    --tilt-y: -0.6deg;
+    position: relative;
+    transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+    transform-origin: center 18%;
+    transform-style: preserve-3d;
+    transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .guestbook-side {
+    position: absolute;
+    border: 1px solid rgb(216 140 60 / 48%);
+    background-color: #151a25;
+    background-image: repeating-linear-gradient(90deg, transparent 0 18px, rgb(216 140 60 / 13%) 18px 19px);
+    pointer-events: none;
+  }
+
+  .guestbook-side--right {
+    top: 9px;
+    right: -18px;
+    bottom: -10px;
+    width: 19px;
+    clip-path: polygon(0 0, 100% 12px, 100% 100%, 0 calc(100% - 10px));
+    background-image: linear-gradient(90deg, rgb(216 140 60 / 20%), transparent 65%), repeating-linear-gradient(180deg, transparent 0 36px, rgb(0 221 235 / 18%) 36px 39px, transparent 39px 64px);
+  }
+
+  .guestbook-side--bottom {
+    right: -18px;
+    bottom: -18px;
+    left: 9px;
+    height: 19px;
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 100%, 12px 100%);
+    background-image: linear-gradient(180deg, rgb(216 140 60 / 18%), transparent 70%), repeating-linear-gradient(90deg, transparent 0 48px, rgb(0 221 235 / 13%) 48px 51px, transparent 51px 78px);
   }
 
   .guestbook-shell {
     position: relative;
     isolation: isolate;
-    overflow: clip;
     border: 1px solid var(--chassis-edge);
     border-radius: 8px;
-    padding: clamp(1.2rem, 3vw, 2.25rem) clamp(1.25rem, 3.6vw, 3rem) clamp(1.5rem, 3.6vw, 3rem);
+    padding: 0 clamp(0.65rem, 1.4vw, 1rem) clamp(0.7rem, 1.5vw, 1rem);
     background-color: rgb(15 18 27 / 82%);
     background-image:
-      linear-gradient(160deg, rgb(0 221 235 / 10%), transparent 28% 75%, rgb(216 140 60 / 9%)),
-      repeating-linear-gradient(90deg, transparent 0 39px, rgb(255 255 255 / 1.5%) 40px 41px);
+      linear-gradient(155deg, rgb(0 221 235 / 11%), transparent 24% 76%, rgb(216 140 60 / 11%)),
+      linear-gradient(90deg, rgb(255 255 255 / 5%), transparent 6% 94%, rgb(0 0 0 / 30%));
     box-shadow:
-      inset 0 0 0 5px rgb(4 8 16 / 78%),
-      inset 0 0 0 6px rgb(216 140 60 / 32%),
-      inset 0 26px 44px rgb(0 221 235 / 3%),
-      0 26px 70px rgb(2 5 11 / 52%);
+      inset 0 0 0 4px rgb(4 8 16 / 88%),
+      inset 0 0 0 5px rgb(216 140 60 / 30%),
+      4px 24px 48px rgb(2 5 11 / 52%);
     backdrop-filter: blur(18px) saturate(118%);
+    transform: translateZ(12px);
     transition: border-color 220ms ease, box-shadow 220ms ease;
   }
 
@@ -46,25 +115,91 @@ import BackButton from '@/components/BackButton.astro';
   .guestbook-shell:focus-within {
     border-color: rgb(255 210 0 / 72%);
     box-shadow:
-      inset 0 0 0 5px rgb(4 8 16 / 78%),
-      inset 0 0 0 6px rgb(216 140 60 / 42%),
-      inset 0 26px 44px rgb(0 221 235 / 5%),
-      0 26px 70px rgb(2 5 11 / 52%),
-      0 0 30px rgb(255 210 0 / 8%);
+      inset 0 0 0 4px rgb(4 8 16 / 88%),
+      inset 0 0 0 5px rgb(216 140 60 / 42%),
+      4px 24px 48px rgb(2 5 11 / 52%),
+      0 8px 26px rgb(255 210 0 / 8%);
   }
 
   .guestbook-shell::before {
     position: absolute;
-    z-index: -1;
-    inset: 6px;
+    inset: 5px;
+    border: 1px solid rgb(216 140 60 / 14%);
+    border-radius: 4px;
     background:
-      linear-gradient(90deg, var(--color-link), transparent 72%) left top / 130px 2px no-repeat,
-      linear-gradient(270deg, var(--color-copper), transparent 72%) right bottom / 130px 2px no-repeat,
-      linear-gradient(180deg, rgb(0 221 235 / 45%), transparent 72%) left top / 2px 100px no-repeat,
-      linear-gradient(0deg, rgb(216 140 60 / 52%), transparent 72%) right bottom / 2px 100px no-repeat,
-      var(--surface-sheen);
+      linear-gradient(90deg, var(--color-link), transparent 78%) left top / 140px 2px no-repeat,
+      linear-gradient(270deg, var(--color-copper), transparent 78%) right bottom / 140px 2px no-repeat;
     content: '';
     pointer-events: none;
+  }
+
+  .guestbook-rail {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding-inline: clamp(0.8rem, 2vw, 1.4rem);
+    border-bottom: 1px solid rgb(216 140 60 / 22%);
+    background: linear-gradient(90deg, rgb(0 221 235 / 9%), transparent 34% 68%, rgb(216 140 60 / 8%));
+    pointer-events: none;
+  }
+
+  .guestbook-rail::after {
+    width: min(28%, 180px);
+    height: 3px;
+    margin-left: auto;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgb(216 140 60 / 36%) 30%, rgb(216 140 60 / 10%));
+    content: '';
+  }
+
+  .guestbook-rail span {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgb(216 140 60 / 38%);
+  }
+
+  .guestbook-rail span:first-child {
+    width: 25px;
+    background: var(--color-link);
+    box-shadow: 0 0 10px rgb(0 221 235 / 35%);
+    animation: guestbook-signal 6s ease-in-out infinite;
+  }
+
+  .guestbook-screen {
+    position: relative;
+    margin: clamp(0.3rem, 0.8vw, 0.6rem);
+    padding: clamp(1rem, 2.4vw, 1.8rem) clamp(1rem, 3vw, 2.25rem) clamp(1.3rem, 3vw, 2.5rem);
+    border: 1px solid rgb(0 221 235 / 26%);
+    border-radius: 4px;
+    background: linear-gradient(155deg, rgb(0 221 235 / 4%), transparent 32% 70%, rgb(216 140 60 / 5%)), rgb(5 10 19 / 64%);
+    box-shadow: inset 0 0 0 4px rgb(2 6 12 / 70%), inset 0 18px 35px rgb(0 0 0 / 19%);
+    transform: translateZ(5px);
+  }
+
+  .guestbook-screen::before,
+  .guestbook-screen::after {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-color: rgb(0 221 235 / 60%);
+    border-style: solid;
+    content: '';
+    pointer-events: none;
+  }
+
+  .guestbook-screen::before {
+    top: 7px;
+    left: 7px;
+    border-width: 1px 0 0 1px;
+  }
+
+  .guestbook-screen::after {
+    right: 7px;
+    bottom: 7px;
+    border-width: 0 1px 1px 0;
+    border-color: rgb(216 140 60 / 62%);
   }
 
   .guestbook-board :global(.comments) {
@@ -87,12 +222,51 @@ import BackButton from '@/components/BackButton.astro';
     :global(body.guestbook-page.plain-page) > main.guestbook-main {
       padding-top: calc(var(--header-height) + 4rem);
     }
+
+    .guestbook-stage {
+      padding: 4px 9px 28px 2px;
+    }
+
+    .guestbook-float {
+      animation: none;
+    }
+
+    .guestbook-rail span:first-child {
+      animation: none;
+    }
+
+    .guestbook-rig {
+      --tilt-x: 0deg;
+      --tilt-y: 0deg;
+    }
+
+    .guestbook-side--right {
+      right: -9px;
+      width: 10px;
+      clip-path: polygon(0 0, 100% 7px, 100% 100%, 0 calc(100% - 6px));
+    }
+
+    .guestbook-side--bottom {
+      right: -9px;
+      bottom: -9px;
+      height: 10px;
+      clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 100%, 7px 100%);
+    }
+
+    .guestbook-rail {
+      height: 30px;
+    }
   }
 
   @media (max-width: 420px) {
     .guestbook-shell {
       border-radius: var(--radius-card);
-      padding-inline: 1rem;
+      padding-inline: 0.45rem;
+    }
+
+    .guestbook-screen {
+      margin: 0.25rem;
+      padding-inline: 0.7rem;
     }
 
     .guestbook-board {
@@ -100,9 +274,101 @@ import BackButton from '@/components/BackButton.astro';
     }
   }
 
+  @media (hover: none) {
+    .guestbook-float,
+    .guestbook-rail span:first-child {
+      animation: none;
+    }
+
+    .guestbook-rig {
+      --tilt-x: 0deg;
+      --tilt-y: 0deg;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .guestbook-shell {
+    .guestbook-float,
+    .guestbook-rail span:first-child {
+      animation: none;
+    }
+
+    .guestbook-rig {
+      --tilt-x: 0deg;
+      --tilt-y: 0deg;
       transition: none;
     }
   }
+
+  .guestbook-stage[data-motion-paused] .guestbook-float,
+  .guestbook-stage[data-motion-paused] .guestbook-rail span:first-child,
+  .guestbook-stage:focus-within .guestbook-float {
+    animation-play-state: paused;
+  }
+
+  @keyframes guestbook-hover {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  @keyframes guestbook-signal {
+    0%, 100% { opacity: 0.58; }
+    50% { opacity: 1; }
+  }
 </style>
+
+<script>
+  const setupGuestbookMotion = () => {
+    const stage = document.querySelector<HTMLElement>('[data-guestbook-stage]');
+    const rig = stage?.querySelector<HTMLElement>('[data-guestbook-rig]');
+    if (!stage || !rig || stage.dataset.motionReady) return;
+    stage.dataset.motionReady = 'true';
+
+    const controller = new AbortController();
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+    let frame = 0;
+    let visible = true;
+
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      rig.style.removeProperty('--tilt-x');
+      rig.style.removeProperty('--tilt-y');
+    };
+    const updatePause = () => {
+      stage.toggleAttribute('data-motion-paused', document.hidden || !visible);
+      if (document.hidden || reducedMotion.matches || !finePointer.matches) reset();
+    };
+
+    stage.addEventListener('pointermove', (event) => {
+      if (event.pointerType !== 'mouse' || document.hidden || reducedMotion.matches || !finePointer.matches || stage.matches(':focus-within')) return;
+      const rect = stage.getBoundingClientRect();
+      const x = Math.max(-1, Math.min(1, (event.clientX - rect.left) / rect.width * 2 - 1));
+      const y = Math.max(-1, Math.min(1, event.clientY / window.innerHeight * 2 - 1));
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        rig.style.setProperty('--tilt-x', `${(-y * 1.1).toFixed(2)}deg`);
+        rig.style.setProperty('--tilt-y', `${(x * 1.6 - 0.6).toFixed(2)}deg`);
+      });
+    }, { signal: controller.signal });
+    stage.addEventListener('pointerleave', reset, { signal: controller.signal });
+    stage.addEventListener('focusin', reset, { signal: controller.signal });
+    document.addEventListener('visibilitychange', updatePause, { signal: controller.signal });
+    reducedMotion.addEventListener('change', updatePause, { signal: controller.signal });
+    finePointer.addEventListener('change', updatePause, { signal: controller.signal });
+
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      updatePause();
+    });
+    observer.observe(stage);
+    document.addEventListener('astro:before-swap', () => {
+      reset();
+      observer.disconnect();
+      controller.abort();
+    }, { once: true, signal: controller.signal });
+    updatePause();
+  };
+
+  document.addEventListener('astro:page-load', setupGuestbookMotion);
+  setupGuestbookMotion();
+</script>

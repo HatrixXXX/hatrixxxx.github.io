@@ -8,7 +8,6 @@ import MusicPlayer from '@/components/MusicPlayer.astro';
 import SearchOverlay from '@/components/SearchOverlay.astro';
 import PageLoader from '@/components/PageLoader.astro';
 import SakanaCharacters from '@/components/SakanaCharacters.astro';
-import CursorTrail from '@/components/CursorTrail.astro';
 import { isConfiguredLockedPage } from '@/config/protected-content';
 import { SITE } from '@/config/site';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '@/config/security';
@@ -31,6 +30,8 @@ interface Props {
   noindex?: boolean;
   pageKind?: 'default' | 'home';
   showFooter?: boolean;
+  showMusicPlayer?: boolean;
+  showPageLoader?: boolean;
   siteFooterStats?: {
     postCount: BuiltSiteStats['postCount'];
     wordCount: BuiltSiteStats['wordCount'];
@@ -47,6 +48,8 @@ const {
   noindex = false,
   pageKind = 'default',
   showFooter = false,
+  showMusicPlayer = true,
+  showPageLoader = true,
   siteFooterStats
 } = Astro.props;
 
@@ -62,7 +65,6 @@ const footerStats = siteFooterStats ?? defaultFooterStats;
 const isHome = pageKind === 'home';
 const pageBackgroundSrc = '/assets/backgrounds/background.png';
 const pageBgStyle = !isHome ? `--page-bg-image: url("${pageBackgroundSrc}")` : undefined;
-const isLabPage = Astro.url.pathname === '/lab/';
 const isAboutPage = Astro.url.pathname === '/about' || Astro.url.pathname.startsWith('/about/');
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
@@ -73,7 +75,7 @@ const showSakanaCharacters = isAboutPage;
 ---
 
 <!doctype html>
-<html lang="zh-CN" data-page-kind={isHome ? 'home' : undefined} transition:animate="none">
+<html lang="zh-CN" data-page-kind={isHome ? 'home' : undefined} data-page-loader={showPageLoader ? undefined : 'disabled'} transition:animate="none">
   <head>
     {
       import.meta.env.PROD && (
@@ -84,6 +86,7 @@ const showSakanaCharacters = isAboutPage;
     <script is:inline>
       (() => {
         const root = document.documentElement;
+        if (root.dataset.pageLoader === 'disabled') return;
         if (root.dataset.pageKind !== 'home') root.dataset.pageBackground = 'loading';
         let visited = false;
         try {
@@ -130,7 +133,8 @@ const showSakanaCharacters = isAboutPage;
     {!isHome && <link rel="preload" href={pageBackgroundSrc} as="image" fetchpriority="high" />}
     {image !== '/assets/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
-  <body class={bodyClass} style={pageBgStyle}>    <PageLoader />
+  <body class={bodyClass} style={pageBgStyle}>
+    {showPageLoader && <PageLoader />}
     <span data-magnetic-frame aria-hidden="true"></span>
     {!isHome && <SiteHeader />}
     <ProtectedContent locked={pageLocked} route={Astro.url.pathname} title={title}>
@@ -138,9 +142,8 @@ const showSakanaCharacters = isAboutPage;
     </ProtectedContent>
     {showFooter && <SiteFooter stats={footerStats} />}
     {!isHome && showSakanaCharacters && <SakanaCharacters />}
-    {isLabPage && <CursorTrail />}
     <SearchOverlay />
-    {!isHome && <MusicPlayer mode="dock" />}
+    {!isHome && showMusicPlayer && <MusicPlayer mode="dock" />}
     <span
       id="vercount_value_site_uv"
       data-visitor-count-source
@@ -157,7 +160,6 @@ const showSakanaCharacters = isAboutPage;
       import '@/scripts/magnetic-pointer';
       import '@/scripts/twikoo';
       import '@/scripts/protected-content-bootstrap';
-      import '@/scripts/cursor-trail';
       import '@/scripts/search';
       import '@/scripts/search-highlight';
       import '@/scripts/site-stats';
