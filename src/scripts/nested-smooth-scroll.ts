@@ -126,6 +126,7 @@ function mount(): void {
 
   const selectors = [
     '.search-results',
+    '.guestbook-screen',
     '.mobile-nav',
     ...(compactFriends.matches
       ? ['.friends-main']

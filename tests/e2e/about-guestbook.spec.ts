@@ -316,15 +316,10 @@ test('guestbook mounts Twikoo on its own pathname', async ({ page }) => {
   await expect(shell).toHaveAccessibleName('留言板');
   await expect(shell.getByText('GitHub Discussions', { exact: true })).toHaveCount(0);
   await expect(shell.locator('.guestbook-serial, .guestbook-header, .guestbook-board-heading')).toHaveCount(0);
-  const shellMaterial = await shell.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      backgroundColor: style.backgroundColor,
-      backdropFilter: style.backdropFilter
-    };
-  });
-  expect(shellMaterial.backgroundColor).toMatch(/^rgba\(.+, 0\.\d+\)$/);
-  expect(shellMaterial.backdropFilter).not.toBe('none');
+  await expect(shell).toHaveCSS('border-image-source', /terminal-frame\.png/);
+  const screen = shell.locator('[data-guestbook-scroll]');
+  await expect(screen).toHaveCSS('overflow-y', 'auto');
+  await expect(screen).toHaveCSS('scrollbar-width', 'none');
   const comments = page.locator('[data-twikoo-comments]');
   await expect(comments).toHaveAccessibleName('评论');
   await expect(comments).toHaveAttribute('data-twikoo-path', '/guestbook/');
@@ -344,6 +339,15 @@ test('guestbook mounts Twikoo on its own pathname', async ({ page }) => {
   expect(mobileShellBox).not.toBeNull();
   expect(mobileShellBox!.y - (backButtonBox!.y + backButtonBox!.height)).toBeGreaterThanOrEqual(12);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await screen.evaluate((element) => {
+    const extraComments = document.createElement('div');
+    extraComments.style.height = '1000px';
+    element.firstElementChild?.append(extraComments);
+  });
+  await screen.hover();
+  await page.mouse.wheel(0, 450);
+  await expect.poll(() => screen.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
 test('Twikoo runtime styles survive client navigation to guestbook and an article', async ({ page }) => {

@@ -8,99 +8,12 @@ import '@/styles/guestbook-terminal.css';
 <BaseLayout title="留言板" bodyClass="guestbook-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" />
   <main class="guestbook-main container">
-    <div class="guestbook-stage" data-guestbook-stage>
-      <div class="guestbook-float">
-        <div class="guestbook-rig" data-guestbook-rig>
-          <section class="guestbook-shell" aria-label="留言板" data-guestbook-shell>
-            <div class="terminal-top" aria-hidden="true">
-              <span class="terminal-bolt terminal-bolt--left"></span>
-              <span class="terminal-camera"></span>
-              <span class="terminal-bolt terminal-bolt--right"></span>
-            </div>
-            <div class="terminal-armor terminal-armor--left" aria-hidden="true">
-              <span class="terminal-plate terminal-plate--upper"></span>
-              <span class="terminal-plate terminal-plate--middle"></span>
-              <span class="terminal-plate terminal-plate--lower"></span>
-            </div>
-            <div class="guestbook-screen">
-              <div class="guestbook-rail" aria-hidden="true"><span></span><span></span><span></span></div>
-              <div class="guestbook-board">
-                <TwikooComments variant="guestbook" />
-              </div>
-            </div>
-            <div class="terminal-armor terminal-armor--right" aria-hidden="true">
-              <span class="terminal-plate terminal-plate--upper"></span>
-              <span class="terminal-plate terminal-plate--middle"></span>
-              <span class="terminal-plate terminal-plate--lower"></span>
-            </div>
-            <div class="terminal-bottom" aria-hidden="true">
-              <span class="terminal-foot terminal-foot--left"></span>
-              <span class="terminal-brand">HATRIX</span>
-              <span class="terminal-grip"></span>
-              <span class="terminal-foot terminal-foot--right"></span>
-            </div>
-          </section>
+    <section class="guestbook-shell" aria-label="留言板" data-guestbook-shell>
+      <div class="guestbook-screen" role="region" aria-label="留言内容" tabindex="0" data-guestbook-scroll data-lenis-prevent>
+        <div class="guestbook-board">
+          <TwikooComments variant="guestbook" />
         </div>
       </div>
-    </div>
+    </section>
   </main>
 </BaseLayout>
-
-
-
-<script>
-  const setupGuestbookMotion = () => {
-    const stage = document.querySelector<HTMLElement>('[data-guestbook-stage]');
-    const rig = stage?.querySelector<HTMLElement>('[data-guestbook-rig]');
-    if (!stage || !rig || stage.dataset.motionReady) return;
-    stage.dataset.motionReady = 'true';
-
-    const controller = new AbortController();
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-    let frame = 0;
-    let visible = true;
-
-    const reset = () => {
-      cancelAnimationFrame(frame);
-      rig.style.removeProperty('--tilt-x');
-      rig.style.removeProperty('--tilt-y');
-    };
-    const updatePause = () => {
-      stage.toggleAttribute('data-motion-paused', document.hidden || !visible);
-      if (document.hidden || reducedMotion.matches || !finePointer.matches) reset();
-    };
-
-    stage.addEventListener('pointermove', (event) => {
-      if (event.pointerType !== 'mouse' || document.hidden || reducedMotion.matches || !finePointer.matches || stage.matches(':focus-within')) return;
-      const rect = stage.getBoundingClientRect();
-      const x = Math.max(-1, Math.min(1, (event.clientX - rect.left) / rect.width * 2 - 1));
-      const y = Math.max(-1, Math.min(1, event.clientY / window.innerHeight * 2 - 1));
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        rig.style.setProperty('--tilt-x', `${(-y * 1.1).toFixed(2)}deg`);
-        rig.style.setProperty('--tilt-y', `${(x * 1.6 - 0.6).toFixed(2)}deg`);
-      });
-    }, { signal: controller.signal });
-    stage.addEventListener('pointerleave', reset, { signal: controller.signal });
-    stage.addEventListener('focusin', reset, { signal: controller.signal });
-    document.addEventListener('visibilitychange', updatePause, { signal: controller.signal });
-    reducedMotion.addEventListener('change', updatePause, { signal: controller.signal });
-    finePointer.addEventListener('change', updatePause, { signal: controller.signal });
-
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      updatePause();
-    });
-    observer.observe(stage);
-    document.addEventListener('astro:before-swap', () => {
-      reset();
-      observer.disconnect();
-      controller.abort();
-    }, { once: true, signal: controller.signal });
-    updatePause();
-  };
-
-  document.addEventListener('astro:page-load', setupGuestbookMotion);
-  setupGuestbookMotion();
-</script>
