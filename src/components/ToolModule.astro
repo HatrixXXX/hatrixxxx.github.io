@@ -25,7 +25,7 @@ const kindLabel = tool.kind === 'link' ? '在线' : '软件';
     <span class="tool-module__led" data-tool-led aria-hidden="true"></span>
   </span>
   <span class="tool-module__center">
-    <img src={tool.icon} alt="" width="64" height="64" loading="lazy" decoding="async" />
+    <img src={tool.icon} alt="" width="128" height="128" loading="lazy" decoding="async" />
     <span class="tool-module__kind" data-tool-kind-badge>{kindLabel}</span>
   </span>
   <span class="tool-module__purpose" data-tool-purpose>{tool.purpose}</span>
@@ -103,7 +103,9 @@ const kindLabel = tool.kind === 'link' ? '在线' : '软件';
   .tool-module__center img {
     display: block;
     width: min(3.5rem, 76%);
-    height: min(3.5rem, 100%);
+    height: auto;
+    max-height: 100%;
+    aspect-ratio: 1;
     object-fit: contain;
     filter: drop-shadow(0 3px 5px rgb(0 0 0 / 35%));
     transition: transform var(--duration-fast) var(--ease-out);

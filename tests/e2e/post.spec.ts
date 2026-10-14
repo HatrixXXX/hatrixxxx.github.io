@@ -70,7 +70,7 @@ test('all legacy slugs resolve and the merged FPGA route stays available', async
 }) => {
   test.setTimeout(120_000);
   const slugs = await legacySlugs();
-  expect(slugs).toHaveLength(16);
+  expect(slugs).toHaveLength(15);
 
   const responses: Array<{ slug: string; response: APIResponse }> = [];
   for (let offset = 0; offset < slugs.length; offset += 4) {
@@ -92,7 +92,8 @@ test('all legacy slugs resolve and the merged FPGA route stays available', async
   const mergedFpgaLink = mergedFpgaCard.locator('h2 a');
   await mergedFpgaCard.dispatchEvent('click');
   await expect(mergedFpgaCard).toHaveAttribute('data-active', 'true');
-  await mergedFpgaLink.click();
+  await mergedFpgaLink.focus();
+  await page.keyboard.press('Enter');
   await expect(page).toHaveURL(
     new RegExp(`${encodeURI('/posts/Xilinx FPGA开发/').replace(/[+()]/g, '\\$&')}$`)
   );

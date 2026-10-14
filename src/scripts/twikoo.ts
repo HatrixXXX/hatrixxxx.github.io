@@ -21,6 +21,8 @@ declare global {
 
 let clientPromise: Promise<TwikooClient> | undefined;
 let controlsObserver: MutationObserver | undefined;
+let loadingControlTemplates: HTMLElement[] = [];
+let adminReturnFocus: HTMLElement | null = null;
 
 function labelControl(element: HTMLElement, label: string): void {
   element.setAttribute('role', 'button');
@@ -37,9 +39,38 @@ function labelControl(element: HTMLElement, label: string): void {
 }
 
 function enhanceControls(root: HTMLElement): void {
-  const actions = [...root.querySelectorAll<HTMLElement>('.tk-comments-actions > .tk-icon.__comments')];
+  const isGuestbook = !!root.closest('[data-twikoo-variant="guestbook"]');
+  const actionGroup = root.querySelector<HTMLElement>('.tk-comments-actions');
+  const actions = [...(actionGroup?.querySelectorAll<HTMLElement>(':scope > .tk-icon.__comments:not([data-twikoo-loading-control])') ?? [])];
   const labels = actions.length === 1 ? ['设置'] : ['搜索评论', '刷新评论', '设置'];
   actions.forEach((action, index) => labelControl(action, labels[index]));
+  if (isGuestbook && actions.length >= 2) {
+    loadingControlTemplates = actions.slice(0, 2).map((action) => action.cloneNode(true) as HTMLElement);
+    actionGroup?.querySelectorAll('[data-twikoo-loading-control]').forEach((placeholder) => placeholder.remove());
+  } else if (isGuestbook && actionGroup && loadingControlTemplates.length === 2 && !actionGroup.querySelector('[data-twikoo-loading-control]')) {
+    loadingControlTemplates.forEach((template, index) => {
+      const placeholder = template.cloneNode(true) as HTMLElement;
+      placeholder.dataset.twikooLoadingControl = index === 0 ? 'search' : 'refresh';
+      placeholder.setAttribute('aria-disabled', 'true');
+      placeholder.tabIndex = -1;
+      actionGroup.insertBefore(placeholder, actions[0] ?? null);
+    });
+  }
+  if (isGuestbook) {
+    const adminOpen = !!root.querySelector('.tk-admin.__show');
+    const wasAdminOpen = actionGroup?.hasAttribute('data-admin-open') ?? false;
+    if (adminOpen && !wasAdminOpen) {
+      adminReturnFocus = actions.at(-1) ?? null;
+    }
+    actionGroup?.toggleAttribute('data-admin-open', adminOpen);
+    actionGroup?.toggleAttribute('inert', adminOpen);
+    if (adminOpen && !wasAdminOpen) {
+      root.querySelector<HTMLElement>('.tk-admin.__show input, .tk-admin.__show button')?.focus();
+    } else if (!adminOpen && wasAdminOpen) {
+      adminReturnFocus?.focus();
+      adminReturnFocus = null;
+    }
+  }
 
   root.querySelectorAll<HTMLElement>('.tk-comment').forEach((comment) => {
     const nick = comment.querySelector<HTMLElement>(':scope > .tk-main > .tk-row .tk-nick');
@@ -72,9 +103,11 @@ function enhanceControls(root: HTMLElement): void {
 
 function observeControls(root: HTMLElement): void {
   controlsObserver?.disconnect();
+  loadingControlTemplates = [];
+  adminReturnFocus = null;
   enhanceControls(root);
   controlsObserver = new MutationObserver(() => enhanceControls(root));
-  controlsObserver.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
+  controlsObserver.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['href', 'class'] });
 }
 
 function loadTwikoo(): Promise<TwikooClient> {
@@ -165,6 +198,8 @@ function mountTwikoo(): void {
 document.addEventListener('astro:before-swap', (raw) => {
   controlsObserver?.disconnect();
   controlsObserver = undefined;
+  loadingControlTemplates = [];
+  adminReturnFocus = null;
   const next = (raw as unknown as { newDocument?: Document }).newDocument;
   const style = document.head.querySelector<HTMLStyleElement>('style[data-twikoo]');
   if (next && style && !next.head.querySelector('style[data-twikoo]')) {

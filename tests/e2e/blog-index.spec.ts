@@ -7,7 +7,7 @@ test('blog index lists every published post in date order', async ({ page }) => 
   const cards = coverflow.locator('article[data-post-card]');
   await expect(coverflow).toHaveAttribute('tabindex', '0');
   await expect(coverflow).toHaveAccessibleName('文章列表');
-  await expect(cards).toHaveCount(16);
+  await expect(cards).toHaveCount(15);
   await expect(cards.first().locator('h2')).not.toBeEmpty();
   await expect(cards.first()).toHaveAttribute('data-active', 'true');
   await expect(coverflow.locator('[data-post-card][data-active="true"]')).toHaveCount(1);
@@ -15,7 +15,7 @@ test('blog index lists every published post in date order', async ({ page }) => 
   const dates = await cards.locator('time').evaluateAll((times) =>
     times.map((time) => Date.parse(time.getAttribute('datetime') ?? ''))
   );
-  expect(dates).toHaveLength(16);
+  expect(dates).toHaveLength(15);
   expect(dates.every((date, index) => index === 0 || dates[index - 1] >= date)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     await page.evaluate(() => document.documentElement.clientWidth)
@@ -171,6 +171,7 @@ test('a vertical phone swipe advances one card', async ({ browser }) => {
   try {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/blogs/');
+    await expect(page.locator('[data-post-card]').first()).toHaveAttribute('data-active', 'true');
     await page.evaluate(() => {
       const rail = document.querySelector<HTMLElement>('[data-post-coverflow]');
       if (!rail) throw new Error('Missing post coverflow');

@@ -1,25 +1,48 @@
 import { expect, test } from '@playwright/test';
 
-test('bookmark files respond to pointer, keyboard, and detail actions', async ({ page }) => {
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
+test('the favorites reel selects a real link by wheel, drag, and keyboard', async ({ page }) => {
   await page.goto('/favorites/');
-  await page.locator('[data-bookmark-console][data-bound]').waitFor();
-  const files = page.locator('[data-bookmark-file]');
-  await expect(files).toHaveCount(18);
-  await expect(files.first()).toHaveAttribute('data-selected', '');
+  const reel = page.locator('[data-favorites-reel]');
+  const selected = page.locator('[data-favorites-selected]');
+  const visit = page.locator('[data-favorites-visit]');
 
-  await files.nth(1).hover();
-  await expect(files.nth(1)).toHaveAttribute('data-selected', '');
-  await expect(page.locator('[data-bookmark-current]')).toHaveText("X-Jeff's Blog");
+  await expect(selected).toHaveText('扬神的博客');
+  await reel.hover();
+  await page.mouse.wheel(0, 110);
+  await expect(selected).toHaveText("X-Jeff's Blog");
+  await expect(visit).toHaveAttribute('href', 'https://shichaoxin.com/');
 
-  await page.keyboard.press('ArrowRight');
-  await expect(files.nth(2)).toBeFocused();
-  await page.keyboard.press('Enter');
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('heading', { name: "Siboehm's Blog" })).toBeVisible();
-  await expect(dialog.getByRole('link', { name: '访问网站' })).toHaveAttribute('href', 'https://siboehm.com/');
+  const bounds = await reel.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2 - 90, { steps: 5 });
+  await page.mouse.up();
+  await expect(selected).toHaveText("Siboehm's Blog");
 
-  await page.keyboard.press('Escape');
-  await expect(dialog).not.toBeVisible();
-  await expect(files.nth(2)).toBeFocused();
+  await reel.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(selected).toHaveText('Git Game');
+  await expect(visit).toHaveAttribute('target', '_blank');
+});
+
+test('random spin lands on another saved link and reduced motion resolves immediately', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/favorites/');
+  const selected = page.locator('[data-favorites-selected]');
+  await page.getByRole('button', { name: '随机转一个链接' }).click();
+  await expect(selected).not.toHaveText('扬神的博客');
+  await expect(page.locator('[data-favorites-status]')).toContainText('已选中');
+  await expect(page.locator('[data-favorites-visit]')).toHaveAttribute('href', /^https:\/\//);
+});
+
+test('random spin visibly turns and then settles on a different link', async ({ page }) => {
+  await page.goto('/favorites/');
+  const selected = page.locator('[data-favorites-selected]');
+  await page.getByRole('button', { name: '随机转一个链接' }).click();
+  await expect(page.locator('[data-favorites-status]')).toHaveText('正在随机转动…');
+  await expect(page.locator('[data-favorites-status]')).toContainText('已选中', { timeout: 10000 });
+  await expect(selected).not.toHaveText('扬神的博客');
 });

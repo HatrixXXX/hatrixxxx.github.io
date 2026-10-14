@@ -1,13 +1,10 @@
 ---
 import BackButton from '@/components/BackButton.astro';
 import ToolModule from '@/components/ToolModule.astro';
-import { SOFTWARE_TOOLS, SOFTWARE_TOOL_CATEGORIES } from '@/data/software-tools';
+import { SOFTWARE_TOOLS } from '@/data/software-tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
-const description = '收录常用软件、在线工具和工作中会反复打开的站点。';
-const orderedTools = SOFTWARE_TOOL_CATEGORIES.flatMap((category) =>
-  SOFTWARE_TOOLS.filter((tool) => tool.category === category.id)
-);
+const description = '收录日常学习和开发中使用的软件。';
 ---
 
 <BaseLayout title="工具箱" description={description} bodyClass="software-page nav-content-page plain-page">
@@ -16,7 +13,7 @@ const orderedTools = SOFTWARE_TOOL_CATEGORIES.flatMap((category) =>
   <main class="toolbox-main container" aria-label="工具箱">
     <div class="tool-deck" data-tool-deck>
       <div class="tool-grid" data-tool-grid>
-        {orderedTools.map((tool) => <ToolModule tool={tool} />)}
+        {SOFTWARE_TOOLS.map((tool) => <ToolModule tool={tool} />)}
       </div>
     </div>
   </main>

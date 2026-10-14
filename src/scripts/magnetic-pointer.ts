@@ -57,7 +57,8 @@ function interactiveTarget(element: Element): Element | null {
   if (player && !element.closest('button, input, label, a')) return player;
 
   const control = element.closest(controlSelector);
-  if (!control || control.closest('[inert], [aria-disabled="true"]') || control.matches(':disabled')) return null;
+  if (!control) return element.closest('.twikoo-comments[data-twikoo-variant="guestbook"] .tk-comment');
+  if (control.closest('[inert], [aria-disabled="true"]') || control.matches(':disabled')) return null;
   if (control instanceof HTMLLabelElement && (!control.control || control.control.matches(':disabled'))) return null;
   return control;
 }

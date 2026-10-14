@@ -30,7 +30,6 @@ interface Props {
   noindex?: boolean;
   pageKind?: 'default' | 'home';
   showFooter?: boolean;
-  showMusicPlayer?: boolean;
   showPageLoader?: boolean;
   siteFooterStats?: {
     postCount: BuiltSiteStats['postCount'];
@@ -48,7 +47,6 @@ const {
   noindex = false,
   pageKind = 'default',
   showFooter = false,
-  showMusicPlayer = true,
   showPageLoader = true,
   siteFooterStats
 } = Astro.props;
@@ -143,7 +141,7 @@ const showSakanaCharacters = isAboutPage;
     {showFooter && <SiteFooter stats={footerStats} />}
     {!isHome && showSakanaCharacters && <SakanaCharacters />}
     <SearchOverlay />
-    {!isHome && showMusicPlayer && <MusicPlayer mode="dock" />}
+    {!isHome && <MusicPlayer mode="dock" />}
     <span
       id="vercount_value_site_uv"
       data-visitor-count-source

@@ -1,5 +1,4 @@
 .projects-page { overflow-x: hidden; }
-.projects-page [data-music-player] { display: none !important; }
 .project-book-stage:focus { outline: none; }
 
 body.plain-page > main.project-book-stage {

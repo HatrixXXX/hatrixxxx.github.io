@@ -104,8 +104,72 @@ describe('music player', () => {
     expect(record.attributes.get('aria-pressed')).toBe('true');
     record.dispatchEvent(new Event('click'));
     vi.advanceTimersByTime(350);
+    expect(player.dataset.playbackState).toBe('playing');
+    vi.advanceTimersByTime(320);
     expect(player.dataset.playbackState).toBe('paused');
     expect(record.attributes.get('aria-pressed')).toBe('false');
+  });
+
+  it('starts fading on the pause click and stays silent until the next play', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    record.dispatchEvent(new Event('click'));
+    vi.advanceTimersByTime(350);
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 1 }));
+    vi.advanceTimersByTime(40);
+    expect(playerAudio.volume).toBeLessThan(0.7);
+    expect(playerAudio.paused).toBe(false);
+    vi.advanceTimersByTime(240);
+    expect(playerAudio.volume).toBeGreaterThan(0);
+    expect(playerAudio.volume).toBeLessThan(0.7);
+    expect(playerAudio.paused).toBe(false);
+    vi.advanceTimersByTime(250);
+    expect(playerAudio.paused).toBe(true);
+    expect(playerAudio.volume).toBe(0);
+    expect(player.dataset.playbackState).toBe('paused');
+    record.dispatchEvent(new Event('click'));
+    vi.advanceTimersByTime(350);
+    expect(playerAudio.volume).toBe(0.7);
+    expect(playerAudio.paused).toBe(false);
+  });
+
+  it('cancels a pending pause fade when the record is clicked again', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    record.dispatchEvent(new Event('click'));
+    vi.advanceTimersByTime(350);
+    record.dispatchEvent(new Event('click'));
+    vi.advanceTimersByTime(440);
+    expect(playerAudio.volume).toBeLessThan(0.7);
+    record.dispatchEvent(new Event('click'));
+    expect(playerAudio.volume).toBe(0.7);
+    vi.advanceTimersByTime(400);
+    expect(playerAudio.paused).toBe(false);
+    expect(player.dataset.playbackState).toBe('playing');
   });
 
   it('double clicking skips the pending toggle and draws each remaining track before reshuffling', () => {
@@ -130,8 +194,8 @@ describe('music player', () => {
 
     const doubleClick = () => {
       const previousTrack = track.textContent;
-      record.dispatchEvent(new Event('click'));
-      record.dispatchEvent(new Event('click'));
+      record.dispatchEvent(Object.assign(new Event('click'), { detail: 1 }));
+      record.dispatchEvent(Object.assign(new Event('click'), { detail: 2 }));
       expect(player.dataset.playbackState).toBe('changing');
       expect(player.dataset.recordSwap).toBe('true');
       expect(record.disabled).toBe(true);

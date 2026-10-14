@@ -16,11 +16,11 @@ test('toolbox presents nine readable colored cards per row', async ({ page }) =>
   expect(columns).toBe(9);
 
   const first = cards.first();
-  await expect(first.locator('[data-tool-title]')).toHaveText('SolidWorks');
-  await expect(first.locator('[data-tool-purpose]')).toHaveText('机械设计');
+  await expect(first.locator('[data-tool-title]')).toHaveText('VS Code');
+  await expect(first.locator('[data-tool-purpose]')).toHaveText('代码编辑');
   await expect(first.locator('[data-tool-kind-badge]')).toHaveText('软件');
   await expect(first.locator('[data-tool-led]')).toHaveCount(2);
-  await expect(first.locator('img')).toHaveAttribute('src', '/assets/tool-icons/solidworks.svg');
+  await expect(first.locator('img')).toHaveAttribute('src', '/assets/tool-icons/vs-code.png');
 
   const cardBox = await first.boundingBox();
   const iconAreaBox = await first.locator('.tool-module__center').boundingBox();
@@ -35,16 +35,17 @@ test('toolbox presents nine readable colored cards per row', async ({ page }) =>
   );
   expect(clippedTitles).toEqual([]);
 
-  const online = page.getByRole('link', { name: /轻松传.*文件传输/ });
-  await expect(online.locator('[data-tool-kind-badge]')).toHaveText('在线');
-  await expect(online).toHaveAttribute('href', 'https://easychuan.cn/');
-  await expect(online).toHaveAttribute('target', '_blank');
-  await expect(online).toHaveAttribute('rel', 'noreferrer');
+  const last = page.getByRole('link', { name: /ContextMenuManager.*右键菜单/ });
+  await expect(last.locator('[data-tool-kind-badge]')).toHaveText('软件');
+  await expect(last).toHaveAttribute('href', 'https://github.com/BluePointLilac/ContextMenuManager');
+  await expect(last).toHaveAttribute('target', '_blank');
+  await expect(last).toHaveAttribute('rel', 'noreferrer');
 
   const firstColor = await first.evaluate((card) => getComputedStyle(card).borderColor);
-  const everydayColor = await page.getByRole('link', { name: /PowerToys/ }).evaluate((card) => getComputedStyle(card).borderColor);
+  const toolchainColor = await page.getByRole('link', { name: /SolidWorks/ }).evaluate((card) => getComputedStyle(card).borderColor);
+  const everydayColor = await page.getByRole('link', { name: /Everything/ }).evaluate((card) => getComputedStyle(card).borderColor);
   const imageColor = await page.getByRole('link', { name: /Snipaste/ }).evaluate((card) => getComputedStyle(card).borderColor);
-  expect(new Set([firstColor, everydayColor, imageColor]).size).toBe(3);
+  expect(new Set([firstColor, toolchainColor, everydayColor, imageColor]).size).toBe(4);
 
   const brokenIcons = await cards.locator('img').evaluateAll(async (images) => {
     const sources = images.map((image) => (image as HTMLImageElement).src);
@@ -62,9 +63,9 @@ test('full descriptions appear above a card on hover and keyboard focus', async 
   await page.goto('/toolbox/');
   await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
 
-  const solidWorks = page.getByRole('link', { name: /SolidWorks.*三维机械设计/ });
+  const solidWorks = page.getByRole('link', { name: /SolidWorks.*机械零件/ });
   const tooltip = solidWorks.locator('[data-tool-tooltip]');
-  await expect(tooltip).toContainText('用于零件、装配体与工程图的三维机械设计');
+  await expect(tooltip).toContainText('创建机械零件、装配体和工程图');
   await solidWorks.hover();
   await expect(tooltip).toHaveCSS('opacity', '1');
 

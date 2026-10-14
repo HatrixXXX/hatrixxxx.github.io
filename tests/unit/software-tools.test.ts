@@ -1,43 +1,54 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import sharp from 'sharp';
 import { SOFTWARE_TOOLS } from '../../src/data/software-tools';
 
-describe('software tool cabinet data', () => {
-  it('contains the migrated development toolchain alongside software and web links', () => {
-    expect(SOFTWARE_TOOLS).toHaveLength(47);
-    expect(SOFTWARE_TOOLS.filter((tool) => tool.kind === 'software')).toHaveLength(37);
-    expect(SOFTWARE_TOOLS.filter((tool) => tool.kind === 'link')).toHaveLength(10);
-  });
+const listedNames = [
+  'VS Code', 'Git', 'CLion', 'Pycharm', 'Anaconda', 'SolidWorks', 'Blender',
+  'Bamboo Studio', 'Altium Designer', 'Kicad', 'CubeMX', 'Keil', 'Ozone',
+  'Vivado', 'Quartus', 'Matlab', 'Multisim', 'MobaXterm', 'VMware',
+  'Acrobat DC', 'Adobe Illustrator', 'Adobe Media Encoder',
+  'Adobe Photoshop', 'Adobe Premiere Pro', 'Everything', 'Honeyview',
+  'Potplayer', 'Typora', 'Zotero', 'PicGo', 'Q-dir', '7-zip', 'Geek',
+  'Snipaste', 'Bandicam', 'DiskGenius', 'Spacesniffer', 'CrystalDiskMark',
+  'ContextMenuManager'
+];
 
-  it('keeps every tool from the development toolchain in one category', () => {
-    expect(SOFTWARE_TOOLS.filter((tool) => tool.category === 'toolchain').map((tool) => tool.name)).toEqual([
-      'SolidWorks', 'Fusion 360', 'Inventor', 'Bambu Studio',
-      'Altium Designer', '嘉立创 EDA', 'KiCad', 'OrCAD', 'PADS',
-      'STM32CubeMX', 'Keil MDK', 'Ozone', 'Arduino IDE', 'PlatformIO',
-      'Vivado', 'Quartus Prime', 'PSIM', 'Multisim', 'MATLAB',
-      'Visual Studio Code', 'Git', 'SourceTree', 'CLion', 'PyCharm',
-      'Visual Studio', 'Anaconda', 'VMware Workstation', 'Zotero',
-      'Typora', '向日葵', 'RustDesk', 'VNC Viewer', 'PicGo'
-    ]);
+describe('software tool cabinet data', () => {
+  it('keeps the curated software inventory in display order', () => {
+    expect(SOFTWARE_TOOLS.map((tool) => tool.name)).toEqual(listedNames);
+    expect(SOFTWARE_TOOLS.every((tool) => tool.kind === 'software')).toBe(true);
   });
 
   it('uses complete, unique HTTPS entries', () => {
-    const names = SOFTWARE_TOOLS.map((tool) => tool.name);
     const hrefs = SOFTWARE_TOOLS.map((tool) => tool.href);
-
-    expect(new Set(names).size).toBe(names.length);
     expect(new Set(hrefs).size).toBe(hrefs.length);
 
     for (const tool of SOFTWARE_TOOLS) {
-      expect(tool.name.trim().length).toBeGreaterThan(0);
       expect(tool.description.trim().length).toBeGreaterThan(0);
       expect(tool.purpose.trim().length).toBeGreaterThan(0);
       expect(new URL(tool.href).protocol).toBe('https:');
-      expect(tool.icon).toMatch(/^\/assets\/tool-icons\/[a-z0-9-]+\.(?:svg|png|ico)$/);
-      expect(existsSync(join(process.cwd(), 'public', tool.icon.slice(1)))).toBe(true);
+      expect(tool.icon).toMatch(/^\/assets\/tool-icons\/[a-z0-9-]+\.png$/);
     }
-
     expect(new Set(SOFTWARE_TOOLS.map((tool) => tool.icon)).size).toBe(SOFTWARE_TOOLS.length);
+  });
+
+  it('keeps only listed icons on 128px transparent canvases', async () => {
+    const iconDirectory = join(process.cwd(), 'public', 'assets', 'tool-icons');
+    const expectedFiles = SOFTWARE_TOOLS.map((tool) => tool.icon.split('/').at(-1)).sort();
+    const actualFiles = readdirSync(iconDirectory).filter((file) => /\.(?:png|svg|ico)$/.test(file)).sort();
+    expect(actualFiles).toEqual(expectedFiles);
+    const sourceNames = readFileSync(join(iconDirectory, 'SOURCES.txt'), 'utf8')
+      .match(/^[a-z0-9-]+\.png <- /gm)?.map((line) => line.slice(0, -4)).sort();
+    expect(sourceNames).toEqual(expectedFiles);
+
+    for (const file of actualFiles) {
+      const icon = sharp(join(iconDirectory, file));
+      const metadata = await icon.metadata();
+      expect([metadata.width, metadata.height, metadata.channels]).toEqual([128, 128, 4]);
+      const { data } = await icon.raw().toBuffer({ resolveWithObject: true });
+      expect(data[3]).toBe(0);
+    }
   });
 });

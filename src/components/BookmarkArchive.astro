@@ -6,81 +6,68 @@ interface Props {
 }
 
 const { bookmarks } = Astro.props;
-const monogramFor = (title: string) => title.match(/[\p{L}\p{N}]/gu)?.slice(0, 2).join('').toUpperCase() ?? '?';
+const first = bookmarks[0];
 ---
 
-<section class="bookmark-console" data-bookmark-console aria-label="网址档案架">
-  <div class="bookmark-console__status">
-    <span class="bookmark-console__signal" aria-hidden="true"></span>
-    <span>网址档案</span>
-    <span class="bookmark-console__current" data-bookmark-current aria-live="polite">
-      {bookmarks.length > 0 ? bookmarks[0].title : '暂无档案'}
-    </span>
-    <span class="bookmark-console__hint">方向键切换 · Enter 查看 · Esc 返回</span>
+<section class="favorites-console" data-favorites aria-label="收藏夹转轴">
+  <header class="favorites-heading">
+    <div>
+      <h1>收藏夹</h1>
+      <p>转动转轴，挑一个值得继续探索的网址。</p>
+    </div>
+    <span class="favorites-heading__count">{String(bookmarks.length).padStart(2, '0')} 个链接</span>
+  </header>
+
+  <div class="favorites-layout">
+    <div class="favorites-machine">
+      <div class="favorites-machine__top" aria-hidden="true"><span></span><b>HATRIX</b><span></span></div>
+      <div class="favorites-machine__bezel">
+        <div class="favorites-machine__rail" aria-hidden="true"></div>
+        <button class="favorites-step favorites-step--previous" data-favorites-previous type="button" aria-label="上一个链接"><span aria-hidden="true"></span></button>
+        <div class="favorites-reel" data-favorites-reel tabindex="0" role="group" aria-label="网址转轴，用滚轮、拖拽或上下方向键选择">
+          <div class="favorites-reel__well" aria-hidden="true"></div>
+          {bookmarks.map((bookmark, index) => (
+            <button
+              class="favorites-reel__item"
+              type="button"
+              data-favorites-item
+              data-title={bookmark.title}
+              data-category={bookmark.category}
+              data-description={bookmark.description}
+              data-url={bookmark.url}
+              data-index={index}
+              tabindex="-1"
+              aria-label={`选择 ${bookmark.title}`}
+            ><span class="favorites-reel__number">{String(index + 1).padStart(2, '0')}</span><span class="favorites-reel__title">{bookmark.title}</span><span class="favorites-reel__signal" aria-hidden="true"></span></button>
+          ))}
+          <div class="favorites-reel__focus" aria-hidden="true"></div>
+          <div class="favorites-reel__shine" aria-hidden="true"></div>
+        </div>
+        <button class="favorites-step favorites-step--next" data-favorites-next type="button" aria-label="下一个链接"><span aria-hidden="true"></span></button>
+      </div>
+      <div class="favorites-machine__foot"><span>链接坐标</span><strong data-favorites-number>01</strong><i>/</i><span>{String(bookmarks.length).padStart(2, '0')}</span><div aria-hidden="true"></div></div>
+    </div>
+
+    <aside class="favorites-readout" aria-label="当前网址">
+      <div class="favorites-readout__indicator"><span aria-hidden="true"></span> 当前选中</div>
+      <div class="favorites-readout__content">
+        <span data-favorites-category>{first?.category}</span>
+        <h2 data-favorites-selected>{first?.title}</h2>
+        <p class="favorites-readout__domain" data-favorites-domain>{first && new URL(first.url).hostname}</p>
+        <p class="favorites-readout__description" data-favorites-description>{first?.description}</p>
+      </div>
+      <a class="favorites-visit" data-favorites-visit href={first?.url} target="_blank" rel="noopener noreferrer">访问网站 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 16 16 4M7 4h9v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg></a>
+    </aside>
   </div>
 
-  {bookmarks.length > 0 ? (
-    <>
-      <div class="bookmark-shelf" data-bookmark-shelf aria-label="网址档案">
-        {bookmarks.map((bookmark, index) => (
-          <button
-            type="button"
-            class="bookmark-file"
-            data-bookmark-file
-            data-selected={index === 0 ? '' : undefined}
-            data-title={bookmark.title}
-            data-category={bookmark.category}
-            data-description={bookmark.description}
-            data-url={bookmark.url}
-            data-monogram={monogramFor(bookmark.title)}
-            aria-haspopup="dialog"
-            aria-label={`查看 ${bookmark.title} 的档案`}
-          >
-            <span class="bookmark-file__spine" aria-hidden="true"></span>
-            <span class="bookmark-file__top">
-              <span>{bookmark.category}</span>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-            </span>
-            <span class="bookmark-file__emblem" aria-hidden="true">
-              <span>{monogramFor(bookmark.title)}</span>
-            </span>
-            <span class="bookmark-file__foot">
-              <strong>{bookmark.title}</strong>
-              <span>{new URL(bookmark.url).hostname.replace(/^www\./, '')}</span>
-            </span>
-            <span class="bookmark-file__latch" aria-hidden="true"></span>
-          </button>
-        ))}
-      </div>
-      <div class="bookmark-console__footer">
-        <span>移动或聚焦档案以选择</span>
-        <span>点击档案读取介绍</span>
-      </div>
-      <dialog class="bookmark-dossier" data-bookmark-dialog data-lenis-prevent aria-labelledby="bookmark-dossier-title">
-        <div class="bookmark-dossier__shell">
-          <header class="bookmark-dossier__head">
-            <span data-bookmark-category></span>
-            <button type="button" class="bookmark-dossier__close" data-bookmark-close aria-label="返回档案总览">返回总览 <span aria-hidden="true">×</span></button>
-          </header>
-          <div class="bookmark-dossier__body">
-            <div class="bookmark-dossier__mark" data-bookmark-monogram aria-hidden="true"></div>
-            <div class="bookmark-dossier__copy">
-              <h2 id="bookmark-dossier-title" data-bookmark-title></h2>
-              <p data-bookmark-description></p>
-              <span class="bookmark-dossier__url" data-bookmark-url></span>
-              <a class="bookmark-dossier__visit" data-bookmark-visit target="_blank" rel="noopener noreferrer">访问网站 <span aria-hidden="true">↗</span></a>
-            </div>
-          </div>
-        </div>
-      </dialog>
-    </>
-  ) : (
-    <div class="bookmark-console__empty">
-      <span class="bookmark-console__empty-slot" aria-hidden="true"></span>
-      <div>
-        <h2>档案架还空着</h2>
-        <p>收藏的网址录入后会在这里逐一陈列。</p>
-      </div>
-    </div>
-  )}
+  <div class="favorites-actions">
+    <p class="favorites-instruction">滚轮或拖拽转动 · 方向键逐项选择</p>
+    <button class="favorites-random" data-favorites-random type="button">随机转一个链接 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 7v4h-4M19 11a7 7 0 1 0 1 4" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/></svg></button>
+  </div>
+  <p class="favorites-status" data-favorites-status role="status" aria-live="polite" aria-atomic="true">已选中：{first?.title}</p>
+
+  <details class="favorites-index">
+    <summary>查看全部 {bookmarks.length} 个链接</summary>
+    <ul>{bookmarks.map((bookmark) => <li><a href={bookmark.url} target="_blank" rel="noopener noreferrer">{bookmark.title}</a><span>{bookmark.category}</span></li>)}</ul>
+  </details>
 </section>

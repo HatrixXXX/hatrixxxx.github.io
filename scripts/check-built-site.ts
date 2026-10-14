@@ -19,7 +19,7 @@ import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 // Includes the static noscript character fallback as well as the runtime layers.
-export const EXPECTED_LOCAL_LINKS = 1785;
+export const EXPECTED_LOCAL_LINKS = 1713;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js'
@@ -571,7 +571,7 @@ export async function inspectProjectBuiltSite(
   options: ProjectBuiltSiteCheckOptions = {}
 ): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
-  const expectedPostCount = options.expectedPostCount ?? 16;
+  const expectedPostCount = options.expectedPostCount ?? 15;
   const sourceContentRoot = resolve(projectRoot, options.sourceContentRoot ?? '.private-content');
   const postsDirectory = resolve(sourceContentRoot, 'posts');
   const sourceSnippetsRoot = resolve(projectRoot, options.sourceSnippetsRoot ?? '.private-snippets');
@@ -635,7 +635,7 @@ async function main(): Promise<void> {
   const fixtureMode = process.argv.includes('--fixtures');
   const result = await inspectProjectBuiltSite(process.cwd(), {
     expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
-    expectedPostCount: fixtureMode ? 2 : 16,
+    expectedPostCount: fixtureMode ? 2 : 15,
     sourceContentRoot: contentRoot(),
     sourceSnippetsRoot: snippetRoot()
   });

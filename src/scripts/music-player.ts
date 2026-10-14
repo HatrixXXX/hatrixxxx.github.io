@@ -6,6 +6,8 @@ const STORAGE_KEY = 'hatrix-player';
 const RECORD_CLICK_DELAY = 320;
 const RECORD_SWAP_MIDPOINT = 440;
 const RECORD_SWAP_DURATION = 720;
+const PAUSE_FADE_DURATION = 500;
+const PLAYER_VOLUME = 0.7;
 let audio: HTMLAudioElement | undefined;
 
 function readTrackIndex(): number {
@@ -125,12 +127,33 @@ export function initializeMusicPlayer(
   const indices = tracks.map((_, trackIndex) => trackIndex);
   let order = shuffleQuoteOrder(indices.filter((trackIndex) => trackIndex !== index));
   audio = new Audio();
-  audio.volume = 0.7;
+  audio.volume = PLAYER_VOLUME;
   const playerAudio = audio;
   let clickTimer: ReturnType<typeof setTimeout> | undefined;
   let midpointTimer: ReturnType<typeof setTimeout> | undefined;
   let nextPlayTimer: ReturnType<typeof setTimeout> | undefined;
+  let pauseFadeTimer: ReturnType<typeof setInterval> | undefined;
   let swapInProgress = false;
+
+  const clearPauseFade = (): void => {
+    if (pauseFadeTimer !== undefined) clearInterval(pauseFadeTimer);
+    pauseFadeTimer = undefined;
+  };
+  const cancelPauseFade = (): void => {
+    clearPauseFade();
+    playerAudio.volume = PLAYER_VOLUME;
+  };
+  const pauseWithFade = (): void => {
+    const startedAt = Date.now();
+    const startVolume = playerAudio.volume;
+    pauseFadeTimer = setInterval(() => {
+      const progress = Math.min(1, (Date.now() - startedAt) / PAUSE_FADE_DURATION);
+      playerAudio.volume = Math.max(0, startVolume * (1 - progress));
+      if (progress < 1) return;
+      clearPauseFade();
+      playerAudio.pause();
+    }, 20);
+  };
 
   const setPlaying = (playing: boolean): void => {
     player.dataset.playbackState = playing ? 'playing' : 'paused';
@@ -138,6 +161,7 @@ export function initializeMusicPlayer(
     record?.setAttribute('aria-label', playing ? '暂停唱片，双击随机下一曲' : '播放唱片，双击随机下一曲');
   };
   const play = (): void => {
+    cancelPauseFade();
     void playerAudio.play().catch(() => {
       setPlaying(false);
       if (trackLabel) trackLabel.textContent = '播放失败，请重试';
@@ -146,10 +170,12 @@ export function initializeMusicPlayer(
   const load = (nextIndex: number): void => {
     index = nextIndex;
     const track = tracks[index]!;
+    clearPauseFade();
     playerAudio.pause();
     playerAudio.src = track.src;
     playerAudio.load();
     playerAudio.currentTime = 0;
+    playerAudio.volume = PLAYER_VOLUME;
     player.dataset.recordVariant = String(index % 3);
     if (trackLabel) trackLabel.textContent = `${track.title}-${track.artist}`;
     saveTrackIndex(index);
@@ -162,6 +188,7 @@ export function initializeMusicPlayer(
     if (order.length === 0) order = shuffleQuoteOrder(indices, index);
     const nextIndex = order.shift() ?? index;
     swapInProgress = true;
+    clearPauseFade();
     playerAudio.pause();
     player.dataset.playbackState = 'changing';
     record?.setAttribute('aria-pressed', 'false');
@@ -189,19 +216,25 @@ export function initializeMusicPlayer(
 
   const togglePlayback = (): void => {
     if (swapInProgress) return;
+    if (pauseFadeTimer !== undefined) {
+      cancelPauseFade();
+      return;
+    }
     if (playerAudio.paused) {
       play();
     } else {
-      playerAudio.pause();
+      pauseWithFade();
     }
   };
 
   playerAudio.addEventListener('play', () => setPlaying(true));
   playerAudio.addEventListener('pause', () => {
+    clearPauseFade();
     if (!swapInProgress) setPlaying(false);
   });
   playerAudio.addEventListener('ended', advanceTrack);
   playerAudio.addEventListener('error', () => {
+    clearPauseFade();
     setPlaying(false);
     if (trackLabel) trackLabel.textContent = '音频无法加载';
   });
@@ -213,8 +246,16 @@ export function initializeMusicPlayer(
       advanceTrack();
       return;
     }
+    if (pauseFadeTimer !== undefined) {
+      cancelPauseFade();
+      return;
+    }
     if ((event as MouseEvent).detail === 0) {
       togglePlayback();
+      return;
+    }
+    if (!playerAudio.paused) {
+      pauseWithFade();
       return;
     }
     if (clickTimer !== undefined) {

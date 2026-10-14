@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { ABOUT_SECTION_LINKS } from '../../src/config/navigation';
+import { playlist } from '../../src/data/playlist';
 
 const expectedSocials = [
   { id: 'rss', label: 'RSS', href: '/rss.xml', external: false },
@@ -23,12 +24,9 @@ const expectedSocials = [
 
 const compactContentSurfaces = [
   { path: '/about/', selector: '.about-main > article' },
-  { path: '/favorites/', selector: '[data-bookmark-console]' },
   { path: '/toolbox/', selector: '[data-tool-deck]' },
-  { path: '/snippets/', selector: '.empty-state' },
   { path: '/plans/', selector: '.empty-state' },
-  { path: '/digest/', selector: '.empty-state' },
-  { path: '/guestbook/', selector: '[data-guestbook-shell]' }
+  { path: '/digest/', selector: '.empty-state' }
 ] as const;
 
 test('about section routes keep their document titles without title banners', async ({ page }) => {
@@ -272,22 +270,17 @@ test('friend portal removes listeners left by an earlier page script', async ({ 
   await expect(page).toHaveURL(/\/friends\/$/);
 });
 
-test('primary content surfaces align with the project cabinet below desktop navigation', async ({ page }) => {
+test('compact content surfaces begin below desktop navigation', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/creation/');
-
-  const projectCabinetTop = await page.locator('.project-cabinet').evaluate((element) => {
-    const mainTop = element.getBoundingClientRect().top;
-    const cabinetTop = Number.parseFloat(getComputedStyle(element, '::before').top);
-    return mainTop + cabinetTop;
-  });
 
   for (const surface of compactContentSurfaces) {
     await page.goto(surface.path);
+    const headerBottom = await page.locator('header.site-header').evaluate((element) => element.getBoundingClientRect().bottom);
     const surfaceBox = await page.locator(surface.selector).first().boundingBox();
 
     expect(surfaceBox, `${surface.path} ${surface.selector}`).not.toBeNull();
-    expect(Math.abs(surfaceBox!.y - projectCabinetTop), `${surface.path} ${surface.selector}`).toBeLessThan(2);
+    expect(surfaceBox!.y - headerBottom, `${surface.path} ${surface.selector}`).toBeGreaterThanOrEqual(8);
+    expect(surfaceBox!.y - headerBottom, `${surface.path} ${surface.selector}`).toBeLessThanOrEqual(24);
   }
 });
 
@@ -313,6 +306,11 @@ test('guestbook mounts Twikoo on its own pathname', async ({ page }) => {
   await expect(page.locator('body')).toHaveClass(/guestbook-page/);
   const shell = page.locator('[data-guestbook-shell]');
   await expect(shell).toBeVisible();
+  await expect(shell).toHaveCSS('animation-name', 'guestbook-float');
+  const desktopShellBox = await shell.boundingBox();
+  expect(desktopShellBox).not.toBeNull();
+  expect(desktopShellBox!.y).toBeGreaterThan(60);
+  expect(desktopShellBox!.y + desktopShellBox!.height).toBeLessThan(882);
   await expect(shell).toHaveAccessibleName('留言板');
   await expect(shell.getByText('GitHub Discussions', { exact: true })).toHaveCount(0);
   await expect(shell.locator('.guestbook-serial, .guestbook-header, .guestbook-board-heading')).toHaveCount(0);
@@ -338,16 +336,23 @@ test('guestbook mounts Twikoo on its own pathname', async ({ page }) => {
   expect(backButtonBox).not.toBeNull();
   expect(mobileShellBox).not.toBeNull();
   expect(mobileShellBox!.y - (backButtonBox!.y + backButtonBox!.height)).toBeGreaterThanOrEqual(12);
+  expect(mobileShellBox!.y + mobileShellBox!.height).toBeLessThan(828);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(844);
   await screen.evaluate((element) => {
     const extraComments = document.createElement('div');
     extraComments.style.height = '1000px';
     element.firstElementChild?.append(extraComments);
   });
-  await screen.hover();
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const screenBox = await screen.boundingBox();
+  expect(screenBox).not.toBeNull();
+  await page.mouse.move(screenBox!.x + screenBox!.width / 2, screenBox!.y + screenBox!.height / 2);
   await page.mouse.wheel(0, 450);
   await expect.poll(() => screen.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(shell).toHaveCSS('animation-name', 'none');
 });
 
 test('Twikoo runtime styles survive client navigation to guestbook and an article', async ({ page }) => {
@@ -392,7 +397,8 @@ test('Twikoo runtime styles survive client navigation to guestbook and an articl
   await page.locator('.desktop-nav a[href="/blogs/"]').click();
   await page.waitForURL('**/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
-  await page.locator('[data-post-card][data-active="true"] h2 a').click();
+  await page.locator('[data-post-card][data-active="true"] h2 a').focus();
+  await page.keyboard.press('Enter');
   await page.waitForURL((url) => url.pathname.startsWith('/posts/'));
   await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
   await expect(avatar).toHaveCSS('width', '40px');
@@ -428,7 +434,7 @@ test('profile and article routes retain their contextual sidebar with one separa
 });
 
 test('selected about routes omit the profile sidebar and let content use the full container', async ({ page }) => {
-  for (const path of ['/about/', '/favorites/', '/toolbox/', '/snippets/']) {
+  for (const path of ['/about/', '/toolbox/', '/snippets/']) {
     await page.goto(path);
     await expect(page.locator('[data-sidebar-stack], [data-profile-card]')).toHaveCount(0);
     const main = page.locator('main.container');
@@ -499,7 +505,7 @@ test('about sidebar exposes the requested profile and social links without stati
 test('contextual sidebar cards remain readable in the dark theme', async ({ page }) => {
   await page.goto('/about/');
 
-  await expect(page.locator('.about-main article > h1')).toHaveCSS('color', 'rgb(245, 240, 232)');
+  await expect(page.locator('.about-main article h1')).toHaveCSS('color', 'rgb(245, 240, 232)');
   await expect(page.locator('[data-profile-card]')).toHaveCount(0);
   await page.goto('/about/hobbies/');
   await expect(page.locator('[data-profile-card] h2')).toHaveCSS('color', 'rgb(245, 240, 232)');
@@ -525,7 +531,7 @@ test('the player dock reveals half a record and keeps its record action independ
   await player.locator('[data-player-record]').click();
   await expect(player).toHaveAttribute('data-ui-state', 'expanded');
   await expect(player).toHaveAttribute('data-playback-state', 'playing');
-  await expect(player.locator('[data-player-track]')).toHaveText('其实-薛之谦');
+  await expect(player.locator('[data-player-track]')).toHaveText(`${playlist[0].title}-${playlist[0].artist}`);
   await player.click({ position: { x: 12, y: 12 } });
   await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
   await toggle.focus();

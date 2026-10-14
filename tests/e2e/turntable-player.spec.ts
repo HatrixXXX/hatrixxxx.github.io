@@ -1,5 +1,85 @@
 import { expect, test } from '@playwright/test';
 
+test('the same playing turntable survives every formerly missing card page', async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeAudio = window.Audio;
+    const trackedWindow = window as Window & { __playerAudios?: HTMLAudioElement[] };
+    trackedWindow.__playerAudios = [];
+    window.Audio = new Proxy(NativeAudio, {
+      construct(target, args) {
+        const instance = Reflect.construct(target, args) as HTMLAudioElement;
+        trackedWindow.__playerAudios?.push(instance);
+        return instance;
+      }
+    });
+  });
+
+  await page.goto('/');
+  const player = page.locator('[data-music-player]');
+  await player.evaluate((element) => element.setAttribute('data-persist-probe', 'one-turntable'));
+  await player.locator('[data-player-record]').click();
+  await expect(player).toHaveAttribute('data-playback-state', 'playing');
+
+  for (const path of ['/favorites/', '/playground/', '/creation/', '/']) {
+    await page.locator(`a[href="${path}"]`).first().click();
+    await expect(page).toHaveURL(path);
+    await expect(player).toHaveCount(1);
+    await expect(player).toBeVisible();
+    await expect(player).toHaveAttribute('data-persist-probe', 'one-turntable');
+    await expect(player).toHaveAttribute('data-playback-state', 'playing');
+    expect(await page.evaluate(() => (window as Window & { __playerAudios?: HTMLAudioElement[] }).__playerAudios?.length)).toBe(1);
+    if (path !== '/') {
+      await player.locator('[data-player-toggle]').click();
+      await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+      await page.keyboard.press('Escape');
+      await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
+    }
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('a[href="/favorites/"]').first().click();
+  await expect(page).toHaveURL('/favorites/');
+  await expect(player).toHaveAttribute('data-persist-probe', 'one-turntable');
+  await expect(player).toHaveAttribute('data-playback-state', 'playing');
+  await expect(player).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { __playerAudios?: HTMLAudioElement[] }).__playerAudios?.length)).toBe(1);
+  await player.locator('[data-player-toggle]').click();
+  await expect(player).toHaveAttribute('data-ui-state', 'expanded');
+});
+
+test('pause fades immediately and resumes at normal volume', async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeAudio = window.Audio;
+    window.Audio = new Proxy(NativeAudio, {
+      construct(target, args) {
+        const instance = Reflect.construct(target, args) as HTMLAudioElement;
+        (window as Window & { __playerAudio?: HTMLAudioElement }).__playerAudio = instance;
+        return instance;
+      }
+    });
+  });
+
+  await page.goto('/about/');
+  const player = page.locator('[data-music-player]');
+  await player.locator('[data-player-toggle]').click();
+  const record = player.locator('[data-player-record]');
+  await record.click();
+  await expect(player).toHaveAttribute('data-playback-state', 'playing');
+  await page.waitForTimeout(700);
+
+  await record.click();
+  await expect.poll(
+    () => page.evaluate(() => (window as Window & { __playerAudio?: HTMLAudioElement }).__playerAudio?.volume ?? 0.7),
+    { timeout: 200 }
+  ).toBeLessThan(0.7);
+  await expect(player).toHaveAttribute('data-playback-state', 'paused');
+  expect(await page.evaluate(() => (window as Window & { __playerAudio?: HTMLAudioElement }).__playerAudio?.volume)).toBe(0);
+
+  await record.click();
+  await expect(player).toHaveAttribute('data-playback-state', 'playing');
+  expect(await page.evaluate(() => (window as Window & { __playerAudio?: HTMLAudioElement }).__playerAudio?.volume)).toBe(0.7);
+});
+
 test('the chassis and record keep the reference top-down proportions on desktop and mobile', async ({ page }) => {
   await page.goto('/about/');
   const player = page.locator('[data-music-player]');
@@ -35,7 +115,7 @@ test('the record plays, pauses, shuffles on double click, and reveals the track 
 
   await expect(player).toHaveAttribute('data-playback-state', 'paused');
   await record.hover();
-  await expect(track).toHaveText('其实-薛之谦');
+  await expect(track).toHaveText('半岛铁盒-周杰伦');
   await expect(track).toHaveCSS('opacity', '1');
   await page.mouse.move(500, 500);
   const exitState = await player.evaluate((element) => ({
@@ -72,7 +152,7 @@ test('the record plays, pauses, shuffles on double click, and reveals the track 
   await expect(player).toHaveAttribute('data-record-swap', 'true');
   await expect(record).toBeDisabled();
   await expect(player.locator('.record-assembly')).toHaveCSS('animation-name', 'record-exchange');
-  await expect(track).not.toHaveText('其实-薛之谦');
+  await expect(track).not.toHaveText('半岛铁盒-周杰伦');
   await expect(player).toHaveAttribute('data-playback-state', 'playing');
   const selectedTrack = await track.textContent();
   await record.press('Shift+Enter');

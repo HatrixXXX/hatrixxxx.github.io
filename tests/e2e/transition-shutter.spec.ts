@@ -2,6 +2,48 @@ import { expect, test } from '@playwright/test';
 
 test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
 
+test('leaving favorites closes the shutter before the next page swaps in', async ({ page }) => {
+  await page.goto('/favorites/');
+  await expect(page.locator('[data-favorites-reel]')).toBeVisible();
+  const loader = page.locator('#page-loader');
+
+  let releaseNavigation!: () => void;
+  let navigationRequested!: () => void;
+  const gate = new Promise<void>((resolve) => { releaseNavigation = resolve; });
+  const requested = new Promise<void>((resolve) => { navigationRequested = resolve; });
+  await page.route('**/plans/', async (route) => {
+    navigationRequested();
+    await gate;
+    await route.continue();
+  });
+
+  try {
+    await page.locator('.desktop-nav a[href="/plans/"]').click();
+    await requested;
+    await expect(loader).toBeVisible();
+    await expect(loader.locator('.pl-shutter-leaf')).toHaveCount(2);
+    await expect(page).toHaveURL('/favorites/');
+  } finally {
+    releaseNavigation();
+  }
+
+  await expect(page).toHaveURL('/plans/');
+  await expect(loader).toBeHidden();
+});
+
+test('entering favorites shows the reel without requesting the removed model', async ({ page }) => {
+  await page.goto('/plans/');
+  const loader = page.locator('#page-loader');
+  await expect(loader).toBeHidden();
+  const modelRequests: string[] = [];
+  page.on('request', (request) => { if (request.url().endsWith('.glb')) modelRequests.push(request.url()); });
+  await page.locator('.desktop-nav a[href="/favorites/"]').click();
+  await expect(page).toHaveURL('/favorites/');
+  await expect(page.locator('[data-favorites-selected]')).toHaveText('扬神的博客');
+  await expect(loader).toBeHidden();
+  expect(modelRequests).toEqual([]);
+});
+
 test('a client navigation closes both shutter leaves before swapping pages, then opens them', async ({ page }, testInfo) => {
   await page.goto('/plans/');
   const loader = page.locator('#page-loader');

@@ -160,7 +160,8 @@
   outline-offset: 2px;
 }
 
-.twikoo-comments :is(.tk-sort-item, .tk-action, .tk-comments-actions .tk-icon.__comments, .tk-comments-search) {
+.twikoo-comments :is(.tk-sort-item, .tk-action, .tk-comments-actions .tk-icon.__comments, .tk-comments-search),
+.twikoo-comments[data-twikoo-variant='guestbook'] .tk-comment {
   cursor: url('/assets/cursors/link.cur') 47 80, pointer !important;
   cursor: image-set(url('/assets/cursors/link.cur') 2x) 24 40, pointer !important;
 }
@@ -193,6 +194,10 @@
 
 .twikoo-comments .tk-comments-actions {
   display: contents;
+}
+
+.twikoo-comments .tk-comments-actions[data-admin-open] {
+  display: none !important;
 }
 
 .twikoo-comments .tk-comments-sort {
@@ -245,6 +250,11 @@
 
 .twikoo-comments .tk-comments-actions > .tk-icon.__comments:active {
   transform: translateY(1px);
+}
+
+.twikoo-comments .tk-comments-actions > [data-twikoo-loading-control] {
+  opacity: 0.75;
+  pointer-events: none;
 }
 
 .twikoo-comments .tk-comment {

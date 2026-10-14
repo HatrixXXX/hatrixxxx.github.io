@@ -43,7 +43,7 @@ pnpm test:e2e
 - `public/assets/`：网站图片、图标、纹理、光标和音频；首页原图与人物分块源图也在此目录
 - `public/`：CNAME、manifest 和第三方告知等站点根文件
 
-私有内容仓库有 16 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。文章和随笔通过校验后都会生成页面；当前 10 篇随笔参与构建时生成 54 个页面，随笔为空时生成 44 个页面。
+私有内容仓库有 15 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。文章和随笔通过校验后都会生成页面；当前 10 篇随笔参与构建时生成 53 个页面，随笔为空时生成 43 个页面。
 
 私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
 
@@ -103,7 +103,7 @@ git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 
 博客文章详情返回 `/blogs/`。从随笔总览进入详情后，左上返回按钮回到总览的原滚动位置；直接打开详情时返回总览顶部。其余页面返回首页。
 
-非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮在桌面右侧，管理员退出按钮在左侧，不影响导航居中。`/blogs/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱使用带用途颜色的图标卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、图标、用途短语和“软件／在线”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 将 Twikoo 留言区放入 `public/assets/guestbook/terminal-frame.png` 的透明开口；页面固定在视口内，仅屏幕区域可以滚动，滚动条隐藏。
+非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮在桌面右侧，管理员退出按钮在左侧，不影响导航居中。`/blogs/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱按 `src/data/software-tools.ts` 的清单顺序显示软件卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、统一透明背景的本地图标、用途短语和“软件”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 将 Twikoo 留言区放入 `public/assets/guestbook/terminal-frame.png` 的透明开口；页面固定在视口内，仅屏幕区域可以滚动，滚动条隐藏。
 
 站内搜索支持普通文章的标题和正文。结果会显示命中片段并高亮关键词；点击后文章页会滚动到对应段落，段落背景短暂突出后渐变恢复。加锁文章不会进入公开搜索索引。
 
@@ -207,7 +207,7 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 168 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
+文章共引用 167 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
@@ -239,18 +239,18 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | --- | --- |
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
-| `pnpm check:images` | 168 个去重后的远程图片 URL |
+| `pnpm check:images` | 167 个去重后的远程图片 URL |
 | `pnpm build` | 图片预检、静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
 | `pnpm check:site` | 文章和随笔路由、CNAME、站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 244 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 284 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
 
 2026-09-25 本次发布检查通过 316 项单元测试、55 项相关浏览器回归、Astro 检查、生产依赖审计、完整构建、保护审计和 3976 条站内链接检查。浏览器回归覆盖首页、导航、各页面返回路径、键盘操作和无脚本访问。
 
 浏览器套件覆盖博客路径、文章数量、普通页页脚、Coverflow、实验场三维场景、About 装饰层和视觉基线。
-随笔为空时，`check:site` 按 1785 条站内链接核对基线；有随笔时逐条检查站内链接，不锁总数。新增或删除其他页面、导航项后若总量合理变化，核对构建产物，再同步更新 `scripts/check-built-site.ts` 和对应单测中的期望值。
+随笔为空时，`check:site` 按 1713 条站内链接核对基线；有随笔时逐条检查站内链接，不锁总数。新增或删除其他页面、导航项后若总量合理变化，核对构建产物，再同步更新 `scripts/check-built-site.ts` 和对应单测中的期望值。
 
 ## 安全边界
 
@@ -303,7 +303,7 @@ Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留�
 
 ## 实验场与后续 3D 页面
 
-实验场的场景结构、样式和交互集中在 `src/lab.html`，内嵌 Three.js 0.180.0 与 MIT 许可。`src/pages/playground/index.astro` 提取其中的样式与正文，放入全站 `BaseLayout`，不再使用专用 endpoint 或 middleware。页面主体只有居中的三维场景，不挂载播放器。站内跳转时双瓣转场等场景首帧完成后退场；直接打开页面时显示首次加载环。模型、表面纹理和原创屏幕画面由程序生成，`docs/design-references/color-saturation-reference.png` 仅用于构图和色彩核对。旧贝塞尔鼠标轨迹代码与功能已移除。
+实验场的场景结构、样式和交互集中在 `src/lab.html`，内嵌 Three.js 0.180.0 与 MIT 许可。`src/pages/playground/index.astro` 提取其中的样式与正文，放入全站 `BaseLayout`，不再使用专用 endpoint 或 middleware。页面主体只有居中的三维场景，播放器在左侧折叠显示。站内跳转时双瓣转场等场景首帧完成后退场；直接打开页面时显示首次加载环。模型、表面纹理和原创屏幕画面由程序生成，`docs/design-references/color-saturation-reference.png` 仅用于构图和色彩核对。旧贝塞尔鼠标轨迹代码与功能已移除。
 
 实验场的 3D 引擎仅随 `/playground/` 加载。Three.js、Babylon.js 等 3D 依赖不能进入公共布局或普通页面的首屏脚本；其他新增 3D 功能放在独立客户端岛中，并在组件进入视口或用户操作后延迟加载。
 

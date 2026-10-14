@@ -18,8 +18,10 @@ body.guestbook-page.plain-page > main.guestbook-main {
 }
 
 .guestbook-shell {
-  width: min(100vw, 840px);
-  height: 100%;
+  position: relative;
+  isolation: isolate;
+  width: min(calc(100vw - 24px), 820px);
+  height: calc(100% - 28px);
   min-height: 0;
   border: solid transparent;
   border-width: 80px 155px 112px;
@@ -28,6 +30,33 @@ body.guestbook-page.plain-page > main.guestbook-main {
   border-image-width: 1;
   border-image-repeat: stretch;
   filter: drop-shadow(0 18px 28px rgb(2 5 11 / 55%));
+  animation: guestbook-float 5.2s ease-in-out infinite alternate;
+}
+
+.guestbook-shell::before {
+  position: absolute;
+  z-index: -1;
+  inset: -80px -155px -112px;
+  border: solid transparent;
+  border-width: 80px 155px 112px;
+  border-image-source: url('/assets/guestbook/terminal-frame.png');
+  border-image-slice: 140 290 200 290;
+  border-image-width: 1;
+  border-image-repeat: stretch;
+  filter: drop-shadow(0 0 3px rgb(255 210 0 / 95%)) drop-shadow(0 0 11px rgb(255 210 0 / 72%)) drop-shadow(0 0 23px rgb(216 140 60 / 45%));
+  content: '';
+  pointer-events: none;
+  animation: guestbook-glow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes guestbook-float {
+  from { transform: translateY(-5px); }
+  to { transform: translateY(5px); }
+}
+
+@keyframes guestbook-glow {
+  from { opacity: 1; }
+  to { opacity: .42; }
 }
 
 .guestbook-screen {
@@ -67,12 +96,37 @@ body.guestbook-page.plain-page > main.guestbook-main {
   }
 
   .guestbook-shell {
-    width: 100vw;
+    width: calc(100vw - 32px);
     border-width: 58px clamp(54px, 18vw, 70px) 78px;
-    transform: translateX(10px);
+    animation-name: guestbook-float-mobile;
+  }
+
+  .guestbook-shell::before {
+    inset: -58px calc(-1 * clamp(54px, 18vw, 70px)) -78px;
+    border-width: 58px clamp(54px, 18vw, 70px) 78px;
+  }
+
+  @keyframes guestbook-float-mobile {
+    from { transform: translate(4px, -5px); }
+    to { transform: translate(4px, 5px); }
   }
 
   .guestbook-board {
     padding: 7px 5px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guestbook-shell,
+  .guestbook-shell::before {
+    animation: none;
+  }
+
+  .guestbook-shell {
+    transform: none;
+  }
+
+  .guestbook-shell::before {
+    opacity: .72;
   }
 }

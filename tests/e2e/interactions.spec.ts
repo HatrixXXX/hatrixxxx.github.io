@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { playlist } from '../../src/data/playlist';
 
 test.use({ timezoneId: 'Asia/Shanghai' });
 
@@ -10,13 +11,15 @@ test('site statistics synchronize the persistent visitor source after client nav
     if (request.url().includes('events.vercount.one')) vercountRequests.push(request.url());
   });
 
-  await page.goto('/');
+  await page.goto('/blogs/');
   await page.locator('[data-visitor-count-source]').evaluate((source) => {
     source.textContent = '1,234';
   });
-  await page.getByRole('link', { name: '友链', exact: true }).click();
+  await page.locator('[data-post-card][data-active="true"] h2 a').focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((url) => url.pathname.startsWith('/posts/'));
 
-  const visitors = page.locator('[data-site-stats] [data-visitor-count]');
+  const visitors = page.locator('[data-site-footer] [data-visitor-count]');
   await expect(visitors).toHaveText('1,234');
   await page.locator('[data-visitor-count-source]').evaluate((source) => {
     source.textContent = '2,345';
@@ -189,7 +192,7 @@ test('music player persists across about navigation without recreating its audio
   await expect(player).toHaveAttribute('data-ui-state', 'collapsed');
   await player.locator('[data-player-toggle]').click();
   await expect(player).toHaveAttribute('data-ui-state', 'expanded');
-  await expect(player.locator('[data-player-track]')).toHaveText('其实-薛之谦');
+  await expect(player.locator('[data-player-track]')).toHaveText(`${playlist[0].title}-${playlist[0].artist}`);
   await expect(player.locator('[data-player-record]')).toBeEnabled();
   await expect(player).toHaveAttribute('data-playback-state', 'paused');
 

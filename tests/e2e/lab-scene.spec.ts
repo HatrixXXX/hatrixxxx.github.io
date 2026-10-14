@@ -20,7 +20,9 @@ test('the lab keeps the site navigation around its inline WebGL scene', async ({
   await expect(page.locator('[data-search-overlay]')).toHaveCount(1);
   await expect(page.locator('main #lab-scene canvas#scene')).toBeVisible();
   await expect(page.locator('canvas#scene')).toHaveAttribute('data-ready', 'true');
-  await expect(page.locator('[data-hero], [data-music-player], iframe, main h1, main button')).toHaveCount(0);
+  await expect(page.locator('[data-hero], iframe, main h1, main button')).toHaveCount(0);
+  await expect(page.locator('[data-music-player]')).toBeVisible();
+  await expect(page.locator('[data-music-player]')).toHaveAttribute('data-ui-state', 'collapsed');
   await expect(page.locator('#page-loader')).toBeHidden();
   expect(await page.evaluate(() => sessionStorage.getItem('lab-splash-seen'))).toBe('true');
   expect(await page.locator('body').evaluate((body) => body.style.getPropertyValue('--page-bg-image')))

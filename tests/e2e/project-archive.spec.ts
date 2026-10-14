@@ -15,10 +15,11 @@ test('atlas starts on its cover and reads one work per turned page', async ({ pa
   await expect(book).toBeVisible();
   await expect(book.locator('.book-float')).toHaveCSS('animation-name', 'book-breathe');
   await expect(page.locator('.project-atlas-head, .project-atlas-rail, .project-atlas-grid')).toHaveCount(0);
-  await expect(page.locator('[data-music-player]')).toBeHidden();
+  await expect(page.locator('[data-music-player]')).toBeVisible();
+  await expect(page.locator('[data-music-player]')).toHaveAttribute('data-ui-state', 'collapsed');
   await expect(book.getByRole('button', { name: '翻开作品图鉴' })).toBeVisible();
   const coverImage = book.locator('[data-book-cover-image]');
-  await expect(coverImage).toHaveAttribute('src', '/assets/creation/project-atlas-cover-v1.webp');
+  await expect(coverImage).toHaveAttribute('src', '/assets/projects/project-atlas-cover-v1.webp');
   await expect.poll(() => coverImage.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(900);
   await expect(page.locator('[data-project-page]')).toHaveCount(5);
 
