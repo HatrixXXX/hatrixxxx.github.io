@@ -171,7 +171,7 @@ git -C .private-content commit -m "content: update posts"
 title: 示例作品
 description: 作品解决的问题和目前进度
 status: active
-cover: /assets/images/default-cover.svg
+cover: /assets/projects/project-atlas-cover-v1.webp
 tech:
   - Astro
   - TypeScript
@@ -211,7 +211,7 @@ export const playlist: readonly Track[] = [
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
-人物运行时资源为 `public/assets/home/character-parts/*.webp`，分块源 PNG 位于 `public/assets/home/character-parts-source/`；原始 v5 PNG 保留作合成和视觉核对基准。禁用 JavaScript 时显示同目录的静态 WebP 回退图；启用 JavaScript 时不请求该图。首页使用 `public/assets/home/cover.webp`，原图为同目录的 `cover.png`，以灰紫色调衔接人物；其他页面使用用户选定的 `public/assets/backgrounds/background.png`，独立维护。原始 v8 保留在 `docs/design-references/previous-backgrounds/`，人物立绘未改。
+人物运行时资源为 `public/assets/home/character-parts/*.webp`，分块源 PNG 位于 `public/assets/home/character-parts-source/`；原始 v5 PNG 保留作合成和视觉核对基准。禁用 JavaScript 时显示同目录的静态 WebP 回退图；启用 JavaScript 时不请求该图。首页使用 `public/assets/home/cover.webp`，原图为同目录的 `cover.png`，以灰紫色调衔接人物；其他页面使用用户选定的 `public/assets/backgrounds/background.png`，独立维护。人物立绘未改。
 
 文章列表的 `cover` 由 Astro 的图片管线和 Sharp 生成 WebP、`srcset` 与尺寸信息。正文远程图片通过预检后仍使用 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
 

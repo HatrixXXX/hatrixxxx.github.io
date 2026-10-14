@@ -41,7 +41,7 @@ interface Props {
 const {
   title,
   description = SITE.description,
-  image = '/assets/images/default-cover.svg',
+  image = '/assets/home/cover.webp',
   bodyClass,
   canonicalPath,
   noindex = false,
@@ -129,7 +129,15 @@ const showSakanaCharacters = isAboutPage;
     <link rel="preload" href={ibmPlexMono400Url} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
     {!isHome && <link rel="preload" href={pageBackgroundSrc} as="image" fetchpriority="high" />}
-    {image !== '/assets/images/default-cover.svg' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
+    {Astro.url.pathname === '/blogs/' && (
+      <>
+        <link rel="preload" href="/assets/blog-cards/desktop-frame.webp" as="image" media="(min-width: 721px)" />
+        <link rel="preload" href="/assets/blog-cards/mobile-frame.webp" as="image" media="(max-width: 720px)" />
+        <link rel="preload" href="/assets/blog-cards/guide-rail.webp" as="image" />
+        <link rel="preload" href="/assets/blog-cards/locking-clamp.webp" as="image" media="(min-width: 721px)" />
+      </>
+    )}
+    {image !== '/assets/home/cover.webp' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
   <body class={bodyClass} style={pageBgStyle}>
     {showPageLoader && <PageLoader />}

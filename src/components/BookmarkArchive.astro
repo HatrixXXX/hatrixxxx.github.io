@@ -10,19 +10,10 @@ const first = bookmarks[0];
 ---
 
 <section class="favorites-console" data-favorites aria-label="收藏夹转轴">
-  <header class="favorites-heading">
-    <div>
-      <h1>收藏夹</h1>
-      <p>转动转轴，挑一个值得继续探索的网址。</p>
-    </div>
-    <span class="favorites-heading__count">{String(bookmarks.length).padStart(2, '0')} 个链接</span>
-  </header>
-
   <div class="favorites-layout">
     <div class="favorites-machine">
-      <div class="favorites-machine__top" aria-hidden="true"><span></span><b>HATRIX</b><span></span></div>
+      <div class="favorites-machine__top" aria-hidden="true"><b>HATRIX</b></div>
       <div class="favorites-machine__bezel">
-        <div class="favorites-machine__rail" aria-hidden="true"></div>
         <button class="favorites-step favorites-step--previous" data-favorites-previous type="button" aria-label="上一个链接"><span aria-hidden="true"></span></button>
         <div class="favorites-reel" data-favorites-reel tabindex="0" role="group" aria-label="网址转轴，用滚轮、拖拽或上下方向键选择">
           <div class="favorites-reel__well" aria-hidden="true"></div>
@@ -45,29 +36,24 @@ const first = bookmarks[0];
         </div>
         <button class="favorites-step favorites-step--next" data-favorites-next type="button" aria-label="下一个链接"><span aria-hidden="true"></span></button>
       </div>
-      <div class="favorites-machine__foot"><span>链接坐标</span><strong data-favorites-number>01</strong><i>/</i><span>{String(bookmarks.length).padStart(2, '0')}</span><div aria-hidden="true"></div></div>
+      <div class="favorites-machine__frame" aria-hidden="true"></div>
     </div>
 
     <aside class="favorites-readout" aria-label="当前网址">
-      <div class="favorites-readout__indicator"><span aria-hidden="true"></span> 当前选中</div>
       <div class="favorites-readout__content">
-        <span data-favorites-category>{first?.category}</span>
-        <h2 data-favorites-selected>{first?.title}</h2>
-        <p class="favorites-readout__domain" data-favorites-domain>{first && new URL(first.url).hostname}</p>
+        <div class="favorites-readout__plate">
+          <span data-favorites-category>{first?.category}</span>
+          <h2 data-favorites-selected>{first?.title}</h2>
+          <p class="favorites-readout__domain" data-favorites-domain>{first && new URL(first.url).hostname}</p>
+        </div>
         <p class="favorites-readout__description" data-favorites-description>{first?.description}</p>
       </div>
-      <a class="favorites-visit" data-favorites-visit href={first?.url} target="_blank" rel="noopener noreferrer">访问网站 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 16 16 4M7 4h9v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg></a>
     </aside>
   </div>
 
   <div class="favorites-actions">
-    <p class="favorites-instruction">滚轮或拖拽转动 · 方向键逐项选择</p>
     <button class="favorites-random" data-favorites-random type="button">随机转一个链接 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 7v4h-4M19 11a7 7 0 1 0 1 4" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/></svg></button>
+    <a class="favorites-visit" data-favorites-visit href={first?.url} target="_blank" rel="noopener noreferrer">访问网站 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 16 16 4M7 4h9v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg></a>
   </div>
   <p class="favorites-status" data-favorites-status role="status" aria-live="polite" aria-atomic="true">已选中：{first?.title}</p>
-
-  <details class="favorites-index">
-    <summary>查看全部 {bookmarks.length} 个链接</summary>
-    <ul>{bookmarks.map((bookmark) => <li><a href={bookmark.url} target="_blank" rel="noopener noreferrer">{bookmark.title}</a><span>{bookmark.category}</span></li>)}</ul>
-  </details>
 </section>

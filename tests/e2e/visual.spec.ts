@@ -19,6 +19,10 @@ for (const path of routes) {
       await page.clock.pauseAt(new Date('2026-10-02T00:00:01Z'));
     }
     await page.goto(path);
+    if (path === '/blogs/') {
+      await page.locator('#page-loader').waitFor({ state: 'hidden', timeout: 30_000 });
+      await expect(page.locator('[data-post-card]').first()).toBeVisible();
+    }
     // Sakana is limited to About routes; none of these representative routes use it.
     await expect(page.locator('[data-sakana-layer]')).toHaveCount(0);
     await page.evaluate(() => document.fonts.ready);

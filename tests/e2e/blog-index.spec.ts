@@ -47,8 +47,14 @@ test('coverflow presents horizontal cards on a vertical track with alternating c
   if (!media) throw new Error('Missing cover frame bounds');
   expect(media.width / media.height).toBeGreaterThan(1.8);
   expect(media.width / media.height).toBeLessThan(2.05);
-  await expect(cards.nth(0).locator('.post-card-media')).toHaveCSS('order', '0');
-  await expect(cards.nth(1).locator('.post-card-media')).toHaveCSS('order', '2');
+  const [firstContent, secondMedia, secondContent] = await Promise.all([
+    cards.nth(0).locator('.post-card-content').boundingBox(),
+    cards.nth(1).locator('.post-card-media').boundingBox(),
+    cards.nth(1).locator('.post-card-content').boundingBox()
+  ]);
+  if (!firstContent || !secondMedia || !secondContent) throw new Error('Missing blog card content bounds');
+  expect(media.x + media.width).toBeLessThan(firstContent.x);
+  expect(secondContent.x + secondContent.width).toBeLessThan(secondMedia.x);
   await expect(cards.nth(0).locator('img')).toHaveCSS('object-fit', 'cover');
   await expect(cards.nth(0).locator('img')).not.toHaveAttribute('role', 'button');
   expect(await cards.nth(0).locator('img').getAttribute('srcset')).toContain('1280w');

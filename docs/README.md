@@ -16,7 +16,7 @@
 
 ## 设计记录
 
-首页截图、配色饱和度参考图、共构城世界观指南和布局分析放在[首页设计参考](design-references/)；使用顺序与边界见 [AGENTS.md](../AGENTS.md) 的“首页视觉设计参考”。
+配色饱和度参考图与共构城世界观指南放在[设计参考](design-references/)；使用边界见 [AGENTS.md](../AGENTS.md) 的“首页视觉设计参考”。
 
 当前外观规则见 [DESIGN.md](../DESIGN.md)；[首页设计记录](superpowers/specs/2026-09-25-home-dashboard-design.md)保留历史方案。加锁与搜索分别见[加锁内容设计](superpowers/specs/2026-09-03-protected-content-design.md)和[搜索设计](superpowers/specs/2026-09-06-search-content-highlight-design.md)。
 

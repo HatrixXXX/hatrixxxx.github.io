@@ -28,7 +28,6 @@ function bindBookmarkArchive(): void {
   root.dataset.bound = '';
   const consoleElement = root;
 
-  const number = root.querySelector<HTMLElement>('[data-favorites-number]')!;
   const category = root.querySelector<HTMLElement>('[data-favorites-category]')!;
   const title = root.querySelector<HTMLElement>('[data-favorites-selected]')!;
   const domain = root.querySelector<HTMLElement>('[data-favorites-domain]')!;
@@ -39,6 +38,7 @@ function bindBookmarkArchive(): void {
   const abort = new AbortController();
   let selected = 0;
   let spinTimer: number | undefined;
+  let settleTimer: number | undefined;
   let pointerY: number | undefined;
   let didDrag = false;
   let suppressClickUntil = 0;
@@ -63,7 +63,6 @@ function bindBookmarkArchive(): void {
     });
 
     const current = items[selected];
-    number.textContent = String(selected + 1).padStart(2, '0');
     category.textContent = current.category;
     title.textContent = current.title;
     domain.textContent = new URL(current.url).hostname;
@@ -74,9 +73,20 @@ function bindBookmarkArchive(): void {
 
   function cancelSpin(): void {
     if (spinTimer !== undefined) window.clearTimeout(spinTimer);
+    if (settleTimer !== undefined) window.clearTimeout(settleTimer);
     spinTimer = undefined;
+    settleTimer = undefined;
     reel.removeAttribute('aria-busy');
     consoleElement.removeAttribute('data-spinning');
+    consoleElement.removeAttribute('data-settling');
+  }
+
+  function settle(): void {
+    consoleElement.dataset.settling = '';
+    settleTimer = window.setTimeout(() => {
+      consoleElement.removeAttribute('data-settling');
+      settleTimer = undefined;
+    }, 420);
   }
 
   function select(index: number, announce = true): void {
@@ -105,8 +115,11 @@ function bindBookmarkArchive(): void {
       count += 1;
       select(selected + 1, false);
       if (count === total) {
-        cancelSpin();
-        status.textContent = `已选中：${items[selected].title}`;
+        spinTimer = window.setTimeout(() => {
+          cancelSpin();
+          status.textContent = `已选中：${items[selected].title}`;
+          settle();
+        }, 320);
         return;
       }
       const progress = count / total;

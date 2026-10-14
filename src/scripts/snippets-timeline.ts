@@ -51,7 +51,13 @@ function initSnippetsTimeline() {
     body.style.setProperty('--flow-length', `${visibleDepth.toFixed(1)}px`);
     body.style.setProperty('--flow-progress', String(height > 0 ? visibleDepth / height : 1));
     entries.forEach((entry, index) => {
-      entry.dataset.revealed = visibleDepth >= junctions[index] ? 'true' : 'false';
+      const revealed = visibleDepth >= junctions[index];
+      if (!revealed) {
+        delete entry.dataset.connectFlash;
+      } else if (entry.dataset.revealed === 'false' && body.dataset.transitions === 'on' && !document.hidden) {
+        entry.dataset.connectFlash = 'true';
+      }
+      entry.dataset.revealed = revealed ? 'true' : 'false';
     });
   };
 
@@ -83,6 +89,7 @@ function initSnippetsTimeline() {
     lastFrame = 0;
     body.dataset.transitions = 'off';
     body.dataset.motion = motionPreference.matches ? 'reduced' : 'active';
+    entries.forEach((entry) => { delete entry.dataset.connectFlash; });
     renderedDepth = scrollDepth();
     paint(renderedDepth);
     if (!motionPreference.matches) {

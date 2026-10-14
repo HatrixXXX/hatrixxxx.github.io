@@ -18,6 +18,10 @@ const { posts } = Astro.props;
 >
   <div class="coverflow-scene">
     {posts.map((post, index) => <PostCard post={post} index={index} total={posts.length} />)}
+    <div class="coverflow-rails" aria-hidden="true">
+      <img class="coverflow-rail coverflow-rail--left" src="/assets/blog-cards/guide-rail.webp" alt="" width="167" height="2160" loading="eager" decoding="async" />
+      <img class="coverflow-rail coverflow-rail--right" src="/assets/blog-cards/guide-rail.webp" alt="" width="167" height="2160" loading="eager" decoding="async" />
+    </div>
   </div>
 </div>
 <p id="post-list-instructions" class="post-list-instructions">
@@ -56,6 +60,8 @@ const { posts } = Astro.props;
   }
 
   .coverflow-scene {
+    --card-w: min(1120px, calc(100vw - 7rem));
+    --card-h: min(270px, calc(var(--card-w) * .245));
     position: absolute;
     inset: 0;
     perspective: 1400px;
@@ -63,10 +69,36 @@ const { posts } = Astro.props;
     overflow: hidden;
   }
 
+  .coverflow-rails {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .coverflow-rail {
+    position: absolute;
+    top: 50%;
+    width: auto;
+    height: min(calc(100% - 1rem), 1100px);
+    object-fit: contain;
+    opacity: .84;
+    filter: brightness(.8) drop-shadow(0 8px 14px rgb(0 0 0 / 55%));
+    user-select: none;
+  }
+
+  .coverflow-rail--left {
+    left: calc(50% - var(--card-w) / 2 + 12px);
+    transform: translate(-50%, -50%);
+  }
+
+  .coverflow-rail--right {
+    right: calc(50% - var(--card-w) / 2 + 12px);
+    transform: translate(50%, -50%) scaleX(-1);
+  }
+
   /* Long horizontal cards leave room for the surrounding depth layers. */
   .coverflow-scene :global([data-post-card]) {
-    --card-w: min(1120px, calc(100vw - 7rem));
-    --card-h: clamp(240px, 31dvh, 270px);
     position: absolute;
     left: 50%;
     top: 50%;
@@ -85,43 +117,14 @@ const { posts } = Astro.props;
     cursor: default;
   }
 
-  .coverflow-scene :global([data-post-card]) {
-    border-color: color-mix(in srgb, var(--color-line-strong), var(--color-accent) calc(var(--center-proximity, 0) * 100%));
-  }
-
-  .coverflow-scene :global([data-post-card]::after) {
-    position: absolute;
-    z-index: 3;
-    inset: 0;
-    box-shadow: inset 0 0 0 3px rgb(255 210 0 / calc(var(--center-proximity, 0) * .7));
-    content: '';
-    pointer-events: none;
-  }
-
   .coverflow-scene :global([data-post-card][data-near-center]) {
     filter:
       brightness(var(--post-hover-brightness, 1))
-      drop-shadow(0 0 8px rgb(255 210 0 / calc(var(--center-proximity) * .9)))
-      drop-shadow(0 0 22px rgb(255 210 0 / calc(var(--center-proximity) * .55)));
+      drop-shadow(0 8px 12px rgb(0 0 0 / 60%));
   }
 
   .coverflow-scene :global([data-post-card][data-near-center]:hover) {
     --post-hover-brightness: 1.08;
-  }
-
-  .coverflow-scene :global([data-post-card] .post-card-content) {
-    position: relative;
-    isolation: isolate;
-  }
-
-  .coverflow-scene :global([data-post-card] .post-card-content::before) {
-    position: absolute;
-    z-index: -1;
-    inset: 0;
-    background: radial-gradient(ellipse at 100% 50%, color-mix(in srgb, var(--color-copper) 18%, transparent), transparent 72%);
-    content: '';
-    opacity: 0;
-    pointer-events: none;
   }
 
   /* The selected card breathes independently of the coverflow's inline transforms. */
@@ -130,12 +133,7 @@ const { posts } = Astro.props;
       animation: archive-active-breathe 4.8s ease-in-out .5s infinite backwards;
     }
 
-    .coverflow-scene :global([data-post-card] .post-card-content::before) {
-      animation: archive-surface-breathe 4.8s ease-in-out .5s infinite backwards;
-    }
-
-    .coverflow-shell[data-page-hidden] .coverflow-scene :global([data-post-card]),
-    .coverflow-shell[data-page-hidden] .coverflow-scene :global([data-post-card] .post-card-content::before) {
+    .coverflow-shell[data-page-hidden] .coverflow-scene :global([data-post-card]) {
       animation-play-state: paused;
     }
   }
@@ -143,17 +141,6 @@ const { posts } = Astro.props;
   @keyframes archive-active-breathe {
     0%, 100% { translate: 0 0; }
     50% { translate: 0 calc(-11px * var(--center-proximity, 0)); }
-  }
-
-  @keyframes archive-surface-breathe {
-    0%, 100% { opacity: calc(var(--center-proximity, 0) * .2); }
-    50% { opacity: calc(var(--center-proximity, 0) * .55); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .coverflow-scene :global([data-post-card] .post-card-content::before) {
-      opacity: calc(var(--center-proximity, 0) * .3);
-    }
   }
 
   .post-list-instructions {
@@ -166,20 +153,25 @@ const { posts } = Astro.props;
     white-space: nowrap;
   }
 
-  @media (max-width: 900px) and (min-width: 601px) {
-    .coverflow-scene :global([data-post-card]) {
+  @media (max-width: 1050px) and (min-width: 721px) {
+    .coverflow-scene {
       --card-w: calc(100vw - 3rem);
-      --card-h: clamp(240px, 29dvh, 260px);
+      --card-h: calc(var(--card-w) * .245);
     }
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 720px) {
     .coverflow-shell {
       min-height: 480px;
     }
-    .coverflow-scene :global([data-post-card]) {
-      --card-w: calc(100vw - 2rem);
-      --card-h: min(350px, calc(100dvh - var(--blog-header-height, 60px) - 5rem));
+
+    .coverflow-scene {
+      --card-w: min(360px, calc(100vw - 2rem));
+      --card-h: min(var(--card-w), 350px, calc(100dvh - var(--blog-header-height, 60px) - 5rem));
+    }
+
+    .coverflow-rail {
+      opacity: .52;
     }
   }
 
