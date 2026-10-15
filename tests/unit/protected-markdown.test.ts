@@ -3,6 +3,7 @@ import { join, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { PostEntry } from '../../src/lib/content';
+import type { CollectionEntry } from 'astro:content';
 import {
   collectProtectedAssets,
   renderProtectedMarkdown
@@ -14,6 +15,7 @@ let temporaryRoot: string;
 let postsRoot: string;
 let postPath: string;
 let previousContentDir: string | undefined;
+let previousSnippetsDir: string | undefined;
 
 function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntry {
   return {
@@ -35,10 +37,12 @@ function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntr
 
 beforeEach(async () => {
   previousContentDir = process.env.HATRIX_CONTENT_DIR;
+  previousSnippetsDir = process.env.HATRIX_SNIPPETS_DIR;
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-markdown-'));
   postsRoot = join(temporaryRoot, 'posts');
   postPath = join(postsRoot, 'nested', 'private.md');
   process.env.HATRIX_CONTENT_DIR = temporaryRoot;
+  process.env.HATRIX_SNIPPETS_DIR = temporaryRoot;
   await mkdir(join(postsRoot, 'nested'), { recursive: true });
   await copyFile(fixtureImage, join(postsRoot, 'nested', 'private-image.png'));
   await writeFile(postPath, '# fixture', 'utf8');
@@ -50,10 +54,30 @@ afterEach(async () => {
   } else {
     process.env.HATRIX_CONTENT_DIR = previousContentDir;
   }
+  if (previousSnippetsDir === undefined) delete process.env.HATRIX_SNIPPETS_DIR;
+  else process.env.HATRIX_SNIPPETS_DIR = previousSnippetsDir;
   await rm(temporaryRoot, { recursive: true, force: true });
 });
 
 describe('protected Markdown', () => {
+  it('encrypts snippet Markdown images from the private snippets checkout', async () => {
+    const snippetsRoot = join(temporaryRoot, 'snippets');
+    const snippetPath = join(snippetsRoot, 'private.md');
+    await mkdir(snippetsRoot, { recursive: true });
+    await writeFile(snippetPath, '# fixture', 'utf8');
+    await copyFile(fixtureImage, join(snippetsRoot, 'private-image.png'));
+    const snippet = {
+      id: 'private', collection: 'snippets', filePath: snippetPath,
+      body: '![secret alt](./private-image.png)',
+      data: { title: 'Private snippet', date: new Date('2026-10-12') }
+    } as CollectionEntry<'snippets'>;
+
+    const result = await renderProtectedMarkdown(snippet, keyBytes);
+
+    expect(result.html).toContain('data-protected-src="/protected-content/assets/');
+    expect(result.html).not.toContain('private-image.png');
+    expect(result.assets[0].sourcePath).toBe(join(snippetsRoot, 'private-image.png'));
+  });
   it('replaces a local image with an opaque encrypted asset reference', async () => {
     const result = await renderProtectedMarkdown(
       fixturePost('Private marker.\n\n![secret alt](./private-image.png "secret title")'),

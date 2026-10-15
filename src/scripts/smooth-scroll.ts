@@ -17,6 +17,30 @@ export function scrollPageTo(target: number | HTMLElement, block: ScrollLogicalP
   else target.scrollIntoView({ behavior, block });
 }
 
+export function scrollPageToBottom(): void {
+  if (pageScroll) {
+    pageScroll.resize();
+    pageScroll.scrollTo('bottom');
+    return;
+  }
+
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior });
+}
+
+export function scrollPageBy(delta: number): void {
+  if (pageScroll) {
+    pageScroll.scrollTo(pageScroll.targetScroll + delta, {
+      programmatic: false,
+      lerp: pageScroll.options.lerp,
+    });
+    return;
+  }
+
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+  window.scrollBy({ top: delta, behavior });
+}
+
 function initializePageScroll(): void {
   pageScroll?.destroy();
   pageScroll = undefined;

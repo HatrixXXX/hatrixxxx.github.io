@@ -177,7 +177,8 @@ const currentTrack = playlist[0];
   }
   .music-player[data-record-variant='1'] { --record-label: #344650; --record-label-edge: #566671; }
   .music-player[data-record-variant='2'] { --record-label: #4b3934; --record-label-edge: #735247; }
-  .music-player[data-playback-state='playing'] .record-disc { animation: record-spin 1.8s linear infinite; }
+  .music-player[data-playback-state='playing'] .record-disc,
+  .music-player[data-playback-state='buffering'] .record-disc { animation: record-spin 1.8s linear infinite; }
   @keyframes record-spin { to { transform: rotate(360deg); } }
   .music-player[data-record-swap='true'] .record-assembly {
     animation: record-exchange 560ms cubic-bezier(.4, 0, .2, 1) 160ms both;
@@ -222,7 +223,8 @@ const currentTrack = playlist[0];
     transition: transform 660ms cubic-bezier(.2, .7, .18, 1);
     filter: drop-shadow(2px 3px 2px #080a0d9c);
   }
-  .music-player[data-playback-state='playing'] .tonearm { transform: rotate(0); }
+  .music-player[data-playback-state='playing'] .tonearm,
+  .music-player[data-playback-state='buffering'] .tonearm { transform: rotate(0); }
   .music-player[data-playback-state='changing'] .tonearm { transition-duration: 180ms; }
 
   .track-tooltip {
@@ -250,6 +252,7 @@ const currentTrack = playlist[0];
     transition: opacity 160ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1), visibility 0s linear 220ms;
   }
   .music-player:not([data-record-swap='true']) .record-assembly:hover ~ .track-tooltip,
+  .music-player[data-playback-state='buffering'] .track-tooltip,
   .music-player[data-input-mode='keyboard']:not([data-record-swap='true']) .record-assembly:has(.record-button:focus-visible) ~ .track-tooltip {
     opacity: 1;
     visibility: visible;

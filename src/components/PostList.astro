@@ -64,8 +64,6 @@ const { posts } = Astro.props;
     --card-h: min(270px, calc(var(--card-w) * .245));
     position: absolute;
     inset: 0;
-    perspective: 1400px;
-    perspective-origin: 50% 50%;
     overflow: hidden;
   }
 
@@ -80,7 +78,7 @@ const { posts } = Astro.props;
     position: absolute;
     top: 50%;
     width: auto;
-    height: min(calc(100% - 1rem), 1100px);
+    height: calc(100% + 1rem);
     object-fit: contain;
     opacity: .84;
     filter: brightness(.8) drop-shadow(0 8px 14px rgb(0 0 0 / 55%));
@@ -97,37 +95,27 @@ const { posts } = Astro.props;
     transform: translate(50%, -50%) scaleX(-1);
   }
 
-  /* Long horizontal cards leave room for the surrounding depth layers. */
+  /* Horizontal cards keep their edges aligned with the straight guide rails. */
   .coverflow-scene :global([data-post-card]) {
     position: absolute;
     left: 50%;
     top: 50%;
     transform-origin: center center;
-    transform-style: preserve-3d;
+    transform-style: flat;
     will-change: transform, opacity;
     width: var(--card-w);
     margin-left: calc(var(--card-w) / -2);
     height: var(--card-h);
     margin-top: calc(var(--card-h) / -2);
     transition: opacity 0.1s linear;
-    cursor: pointer;
-  }
-
-  .coverflow-scene :global([data-post-card][data-active='true']) {
-    cursor: default;
+    cursor: url('/assets/cursors/link.cur') 47 80, pointer;
+    cursor: image-set(url('/assets/cursors/link.cur') 2x) 24 40, pointer;
   }
 
   .coverflow-scene :global([data-post-card][data-near-center]) {
-    filter:
-      brightness(var(--post-hover-brightness, 1))
-      drop-shadow(0 8px 12px rgb(0 0 0 / 60%));
+    filter: drop-shadow(0 8px 12px rgb(0 0 0 / 60%));
   }
 
-  .coverflow-scene :global([data-post-card][data-near-center]:hover) {
-    --post-hover-brightness: 1.08;
-  }
-
-  /* The selected card breathes independently of the coverflow's inline transforms. */
   @media (prefers-reduced-motion: no-preference) {
     .coverflow-scene :global([data-post-card]) {
       animation: archive-active-breathe 4.8s ease-in-out .5s infinite backwards;

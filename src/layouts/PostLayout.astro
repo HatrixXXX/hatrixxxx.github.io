@@ -15,6 +15,7 @@ import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
 import { postPath } from '@/lib/urls';
 import { latestPostLimit } from '@/lib/post-layout';
 import { SITE } from '@/config/site';
+import '../styles/post-comments-frame.css';
 
 interface Heading {
   depth: number;
@@ -39,6 +40,7 @@ const stats = buildSiteStats(posts);
   title={post.data.title}
   description={SITE.description}
   image={post.data.cover}
+  preloadImage={false}
   showFooter={true}
   canonicalPath={canonicalPath}
   bodyClass="post-page"
@@ -49,7 +51,7 @@ const stats = buildSiteStats(posts);
     runningDuration: formatRunningDurationAt(new Date())
   }}
 >
-  <BackButton href="/blogs/" label="返回博客文章" belowHeader={true} />
+  <BackButton href="/blogs/" label="返回博客文章" belowHeader={true} cornerAligned={true} />
   <article data-post>
     <div class="post-intro container">
       <h1>{post.data.title}</h1>
@@ -78,7 +80,11 @@ const stats = buildSiteStats(posts);
             }
           </nav>
 
-          <TwikooComments />
+          <div class="post-comments-shell">
+            <div class="post-comments-screen" role="region" aria-label="评论内容" tabindex="0">
+              <TwikooComments />
+            </div>
+          </div>
         </div>
         <aside class="post-sidebar"><TableOfContents headings={headings} /><LatestPostRail posts={posts} limit={latestPostLimit(headings.length)} /></aside>
       </div>
@@ -90,6 +96,7 @@ const stats = buildSiteStats(posts);
 <script>
   import '@/scripts/back-to-top';
   import '@/scripts/mermaid';
+  import '@/scripts/post-links';
   import '@/scripts/post-sidebar';
   import '@/scripts/toc';
 </script>
@@ -185,8 +192,8 @@ const stats = buildSiteStats(posts);
   .adjacent-posts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    margin-top: 2rem;
+    gap: 1.25rem;
+    margin-top: 2.5rem;
   }
 
   .adjacent-posts :global(a) {
@@ -194,24 +201,26 @@ const stats = buildSiteStats(posts);
     display: flex;
     min-width: 0;
     flex-direction: column;
-    gap: 0.2rem;
-    border: 1px solid var(--color-line);
-    border-radius: 3px;
-    padding: 1rem;
-    background: linear-gradient(110deg, rgb(0 221 235 / 6%), transparent 55%), var(--surface-sheen), var(--color-surface);
-    box-shadow: var(--shadow-inset);
-    transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 124px;
+    border: 1px solid var(--chassis-edge);
+    border-radius: var(--radius-card);
+    padding: 1.2rem 1.35rem;
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove), inset 0 5px 12px rgb(0 0 0 / 18%), 0 10px 24px rgb(3 5 11 / 22%);
+    transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
   }
 
   .adjacent-posts :global(a::before) {
     content: '';
     position: absolute;
-    top: 0;
-    left: 1rem;
+    top: 9px;
+    left: 1.35rem;
     width: 65%;
     height: 2px;
     background: linear-gradient(90deg, var(--color-copper), transparent);
-    transform: scaleX(0.54);
+    transform: scaleX(0.615);
     transform-origin: left;
     transition: transform var(--duration-normal) var(--ease-out), background-color var(--duration-normal) ease;
   }
@@ -219,7 +228,8 @@ const stats = buildSiteStats(posts);
   .adjacent-posts :global(a:hover),
   .adjacent-posts :global(a:focus-visible) {
     border-color: var(--color-copper);
-    background-color: var(--color-surface-raised);
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove), inset 0 5px 12px rgb(0 0 0 / 18%), 0 14px 28px rgb(3 5 11 / 32%);
   }
 
   .adjacent-posts :global(a:is(:hover, :focus-visible)::before) {
@@ -231,9 +241,21 @@ const stats = buildSiteStats(posts);
     text-align: right;
   }
 
+  .adjacent-posts :global(a:last-child::before) {
+    right: 1.35rem;
+    left: auto;
+    background: linear-gradient(270deg, var(--color-copper), transparent);
+    transform-origin: right;
+  }
+
+  .adjacent-posts :global(a:last-child:is(:hover, :focus-visible)::before) {
+    background: linear-gradient(270deg, var(--color-accent), var(--color-link), transparent);
+  }
+
   .adjacent-posts :global(a > span) {
-    color: var(--color-muted);
+    color: var(--color-copper);
     font-size: 0.8125rem;
+    font-weight: 600;
   }
 
   .adjacent-posts :global(a > strong) {
@@ -244,6 +266,12 @@ const stats = buildSiteStats(posts);
 
   .adjacent-posts :global(a:hover > strong) {
     color: var(--color-link);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .adjacent-posts :global(a) { transition: none; }
+    .adjacent-posts :global(a:hover),
+    .adjacent-posts :global(a:focus-visible) { transform: none; }
   }
 
   @media (min-width: 1280px) {
@@ -273,7 +301,7 @@ const stats = buildSiteStats(posts);
 
   @media (max-width: 1199px) {
     .post-intro {
-      padding-top: calc(var(--header-height) + 3.5rem);
+      padding-top: calc(var(--header-height) + 4.5rem);
     }
   }
 
@@ -288,8 +316,13 @@ const stats = buildSiteStats(posts);
 
 
   @media (max-width: 600px) {
+    .post-sidebar {
+      margin-left: 64px;
+    }
+
     .adjacent-posts {
       grid-template-columns: minmax(0, 1fr);
+      margin-left: 64px;
     }
 
     .adjacent-posts > span {

@@ -125,10 +125,7 @@ test('friend portal reports an artwork failure instead of showing an empty doorw
   await expect(page.locator('#page-loader')).toBeHidden();
 });
 
-test('friend portal retries artwork on a previously visited hard navigation', async ({ page }) => {
-  await page.addInitScript(() => {
-    sessionStorage.setItem('hatrix-visited-pages', JSON.stringify(['/friends/']));
-  });
+test('friend portal retries artwork on a hard navigation', async ({ page }) => {
   const failed = new Set<string>();
   await page.route('**/assets/friends/portal-*', (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -434,11 +431,11 @@ test('profile and article routes retain their contextual sidebar with one separa
 });
 
 test('selected about routes omit the profile sidebar and let content use the full container', async ({ page }) => {
-  for (const path of ['/about/', '/toolbox/', '/snippets/']) {
+  for (const path of ['/about/', '/toolbox/']) {
     await page.goto(path);
     await expect(page.locator('[data-sidebar-stack], [data-profile-card]')).toHaveCount(0);
     const main = page.locator('main.container');
-    const content = path === '/toolbox/' || path === '/snippets/'
+    const content = path === '/toolbox/'
       ? main
       : main.locator(':scope > article, :scope > .about-content');
     const [mainBox, contentBox] = await Promise.all([main.boundingBox(), content.boundingBox()]);

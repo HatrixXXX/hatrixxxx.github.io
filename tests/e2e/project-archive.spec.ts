@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const titles = [
   'FPGA-3DGS渲染',
@@ -8,60 +8,131 @@ const titles = [
   '实验室文化墙'
 ];
 
-test('atlas starts on its cover and reads one work per turned page', async ({ page }) => {
+async function injectGalleryFixture(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const showcase = document.querySelector<HTMLElement>('[data-project-showcase]')!;
+    const media = showcase.querySelector<HTMLElement>('[data-project-detail="0"] [data-carousel]')!;
+    const track = media.querySelector<HTMLElement>('[data-carousel-track]')!;
+    media.querySelector<HTMLElement>('[data-carousel-viewport]')!.tabIndex = 0;
+    const slide = track.querySelector<HTMLElement>('[data-carousel-slide]')!;
+    track.append(slide.cloneNode(true), slide.cloneNode(true));
+    const controls = document.createElement('div');
+    controls.className = 'showcase-carousel-controls';
+    controls.innerHTML = '<button type="button" data-carousel-prev aria-label="上一张图片">‹</button><span data-carousel-counter></span><button type="button" data-carousel-next aria-label="下一张图片">›</button>';
+    media.append(controls);
+    showcase.removeAttribute('data-bound');
+    document.dispatchEvent(new Event('astro:page-load'));
+  });
+}
+
+test('showcase displays equal catalog and detail windows immediately', async ({ page }) => {
   await page.goto('/creation/');
   await expect(page.locator('#page-loader')).toBeHidden();
-  const book = page.locator('[data-project-book]');
-  await expect(book).toBeVisible();
-  await expect(book.locator('.book-float')).toHaveCSS('animation-name', 'book-breathe');
-  await expect(page.locator('.project-atlas-head, .project-atlas-rail, .project-atlas-grid')).toHaveCount(0);
-  await expect(page.locator('[data-music-player]')).toBeVisible();
+  const showcase = page.locator('[data-project-showcase]');
+  await expect(showcase.locator('[data-showcase-window]')).toBeVisible();
+  const windowSize = await showcase.locator('[data-showcase-window]').boundingBox();
+  expect(windowSize?.width).toBeGreaterThan(1200);
+  expect(windowSize?.width).toBeLessThan(1250);
+  expect(windowSize?.height).toBeGreaterThan(800);
+  expect(windowSize?.height).toBeLessThan(830);
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 1440);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(900);
+  await expect(showcase.locator('[data-catalog-panel]')).not.toContainText('作品展位');
+  await expect(showcase.locator('[data-catalog-panel]')).not.toContainText('件作品');
+  await expect(showcase.locator('[data-detail-panel]')).not.toContainText('01 / 05');
+  await expect(showcase.locator('[data-detail-panel]')).not.toContainText('作品详情');
+  await expect(showcase.locator('[data-project-badge]')).toHaveCount(5);
+  await expect(showcase.locator('[data-empty-mount]')).toHaveCount(1);
+  await expect(showcase.locator('[data-open-showcase], [data-close-showcase], [data-showcase-lid]')).toHaveCount(0);
+  await expect(showcase.locator('[data-showcase-crest]')).toBeVisible();
   await expect(page.locator('[data-music-player]')).toHaveAttribute('data-ui-state', 'collapsed');
-  await expect(book.getByRole('button', { name: '翻开作品图鉴' })).toBeVisible();
-  const coverImage = book.locator('[data-book-cover-image]');
-  await expect(coverImage).toHaveAttribute('src', '/assets/projects/project-atlas-cover-v1.webp');
-  await expect.poll(() => coverImage.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(900);
-  await expect(page.locator('[data-project-page]')).toHaveCount(5);
+  await expect(showcase.locator('[data-project-badge="0"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(showcase.locator('[data-project-detail="0"]')).toBeVisible();
 
-  await book.getByRole('button', { name: '翻开作品图鉴' }).focus();
-  await page.keyboard.press('Enter');
-  await expect(book).toHaveAttribute('data-current-page', '1');
-  await expect(book.locator('[data-book-leaf][data-index="0"]')).toHaveAttribute('data-flipped', '');
-  const first = book.locator('[data-project-page="1"]');
-  await expect(first).toContainText(titles[0]);
-  await expect(first).toHaveAttribute('data-scanning', '');
-  await expect(first).toHaveAttribute('data-revealed', '');
-  await expect(first).toContainText('制作经历');
-  await expect(first).toContainText('过程趣事');
-  await expect(first).toContainText('照片待补充');
-
-  for (let index = 1; index < titles.length; index += 1) {
-    await book.locator(`[data-project-page="${index}"] [data-turn-next]`).click({ force: true });
-    await expect(book).toHaveAttribute('data-current-page', String(index + 1));
-    await expect(book.locator(`[data-project-page="${index + 1}"]`)).toContainText(titles[index]);
-  }
-  await expect(book.locator('[data-project-page="5"] [data-turn-next]')).toHaveCount(0);
-
-  await expect(book.locator('[data-project-page="5"]')).toHaveAttribute('data-revealed', '');
-  await page.keyboard.press('ArrowLeft');
-  await expect(book).toHaveAttribute('data-current-page', '4');
-  await expect(book.locator('[data-project-page="4"]')).toHaveAttribute('data-revealed', '');
+  await expect.poll(() => showcase.evaluate((element) => {
+    const catalog = element.querySelector('[data-catalog-panel]')!.getBoundingClientRect();
+    const detail = element.querySelector('[data-detail-panel]')!.getBoundingClientRect();
+    return Math.abs(catalog.width - detail.width) + Math.abs(detail.left - catalog.right);
+  })).toBeLessThan(2);
+  await showcase.locator('[data-project-badge="4"]').click();
+  await expect(showcase.locator('[data-project-badge="4"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(showcase.locator('[data-project-detail="4"]')).toContainText(titles[4]);
+  await expect(showcase.locator('[data-project-detail="0"]')).toBeHidden();
+  await expect(showcase.locator('[data-project-detail="4"]')).toContainText('项目介绍待补充。');
+  await page.setViewportSize({ width: 1024, height: 768 });
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(768);
 });
 
-test('book remains legible on mobile and opens pages directly with reduced motion', async ({ page }) => {
+test('showcase selection remains accessible on mobile with reduced motion', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/creation/');
   await expect(page.locator('#page-loader')).toBeHidden();
-  const book = page.locator('[data-project-book]');
-  await expect(book.locator('.book-float')).toHaveCSS('animation-name', 'none');
-  await book.getByRole('button', { name: '翻开作品图鉴' }).click({ force: true });
-  const first = book.locator('[data-project-page="1"]');
-  await expect(first).toHaveAttribute('data-revealed', '');
-  await expect(first.getByRole('heading', { name: titles[0] })).toBeVisible();
+  const showcase = page.locator('[data-project-showcase]');
+  await expect(showcase).toHaveAttribute('data-mobile-view', 'catalog');
+  await expect(showcase.locator('[data-project-detail="0"]')).toBeHidden();
+  await showcase.locator('[data-project-badge="2"]').click();
+  await expect(showcase).toHaveAttribute('data-mobile-view', 'detail');
+  await expect(showcase.locator('[data-project-detail="2"]')).toContainText(titles[2]);
+  await expect(showcase.locator('[data-project-detail="2"]')).toBeVisible();
+  await expect(showcase.locator('[data-catalog-panel]')).toBeHidden();
+  const detailScroll = showcase.locator('[data-project-detail="2"] [data-detail-scroll]');
+  expect(await detailScroll.evaluate((element) => element.scrollHeight)).toBeGreaterThan(await detailScroll.evaluate((element) => element.clientHeight));
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(844);
   await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390);
-  await first.getByRole('button', { name: '返回封面' }).click({ force: true });
-  await expect(book).toHaveAttribute('data-current-page', '0');
-  await expect(book.locator('[data-book-leaf][data-index="0"]')).not.toHaveAttribute('data-flipped');
-  await expect(book.getByRole('button', { name: '翻开作品图鉴' })).toBeFocused();
+  await showcase.getByRole('button', { name: '返回作品展位' }).click();
+  await expect(showcase).toHaveAttribute('data-mobile-view', 'catalog');
+  await expect(showcase.locator('[data-catalog-panel]')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 667 });
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(667);
+  await expect(showcase.locator('[data-project-badge="4"]')).toBeVisible();
+});
+
+test('local gallery wraps and stays clipped to the detail panel', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/creation/');
+  await page.locator('#page-loader').waitFor({ state: 'hidden' });
+  await injectGalleryFixture(page);
+
+  const media = page.locator('[data-project-detail="0"] [data-carousel]');
+  const counter = media.locator('[data-carousel-counter]');
+  await expect(counter).toHaveText('01 / 03');
+  await media.getByRole('button', { name: '下一张图片' }).click();
+  await expect(counter).toHaveText('02 / 03');
+  await media.getByRole('button', { name: '下一张图片' }).click();
+  await media.getByRole('button', { name: '下一张图片' }).click();
+  await expect(counter).toHaveText('01 / 03');
+  await media.getByRole('button', { name: '上一张图片' }).click();
+  await expect(counter).toHaveText('03 / 03');
+  const viewport = media.locator('[data-carousel-viewport]');
+  await viewport.dispatchEvent('pointerdown', { pointerType: 'touch', clientX: 200 });
+  await viewport.dispatchEvent('pointerup', { pointerType: 'touch', clientX: 100 });
+  await expect(counter).toHaveText('01 / 03');
+  await viewport.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(counter).toHaveText('03 / 03');
+  expect(await media.evaluate((element) => getComputedStyle(element).overflow)).toBe('hidden');
+});
+
+test('keyboard focus follows the catalog into the detail panel', async ({ page }) => {
+  await page.goto('/creation/');
+  await page.locator('#page-loader').waitFor({ state: 'hidden' });
+  const showcase = page.locator('[data-project-showcase]');
+  await showcase.locator('[data-project-badge="4"]').focus();
+  await page.keyboard.press('Tab');
+  await expect(showcase.locator('[data-project-detail="0"] [data-carousel-viewport]')).toBeFocused();
+});
+
+test('carousel remains usable when reduced motion turns on mid-slide', async ({ page }) => {
+  await page.goto('/creation/');
+  await page.locator('#page-loader').waitFor({ state: 'hidden' });
+  await injectGalleryFixture(page);
+  await page.addStyleTag({ content: '@media (prefers-reduced-motion: no-preference) { .showcase-carousel-track { transition-duration: 5s !important; } }' });
+  const media = page.locator('[data-project-detail="0"] [data-carousel]');
+  const counter = media.locator('[data-carousel-counter]');
+  await media.getByRole('button', { name: '下一张图片' }).click();
+  await expect(counter).toHaveText('02 / 03');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await media.getByRole('button', { name: '下一张图片' }).click();
+  await expect(counter).toHaveText('03 / 03');
 });

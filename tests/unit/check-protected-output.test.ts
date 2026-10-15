@@ -15,6 +15,7 @@ const PRIVATE_ASSET = new Uint8Array([
 let temporaryRoot: string;
 let contentRoot: string;
 let distRoot: string;
+let snippetsRoot: string;
 
 async function writeFixture(markdownBody = `${PRIVATE_BODY}\n\n![private](./private-image.png)`): Promise<void> {
   await mkdir(join(contentRoot, 'posts'), { recursive: true });
@@ -44,6 +45,8 @@ beforeEach(async () => {
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-output-'));
   contentRoot = join(temporaryRoot, 'content');
   distRoot = join(temporaryRoot, 'dist');
+  snippetsRoot = join(temporaryRoot, 'snippets');
+  await mkdir(snippetsRoot, { recursive: true });
   await mkdir(join(distRoot, 'protected-content'), { recursive: true });
 });
 
@@ -52,6 +55,31 @@ afterEach(async () => {
 });
 
 describe('protected output audit', () => {
+  it('reports leaked snippet metadata and body without echoing either', async () => {
+    await writeFixture();
+    await writeFile(join(snippetsRoot, 'quiet-note.md'),
+      '---\ntitle: Quiet private note\ndate: 2026-10-12\ndescription: A private summary for this note\n---\nA private paragraph that must stay encrypted.', 'utf8');
+    await writeFile(join(distRoot, 'snippets.html'),
+      '<h1>Quiet private note</h1><p>A private paragraph that must stay encrypted.</p>', 'utf8');
+
+    const result = await inspectProtectedOutput(contentRoot, distRoot, snippetsRoot);
+
+    expect(result.errors).toContain('snippets.html: protected snippet metadata plaintext');
+    expect(result.errors).toContain('snippets.html: protected Markdown body plaintext');
+    expect(result.errors.join('\n')).not.toContain('Quiet private note');
+  });
+
+  it('detects an original snippet image copied into public output', async () => {
+    await writeFixture();
+    await writeFile(join(snippetsRoot, 'private.md'),
+      '---\ntitle: Private image note\ndate: 2026-10-12\n---\n![private](./private-image.png)', 'utf8');
+    await writeFile(join(snippetsRoot, 'private-image.png'), PRIVATE_ASSET);
+    await writeFile(join(distRoot, 'assets', 'leaked.bin'), PRIVATE_ASSET);
+
+    const result = await inspectProtectedOutput(contentRoot, distRoot, snippetsRoot);
+
+    expect(result.errors).toContain('assets/leaked.bin: original protected resource bytes');
+  });
   it('reports private Markdown body plaintext without echoing it', async () => {
     await writeFixture();
     await writeFile(join(distRoot, 'leaked.html'), `<p>${PRIVATE_BODY}</p>`, 'utf8');

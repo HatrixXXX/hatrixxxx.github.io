@@ -156,15 +156,15 @@ describe('Astro project tooling', () => {
 
     expect(readme).toContain('`.private-content/posts/`：已发布文章');
     expect(readme).toContain('`.private-content/` 是独立的私有 Git 仓库');
-    expect(readme).toContain('公开仓库不跟踪任何已发布文章的 Markdown');
+    expect(readme).toContain('公开仓库不跟踪任何已发布文章或随笔的 Markdown');
     expect(readme).toContain('在 `.private-content/posts/` 新建 Markdown 或 MDX 文件');
     expect(readme).not.toContain('`src/content/posts/`：已发布文章');
     expect(readme).not.toContain('在 `src/content/posts/` 新建');
 
-    expect(agents).toContain('`.private-content/posts/`：15 篇已发布文章');
-    expect(agents).toContain('`.private-content/` 是独立的私有 Git 仓库');
+    expect(agents).toContain('`.private-content/posts/` 是已发布博客文章的唯一正文来源');
+    expect(agents).toContain('也是独立私有仓库');
     expect(agents).toContain('公开仓库不跟踪文章 Markdown');
-    expect(agents).not.toContain('`src/content/posts/`：42 篇已发布文章');
+    expect(agents).not.toContain('`src/content/posts/`');
   });
 
   it('documents Astro build state as secret-bearing and never safe to persist', () => {
@@ -173,7 +173,7 @@ describe('Astro project tooling', () => {
 
     expect(readme).toContain('生产构建生成的 `.astro/` 是带密构建状态');
     expect(readme).toContain('不得缓存、上传或提交');
-    expect(agents).toContain('生产构建生成的 `.astro/` 是带密构建状态');
+    expect(agents).toContain('生产构建生成的 `.astro/` 可能包含私有正文');
     expect(agents).toContain('不得缓存、上传或提交');
   });
 
@@ -251,6 +251,7 @@ describe('Astro project tooling', () => {
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
+      { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/configure-pages', revision: '45bfe0192ca1faeb007ade9deae92b16b8254a0d', version: 'v6' },
       { action: 'actions/setup-node', revision: '820762786026740c76f36085b0efc47a31fe5020', version: 'v7' },
       { action: 'actions/cache', revision: '55cc8345863c7cc4c66a329aec7e433d2d1c52a9', version: 'v6' },
@@ -315,7 +316,7 @@ describe('Astro project tooling', () => {
 
     expect(workflow).toContain('  push:\n    branches: [master]');
     expect(workflow).toContain('  workflow_dispatch:');
-    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated]');
+    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated]');
     expect(productionJob).toContain("github.event_name == 'repository_dispatch'");
     expect(productionJob).toContain(
       "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'"
@@ -333,14 +334,14 @@ describe('Astro project tooling', () => {
     expect(productionJob).not.toContain('gh api');
     expect(productionJob).not.toContain('GH_TOKEN');
     expect(productionJob.match(/HATRIX_CONTENT_TOKEN/g)).toHaveLength(6);
-    expect(dispatchValidation).toContain("if: github.event_name == 'repository_dispatch'");
+    expect(dispatchValidation).toContain("if: github.event.action == 'content-updated'");
     expect(dispatchValidation).toContain('DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}');
-    expect(dispatchCheckout).toContain("if: github.event_name == 'repository_dispatch'");
+    expect(dispatchCheckout).toContain("if: github.event.action == 'content-updated'");
     expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-content');
     expect(dispatchCheckout).toContain('token: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
     expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.content_sha }}');
     expect(dispatchCheckout).toContain('path: .private-content');
-    expect(defaultBranchCheckout).toContain("if: github.event_name != 'repository_dispatch'");
+    expect(defaultBranchCheckout).toContain("if: github.event.action != 'content-updated'");
     expect(defaultBranchCheckout).toContain('repository: HatrixXXX/hatrix-content');
     expect(defaultBranchCheckout).toContain('token: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
     expect(defaultBranchCheckout).toContain('path: .private-content');
@@ -358,6 +359,30 @@ describe('Astro project tooling', () => {
     expect(deployJob).toContain(
       'uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5'
     );
+  });
+
+  it('checks out and verifies the dispatched private snippets commit', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+    const productionJob = workflowJob(workflow, 'build-production');
+    const dispatchValidation = workflowStep(productionJob, 'Validate dispatched snippets SHA');
+    const dispatchCheckout = workflowStep(productionJob, 'Checkout dispatched private snippets');
+    const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private snippets');
+    const provenance = workflowStep(productionJob, 'Record private snippets SHA');
+
+    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated]');
+    expect(dispatchValidation).toContain("if: github.event.action == 'snippets-updated'");
+    expect(dispatchValidation).toContain('DISPATCH_SNIPPETS_SHA: ${{ github.event.client_payload.snippets_sha }}');
+    expect(dispatchValidation).toContain('^[0-9a-fA-F]{40}$');
+    expect(dispatchCheckout).toContain("if: github.event.action == 'snippets-updated'");
+    expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-snippets');
+    expect(dispatchCheckout).toContain('ssh-key: ${{ secrets.HATRIX_SNIPPETS_DEPLOY_KEY }}');
+    expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.snippets_sha }}');
+    expect(defaultBranchCheckout).toContain("if: github.event.action != 'snippets-updated'");
+    expect(defaultBranchCheckout).not.toContain('ref:');
+    expect(provenance).toContain('snippets_sha="$(git -C .private-snippets rev-parse HEAD)"');
+    expect(provenance).toContain('"$DISPATCH_TYPE" == "snippets-updated"');
+    expect(provenance).toContain('"$snippets_sha" != "$DISPATCH_SNIPPETS_SHA"');
+    expect(provenance).toContain('echo "sha=$snippets_sha" >> "$GITHUB_OUTPUT"');
   });
 
   it('never persists secret-bearing Astro state from a Pages build', () => {

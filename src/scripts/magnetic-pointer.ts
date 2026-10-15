@@ -50,6 +50,7 @@ function nearbyHomeTile(x: number, y: number): { tile: HTMLElement; strength: nu
 }
 
 function interactiveTarget(element: Element): Element | null {
+  if (element.closest('.snippet-card')) return null;
   const card = element.closest<HTMLElement>('[data-post-card]');
   if (card) return card;
 

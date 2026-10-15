@@ -1,127 +1,174 @@
-export {};
+import { wrapIndex } from '@/lib/project-showcase';
 
-const TURN_DURATION = 740;
-const SCAN_DURATION = 620;
+type Carousel = { move: (direction: -1 | 1) => void; reset: () => void };
+
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function bindProjectBook(): void {
-  const book = document.querySelector<HTMLElement>('[data-project-book]:not([data-bound])');
-  if (!book) return;
-  book.dataset.bound = '';
+function bindCarousel(media: HTMLElement): Carousel | undefined {
+  const track = media.querySelector<HTMLElement>('[data-carousel-track]');
+  const viewport = media.querySelector<HTMLElement>('[data-carousel-viewport]');
+  const counter = media.querySelector<HTMLElement>('[data-carousel-counter]');
+  if (!track || !viewport) return;
 
-  const leaves = Array.from(book.querySelectorAll<HTMLElement>('[data-book-leaf]'));
-  const status = book.querySelector<HTMLElement>('[data-book-status]');
-  let turnTimer: number | undefined;
-  let scanTimer: number | undefined;
-  let unsealTimer: number | undefined;
+  const slides = Array.from(track.querySelectorAll<HTMLElement>('[data-carousel-slide]'));
+  const length = slides.length;
+  if (length < 2) return;
 
-  const turnTo = (next: number) => {
-    const current = Number(book.dataset.currentPage);
-    if (next === current || next < 0 || next >= leaves.length) return;
-    if (turnTimer !== undefined) window.clearTimeout(turnTimer);
-    if (scanTimer !== undefined) window.clearTimeout(scanTimer);
-    if (unsealTimer !== undefined) window.clearTimeout(unsealTimer);
-    unsealTimer = undefined;
-    book.removeAttribute('data-unsealing');
-    leaves.forEach((leaf) => leaf.removeAttribute('data-turning'));
+  const firstClone = slides[0].cloneNode(true) as HTMLElement;
+  const lastClone = slides[length - 1].cloneNode(true) as HTMLElement;
+  for (const clone of [firstClone, lastClone]) {
+    clone.removeAttribute('data-carousel-slide');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.inert = true;
+  }
+  track.prepend(lastClone);
+  track.append(firstClone);
 
-    const destination = leaves[next].querySelector<HTMLElement>('[data-project-page]');
-    if (destination) {
-      destination.dataset.pending = '';
-      destination.removeAttribute('data-scanning');
-      destination.removeAttribute('data-revealed');
-      destination.closest<HTMLElement>('[data-book-leaf]')?.querySelector<HTMLElement>('.folio-scroll')?.scrollTo({ top: 0 });
+  let logical = 0;
+  let position = 1;
+  let animating = false;
+  let pending: -1 | 0 | 1 = 0;
+
+  const place = (animated: boolean) => {
+    track.toggleAttribute('data-no-transition', !animated);
+    track.style.transform = `translate3d(${-position * 100}%, 0, 0)`;
+    if (!animated) {
+      void track.offsetWidth;
+      track.removeAttribute('data-no-transition');
     }
-
-    const moving = leaves[next > current ? current : next];
-    moving.dataset.turning = '';
-    book.dataset.currentPage = String(next);
-    book.focus({ preventScroll: true });
-    leaves.forEach((leaf, index) => {
-      leaf.toggleAttribute('data-flipped', index < next);
-      leaf.toggleAttribute('data-active', index === next);
-      leaf.inert = index !== next;
-      leaf.setAttribute('aria-hidden', index === next ? 'false' : 'true');
-    });
-    if (status) status.textContent = next === 0 ? '返回图鉴封面' : '正在翻阅项目档案';
-
-    const finishTurn = () => {
-      if (!book.isConnected) return;
-      moving.removeAttribute('data-turning');
-      if (next === 0) {
-        book.querySelector<HTMLButtonElement>('[data-open-book]')?.focus({ preventScroll: true });
-        return;
-      }
-      if (!destination) return;
-      destination.removeAttribute('data-pending');
-      if (reducedMotion()) {
-        destination.dataset.revealed = '';
-        if (status) status.textContent = `已读取：${destination.querySelector('h2')?.textContent ?? ''}`;
-        destination.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
-        return;
-      }
-      destination.dataset.scanning = '';
-      if (status) status.textContent = '正在扫描当前作品';
-      scanTimer = window.setTimeout(() => {
-        if (!book.isConnected || Number(book.dataset.currentPage) !== next) return;
-        destination.removeAttribute('data-scanning');
-        destination.dataset.revealed = '';
-        if (status) status.textContent = `已读取：${destination.querySelector('h2')?.textContent ?? ''}`;
-        destination.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
-      }, SCAN_DURATION);
-    };
-
-    if (reducedMotion()) finishTurn();
-    else turnTimer = window.setTimeout(finishTurn, TURN_DURATION);
+    if (counter) counter.textContent = `${String(logical + 1).padStart(2, '0')} / ${String(length).padStart(2, '0')}`;
   };
 
-  book.addEventListener('click', (event) => {
-    if (!(event.target instanceof Element)) return;
-    if (event.target.closest('[data-open-book]')) {
-      if (book.hasAttribute('data-unsealing')) return;
-      if (reducedMotion()) return turnTo(1);
-      book.dataset.unsealing = '';
-      unsealTimer = window.setTimeout(() => {
-        if (book.isConnected) turnTo(1);
-      }, 260);
+  const move = (direction: -1 | 1) => {
+    if (animating) {
+      pending = direction;
       return;
     }
-    if (event.target.closest('[data-turn-prev]')) return turnTo(Number(book.dataset.currentPage) - 1);
-    if (event.target.closest('[data-turn-next]')) return turnTo(Number(book.dataset.currentPage) + 1);
-    const galleryButton = event.target.closest<HTMLButtonElement>('[data-gallery-prev], [data-gallery-next]');
-    if (!galleryButton) return;
-    const track = galleryButton.closest<HTMLElement>('.folio-media')?.querySelector<HTMLElement>('[data-gallery-track]');
-    if (!track) return;
-    const current = Math.round(track.scrollLeft / track.clientWidth);
-    const direction = galleryButton.hasAttribute('data-gallery-next') ? 1 : -1;
-    const index = Math.max(0, Math.min(track.children.length - 1, current + direction));
-    track.scrollTo({ left: index * track.clientWidth, behavior: reducedMotion() ? 'auto' : 'smooth' });
-  });
-
-  book.addEventListener('keydown', (event) => {
-    if (event.target instanceof Element && event.target.closest('[data-gallery-track]')) return;
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      turnTo(Number(book.dataset.currentPage) + 1);
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      turnTo(Number(book.dataset.currentPage) - 1);
+    logical = wrapIndex(logical + direction, length);
+    position += direction;
+    if (reducedMotion()) {
+      position = logical + 1;
+      place(false);
+      return;
     }
+    animating = true;
+    place(true);
+  };
+
+  const settle = () => {
+    if (!animating) return;
+    animating = false;
+    position = logical + 1;
+    place(false);
+    if (pending !== 0) {
+      const next = pending;
+      pending = 0;
+      move(next);
+    }
+  };
+  const onTransitionStop = (event: TransitionEvent) => {
+    if (event.target === track && event.propertyName === 'transform') settle();
+  };
+  track.addEventListener('transitionend', onTransitionStop);
+  track.addEventListener('transitioncancel', onTransitionStop);
+  const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const motionController = new AbortController();
+  motionPreference.addEventListener('change', () => {
+    if (motionPreference.matches) settle();
+  }, { signal: motionController.signal });
+  document.addEventListener('astro:before-swap', () => motionController.abort(), { once: true, signal: motionController.signal });
+
+  let touchStart: number | undefined;
+  viewport.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'touch' || event.pointerType === 'pen') touchStart = event.clientX;
+  });
+  viewport.addEventListener('pointerup', (event) => {
+    if (touchStart === undefined) return;
+    const distance = event.clientX - touchStart;
+    touchStart = undefined;
+    if (Math.abs(distance) > 42) move(distance < 0 ? 1 : -1);
+  });
+  viewport.addEventListener('pointercancel', () => { touchStart = undefined; });
+  viewport.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    move(event.key === 'ArrowRight' ? 1 : -1);
   });
 
-  book.querySelectorAll<HTMLElement>('[data-gallery-track]').forEach((track) => {
-    const count = track.closest<HTMLElement>('.folio-media')?.querySelector<HTMLElement>('[data-gallery-count]');
-    if (!count) return;
-    track.addEventListener('scroll', () => {
-      const index = Math.round(track.scrollLeft / track.clientWidth) + 1;
-      count.textContent = `${String(index).padStart(2, '0')} / ${String(track.children.length).padStart(2, '0')}`;
-    }, { passive: true });
+  place(false);
+  return {
+    move,
+    reset: () => {
+      pending = 0;
+      animating = false;
+      logical = 0;
+      position = 1;
+      place(false);
+    }
+  };
+}
+
+function bindProjectShowcase(): void {
+  const showcase = document.querySelector<HTMLElement>('[data-project-showcase]:not([data-bound])');
+  if (!showcase) return;
+  showcase.dataset.bound = '';
+
+  const badges = Array.from(showcase.querySelectorAll<HTMLButtonElement>('[data-project-badge]'));
+  const details = Array.from(showcase.querySelectorAll<HTMLElement>('[data-project-detail]'));
+  const pages = Array.from(showcase.querySelectorAll<HTMLElement>('[data-catalog-page]'));
+  const pageCount = showcase.querySelector<HTMLElement>('[data-catalog-count]');
+  const status = showcase.querySelector<HTMLElement>('[data-showcase-status]');
+  const carousels = new Map<HTMLElement, Carousel>();
+  showcase.querySelectorAll<HTMLElement>('[data-carousel]').forEach((media) => {
+    const carousel = bindCarousel(media);
+    if (carousel) carousels.set(media, carousel);
+  });
+
+  let currentPage = 0;
+  const setPage = (page: number) => {
+    if (pages.length === 0) return;
+    currentPage = wrapIndex(page, pages.length);
+    pages.forEach((item, index) => { item.hidden = index !== currentPage; });
+    if (pageCount) pageCount.textContent = `${currentPage + 1} / ${pages.length}`;
+  };
+
+  const select = (index: number, scrollToDetail = false) => {
+    if (!details[index]) return;
+    showcase.dataset.selected = String(index);
+    badges.forEach((badge, badgeIndex) => badge.setAttribute('aria-pressed', badgeIndex === index ? 'true' : 'false'));
+    details.forEach((detail, detailIndex) => {
+      detail.hidden = detailIndex !== index;
+      detail.inert = detailIndex !== index;
+    });
+    setPage(Math.floor(index / 6));
+    const media = details[index].querySelector<HTMLElement>('[data-carousel]');
+    if (media) carousels.get(media)?.reset();
+    details[index].querySelector<HTMLElement>('[data-detail-scroll]')?.scrollTo({ top: 0 });
+    if (status) status.textContent = `当前作品：${badges[index]?.textContent?.trim() ?? ''}`;
+    if (scrollToDetail && window.matchMedia('(max-width: 959px)').matches) {
+      showcase.dataset.mobileView = 'detail';
+      details[index].querySelector<HTMLButtonElement>('[data-back-catalog]')?.focus({ preventScroll: true });
+    }
+  };
+
+  showcase.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const badge = event.target.closest<HTMLButtonElement>('[data-project-badge]');
+    if (badge) return select(Number(badge.dataset.projectBadge), true);
+    if (event.target.closest('[data-back-catalog]')) {
+      showcase.dataset.mobileView = 'catalog';
+      badges[Number(showcase.dataset.selected)]?.focus({ preventScroll: true });
+      return;
+    }
+    if (event.target.closest('[data-catalog-prev], [data-catalog-next]')) {
+      const direction = event.target.closest('[data-catalog-next]') ? 1 : -1;
+      return select(wrapIndex(currentPage + direction, pages.length) * 6);
+    }
+    const carouselButton = event.target.closest<HTMLButtonElement>('[data-carousel-prev], [data-carousel-next]');
+    const media = carouselButton?.closest<HTMLElement>('[data-carousel]');
+    if (media) carousels.get(media)?.move(carouselButton?.hasAttribute('data-carousel-next') ? 1 : -1);
   });
 }
 
-document.addEventListener('astro:page-load', bindProjectBook);
-document.addEventListener('visibilitychange', () => {
-  const book = document.querySelector<HTMLElement>('[data-project-book]');
-  book?.toggleAttribute('data-paused', document.hidden);
-});
-bindProjectBook();
+document.addEventListener('astro:page-load', bindProjectShowcase);
+bindProjectShowcase();

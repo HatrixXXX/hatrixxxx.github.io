@@ -127,6 +127,7 @@ export function initializeMusicPlayer(
   const indices = tracks.map((_, trackIndex) => trackIndex);
   let order = shuffleQuoteOrder(indices.filter((trackIndex) => trackIndex !== index));
   audio = new Audio();
+  audio.preload = 'metadata';
   audio.volume = PLAYER_VOLUME;
   const playerAudio = audio;
   let clickTimer: ReturnType<typeof setTimeout> | undefined;
@@ -156,12 +157,16 @@ export function initializeMusicPlayer(
   };
 
   const setPlaying = (playing: boolean): void => {
+    if (playing && trackLabel) {
+      trackLabel.textContent = `${tracks[index]!.title}-${tracks[index]!.artist}`;
+    }
     player.dataset.playbackState = playing ? 'playing' : 'paused';
     record?.setAttribute('aria-pressed', String(playing));
     record?.setAttribute('aria-label', playing ? '暂停唱片，双击随机下一曲' : '播放唱片，双击随机下一曲');
   };
   const play = (): void => {
     cancelPauseFade();
+    playerAudio.preload = 'auto';
     void playerAudio.play().catch(() => {
       setPlaying(false);
       if (trackLabel) trackLabel.textContent = '播放失败，请重试';
@@ -228,6 +233,13 @@ export function initializeMusicPlayer(
   };
 
   playerAudio.addEventListener('play', () => setPlaying(true));
+  playerAudio.addEventListener('waiting', () => {
+    if (playerAudio.paused || swapInProgress) return;
+    player.dataset.playbackState = 'buffering';
+    record?.setAttribute('aria-label', '正在缓冲，单击暂停');
+    if (trackLabel) trackLabel.textContent = `正在缓冲 · ${tracks[index]!.title}-${tracks[index]!.artist}`;
+  });
+  playerAudio.addEventListener('playing', () => setPlaying(true));
   playerAudio.addEventListener('pause', () => {
     clearPauseFade();
     if (!swapInProgress) setPlaying(false);

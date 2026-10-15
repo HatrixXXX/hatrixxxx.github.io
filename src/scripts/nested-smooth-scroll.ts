@@ -1,4 +1,5 @@
 import Lenis from 'lenis';
+import { scrollPageBy } from './smooth-scroll';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const compactFriends = window.matchMedia('(max-width: 1024px)');
@@ -56,20 +57,39 @@ function destroy(): void {
 }
 
 function add(element: HTMLElement, horizontal = false): void {
+  const allowPageAtEdge = element.matches('.post-comments-screen');
   const attribute = horizontal ? 'data-lenis-prevent-horizontal' : 'data-lenis-prevent';
   const hadPrevent = element.hasAttribute(attribute);
   // The parent Lenis sees this wrapper in the event path; this instance does not.
-  element.setAttribute(attribute, '');
+  if (!allowPageAtEdge) element.setAttribute(attribute, '');
   const lenis = new Lenis({
     wrapper: element,
     content: element.firstElementChild ?? element,
     orientation: horizontal ? 'horizontal' : 'vertical',
     gestureOrientation: horizontal ? 'horizontal' : 'vertical',
-    virtualScroll: ({ deltaX, deltaY }) => horizontal
-      ? Math.abs(deltaX) > Math.abs(deltaY)
-      : Math.abs(deltaY) >= Math.abs(deltaX),
+    virtualScroll: ({ deltaX, deltaY, event }) => {
+      const aligned = horizontal
+        ? Math.abs(deltaX) > Math.abs(deltaY)
+        : Math.abs(deltaY) >= Math.abs(deltaX);
+      if (!aligned || !allowPageAtEdge || event.type !== 'wheel') return aligned;
+
+      const limit = Math.max(0, element.scrollHeight - element.clientHeight);
+      if (lenis.limit !== limit) lenis.resize();
+      const target = Math.max(0, Math.min(limit, lenis.targetScroll + deltaY));
+      const overflow = lenis.targetScroll + deltaY - target;
+      if (overflow === 0) return true;
+
+      if (event.cancelable) event.preventDefault();
+      (event as WheelEvent & { lenisStopPropagation?: boolean }).lenisStopPropagation = true;
+      if (target !== lenis.targetScroll) {
+        lenis.scrollTo(target, { programmatic: false, lerp: lenis.options.lerp });
+        startAnimation(lenis);
+      }
+      scrollPageBy(overflow);
+      return false;
+    },
     lerp: 0.14,
-    overscroll: false,
+    overscroll: allowPageAtEdge,
   });
   lenis.on('virtual-scroll', () => startAnimation(lenis));
 
@@ -127,6 +147,7 @@ function mount(): void {
   const selectors = [
     '.search-results',
     '.guestbook-screen',
+    '.post-comments-screen',
     '.mobile-nav',
     ...(compactFriends.matches
       ? ['.friends-main']

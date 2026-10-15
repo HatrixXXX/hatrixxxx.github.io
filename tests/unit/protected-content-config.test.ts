@@ -31,6 +31,13 @@ describe('protected content config', () => {
     expect(isLockedPage('/about/research/', ['/about'])).toBe(false);
   });
 
+  it('protects plans and digest while leaving neighboring navigation pages public', () => {
+    expect(isConfiguredLockedPage('/plans/')).toBe(true);
+    expect(isConfiguredLockedPage('/digest/')).toBe(true);
+    expect(isConfiguredLockedPage('/favorites/')).toBe(false);
+    expect(isConfiguredLockedPage('/toolbox/')).toBe(false);
+  });
+
   it('keeps the verifier AAD fixed independently of runtime configuration', () => {
     expect(PROTECTED_VERIFIER_AAD).toBe('verifier:1');
   });

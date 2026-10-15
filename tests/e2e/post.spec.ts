@@ -197,18 +197,30 @@ test('post back-to-top button appears after scrolling and returns to the page st
   await expect(backToTop).toBeVisible();
   const buttonBox = await backToTop.boundingBox();
   if (!buttonBox) throw new Error('Missing back-to-top button bounds');
-  expect(buttonBox.width).toBeGreaterThanOrEqual(44);
-  expect(buttonBox.height).toBeGreaterThanOrEqual(44);
+  expect(buttonBox.width).toBe(88);
+  expect(buttonBox.height).toBe(88);
+  expect(buttonBox.x + buttonBox.width).toBe(1440 - 80);
+  expect(buttonBox.y + buttonBox.height).toBe(900 - 80);
 
   await backToTop.click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(backToTop).toBeHidden();
 
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 1_200));
+  await expect(backToTop).toBeVisible();
+  const mobileBox = await backToTop.boundingBox();
+  if (!mobileBox) throw new Error('Missing mobile back-to-top button bounds');
+  expect(mobileBox.width).toBe(88);
+  expect(mobileBox.height).toBe(88);
+  expect(mobileBox.x + mobileBox.width).toBe(390 - 40);
+  expect(mobileBox.y + mobileBox.height).toBe(844 - 40);
+
   await page.goto('/blogs/');
   await expect(page.getByRole('button', { name: '回到顶部' })).toHaveCount(0);
 });
 
-test('mobile post back button stays between the fixed navigation and article title', async ({ page }) => {
+test('mobile post back button stays inside the fixed navigation', async ({ page }) => {
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 844, height: 390 }
@@ -223,7 +235,8 @@ test('mobile post back button stays between the fixed navigation and article tit
     ]);
     if (!headerBox || !backButtonBox || !titleBox) throw new Error('Missing mobile post bounds');
 
-    expect(backButtonBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+    expect(backButtonBox.y).toBeGreaterThanOrEqual(headerBox.y);
+    expect(backButtonBox.y + backButtonBox.height).toBeLessThanOrEqual(headerBox.y + headerBox.height);
     expect(backButtonBox.y + backButtonBox.height).toBeLessThanOrEqual(titleBox.y);
   }
 });

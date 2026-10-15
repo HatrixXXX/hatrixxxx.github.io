@@ -1,5 +1,42 @@
 import { expect, test } from '@playwright/test';
 
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
+test('shows the splash again on a homepage reload and holds it for refreshed artwork', async ({ page }) => {
+  let requestCount = 0;
+  let releaseReload!: () => void;
+  let reloadRequested!: () => void;
+  const gate = new Promise<void>((resolve) => { releaseReload = resolve; });
+  const requested = new Promise<void>((resolve) => { reloadRequested = resolve; });
+  await page.route('**/assets/home/character-parts/foot_L.webp', async (route) => {
+    requestCount += 1;
+    if (requestCount === 1) {
+      await route.continue();
+      return;
+    }
+    reloadRequested();
+    await gate;
+    await route.continue();
+  });
+
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+
+  const reload = page.reload({ waitUntil: 'domcontentloaded' });
+  try {
+    await requested;
+    const loader = page.locator('#page-loader');
+    await expect(loader).toBeVisible();
+    await expect(loader.locator('.pl-ring-wrap')).toHaveCount(1);
+    await expect(loader).not.toHaveClass(/pl-done/);
+  } finally {
+    releaseReload();
+  }
+  await reload;
+  await expect(page.locator('[data-char-rig]')).toHaveAttribute('data-character-state', 'ready');
+  await expect(page.locator('#page-loader')).toBeHidden();
+});
+
 test('covers the homepage until client modules finish even after eight seconds', async ({ page }) => {
   let releaseScripts!: () => void;
   const scriptsGate = new Promise<void>((resolve) => { releaseScripts = resolve; });

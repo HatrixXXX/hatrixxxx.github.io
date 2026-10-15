@@ -1,3 +1,7 @@
 project-atlas-cover-v1.webp
 Source: User-selected Hatrix mechanical atlas illustration. The original concept image and generation prompts are not retained in this repository.
 Derivative: transparent-background cutout produced with the built-in imagegen tool on 2026-10-13; cropped to the complete book bounds and encoded as WebP with Sharp.
+
+project-showcase-crest.webp
+Source: central ring cropped from the archived display-case-lid-v2.webp in docs/design-references/project-showcase/. The original selected cover remains unchanged.
+Derivative: 360px square crop at (327, 375), resized to 220px and encoded as WebP with Sharp. Only this small crest is used by the current showcase window.

@@ -284,7 +284,7 @@
 }
 @media (max-width: 540px) {
   .favorites-page { padding: 73px 15px 50px; }
-  .favorites-machine { height: 363px; background-size: cover; }
+  .favorites-machine { height: 363px; background: none; }
   .favorites-machine__frame {
     background-image: url('/assets/favorites/reel-front-mobile.png');
     background-size: 100% 100%;

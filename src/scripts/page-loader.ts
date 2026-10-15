@@ -1,3 +1,5 @@
+import { waitForImages } from '@/lib/image-readiness';
+
 /**
  * 全站页面加载遮罩（page-loader.ts）
  *
@@ -8,10 +10,9 @@
  *
  * 触发规则
  * --------
- * - 首次硬导航到同会话内未访问过的页面显示圆环加载器。
+ * - 直接打开或刷新页面时显示圆环加载器。
  * - 同源 HTML 客户端跳转每次显示左右双瓣遮罩。
  * - 外部链接、非 HTML 目标（/rss.xml 等）不触发。
- * - 硬导航的访问记录存 sessionStorage，关标签重置。
  *
  * 时序
  * ----
@@ -20,7 +21,7 @@
  *   闭合完成后交换页面；背景或首页资源就绪后两瓣展开
  *   导航中断时由 abort signal 收回遮罩
  *
- * 硬导航首次访问:
+ * 硬导航:
  *   astro:page-load → showLoader() + 快速跑满 → complete()
  *
  * 硬导航首页:
@@ -35,23 +36,9 @@
  *   wait for readiness or a real load error before the homepage is revealed.
  */
 
-const VISITED_KEY = 'hatrix-visited-pages';
 const HOME_DEADLINE_MS = 8_000;
 const SHUTTER_CLOSE_FALLBACK_MS = 540;
-
-// ── 访问记录 ──────────────────────────────────────────────────────────────────
-
-function getVisited(): string[] {
-  try { return JSON.parse(sessionStorage.getItem(VISITED_KEY) ?? '[]') as string[]; }
-  catch { return []; }
-}
-function markVisited(path: string): void {
-  try {
-    const v = getVisited();
-    if (!v.includes(path)) { v.push(path); sessionStorage.setItem(VISITED_KEY, JSON.stringify(v)); }
-  } catch { /* noop */ }
-}
-function hasVisited(path: string): boolean { return getVisited().includes(path); }
+const PAGE_READINESS_FAILURE_MS = 15_000;
 
 /** 判断目标是否是应该显示加载页的同源 HTML 页面 */
 function isSameOriginPage(url: URL): boolean {
@@ -224,6 +211,43 @@ function waitForBackground(isHome: boolean): Promise<boolean> {
   return probe.decode().then(() => true, () => false);
 }
 
+function isInFirstView(element: HTMLElement): boolean {
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0
+    && rect.right > 0 && rect.bottom > 0
+    && rect.left < window.innerWidth && rect.top < window.innerHeight
+    && getComputedStyle(element).visibility === 'visible';
+}
+
+async function waitForPageArtwork(signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return;
+  const images = [...document.images].filter((image) => isInFirstView(image));
+  const backgrounds = new Set<string>();
+  for (const element of [document.body, ...document.body.querySelectorAll('*')]) {
+    if (!(element instanceof HTMLElement) || !isInFirstView(element)) continue;
+    for (const pseudo of [null, '::before', '::after']) {
+      const value = getComputedStyle(element, pseudo).backgroundImage;
+      for (const match of value.matchAll(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/g)) {
+        const src = (match[1] ?? match[2] ?? match[3]).trim();
+        if (src && !src.startsWith('data:')) backgrounds.add(new URL(src, location.href).href);
+      }
+    }
+  }
+  const artwork = Promise.all([
+    waitForImages(images, undefined, signal),
+    ...[...backgrounds].map(async (src) => {
+      if (signal.aborted) return;
+      const probe = new Image();
+      probe.src = src;
+      try { await probe.decode(); } catch { /* A failed image cannot delay the reveal. */ }
+    }),
+  ]);
+  await Promise.race([
+    artwork,
+    new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true })),
+  ]);
+}
+
 function getRemainingHomeDeadline(): number {
   const startedAt = Number(document.documentElement.dataset.initialPageLoaderStartedAt);
   if (!Number.isFinite(startedAt)) return HOME_DEADLINE_MS;
@@ -270,6 +294,7 @@ function waitHomeDone(s: State): void {
   void Promise.all([
     waitForBackground(true),
     document.fonts?.ready ?? Promise.resolve(),
+    waitForPageArtwork(controller.signal),
     waitForState(rig, 'characterState', ['ready', 'error'], 'hatrix:character-state', controller.signal),
     Promise.race([
       waitForState(player, 'layoutState', ['ready'], 'hatrix:player-layout-ready', controller.signal),
@@ -283,6 +308,7 @@ function waitHomeDone(s: State): void {
 let pending: State | null = null;
 let initialHomeBootstrapped = false;
 let pageBackgroundWait = 0;
+let pageReadinessController: AbortController | null = null;
 const portalArtworkPromises = new WeakMap<HTMLElement, Promise<void>>();
 
 function waitForPortalArtwork(): Promise<void> {
@@ -334,14 +360,79 @@ function waitForLabScene(): Promise<void> {
   });
 }
 
+function waitForGuestbook(signal: AbortSignal): Promise<void> {
+  const section = document.querySelector<HTMLElement>('[data-twikoo-variant="guestbook"]');
+  if (!section) return Promise.resolve();
+  const isReady = () => ['ready', 'error', 'unconfigured'].includes(section.dataset.twikooState ?? '');
+  if (isReady()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => { if (isReady()) finish(); });
+    const finish = () => {
+      observer.disconnect();
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    signal.addEventListener('abort', finish, { once: true });
+    observer.observe(section, { attributes: true, attributeFilter: ['data-twikoo-state'] });
+    if (isReady() || signal.aborted) finish();
+  });
+}
+
+function waitForProtectedGate(signal: AbortSignal): Promise<void> {
+  const gate = document.querySelector<HTMLElement>('[data-protected-gate]');
+  if (!gate) return Promise.resolve();
+  const key = gate.querySelector<HTMLInputElement>('input[name="key"]');
+  const status = gate.querySelector<HTMLElement>('[data-unlock-status]');
+  const settled = () => gate.dataset.protectedState === 'ready'
+    || key?.disabled === false
+    || Boolean(status?.textContent && status.textContent !== '正在验证…');
+  if (settled()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => { if (settled()) finish(); });
+    const finish = () => {
+      observer.disconnect();
+      window.clearTimeout(timeout);
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    const timeout = window.setTimeout(finish, 10_000);
+    signal.addEventListener('abort', finish, { once: true });
+    observer.observe(gate, { attributes: true, childList: true, characterData: true, subtree: true });
+    if (settled() || signal.aborted) finish();
+  });
+}
+
 function waitPageBackgroundDone(s: State, background: Promise<boolean>, minimumMs = 0): void {
   const wait = ++pageBackgroundWait;
+  pageReadinessController?.abort();
+  const controller = new AbortController();
+  pageReadinessController = controller;
   fakeProgress(s, 85);
   const portalArtwork = document.body.classList.contains('friends-page')
     ? waitForPortalArtwork()
     : Promise.resolve();
-  void Promise.all([background, portalArtwork, waitForLabScene(), new Promise((resolve) => window.setTimeout(resolve, minimumMs))]).then(() => {
+  const readiness = Promise.all([
+    background,
+    portalArtwork,
+    waitForLabScene(),
+    waitForGuestbook(controller.signal),
+    waitForProtectedGate(controller.signal),
+    new Promise((resolve) => window.setTimeout(resolve, minimumMs)),
+  ]).then(async () => {
+    await Promise.all([document.fonts?.ready ?? Promise.resolve(), waitForPageArtwork(controller.signal)]);
+  });
+  let deadline = 0;
+  const failure = new Promise<void>((resolve) => {
+    deadline = window.setTimeout(resolve, PAGE_READINESS_FAILURE_MS);
+  });
+  const canceled = new Promise<void>((resolve) => {
+    controller.signal.addEventListener('abort', () => resolve(), { once: true });
+  });
+  void Promise.race([readiness, failure, canceled]).then(() => {
+    window.clearTimeout(deadline);
+    controller.abort();
     if (wait === pageBackgroundWait) complete(s);
+    if (pageReadinessController === controller) pageReadinessController = null;
   });
 }
 
@@ -361,6 +452,7 @@ document.addEventListener('astro:before-preparation', (raw) => {
   const to = event.to;
   const replacesOverlay = !!to && isSameOriginPage(to);
   cancelHomeWait?.(!replacesOverlay);
+  pageReadinessController?.abort();
   if (!to || !replacesOverlay) return;
   const s = showLoader('transition');
   if (!s) return;
@@ -401,7 +493,6 @@ window.addEventListener('pagehide', () => cancelHomeWait?.(true));
 // ── page-load：页面激活 ──────────────────────────────────────────────────────
 
 function onPageLoad(): void {
-  const path   = location.pathname;
   const isHome = document.documentElement.dataset.pageKind === 'home';
   const body = document.body;
   const background = !isHome
@@ -415,7 +506,6 @@ function onPageLoad(): void {
     // VT 导航完成，消费 pending
     const s = pending;
     pending = null;
-    markVisited(path);
     if (isHome) { waitHomeDone(s); } else { waitPageBackgroundDone(s, background!); }
     return;
   }
@@ -425,16 +515,14 @@ function onPageLoad(): void {
   if (document.documentElement.dataset.initialPageLoader === 'expired') {
     delete document.documentElement.dataset.initialPageLoader;
     delete document.documentElement.dataset.initialPageLoaderStartedAt;
-    markVisited(path);
     return;
   }
 
-  // 硬导航：已访问则跳过
-  if (hasVisited(path)) return;
+  // 硬导航由 head 内联标记触发；客户端导航只消费上面的 pending。
+  if (document.documentElement.dataset.initialPageLoader !== 'visible') return;
 
   const s = showLoader();
   if (!s) return;
-  markVisited(path);
 
   if (isHome) {
     fakeProgress(s, 85);

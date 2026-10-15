@@ -1,8 +1,13 @@
 [data-protected-gate] {
-  display: grid;
+  display: flex;
   min-height: 100svh;
-  padding: calc(var(--header-height) + 2rem) 1rem 3rem;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--header-height) + 0.5rem) 1rem 4rem;
+}
+
+[data-protected-gate]:not([data-protected-state='ready']) [data-protected-mount] {
+  display: none;
 }
 
 [data-protected-gate][data-protected-state='ready'] {
@@ -12,43 +17,102 @@
 }
 
 [data-unlock-form] {
-  width: min(100%, 30rem);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  padding: clamp(1.25rem, 4vw, 2rem);
-  background: var(--surface-sheen), var(--color-surface);
-  box-shadow: var(--shadow-panel);
+  position: relative;
+  width: min(100%, 31rem);
+  isolation: isolate;
+  border: 1px solid rgb(216 140 60 / 58%);
+  border-radius: 6px;
+  padding: clamp(2.75rem, 5vw, 3.25rem) clamp(1.35rem, 4vw, 2rem) clamp(1.35rem, 4vw, 2rem);
+  background-color: var(--color-surface);
+  background-image:
+    linear-gradient(180deg, rgb(36 33 47 / 48%), rgb(23 21 30 / 76%)),
+    url('/assets/protected-gate/panel-alloy.webp');
+  background-position: center;
+  background-size: 100% 100%, cover;
+  box-shadow:
+    0 26px 52px rgb(2 3 8 / 52%),
+    inset 0 1px 0 rgb(255 243 224 / 16%),
+    inset 0 0 0 5px rgb(4 8 16 / 30%);
+}
+
+[data-unlock-form]::before {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgb(216 140 60 / 20%);
+  border-radius: 2px;
+  content: '';
+  pointer-events: none;
+}
+
+[data-unlock-form]::after {
+  position: absolute;
+  top: 0;
+  right: 16%;
+  left: 16%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-copper), transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.unlock-console-crown {
+  position: absolute;
+  z-index: 2;
+  top: -4.5rem;
+  left: 50%;
+  width: min(calc(100% - 2.5rem), 25rem);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.unlock-console-crown img {
+  width: 100%;
+  height: auto;
 }
 
 [data-unlock-form] h2 {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.7rem;
   color: var(--color-heading);
   font-size: clamp(1.3rem, 4vw, 1.75rem);
-}
-
-[data-unlock-form] label {
-  display: flex;
-  gap: 0.55rem;
-  align-items: center;
-  margin-top: 0.8rem;
-  color: var(--color-muted);
-}
-
-[data-unlock-form] label:first-of-type {
-  display: grid;
-  gap: 0.4rem;
-  color: var(--color-text);
   font-weight: 700;
+  letter-spacing: 0.015em;
+  line-height: 1.35;
+  text-align: center;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 55%);
+  text-wrap: balance;
+}
+
+[data-unlock-form] > label {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--color-heading);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 42%);
 }
 
 [data-unlock-form] input[name='key'] {
   width: 100%;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-control);
-  padding: 0.7rem 0.8rem;
-  background: var(--color-inset);
+  min-height: 3.2rem;
+  border: 1px solid rgb(216 140 60 / 48%);
+  border-radius: 4px;
+  padding: 0.7rem 0.85rem;
+  background-color: var(--color-inset);
+  background-image:
+    linear-gradient(180deg, rgb(7 9 17 / 28%), rgb(12 10 18 / 8%)),
+    url('/assets/protected-gate/password-well.webp');
+  background-position: center;
+  background-size: 100% 100%;
+  box-shadow:
+    inset 0 2px 7px rgb(0 0 0 / 48%),
+    inset 0 -1px 0 rgb(0 221 235 / 12%),
+    0 1px 0 rgb(255 243 224 / 6%);
   color: var(--color-text);
   font: inherit;
+}
+
+[data-unlock-form] input[name='key']:focus-visible {
+  border-color: var(--color-accent);
 }
 
 [data-unlock-form] input:focus-visible,
@@ -57,22 +121,102 @@
   outline-offset: 2px;
 }
 
-[data-unlock-form] button[type='submit'] {
-  width: 100%;
-  margin-top: 1.25rem;
+.unlock-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  margin-top: 0.8rem;
+}
+
+.unlock-options label {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 550;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 48%);
+}
+
+.unlock-options label:hover,
+.unlock-options label:focus-within { color: var(--color-heading); }
+
+.unlock-options input {
+  position: relative;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  appearance: none;
+  margin: 0;
   border: 0;
-  border-radius: var(--radius-control);
-  padding: 0.75rem 1rem;
-  background: var(--color-accent);
+  background: url('/assets/protected-gate/checkbox-socket.webp') center / contain no-repeat;
+}
+
+.unlock-options input:hover,
+.unlock-options input:focus-visible { filter: brightness(1.18); }
+
+.unlock-options input:checked::before {
+  position: absolute;
+  inset: 0.2rem;
+  border-radius: 1px;
+  background: linear-gradient(180deg, var(--color-accent-strong), var(--color-accent));
+  box-shadow: 0 0 4px rgb(255 210 0 / 24%);
+  content: '';
+}
+
+.unlock-options input:checked::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.62rem;
+  height: 0.62rem;
+  background: var(--color-on-accent);
+  clip-path: polygon(0 52%, 17% 35%, 42% 60%, 83% 11%, 100% 27%, 44% 91%);
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+[data-unlock-form] button[type='submit'] {
+  position: relative;
+  width: 100%;
+  min-height: 3.15rem;
+  margin-top: 1.1rem;
+  border: 1px solid rgb(216 140 60 / 58%);
+  border-radius: 2px;
+  padding: 0.7rem 1rem;
+  background-color: var(--color-accent);
+  background-image: url('/assets/protected-gate/amber-key-center.webp');
+  background-position: center;
+  background-size: 100% 100%;
+  box-shadow: inset 0 1px 0 rgb(255 243 224 / 28%), 0 6px 14px rgb(0 0 0 / 28%);
   color: var(--color-on-accent);
   cursor: pointer;
   font: inherit;
-  font-weight: 650;
-  transition: background-color var(--duration-fast) ease;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 0 rgb(255 243 224 / 24%);
+  transition: filter var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
-[data-unlock-form] button[type='submit']:hover:not(:disabled) { background: var(--color-accent-strong); }
-[data-unlock-form] button[type='submit']:active:not(:disabled) { box-shadow: inset 0 2px 3px rgb(0 0 0 / 15%); }
+[data-unlock-form] button[type='submit']::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    url('/assets/protected-gate/amber-key-left.webp'),
+    url('/assets/protected-gate/amber-key-right.webp');
+  background-position: left center, right center;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  content: '';
+  pointer-events: none;
+}
+
+[data-unlock-form] button[type='submit']:hover:not(:disabled) { filter: brightness(1.08); }
+[data-unlock-form] button[type='submit']:active:not(:disabled) { box-shadow: inset 0 2px 5px rgb(0 0 0 / 30%); }
 
 [data-unlock-form] button:disabled,
 [data-unlock-form] input:disabled {
@@ -82,7 +226,36 @@
 
 [data-unlock-status] {
   min-height: 1.5em;
-  margin: 0.8rem 0 0;
+  margin: 0.9rem 0 0;
   color: var(--color-muted);
   font-size: 0.9rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+[data-unlock-status]:not(:empty) { color: var(--color-heading); }
+
+@media (max-width: 480px) {
+  [data-unlock-form] { padding: 2.5rem 1.3rem 1.3rem; }
+  .unlock-console-crown { top: -3.5rem; }
+  [data-unlock-form] h2 { margin-bottom: 1.4rem; }
+}
+
+@media (max-width: 480px) and (max-height: 700px) {
+  [data-protected-gate] {
+    align-items: start;
+    padding-top: calc(var(--header-height) + 1.25rem);
+  }
+}
+
+@media (max-width: 360px) and (max-height: 700px) {
+  [data-protected-gate] { padding-top: calc(var(--header-height) + 3rem); }
+  .unlock-console-crown { top: -2.5rem; }
+  [data-unlock-form] h2 { margin-bottom: 1rem; }
+  .unlock-options { margin-top: 0.45rem; }
+  [data-unlock-form] button[type='submit'] { margin-top: 0.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-unlock-form] button[type='submit'] { transition: none; }
 }

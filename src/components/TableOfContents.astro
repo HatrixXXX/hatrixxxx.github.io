@@ -59,16 +59,16 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
   .toc {
     position: static;
     min-width: 0;
-    border: 1px solid var(--color-line);
+    border: 1px solid var(--chassis-edge);
     border-radius: var(--radius-card);
     background: var(--surface-sheen), var(--color-surface);
-    box-shadow: var(--shadow-inset), var(--shadow-panel);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove), 0 10px 24px rgb(3 5 11 / 24%);
     min-height: 0;
+    overflow: hidden;
   }
 
   .toc-desktop,
   .toc-mobile {
-    padding: 1rem 1.1rem;
     min-height: 0;
   }
 
@@ -79,21 +79,41 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
   h2,
   summary {
     margin: 0;
+    border-bottom: 1px solid var(--color-line);
+    padding: 0.9rem 1.1rem 0.8rem;
     color: var(--color-heading);
     font-size: 0.94rem;
     font-weight: 650;
+    background: linear-gradient(90deg, rgb(216 140 60 / 11%), transparent 80%);
   }
 
   summary {
     display: flex;
     min-height: 44px;
     align-items: center;
+    justify-content: space-between;
     cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker { display: none; }
+
+  summary::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1px solid var(--color-copper);
+    border-bottom: 1px solid var(--color-copper);
+    transform: rotate(45deg);
+  }
+
+  details[open] summary::after {
+    transform: rotate(225deg) translate(-2px, -2px);
   }
 
   ol {
-    margin: 0.75rem 0 0;
-    padding: 0;
+    margin: 0;
+    padding: 0.75rem 1.1rem 0.85rem;
     list-style: none;
   }
 
@@ -112,23 +132,27 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
   a {
     display: block;
     border-left: 2px solid transparent;
+    border-radius: 2px;
     padding-left: 0.65rem;
     color: var(--color-muted);
     font-size: 0.82rem;
     line-height: 1.45;
     overflow-wrap: anywhere;
-    transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
   }
 
-  a:hover {
+  a:hover,
+  a:focus-visible {
     border-left-color: var(--color-link);
     color: var(--color-link);
+    background: rgb(0 221 235 / 7%);
   }
 
   a[aria-current='location'] {
     border-left-color: var(--color-accent);
     color: var(--color-heading);
     background: var(--color-accent-soft);
+    box-shadow: inset 0 1px 0 rgb(255 210 0 / 10%);
   }
 
   .toc-desktop {
@@ -138,7 +162,6 @@ const headings = Astro.props.headings.filter(({ depth }) => depth >= 2 && depth 
   @media (min-width: 1280px) {
     .toc-desktop {
       display: block;
-      padding-bottom: 0.85rem;
     }
 
     .toc-mobile {

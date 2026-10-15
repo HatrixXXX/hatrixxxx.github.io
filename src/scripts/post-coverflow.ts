@@ -1,5 +1,5 @@
 ﻿// Coverflow carousel for post list
-// - Active card faces forward (rotateX 0), neighbours fold above and below
+// - Cards stay aligned with the straight guide rails as they move vertically
 // - Mouse wheel over the rail scrolls through cards with spring damping
 // - First card starts active; last card can be active with lower whitespace
 
@@ -8,16 +8,12 @@ const INDEX_KEY = 'blog-coverflow-index';
 const FROM_POST_KEY = 'blog-coverflow-from-post';
 
 // Spring constants
-const SPRING_STIFFNESS = 260;   // how snappy the spring is
-const SPRING_DAMPING   = 28;    // critical damping avoids overshoot
+const SPRING_STIFFNESS = 260;
+const SPRING_DAMPING   = 28;
 const SETTLE_EPS       = 0.005; // index units below which we consider settled
 
 // Coverflow visual parameters
-const SIDE_ROTATE_STEP_DEG = 22;
-const MAX_ROTATE_DEG = 80;
-const SIDE_TRANSLATE_Z = -70;   // px per depth layer
-const MIN_SIDE_SCALE = 0.72;
-const CARD_GAP_FACTOR  = 0.95;  // fraction of card height used as step offset
+const CARD_GAP_FACTOR  = 1.2;   // card height plus a wider visible gap
 
 interface CoverflowState {
   current: number;
@@ -68,17 +64,11 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
     const card = cards[i];
     const offset = i - currentIndex;
     const absOffset = Math.abs(offset);
-    const sign = offset >= 0 ? 1 : -1;
 
-    const rotateX = -sign * Math.min(absOffset * SIDE_ROTATE_STEP_DEG, MAX_ROTATE_DEG);
-    const translateZ = SIDE_TRANSLATE_Z * Math.min(absOffset, 4);
     const translateY = offset * step + edgeShift;
-    const scaleFactor = Math.max(MIN_SIDE_SCALE, 1 - absOffset * 0.08);
-    const opacity = absOffset <= 1
-      ? 1 - absOffset * 0.28
-      : Math.min(0.98, 0.72 + (absOffset - 1) * 0.1);
+    const opacity = Math.max(0.18, 0.62 ** absOffset);
 
-    card.style.transform = `translateY(${translateY.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) rotateX(${rotateX.toFixed(2)}deg) scale(${scaleFactor.toFixed(4)})`;
+    card.style.transform = `translateY(${translateY.toFixed(2)}px)`;
     card.style.opacity = String(opacity.toFixed(3));
     card.style.zIndex = String(Math.round(100 - absOffset * 10));
     const centerProximity = Number(Math.max(0, 1 - absOffset).toFixed(3));

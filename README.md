@@ -38,12 +38,12 @@ pnpm test:e2e
 
 - `.private-content/posts/`：已发布文章。`.private-content/` 是独立的私有 Git 仓库，整个目录由公开仓库忽略
 - `.private-snippets/snippets/`：随笔 Markdown。`.private-snippets/` 是另一个私有 Git 仓库，由公开仓库忽略
-- `src/content/projects/`：作品集合；当前有 5 个待补充资料的作品档案
+- `src/content/projects/`：作品集合；填写规则见 `docs/projects-content.md`
 - `src/data/playlist.ts`：音乐列表
 - `public/assets/`：网站图片、图标、纹理、光标和音频；首页原图与人物分块源图也在此目录
 - `public/`：CNAME、manifest 和第三方告知等站点根文件
 
-私有内容仓库有 15 篇已发布文章，公开仓库不跟踪任何已发布文章的 Markdown。文章和随笔通过校验后都会生成页面；当前 10 篇随笔参与构建时生成 53 个页面，随笔为空时生成 43 个页面。
+公开仓库不跟踪任何已发布文章或随笔的 Markdown。文章和随笔通过校验后都会生成页面；具体内容数和页面数以私有仓库及当前构建结果为准。
 
 私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
 
@@ -95,7 +95,9 @@ git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 
 在 `.private-snippets/snippets/` 中新建 Markdown 文件。文件名会转为 URL slug，作为 `/snippets/<slug>/` 的路径；frontmatter 必填 `title` 和仅含日期的 `date`（如 `2026-10-12`），可选 `description` 和 `cover`。封面图放在公开站点的 `public/` 内，`cover` 写站点根路径，例如 `/assets/images/snippets/wallpaper.webp`。远程图片地址不能直接作为封面。
 
-私有仓库只限制源文件的访问。当前随笔详情页会把正文作为普通静态 HTML 发布，尚未加锁；需要保密的文字和图片暂时不要写入随笔。内容提交并推送到随笔仓库后，在公开站点仓库的 Actions 中手动从 `master` 运行 **Build and deploy GitHub Pages**。公开站点的 `master` 推送也会读取随笔仓库的最新提交；随笔仓库推送本身暂不触发站点构建。生产工作流使用只读 deploy key 和站点仓库 Secret `HATRIX_SNIPPETS_DEPLOY_KEY` 读取随笔，pull request 则使用空的测试目录。
+随笔总览和每篇详情使用现有 `HATRIX_ADMIN_KEY` 解锁。标题、摘要、日期、正文和 Markdown 相对图片进入加密产物；正文图片应保存在 `.private-snippets/snippets/` 内。随笔 URL 和放在 `public/` 下的封面仍可公开访问，封面不要放需保密的图片。
+
+内容提交并推送到随笔仓库的 `master` 后，`notify-site.yml` 会发送 `snippets-updated` 和完整提交 SHA，触发公开站点构建部署；该仓库需配置 `HATRIX_SITE_DISPATCH_TOKEN`。公开站点的 `master` 推送和手动运行也会读取随笔仓库的最新提交。生产工作流使用只读 deploy key 和站点仓库 Secret `HATRIX_SNIPPETS_DEPLOY_KEY` 读取随笔，pull request 则使用空的测试目录。
 
 ## 站点导航
 
@@ -103,7 +105,7 @@ git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 
 博客文章详情返回 `/blogs/`。从随笔总览进入详情后，左上返回按钮回到总览的原滚动位置；直接打开详情时返回总览顶部。其余页面返回首页。
 
-非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮在桌面右侧，管理员退出按钮在左侧，不影响导航居中。`/blogs/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱按 `src/data/software-tools.ts` 的清单顺序显示软件卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、统一透明背景的本地图标、用途短语和“软件”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 将 Twikoo 留言区放入 `public/assets/guestbook/terminal-frame.png` 的透明开口；页面固定在视口内，仅屏幕区域可以滚动，滚动条隐藏。
+非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮位于顶栏右侧，管理员退出图标紧邻其左侧，不影响导航居中。`/blogs/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱按 `src/data/software-tools.ts` 的清单顺序显示软件卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、统一透明背景的本地图标、用途短语和“软件”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 将 Twikoo 留言区放入 `public/assets/guestbook/terminal-frame.png` 的透明开口；页面固定在视口内，仅屏幕区域可以滚动，滚动条隐藏。
 
 站内搜索支持普通文章的标题和正文。结果会显示命中片段并高亮关键词；点击后文章页会滚动到对应段落，段落背景短暂突出后渐变恢复。加锁文章不会进入公开搜索索引。
 
@@ -111,7 +113,7 @@ git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 
 左上以小图标提供站内搜索，中左保留等级圆环和 Hatrix 名称。左下的金句、播放器、友链、留言板与实验场共用仿射平面：金句与下排、三张小卡片彼此间隔 8 个设计像素，三张小卡片叠起后与高 289px 的播放器对齐。金句语料位于 `src/data/home-quotes.ts`，每 6 秒按随机轮次切换；长句自动缩小字号并保持单行，减少动态效果时取消切换动画。右上辉光管时钟每秒显示本地时间。博客卡片进入 `/blogs/`；随笔占分组左侧整高，右侧“效率提升”标题下方并排收藏夹和工具箱。右侧底部是计划和资讯，左下实验场仍进入 `/playground/`；计划和资讯暂为空状态；实验场在全站导航、搜索、返回按钮和内页背景下展示三维电子工作台。当前布局细节见 `DESIGN.md`，历史方案见[首页设计记录](docs/superpowers/specs/2026-09-25-home-dashboard-design.md)。
 
-首次进入首页时，splash 覆盖到背景、人物分块和字体加载结束。播放器布局另有 8 秒降级；人物图片实际加载失败时，不显示残缺立绘。
+直接打开或刷新任意页面时，splash 覆盖到首屏图片、背景和字体加载结束；首页还等待人物分块与播放器布局。播放器布局另有 8 秒降级；人物图片实际加载失败时，不显示残缺立绘。
 
 站内默认不能拖选文字，文章正文和输入、编辑控件例外。页面空白使用本站 `pointer.cur`，普通链接使用斜十字 `link.cur`；顶栏使用裁去透明边距的同款准星，备用指针保持全站正常尺寸。
 
@@ -207,7 +209,7 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章共引用 167 个去重后的 jsDelivr 图片 URL。当前允许图床仓库的两个不可变提交：`85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
+文章中的 jsDelivr 图片 URL 按当前 inventory 去重检查。允许的图床仓库不可变提交为 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
@@ -239,18 +241,16 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | --- | --- |
 | `pnpm test:run` | 内容 schema、旧文章 URL、排序分页、图片和构建检查脚本 |
 | `pnpm check` | Astro 与 TypeScript 诊断 |
-| `pnpm check:images` | 167 个去重后的远程图片 URL |
+| `pnpm check:images` | 远程图片 inventory、固定 commit 与可访问性 |
 | `pnpm build` | 图片预检、静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
 | `pnpm check:site` | 文章和随笔路由、CNAME、站内链接和发布体积 |
-| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，当前收集 284 项；保留 18 张 Windows 视觉基线，文件名不含平台后缀 |
+| `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，以及 Windows 视觉基线 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
 
-2026-09-25 本次发布检查通过 316 项单元测试、55 项相关浏览器回归、Astro 检查、生产依赖审计、完整构建、保护审计和 3976 条站内链接检查。浏览器回归覆盖首页、导航、各页面返回路径、键盘操作和无脚本访问。
-
 浏览器套件覆盖博客路径、文章数量、普通页页脚、Coverflow、实验场三维场景、About 装饰层和视觉基线。
-随笔为空时，`check:site` 按 1713 条站内链接核对基线；有随笔时逐条检查站内链接，不锁总数。新增或删除其他页面、导航项后若总量合理变化，核对构建产物，再同步更新 `scripts/check-built-site.ts` 和对应单测中的期望值。
+随笔为空时，`check:site` 使用代码中的固定链接基线；有随笔时逐条检查站内链接，不锁总数。新增或删除页面、导航项后的机械更新流程见 `docs/operations/testing.md`，不要在 README 中复制当前总数。
 
 ## 安全边界
 
@@ -268,9 +268,10 @@ Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留�
 
 ## 部署
 
-`.github/workflows/pages-deploy.yml` 支持四种入口：
+`.github/workflows/pages-deploy.yml` 支持五种入口：
 
-- 私有仓库 `master` push：`notify-site.yml` 发送 `content-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的内容提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
+- 文章私有仓库 `master` push：`notify-site.yml` 发送 `content-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的文章提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
+- 随笔私有仓库 `master` push：`notify-site.yml` 发送 `snippets-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的随笔提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
 - 公开仓库 `master` push：检出私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
 - 手动运行公开 workflow：同样读取私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
 - 公开仓库 pull request：只使用 `tests/fixtures/private-content` 和测试 key 运行单元测试、Astro check、build 与 fixture 模式的 `check:site`，不读取生产 Secret、正式私有仓库，也不部署。
@@ -279,13 +280,15 @@ Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留�
 
 生产构建生成的 `.astro/` 是带密构建状态，里面可能有私有文章正文、渲染 HTML 和源路径，不得缓存、上传或提交。Pages workflow 在上传 `dist/` 前会删除它。
 
-GitHub 需要三个 Secret，值不得写进仓库：
+GitHub 需要以下 Secret，值不得写进仓库：
 
 | Secret | 仓库 | 最小用途和权限 |
 | --- | --- | --- |
 | `HATRIX_ADMIN_KEY` | `HatrixXXX/hatrixxxx.github.io` | 构建加密使用；不是 token，至少 8 个字符 |
 | `HATRIX_CONTENT_TOKEN` | `HatrixXXX/hatrixxxx.github.io` | fine-grained token，只授权 `HatrixXXX/hatrix-content` 的 Contents read |
+| `HATRIX_SNIPPETS_DEPLOY_KEY` | `HatrixXXX/hatrixxxx.github.io` | 随笔私有仓库的只读 deploy key 私钥，用于构建时检出随笔 |
 | `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-content` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
+| `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-snippets` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
 
 Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留言板共用 `src/components/TwikooComments.astro`，样式在 `src/styles/twikoo.css`。访客只需填写昵称，同一浏览器会记住上次填写的昵称；邮箱和网址不显示。评论数据保存在独立的 Cloudflare Worker 和 D1，部署、检查与回退见 `docs/operations/twikoo.md`。原 GitHub Discussions 留言保留在 GitHub，不迁移。
 

@@ -13,7 +13,7 @@ if (!sceneBody) throw new Error('The lab scene HTML must include a body.');
 ---
 
 <BaseLayout title="实验场" bodyClass="lab-page">
-  <BackButton href="/" label="返回主页" />
+  <BackButton href="/" label="返回主页" cornerAligned={true} />
   <style is:global set:html={sceneStyles} />
   <main class="lab-main" aria-label="复古电子工作台">
     <Fragment set:html={sceneBody} />

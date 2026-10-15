@@ -9,7 +9,7 @@ const posts = sortPosts(await getCollection('posts'));
 ---
 
 <BaseLayout title="博客文章" bodyClass="blog-page plain-page">
-  <BackButton href="/" label="返回主页" />
+  <BackButton href="/" label="返回主页" cornerAligned={true} />
   <main class="blog-main">
     <PostList posts={posts} />
   </main>

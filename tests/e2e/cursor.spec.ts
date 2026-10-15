@@ -162,6 +162,7 @@ test('home level, name, and quote attract their own panel frames', async ({ page
     ['identity', '.level-badge'],
     ['identity-name', '.identity-name'],
     ['quote', '[data-home-quote]'],
+    ['clock', '[data-home-clock-card]'],
   ]) {
     await page.locator(`[data-home-panel="${panel}"] ${selector}`).hover();
     await expect(page.locator(`[data-home-panel="${panel}"] > [data-home-tile-frame]`)).toHaveAttribute('data-active', '');
@@ -213,7 +214,7 @@ test('home card frame is attracted before the pointer enters the card', async ({
   expect(Math.abs(reducedFrameWidth - reducedTileWidth)).toBeLessThan(30);
 });
 
-test('blog magnetic frame covers the selected card and visible edge cards', async ({ page }) => {
+test('blog magnetic frame covers the selected card and visible neighboring cards', async ({ page }) => {
   await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.evaluate(() => document.querySelector('astro-dev-toolbar')?.remove());
@@ -224,20 +225,19 @@ test('blog magnetic frame covers the selected card and visible edge cards', asyn
   await page.waitForTimeout(600);
 
   const activeCard = rail.locator('[data-post-card]').nth(6);
-  await activeCard.locator('h2 a').hover();
   const activeBox = await activeCard.boundingBox();
+  if (!activeBox) throw new Error('Missing active card bounds');
+  await page.mouse.move(activeBox.x + activeBox.width / 2, activeBox.y + activeBox.height / 2);
   const frame = page.locator('body > [data-magnetic-frame]');
   await expect(frame).toHaveAttribute('data-active', '');
-  const activeFrameBox = await frame.boundingBox();
-  if (!activeBox || !activeFrameBox) throw new Error('Missing active card or frame bounds');
-  expect(activeFrameBox.width).toBeGreaterThan(activeBox.width - 20);
-  expect(activeFrameBox.height).toBeGreaterThan(activeBox.height - 20);
+  await expect.poll(async () => (await frame.boundingBox())?.width ?? 0).toBeGreaterThan(activeBox.width - 20);
+  await expect.poll(async () => (await frame.boundingBox())?.height ?? 0).toBeGreaterThan(activeBox.height - 20);
   await expect(activeCard.locator('h2 a')).toHaveAttribute('tabindex', '0');
 
   const sceneBox = await rail.locator('.coverflow-scene').boundingBox();
   if (!sceneBox) throw new Error('Missing coverflow scene bounds');
   let bottomHit: { x: number; y: number } | undefined;
-  for (const index of [4, 8]) {
+  for (const index of [5, 7]) {
     const card = rail.locator('[data-post-card]').nth(index);
     const box = await card.boundingBox();
     if (!box) throw new Error(`Missing edge card ${index} bounds`);
@@ -248,10 +248,9 @@ test('blog magnetic frame covers the selected card and visible edge cards', asyn
     await page.mouse.move(hit.x, hit.y);
     await expect(frame).toHaveAttribute('data-active', '');
     await expect(card).not.toHaveAttribute('inert', '');
-    await expect(card.locator('h2 a')).toHaveAttribute('tabindex', '-1');
-    if (index === 8) bottomHit = hit;
+    if (index === 7) bottomHit = hit;
   }
-  const bottomCard = rail.locator('[data-post-card]').nth(8);
+  const bottomCard = rail.locator('[data-post-card]').nth(7);
   if (!bottomHit) throw new Error('Missing bottom card hit point');
   await page.mouse.click(bottomHit.x, bottomHit.y);
   await expect(bottomCard).toHaveAttribute('data-active', 'true');

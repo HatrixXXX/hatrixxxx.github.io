@@ -138,5 +138,6 @@ function initSnippetsTimeline() {
 }
 
 document.addEventListener('astro:page-load', initSnippetsTimeline);
+document.addEventListener('hatrix:protected-content-ready', initSnippetsTimeline);
 document.addEventListener('astro:before-swap', () => stopTimeline?.());
 initSnippetsTimeline();

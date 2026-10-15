@@ -1,5 +1,6 @@
 ---
 import BookmarkArchive from '@/components/BookmarkArchive.astro';
+import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { BOOKMARKS } from '@/data/bookmarks';
 import '@/styles/bookmark-archive.css';
@@ -9,6 +10,7 @@ import '@/styles/bookmark-archive.css';
   title="收藏夹"
   description="收藏的网址与简要介绍。"
 >
+  <BackButton href="/" label="返回主页" cornerAligned={true} />
   <main class="favorites-page">
     <BookmarkArchive bookmarks={BOOKMARKS} />
   </main>

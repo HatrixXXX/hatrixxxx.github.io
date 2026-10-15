@@ -21,10 +21,11 @@ export async function getStaticPaths() {
     'posts',
     ({ data }: PostEntry) => data.locked
   );
-  if (posts.length === 0) return [];
+  const snippets = await getCollection('snippets');
+  if (posts.length === 0 && snippets.length === 0) return [];
 
   const keyBytes = await deriveContentKeyBytes(adminKeyFromEnvironment());
-  const assets = await collectProtectedAssets(posts, keyBytes);
+  const assets = await collectProtectedAssets([...posts, ...snippets], keyBytes);
   return assets.map((asset) => ({ params: { id: asset.id }, props: { asset, keyBytes } }));
 }
 

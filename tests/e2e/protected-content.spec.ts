@@ -483,6 +483,30 @@ test('remembered unlock crosses pages and an expired reference returns to guest'
   expect(stored.count).toBe(0);
 });
 
+test('client transition keeps the shutter closed until stored access is restored', async ({ page }) => {
+  await mockProtectedEndpoints(page, { manifestDelayMs: 1_500 });
+  await page.goto(FIRST_PAGE);
+  await submitKey(page, TEST_KEY);
+  await expect(page.getByText('protected-e2e-secret-protected')).toBeVisible();
+
+  await page.evaluate((href) => {
+    const link = document.createElement('a');
+    link.href = href;
+    link.textContent = 'Open another protected page';
+    document.body.append(link);
+  }, SECOND_PAGE);
+  await page.getByRole('link', { name: 'Open another protected page' }).click();
+  await expect(page).toHaveURL(SECOND_PAGE);
+  await page.waitForTimeout(700);
+  await expect(page.locator('#page-loader')).toHaveClass(/pl-visible.*pl-closed/);
+  await expect(page.locator('#page-loader')).not.toHaveClass(/pl-done/);
+
+  await expect(page.locator('[data-protected-gate]')).toHaveAttribute('data-protected-state', 'ready');
+  await expect(page.locator('[data-unlock-form]')).toBeHidden();
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await expect(page.getByText('protected-e2e-secret-remembered')).toBeVisible();
+});
+
 test('a version-mismatched reference is cleared and restores a usable guest gate', async ({ page }) => {
   await mockProtectedEndpoints(page);
   await page.goto(FIRST_PAGE);

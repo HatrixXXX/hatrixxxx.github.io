@@ -52,9 +52,23 @@ test('desktop navigation stays at the viewport center with and without the admin
       expect(actionsBox.x + actionsBox.width).toBeLessThanOrEqual(width);
       if (adminVisible) {
         const logoutBox = await page.locator('[data-admin-logout]').boundingBox();
-        if (!logoutBox) throw new Error('Missing admin action bounds');
-        expect(logoutBox.x).toBeGreaterThanOrEqual(0);
-        expect(logoutBox.x + logoutBox.width).toBeLessThanOrEqual(navBox.x);
+        const searchBox = await page.locator('[data-open-search]').boundingBox();
+        if (!logoutBox || !searchBox) throw new Error('Missing header action bounds');
+        expect(navBox.x + navBox.width).toBeLessThanOrEqual(logoutBox.x);
+        expect(searchBox.x - logoutBox.x - logoutBox.width).toBeGreaterThanOrEqual(4);
+        expect(searchBox.x - logoutBox.x - logoutBox.width).toBeLessThanOrEqual(12);
+        expect([logoutBox.width, logoutBox.height, logoutBox.y]).toEqual([
+          searchBox.width, searchBox.height, searchBox.y
+        ]);
+        const appearance = await page.locator('[data-admin-logout]').evaluate((button) => {
+          const search = document.querySelector<HTMLElement>('[data-open-search]')!;
+          const values = (element: Element) => {
+            const style = getComputedStyle(element);
+            return [style.borderColor, style.backgroundImage, style.clipPath, style.color, style.boxShadow];
+          };
+          return { logout: values(button), search: values(search) };
+        });
+        expect(appearance.logout).toEqual(appearance.search);
       }
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth))
@@ -64,16 +78,25 @@ test('desktop navigation stays at the viewport center with and without the admin
 
 
 
-test('narrow viewports center controls and retain all twelve destinations in the mobile menu', async ({ page }) => {
+test('narrow viewports place search at the right edge and retain all twelve destinations in the mobile menu', async ({ page }) => {
   for (const width of [390, 768, 1024, 1199]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/creation/');
     await expect(page.locator('.desktop-nav')).toBeHidden();
     const toggle = page.locator('[data-menu-toggle]');
     await expect(toggle).toBeVisible();
+    await page.locator('[data-admin-logout]').evaluate((element) => { (element as HTMLElement).hidden = false; });
     const actionsBox = await page.locator('.header-actions').boundingBox();
+    const logoutBox = await page.locator('[data-admin-logout]').boundingBox();
+    const searchBox = await page.locator('[data-open-search]').boundingBox();
     if (!actionsBox) throw new Error('Missing mobile header controls');
-    expect(Math.abs(actionsBox.x + actionsBox.width / 2 - width / 2)).toBeLessThan(1);
+    if (!logoutBox || !searchBox) throw new Error('Missing mobile admin action');
+    expect(Math.abs(actionsBox.x + actionsBox.width - (width - 16))).toBeLessThan(1);
+    expect(searchBox.x - logoutBox.x - logoutBox.width).toBeGreaterThanOrEqual(4);
+    expect(searchBox.x - logoutBox.x - logoutBox.width).toBeLessThanOrEqual(12);
+    expect([logoutBox.width, logoutBox.height, logoutBox.y]).toEqual([
+      searchBox.width, searchBox.height, searchBox.y
+    ]);
     await toggle.click();
     const mobileMenu = page.locator('[data-mobile-menu]');
     await expect(mobileMenu).toBeVisible();

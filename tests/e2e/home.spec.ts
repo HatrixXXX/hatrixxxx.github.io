@@ -908,6 +908,56 @@ test('home clock exposes the complete local date and updates every second', asyn
   expect(overflow).toEqual({ time: false, card: false, digits: false });
 });
 
+test('double activating the clock plays a brief glitch and keeps the time readable', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const card = page.locator('[data-home-clock-card]');
+  const clock = card.locator('time');
+  await expect(card).toBeEnabled();
+  await card.dblclick();
+  await expect(card).toHaveAttribute('data-clock-glitch', '');
+  await expect(clock).toHaveAttribute('aria-label', /\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}/);
+  await expect(card).not.toHaveAttribute('data-clock-glitch', '');
+  await card.focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await expect(card).toHaveAttribute('data-clock-glitch', '');
+});
+
+test('clock glitch uses a short light pulse with reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const card = page.locator('[data-home-clock-card]');
+  const state = await card.evaluate((element) => {
+    element.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    return {
+      active: element.hasAttribute('data-clock-glitch'),
+      tubeAnimation: getComputedStyle(element.querySelector('[data-clock-digit]')!).animationName,
+      cardAnimation: getComputedStyle(element).animationName
+    };
+  });
+  expect(state).toEqual({ active: true, tubeAnimation: 'none', cardAnimation: 'clock-shell-glitch' });
+  await expect(card).not.toHaveAttribute('data-clock-glitch', '');
+});
+
+test('clock card remains usable with two taps on a narrow touch screen', async ({ page, browser }) => {
+  await page.goto('/');
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  try {
+    const touchPage = await context.newPage();
+    await touchPage.goto(new URL('/', page.url()).href);
+    await expect(touchPage.locator('#page-loader')).toBeHidden();
+    const card = touchPage.locator('[data-home-clock-card]');
+    await expect(card).toBeInViewport();
+    await card.tap();
+    await card.tap();
+    await expect(card).toHaveAttribute('data-clock-glitch', '');
+  } finally {
+    await context.close();
+  }
+});
+
 test('home links open their independent pages', async ({ page }) => {
   const entries = [
     ['作品橱窗', '/creation/'],

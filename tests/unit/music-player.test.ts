@@ -80,6 +80,75 @@ describe('music player', () => {
     expect(Audio).not.toHaveBeenCalled();
   });
 
+  it('prefetches the selected song after playback starts', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      preload = '';
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, record } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    expect(playerAudio.preload).toBe('metadata');
+    record.dispatchEvent(new Event('click'));
+    vi.advanceTimersByTime(350);
+    expect(playerAudio.preload).toBe('auto');
+  });
+
+  it('shows buffering during a playback gap and restores the track when audio resumes', () => {
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record, track } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    void playerAudio.play();
+    playerAudio.dispatchEvent(new Event('waiting'));
+    expect(player.dataset.playbackState).toBe('buffering');
+    expect(record.attributes.get('aria-pressed')).toBe('true');
+    expect(track.textContent).toBe('正在缓冲 · One-Artist');
+
+    playerAudio.dispatchEvent(new Event('playing'));
+    expect(player.dataset.playbackState).toBe('playing');
+    expect(track.textContent).toBe('One-Artist');
+  });
+
+  it('clears a stale load failure when audio starts playing again', () => {
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, track } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    playerAudio.dispatchEvent(new Event('error'));
+    expect(track.textContent).toBe('音频无法加载');
+
+    playerAudio.dispatchEvent(new Event('playing'));
+    expect(player.dataset.playbackState).toBe('playing');
+    expect(track.textContent).toBe('One-Artist');
+  });
+
   it('starts with the arm lifted, toggles on a single record click, and shows one track label', () => {
     vi.useFakeTimers();
     class TestAudio extends EventTarget {

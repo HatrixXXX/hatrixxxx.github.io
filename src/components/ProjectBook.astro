@@ -7,126 +7,106 @@ interface Props {
 }
 
 const { projects } = Astro.props;
-const total = projects.length;
+const groups = Array.from({ length: Math.ceil(projects.length / 6) }, (_, page) => projects.slice(page * 6, page * 6 + 6));
 ---
 
-<main class="project-book-stage" data-project-book data-current-page="0" aria-label="作品图鉴" tabindex="-1">
+<main class="project-showcase" data-project-showcase data-selected="0" data-mobile-view="catalog" aria-label="作品橱窗">
   <h1 class="visually-hidden">作品橱窗</h1>
-  <div class="book-float">
-    <div class="book-spread">
-      <div class="book-underlay book-underlay--left" aria-hidden="true"></div>
-      <div class="book-underlay book-underlay--right" aria-hidden="true"></div>
-      <div class="book-page-edges" aria-hidden="true"></div>
-      <div class="book-spine" aria-hidden="true"><i></i><i></i><i></i></div>
-
-      <div class="book-leaf book-leaf--cover" data-book-leaf data-index="0" data-active style="--leaf-index: 0">
-        <div class="book-face book-cover">
-          <button class="book-cover-button" type="button" data-open-book aria-label="翻开作品图鉴">
-            <img
-              class="book-cover-image"
-              src="/assets/projects/project-atlas-cover-v1.webp"
-              width="1024"
-              height="1220"
-              alt=""
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-              draggable="false"
-              data-book-cover-image
-            />
-            <span class="book-cover-core" aria-hidden="true"></span>
-            <span class="book-cover-latch" aria-hidden="true"><i></i></span>
-            <span class="book-cover-sheen" aria-hidden="true"></span>
-          </button>
-        </div>
-        <div class="book-face book-verso book-verso--cover" aria-hidden="true">
-          <span class="book-verso-seal"></span>
-          <div class="book-verso-index">
-            <span>HATRIX / ARCHIVE INDEX</span>
-            <ol>{projects.map((project, index) => <li><b>{String(index + 1).padStart(2, '0')}</b>{project.data.title}</li>)}</ol>
-          </div>
-        </div>
-      </div>
-
-      {projects.map((project, index) => {
-        const { title, description, category, theme, experience, moment } = project.data;
-        const gallery = project.data.gallery as { src: string; alt: string; caption?: string }[];
-        const tech = project.data.tech as string[];
-        const links = project.data.links as { label: string; url: string }[];
-        const number = index + 1;
-        return (
-          <div
-            class="book-leaf book-leaf--project"
-            data-book-leaf
-            data-index={number}
-            style={`--leaf-index: ${number}`}
-            aria-hidden="true"
-            inert
-          >
-            <div class="book-face book-project-face" data-project-page={number} data-project-theme={theme}>
-              <div class="folio-head">
-                <span>HATRIX / 作品档案</span>
-                <strong>{String(number).padStart(2, '0')} <i>/</i> {String(total).padStart(2, '0')}</strong>
+  <div class="showcase-viewport">
+    <div class="showcase-window" data-showcase-window>
+      <span class="showcase-crest" data-showcase-crest aria-hidden="true"><img src="/assets/projects/project-showcase-crest.webp" width="220" height="220" alt="" /></span>
+      <section class="showcase-catalog" data-catalog-panel aria-label="选择作品">
+          {groups.length === 0 && <p class="showcase-empty">作品待加入。</p>}
+          {groups.map((group, page) => (
+            <div class="showcase-badge-grid" data-catalog-page={page} hidden={page !== 0}>
+              {group.map((project, slot) => {
+                const index = page * 6 + slot;
+                return (
+                  <button class="showcase-badge" type="button" data-project-badge={index} data-badge-theme={project.data.theme} aria-pressed={index === 0 ? 'true' : 'false'}>
+                    <span class="showcase-badge-crown" aria-hidden="true"></span>
+                    <span class="showcase-badge-art">
+                      {project.data.cover ? <img src={project.data.cover} alt="" loading="lazy" decoding="async" /> : <ProjectArtwork theme={project.data.theme} />}
+                    </span>
+                    <span class="showcase-badge-name">{project.data.title}</span>
+                    <span class="showcase-badge-medallion" aria-hidden="true"></span>
+                  </button>
+                );
+              })}
+              {Array.from({ length: 6 - group.length }, () => <span class="showcase-empty-mount" data-empty-mount aria-hidden="true"><span></span></span>)}
+            </div>
+          ))}
+          {groups.length > 1 && (
+            <div class="showcase-catalog-pagination">
+              <button type="button" data-catalog-prev aria-label="上一组作品">‹</button>
+              <span data-catalog-count>1 / {groups.length}</span>
+              <button type="button" data-catalog-next aria-label="下一组作品">›</button>
+            </div>
+          )}
+      </section>
+      <section class="showcase-detail-shell" data-detail-panel aria-label="作品详情">
+        {projects.map((project, index) => {
+          const { title, description, category, theme, cover, coverAlt, experience, moment } = project.data;
+          const gallery = project.data.gallery as { src: string; alt: string; caption?: string }[];
+          const tags = project.data.tags as string[];
+          const tech = project.data.tech as string[];
+          const links = project.data.links as { label: string; url: string }[];
+          const slideCount = gallery.length + 1;
+          return (
+            <article class="showcase-detail" data-project-detail={index} data-project-theme={theme} hidden={index !== 0}>
+              <div class="showcase-detail-top">
+                <button type="button" class="showcase-back-catalog" data-back-catalog aria-label="返回作品展位">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m13 5-7 7 7 7M6 12h13" /></svg>
+                </button>
               </div>
-              <div class="folio-scroll" data-lenis-prevent>
-                <div class="folio-media">
-                  <div class="folio-gallery-track" data-gallery-track data-lenis-prevent-horizontal>
-                    {gallery.length > 0 ? gallery.map((photo) => (
-                      <figure class="folio-gallery-slide">
-                        <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
-                        {photo.caption && <figcaption>{photo.caption}</figcaption>}
+              <div class="showcase-detail-scroll" data-detail-scroll data-lenis-prevent>
+                <div class="showcase-media" data-carousel data-slide-count={slideCount}>
+                  <div class="showcase-carousel-viewport" tabindex="0" role="region" aria-label={title + '图片展示'} data-carousel-viewport data-lenis-prevent-horizontal>
+                    <div class="showcase-carousel-track" data-carousel-track>
+                      <figure class="showcase-slide" data-carousel-slide>
+                        {cover ? <img src={cover} alt={coverAlt || title + '的概念封面'} loading="lazy" decoding="async" /> : <ProjectArtwork theme={theme} />}
+                        {!cover && <figcaption>概念封面 · 实际照片待补充</figcaption>}
                       </figure>
-                    )) : (
-                      <div class="folio-gallery-slide folio-gallery-empty">
-                        <ProjectArtwork theme={theme} />
-                        <span>照片待补充</span>
-                      </div>
-                    )}
+                      {gallery.map((photo) => (
+                        <figure class="showcase-slide" data-carousel-slide>
+                          <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
+                          {photo.caption && <figcaption>{photo.caption}</figcaption>}
+                        </figure>
+                      ))}
+                    </div>
                   </div>
-                  {gallery.length > 1 && (
-                    <div class="folio-gallery-controls">
-                      <button type="button" data-gallery-prev aria-label="上一张照片">‹</button>
-                      <span data-gallery-count>01 / {String(gallery.length).padStart(2, '0')}</span>
-                      <button type="button" data-gallery-next aria-label="下一张照片">›</button>
+                  {slideCount > 1 && (
+                    <div class="showcase-carousel-controls">
+                      <button type="button" data-carousel-prev aria-label="上一张图片"><span aria-hidden="true">‹</span></button>
+                      <span data-carousel-counter>01 / {String(slideCount).padStart(2, '0')}</span>
+                      <button type="button" data-carousel-next aria-label="下一张图片"><span aria-hidden="true">›</span></button>
                     </div>
                   )}
-                  <span class="folio-scan-line" aria-hidden="true"></span>
                 </div>
-                <div class="folio-details">
-                  <span class="folio-category">{category}</span>
-                  <h2 tabindex="-1">{title}</h2>
-                  <p class="folio-description">{description}</p>
-                  <div class="folio-story">
+                <div class="showcase-copy">
+                  <h2>{title}</h2>
+                  <div class="showcase-tags" aria-label="作品标签">
+                    <span>{category}</span>
+                    {tags.map((tag) => <span>{tag}</span>)}
+                  </div>
+                  <p class="showcase-description">{description}</p>
+                  <div class="showcase-story">
                     <section><h3>制作经历</h3><p>{experience || '制作经历待补充。'}</p></section>
                     <section><h3>过程趣事</h3><p>{moment || '过程趣事待补充。'}</p></section>
                   </div>
-                  {tech.length > 0 && <div class="folio-tech" aria-label="相关技术">{tech.map((item) => <span>{item}</span>)}</div>}
-                  {links.length > 0 && (
-                    <div class="folio-links">
-                      {links.map((link) => <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}
-                    </div>
-                  )}
+                  {tech.length > 0 && <div class="showcase-tech" aria-label="相关技术">{tech.map((item) => <span>{item}</span>)}</div>}
+                  {links.length > 0 && <div class="showcase-links">{links.map((link) => <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div>}
                 </div>
               </div>
-              <nav class="folio-navigation" aria-label={`${title} 翻页`}>
-                <button type="button" data-turn-prev aria-label={number === 1 ? '返回封面' : '上一页'}><span aria-hidden="true">‹</span>{number === 1 ? '封面' : '上一页'}</button>
-                <span class="folio-page-number">{String(number).padStart(2, '0')}</span>
-                {number < total ? <button type="button" data-turn-next aria-label="下一页">下一页<span aria-hidden="true">›</span></button> : <span class="folio-end">档案终页</span>}
-              </nav>
-            </div>
-            <div class="book-face book-verso" aria-hidden="true">
-              <span class="book-verso-seal"></span>
-              <div class="book-verso-art"><ProjectArtwork theme={theme} /></div>
-              <span>{String(number).padStart(2, '0')} / {title}</span>
-            </div>
-          </div>
-        );
-      })}
+            </article>
+          );
+        })}
+      </section>
+
     </div>
   </div>
-  <p class="visually-hidden" role="status" aria-live="polite" data-book-status>图鉴封面</p>
+  <p class="visually-hidden" role="status" aria-live="polite" data-showcase-status>当前作品：{projects[0]?.data.title || '暂无作品'}</p>
   <noscript>
-    <div class="book-nojs">
+    <div class="showcase-nojs">
       {projects.map((project) => <section><h2>{project.data.title}</h2><p>{project.data.description}</p></section>)}
     </div>
   </noscript>

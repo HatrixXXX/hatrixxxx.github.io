@@ -35,14 +35,17 @@ test('coverflow presents horizontal cards on a vertical track with alternating c
     }))
   );
   expect(layout[0]).toMatchObject({ active: 'true', position: 'absolute' });
-  expect(layout[0].transform).toMatch(/rotateX\(0(?:\.0+)?deg\)/);
+  expect(layout[0].transform).toMatch(/translateY\(/);
+  expect(layout[0].transform).not.toMatch(/rotate/);
   expect(layout[1]).toMatchObject({ active: 'false', position: 'absolute' });
-  expect(layout[1].transform).toMatch(/rotateX\(-?22(?:\.0+)?deg\)/);
+  expect(layout[1].transform).toMatch(/translateY\(/);
+  expect(layout[1].transform).not.toMatch(/rotate/);
   const first = await cards.nth(0).boundingBox();
   const second = await cards.nth(1).boundingBox();
   if (!first || !second) throw new Error('Missing blog card bounds');
   expect(first.width).toBeGreaterThan(first.height * 3.5);
   expect(second.y).toBeGreaterThan(first.y);
+  expect(second.y - first.y - first.height).toBeGreaterThan(45);
   const media = await cards.nth(0).locator('.post-card-media').boundingBox();
   if (!media) throw new Error('Missing cover frame bounds');
   expect(media.width / media.height).toBeGreaterThan(1.8);
@@ -57,11 +60,78 @@ test('coverflow presents horizontal cards on a vertical track with alternating c
   expect(secondContent.x + secondContent.width).toBeLessThan(secondMedia.x);
   await expect(cards.nth(0).locator('img')).toHaveCSS('object-fit', 'cover');
   await expect(cards.nth(0).locator('img')).not.toHaveAttribute('role', 'button');
-  expect(await cards.nth(0).locator('img').getAttribute('srcset')).toContain('1280w');
+  expect(await cards.nth(0).locator('img').getAttribute('srcset')).toContain('768w');
   await expect(coverflow.locator('.coverflow-scene')).toHaveCSS('overflow', 'hidden');
 });
 
-test('distant cards gain tilt and opacity by depth', async ({ page }) => {
+test('visible card clamps stay on both guide rails during selection', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/blogs/');
+  const coverflow = page.locator('[data-post-coverflow]');
+  await coverflow.focus();
+
+  let currentIndex = 0;
+  for (const selectedIndex of [0, 3, 14]) {
+    while (currentIndex < selectedIndex) {
+      await page.keyboard.press('ArrowDown');
+      currentIndex++;
+    }
+
+    const mounted = await coverflow.evaluate((rail) => {
+      const tracks = Array.from(rail.querySelectorAll<HTMLElement>('.coverflow-rail'));
+      const cards = Array.from(rail.querySelectorAll<HTMLElement>('[data-post-card]'));
+      const activeIndex = cards.findIndex((card) => card.dataset.active === 'true');
+      const indices = [activeIndex, activeIndex === cards.length - 1 ? activeIndex - 1 : activeIndex + 1];
+      return indices.flatMap((index) => {
+        const card = cards[index];
+        return ['left', 'right'].map((side, trackIndex) => {
+          const clamp = card.querySelector<HTMLElement>(`.post-card-clamp--${side}`)!;
+          const clampBox = clamp.getBoundingClientRect();
+          const trackBox = tracks[trackIndex].getBoundingClientRect();
+          return {
+            opacity: Number(getComputedStyle(clamp).opacity),
+            display: getComputedStyle(clamp).display,
+            distance: Math.abs(clampBox.x + clampBox.width / 2 - trackBox.x - trackBox.width / 2)
+          };
+        });
+      });
+    });
+
+    expect(mounted).toHaveLength(4);
+    for (const clamp of mounted) {
+      expect(clamp.display).not.toBe('none');
+      expect(clamp.opacity).toBeGreaterThan(0.7);
+      expect(clamp.distance).toBeLessThan(30);
+    }
+  }
+});
+
+test('phone cards retain visible clamps inside the viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/blogs/');
+  const coverflow = page.locator('[data-post-coverflow]');
+  await coverflow.focus();
+
+  for (const index of [0, 1]) {
+    if (index > 0) await page.keyboard.press('ArrowDown');
+    const clampBoxes = await coverflow.locator('[data-post-card][data-active="true"] .post-card-clamp').evaluateAll((clamps) =>
+      clamps.map((clamp) => {
+        const box = clamp.getBoundingClientRect();
+        return { display: getComputedStyle(clamp).display, opacity: Number(getComputedStyle(clamp).opacity), left: box.left, right: box.right };
+      })
+    );
+    expect(clampBoxes).toHaveLength(2);
+    for (const clamp of clampBoxes) {
+      expect(clamp.display).not.toBe('none');
+      expect(clamp.opacity).toBeGreaterThan(0.7);
+      expect(clamp.left).toBeGreaterThanOrEqual(0);
+      expect(clamp.right).toBeLessThanOrEqual(390);
+    }
+  }
+});
+
+test('unselected cards recede through opacity without rotating', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/blogs/');
   const rail = page.locator('[data-post-coverflow]');
@@ -73,15 +143,34 @@ test('distant cards gain tilt and opacity by depth', async ({ page }) => {
     [4, 5, 6].map((index) => {
       const card = cards[index] as HTMLElement;
       return {
-        angle: Math.abs(Number(card.style.transform.match(/rotateX\((-?[\d.]+)deg\)/)?.[1] ?? 0)),
+        transform: card.style.transform,
         opacity: Number(card.style.opacity)
       };
     })
   );
-  expect(layers[0].angle).toBeLessThan(layers[1].angle);
-  expect(layers[1].angle).toBeLessThan(layers[2].angle);
-  expect(layers[0].opacity).toBeLessThan(layers[1].opacity);
-  expect(layers[1].opacity).toBeLessThan(layers[2].opacity);
+  for (const layer of layers) expect(layer.transform).not.toMatch(/rotate/);
+  expect(layers[0].opacity).toBeLessThan(0.65);
+  expect(layers[0].opacity).toBeGreaterThan(layers[1].opacity);
+  expect(layers[1].opacity).toBeGreaterThan(layers[2].opacity);
+});
+
+test('selected card floats after settling but stays still with reduced motion', async ({ page }) => {
+  await page.goto('/blogs/');
+  const activeCard = page.locator('[data-post-card][data-active="true"]');
+  await expect(activeCard).toHaveCSS('animation-name', /archive-active-breathe/);
+
+  const positions = await activeCard.evaluate(async (card) => {
+    const samples: number[] = [];
+    for (let sample = 0; sample < 5; sample++) {
+      samples.push(card.getBoundingClientRect().top);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    return samples;
+  });
+  expect(Math.max(...positions) - Math.min(...positions)).toBeGreaterThan(2);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(activeCard).toHaveCSS('animation-name', 'none');
 });
 
 test('active card fits below navigation on desktop and phone', async ({ page }) => {
@@ -103,7 +192,7 @@ test('active card fits below navigation on desktop and phone', async ({ page }) 
     expect(gapBelowHeader).toBeGreaterThanOrEqual(0);
     expect(gapBelowHeader).toBeLessThanOrEqual(viewport.height / 2);
     expect(gapAboveViewportBottom).toBeGreaterThanOrEqual(0);
-    expect(gapAboveViewportBottom).toBeLessThanOrEqual(viewport.height / 2);
+    expect(gapAboveViewportBottom).toBeLessThanOrEqual(viewport.height / 2 + 16);
     expect(cardBox.x).toBeGreaterThanOrEqual(0);
     expect(cardBox.x + cardBox.width).toBeLessThanOrEqual(viewport.width);
   }
@@ -241,6 +330,42 @@ test('post headings remain readable in the dark theme', async ({ page }) => {
     'color',
     'rgb(245, 240, 232)'
   );
+});
+
+test('only the selected card brightens on hover without changing title color', async ({ page }) => {
+  await page.goto('/blogs/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const cards = page.locator('[data-post-card]');
+  const activeCard = cards.nth(0);
+  const inactiveCard = cards.nth(1);
+  const activePanel = activeCard.locator('.post-card-content');
+  const inactivePanel = inactiveCard.locator('.post-card-content');
+  const activeColor = await activePanel.evaluate((panel) => getComputedStyle(panel).backgroundColor);
+  const inactiveColor = await inactivePanel.evaluate((panel) => getComputedStyle(panel).backgroundColor);
+
+  await inactiveCard.locator('h2 a').hover();
+  await expect(inactivePanel).toHaveCSS('background-color', inactiveColor);
+  await expect(inactiveCard.locator('h2 a')).toHaveCSS('color', 'rgb(245, 240, 232)');
+
+  await activeCard.locator('h2 a').hover({ force: true });
+  await expect(activePanel).not.toHaveCSS('background-color', activeColor);
+  await expect(activeCard.locator('h2 a')).toHaveCSS('color', 'rgb(245, 240, 232)');
+
+  await page.mouse.move(80, 450);
+  await expect(activePanel).toHaveCSS('background-color', activeColor);
+});
+
+test('card shell and cover keep the site link cursor', async ({ page }) => {
+  await page.goto('/blogs/');
+  const cursors = await page.locator('[data-post-card]').evaluateAll((cards) =>
+    cards.slice(0, 2).flatMap((card) => [
+      getComputedStyle(card).cursor,
+      getComputedStyle(card.querySelector('.post-card-media')!).cursor,
+      getComputedStyle(card.querySelector('.post-card-media img')!).cursor
+    ])
+  );
+  expect(cursors).toHaveLength(6);
+  for (const cursor of cursors) expect(cursor).toContain('/assets/cursors/link.cur');
 });
 
 test('home blog entry goes directly to the blog index', async ({ page }) => {
