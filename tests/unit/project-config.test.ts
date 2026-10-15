@@ -296,6 +296,14 @@ describe('Astro project tooling', () => {
     expect(pullRequestJob).not.toContain('deploy-pages');
   });
 
+  it('keeps pull request validation from cancelling a production Pages build', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+    const concurrency = workflow.split('\nconcurrency:\n')[1]?.split('\n\njobs:')[0];
+
+    expect(concurrency).toContain('github.ref');
+    expect(concurrency).toContain('cancel-in-progress: true');
+  });
+
   it('defaults the protected output audit to the private content root', () => {
     const script = readFileSync('scripts/check-protected-output.ts', 'utf8');
 
