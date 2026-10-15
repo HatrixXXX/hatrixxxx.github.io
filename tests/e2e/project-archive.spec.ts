@@ -11,13 +11,13 @@ const titles = [
   '装甲板钥匙扣',
   '轮腿步兵金属钥匙扣',
   'PCB 信仰尺',
+  'USB3-Hub',
   '三年总结文档',
   'CoNet 在线笔记',
   '步兵完全手册',
   '涂装小老鼠',
   '纸模型作品',
-  '个人网站',
-  'USB3-Hub'
+  '个人网站'
 ];
 
 test('showcase stacks fifteen works across shelves of five jars', async ({ page }) => {

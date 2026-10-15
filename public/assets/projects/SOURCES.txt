@@ -7,9 +7,9 @@ Source: central ring cropped from the archived display-case-lid-v2.webp in docs/
 Derivative: 360px square crop at (327, 375), resized to 220px and encoded as WebP with Sharp. Retained as an archive of the previous showcase window; the current page does not load it.
 
 project-cabinet-shelf.webp and project-cabinet-jar.webp
-Source: Original images generated with the built-in imagegen tool for the restored mechanical shelf and glass specimen jar design. Full prompts and source PNGs: docs/design-references/project-cabinet/.
+Source: Original images generated with the built-in imagegen tool for the restored mechanical shelf and glass specimen jar design. Full prompts and source PNGs are archived in site commit 271634ffd9d07063397b0b31e6ec7e7122141040 under docs/design-references/project-cabinet/.
 Derivative: Cropped with Sharp, resized to 1600px and 320px wide respectively, encoded as transparent WebP at quality 88. The shelf sits behind the live specimens; each jar overlays a live project illustration.
 
 project-info-card-shell.webp
-Source: Original mechanical detail-card shell generated with the built-in imagegen tool. Full prompt and source PNG: docs/design-references/project-cabinet/.
+Source: Original mechanical detail-card shell generated with the built-in imagegen tool. Full prompt and source PNG are archived in site commit 271634ffd9d07063397b0b31e6ec7e7122141040 under docs/design-references/project-cabinet/.
 Derivative: Cropped with Sharp at (35, 95), 1378x870, resized to 1000px wide and encoded as transparent WebP at quality 88. Runtime nine-slice preserves corner hardware while Astro renders the image and short introduction inside the window.

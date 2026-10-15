@@ -66,7 +66,7 @@ corepack pnpm test:e2e
 ## 内容、路径与提交
 
 - 网站保持纯静态输出。Twikoo Cloudflare Worker 和 D1 独立运行，不在站点构建中增加服务器、数据库、上传、下载中心或对象存储。
-- 保留全部 `/posts/<legacySlug>/` 路径，Twikoo 以 pathname 区分评论；原 GitHub Discussions 留言不迁移、不删除。
+- 保留已发布文章的 `/posts/<legacySlug>/` 路径；用户确认删除的《杂货铺》及 `/posts/杂货铺/` 为例外。Twikoo 以 pathname 区分评论；原 GitHub Discussions 留言不迁移、不删除。
 - 完成博客正文修改后，必须在 `.private-content` 独立仓库提交。完成随笔修改后，必须在 `.private-snippets` 独立仓库提交。用户要求推送时，同时推送任务涉及的私有仓库提交；不留下未提交的内容修改。
 - 文章正文属于用户内容，除非任务明确要求，不改写正文。schema 调整保持旧 URL。只修改摘要时不改 `updatedDate`。
 - 每篇博客文章的公开 `summary` 不超过 100 字并准确概括正文；加锁文章摘要不得泄露受保护信息。正文主题、主要结论或覆盖范围明显变化时同步更新摘要，错别字和不影响主旨的小改不触发。

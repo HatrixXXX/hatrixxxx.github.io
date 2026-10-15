@@ -2,7 +2,7 @@
 title: 纸模型作品
 description: 在我还很闲的时候，经常会干这个来获得成就感。
 theme: wall
-order: 13
+order: 14
 cover: /assets/project-images/paper-models-01.webp
 coverAlt: 纸模型作品中的白色立体心形模型
 gallery:

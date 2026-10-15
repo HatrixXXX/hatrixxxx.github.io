@@ -100,6 +100,8 @@ export default defineConfig({
     ]
   },
   vite: {
+    // Concurrent local dev servers must not overwrite one another's optimized deps.
+    cacheDir: `node_modules/.vite-${process.pid}`,
     optimizeDeps: { include: ['mermaid', 'sakana'] },
     build: {
       rollupOptions: {

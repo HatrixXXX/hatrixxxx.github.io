@@ -10,12 +10,9 @@ const first = bookmarks[0];
 ---
 
 <section class="favorites-console" data-favorites aria-label="收藏夹转轴">
-  <div class="favorites-layout">
-    <div class="favorites-machine">
-      <div class="favorites-machine__top" aria-hidden="true"><b>HATRIX</b></div>
-      <div class="favorites-machine__bezel">
-        <button class="favorites-step favorites-step--previous" data-favorites-previous type="button" aria-label="上一个链接"><span aria-hidden="true"></span></button>
-        <div class="favorites-reel" data-favorites-reel tabindex="0" role="group" aria-label="网址转轴，用滚轮、拖拽或上下方向键选择">
+  <div class="favorites-machine">
+    <div class="favorites-machine__bezel">
+        <div class="favorites-reel" data-favorites-reel tabindex="0" role="group" aria-label="网址转轴，点击侧边叶片选择，点击中间叶片访问；也可用滚轮、拖拽或上下方向键选择">
           <div class="favorites-reel__well" aria-hidden="true"></div>
           {bookmarks.map((bookmark, index) => (
             <button
@@ -23,37 +20,32 @@ const first = bookmarks[0];
               type="button"
               data-favorites-item
               data-title={bookmark.title}
-              data-category={bookmark.category}
               data-description={bookmark.description}
               data-url={bookmark.url}
               data-index={index}
               tabindex="-1"
               aria-label={`选择 ${bookmark.title}`}
-            ><span class="favorites-reel__number">{String(index + 1).padStart(2, '0')}</span><span class="favorites-reel__title">{bookmark.title}</span><span class="favorites-reel__signal" aria-hidden="true"></span></button>
+            ><span class="favorites-reel__title">{bookmark.title}</span><span class="favorites-reel__signal" aria-hidden="true"></span></button>
           ))}
           <div class="favorites-reel__focus" aria-hidden="true"></div>
           <div class="favorites-reel__shine" aria-hidden="true"></div>
         </div>
-        <button class="favorites-step favorites-step--next" data-favorites-next type="button" aria-label="下一个链接"><span aria-hidden="true"></span></button>
-      </div>
-      <div class="favorites-machine__frame" aria-hidden="true"></div>
     </div>
 
-    <aside class="favorites-readout" aria-label="当前网址">
-      <div class="favorites-readout__content">
-        <div class="favorites-readout__plate">
-          <span data-favorites-category>{first?.category}</span>
-          <h2 data-favorites-selected>{first?.title}</h2>
-          <p class="favorites-readout__domain" data-favorites-domain>{first && new URL(first.url).hostname}</p>
-        </div>
+    <div class="favorites-machine__console">
+      <aside class="favorites-readout" aria-label="当前收藏网站">
+        <h2 data-favorites-selected>{first?.title}</h2>
         <p class="favorites-readout__description" data-favorites-description>{first?.description}</p>
+      </aside>
+      <div class="favorites-actions">
+        <button class="favorites-random" data-favorites-random type="button" aria-label="随机转一个链接"><span class="favorites-random__label">试试手气</span></button>
       </div>
-    </aside>
-  </div>
-
-  <div class="favorites-actions">
-    <button class="favorites-random" data-favorites-random type="button">随机转一个链接 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 7v4h-4M19 11a7 7 0 1 0 1 4" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/></svg></button>
-    <a class="favorites-visit" data-favorites-visit href={first?.url} target="_blank" rel="noopener noreferrer">访问网站 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 16 16 4M7 4h9v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg></a>
+    </div>
+    <div class="favorites-machine__frame" aria-hidden="true"></div>
+    <div class="favorites-reel__selectors">
+      <button class="favorites-reel__paddle favorites-reel__paddle--left" data-favorites-arrow data-favorites-previous type="button" aria-label="上一个链接"><span class="favorites-reel__paddle-plate" aria-hidden="true"></span><span class="favorites-reel__paddle-screw" aria-hidden="true"></span></button>
+      <button class="favorites-reel__paddle favorites-reel__paddle--right" data-favorites-arrow data-favorites-next type="button" aria-label="下一个链接"><span class="favorites-reel__paddle-plate" aria-hidden="true"></span><span class="favorites-reel__paddle-screw" aria-hidden="true"></span></button>
+    </div>
   </div>
   <p class="favorites-status" data-favorites-status role="status" aria-live="polite" aria-atomic="true">已选中：{first?.title}</p>
 </section>

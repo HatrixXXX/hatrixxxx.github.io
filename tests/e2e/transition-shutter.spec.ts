@@ -39,7 +39,7 @@ test('entering favorites shows the reel without requesting the removed model', a
   page.on('request', (request) => { if (request.url().endsWith('.glb')) modelRequests.push(request.url()); });
   await page.locator('.desktop-nav a[href="/favorites/"]').click();
   await expect(page).toHaveURL('/favorites/');
-  await expect(page.locator('[data-favorites-selected]')).toHaveText('扬神的博客');
+  await expect(page.locator('[data-favorites-selected]')).toHaveText('Human System Optimization');
   await expect(loader).toBeHidden();
   expect(modelRequests).toEqual([]);
 });
