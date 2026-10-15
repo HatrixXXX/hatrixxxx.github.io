@@ -19,7 +19,7 @@ test('inner pages share the brandless centered navigation', async ({ page }) => 
 
 test('the shared search action uses a visible 20px magnifying-glass SVG', async ({ page }) => {
   await page.goto('/creation/');
-  const button = page.getByRole('button', { name: '搜索文章' });
+  const button = page.getByRole('button', { name: '搜索全站' });
   await expect(button).toBeVisible();
   const icon = button.locator('svg');
   await expect(icon).toBeVisible();

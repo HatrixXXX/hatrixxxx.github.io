@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { ABOUT_SECTION_LINKS } from '../../src/config/navigation';
 import { playlist } from '../../src/data/playlist';
 
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
 const expectedSocials = [
   { id: 'rss', label: 'RSS', href: '/rss.xml', external: false },
   { id: 'github', label: 'GitHub', href: 'https://github.com/HatrixXXX', external: true },
@@ -209,6 +211,27 @@ test('friend portal opens at one second while the keyboard key stays down', asyn
   await page.bringToFront();
   await expect(portal).toHaveAttribute('data-state', 'idle');
   await expect(page.locator('[data-progress-value]')).toHaveText('0%');
+  await page.keyboard.up('Space');
+});
+
+test('friend portal keeps the one second hold without an animated meter in reduced motion', async ({ page, context }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/friends/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await context.route('https://**/*', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Friend</title>' }));
+  const portal = page.locator('[data-friend-portal]');
+  await portal.focus();
+  await page.keyboard.down('Space');
+  await page.waitForTimeout(250);
+  await expect(portal).toHaveAttribute('data-state', 'charging');
+  await expect(page.locator('[data-progress-value]')).toHaveText('0%');
+  await page.keyboard.up('Space');
+  await expect(portal).toHaveAttribute('data-state', 'idle');
+  const popupPromise = context.waitForEvent('page');
+  await page.keyboard.down('Space');
+  const popup = await popupPromise;
+  await expect(popup).toHaveURL(/^https:\/\//);
+  await page.bringToFront();
   await page.keyboard.up('Space');
 });
 

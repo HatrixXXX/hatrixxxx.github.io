@@ -1,3 +1,5 @@
+import { animate, createTimeline } from 'animejs';
+
 interface ReelLink {
   element: HTMLButtonElement;
   title: string;
@@ -34,10 +36,12 @@ function bindBookmarkArchive(): void {
   const description = root.querySelector<HTMLElement>('[data-favorites-description]')!;
   const visit = root.querySelector<HTMLAnchorElement>('[data-favorites-visit]')!;
   const status = root.querySelector<HTMLElement>('[data-favorites-status]')!;
+  const randomIcon = root.querySelector<SVGElement>('[data-favorites-random] svg');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const abort = new AbortController();
   let selected = 0;
-  let spinTimer: number | undefined;
+  let spinTimeline: ReturnType<typeof createTimeline> | undefined;
+  let iconAnimation: ReturnType<typeof animate> | undefined;
   let settleTimer: number | undefined;
   let pointerY: number | undefined;
   let didDrag = false;
@@ -72,9 +76,11 @@ function bindBookmarkArchive(): void {
   }
 
   function cancelSpin(): void {
-    if (spinTimer !== undefined) window.clearTimeout(spinTimer);
+    spinTimeline?.cancel();
+    iconAnimation?.revert();
     if (settleTimer !== undefined) window.clearTimeout(settleTimer);
-    spinTimer = undefined;
+    spinTimeline = undefined;
+    iconAnimation = undefined;
     settleTimer = undefined;
     reel.removeAttribute('aria-busy');
     consoleElement.removeAttribute('data-spinning');
@@ -107,25 +113,22 @@ function bindBookmarkArchive(): void {
       return;
     }
     const total = items.length + advance;
-    let count = 0;
     consoleElement.dataset.spinning = '';
     reel.setAttribute('aria-busy', 'true');
     status.textContent = '正在随机转动…';
-    const tick = () => {
-      count += 1;
-      select(selected + 1, false);
-      if (count === total) {
-        spinTimer = window.setTimeout(() => {
-          cancelSpin();
-          status.textContent = `已选中：${items[selected].title}`;
-          settle();
-        }, 320);
-        return;
-      }
-      const progress = count / total;
-      spinTimer = window.setTimeout(tick, 28 + 120 * progress ** 3);
-    };
-    tick();
+    if (randomIcon) iconAnimation = animate(randomIcon, { rotate: '1turn', duration: 750, ease: 'linear', loop: true });
+    const timeline = createTimeline();
+    spinTimeline = timeline;
+    let at = 0;
+    for (let count = 1; count <= total; count += 1) {
+      timeline.call(() => select(selected + 1, false), at);
+      at += count === total ? 320 : 28 + 120 * (count / total) ** 3;
+    }
+    timeline.call(() => {
+      cancelSpin();
+      status.textContent = `已选中：${items[selected].title}`;
+      settle();
+    }, at);
   }
 
   root.addEventListener('click', (event) => {
@@ -183,7 +186,7 @@ function bindBookmarkArchive(): void {
     reel.focus({ preventScroll: true });
   }, { signal: abort.signal });
   reduced.addEventListener('change', () => {
-    if (reduced.matches && spinTimer !== undefined) {
+    if (reduced.matches && spinTimeline) {
       cancelSpin();
       status.textContent = `已选中：${items[selected].title}`;
     }
@@ -193,6 +196,11 @@ function bindBookmarkArchive(): void {
     abort.abort();
   }, { once: true, signal: abort.signal });
   window.addEventListener('pagehide', cancelSpin, { signal: abort.signal });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden || !spinTimeline) return;
+    cancelSpin();
+    status.textContent = `已选中：${items[selected].title}`;
+  }, { signal: abort.signal });
 
   render();
 }

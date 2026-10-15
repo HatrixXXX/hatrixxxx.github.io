@@ -1,5 +1,6 @@
 import { playlist } from '../data/playlist';
 import { shuffleQuoteOrder } from '../lib/quote-order';
+import { animate, createTimeline } from 'animejs';
 import type { Track } from '../types/content';
 
 const STORAGE_KEY = 'hatrix-player';
@@ -89,7 +90,9 @@ export function initializeMusicPlayer(
 
   const toggle = player.querySelector<HTMLButtonElement>('[data-player-toggle]');
   const record = player.querySelector<HTMLButtonElement>('[data-player-record]');
+  const assembly = player.querySelector<HTMLElement>('[data-player-record-assembly]');
   const trackLabel = player.querySelector<HTMLElement>('[data-player-track]');
+  const reducedMotion = root.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)');
   toggle?.addEventListener('click', () => setExpanded(player, player.dataset.uiState !== 'expanded'));
   player.addEventListener('click', (event) => {
     const target = event.target as Element | null;
@@ -131,29 +134,32 @@ export function initializeMusicPlayer(
   audio.volume = PLAYER_VOLUME;
   const playerAudio = audio;
   let clickTimer: ReturnType<typeof setTimeout> | undefined;
-  let midpointTimer: ReturnType<typeof setTimeout> | undefined;
-  let nextPlayTimer: ReturnType<typeof setTimeout> | undefined;
-  let pauseFadeTimer: ReturnType<typeof setInterval> | undefined;
+  let swapTimeline: ReturnType<typeof createTimeline> | undefined;
+  let completeSwap: (() => void) | undefined;
+  let pauseFade: ReturnType<typeof animate> | undefined;
   let swapInProgress = false;
 
   const clearPauseFade = (): void => {
-    if (pauseFadeTimer !== undefined) clearInterval(pauseFadeTimer);
-    pauseFadeTimer = undefined;
+    pauseFade?.cancel();
+    pauseFade = undefined;
   };
   const cancelPauseFade = (): void => {
     clearPauseFade();
     playerAudio.volume = PLAYER_VOLUME;
   };
   const pauseWithFade = (): void => {
-    const startedAt = Date.now();
-    const startVolume = playerAudio.volume;
-    pauseFadeTimer = setInterval(() => {
-      const progress = Math.min(1, (Date.now() - startedAt) / PAUSE_FADE_DURATION);
-      playerAudio.volume = Math.max(0, startVolume * (1 - progress));
-      if (progress < 1) return;
-      clearPauseFade();
-      playerAudio.pause();
-    }, 20);
+    const level = { level: playerAudio.volume };
+    pauseFade = animate(level, {
+      level: 0,
+      duration: PAUSE_FADE_DURATION,
+      ease: 'linear',
+      onUpdate: () => { playerAudio.volume = Math.max(0, level.level); },
+      onComplete: () => {
+        pauseFade = undefined;
+        playerAudio.volume = 0;
+        playerAudio.pause();
+      },
+    });
   };
 
   const setPlaying = (playing: boolean): void => {
@@ -163,6 +169,15 @@ export function initializeMusicPlayer(
     player.dataset.playbackState = playing ? 'playing' : 'paused';
     record?.setAttribute('aria-pressed', String(playing));
     record?.setAttribute('aria-label', playing ? '暂停唱片，双击随机下一曲' : '播放唱片，双击随机下一曲');
+  };
+  const finishPendingMotion = (): void => {
+    if (pauseFade) {
+      clearPauseFade();
+      playerAudio.volume = 0;
+      playerAudio.pause();
+      setPlaying(false);
+    }
+    completeSwap?.();
   };
   const play = (): void => {
     cancelPauseFade();
@@ -188,8 +203,9 @@ export function initializeMusicPlayer(
   const advanceTrack = (): void => {
     clearTimeout(clickTimer);
     clickTimer = undefined;
-    clearTimeout(midpointTimer);
-    clearTimeout(nextPlayTimer);
+    swapTimeline?.cancel();
+    swapTimeline = undefined;
+    completeSwap = undefined;
     if (order.length === 0) order = shuffleQuoteOrder(indices, index);
     const nextIndex = order.shift() ?? index;
     swapInProgress = true;
@@ -198,7 +214,7 @@ export function initializeMusicPlayer(
     player.dataset.playbackState = 'changing';
     record?.setAttribute('aria-pressed', 'false');
     record?.setAttribute('aria-label', '正在更换唱片');
-    if (player.dataset.uiState === 'collapsed' || root.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    if (player.dataset.uiState === 'collapsed' || reducedMotion?.matches) {
       load(nextIndex);
       swapInProgress = false;
       play();
@@ -206,22 +222,43 @@ export function initializeMusicPlayer(
     }
     player.dataset.recordSwap = 'true';
     if (record) record.disabled = true;
-    midpointTimer = setTimeout(() => {
-      midpointTimer = undefined;
-      load(nextIndex);
-    }, RECORD_SWAP_MIDPOINT);
-    nextPlayTimer = setTimeout(() => {
-      nextPlayTimer = undefined;
+    let loaded = false;
+    completeSwap = () => {
+      swapTimeline?.cancel();
+      swapTimeline = undefined;
+      completeSwap = undefined;
+      if (!loaded) load(nextIndex);
+      if (assembly) {
+        assembly.style.opacity = '';
+        assembly.style.transform = '';
+      }
       delete player.dataset.recordSwap;
       if (record) record.disabled = false;
       swapInProgress = false;
       play();
-    }, RECORD_SWAP_DURATION);
+    };
+    const timeline = createTimeline();
+    swapTimeline = timeline;
+    if (assembly) timeline.add(assembly, {
+      opacity: [1, 0], x: ['0%', '-27%'], y: ['0%', '-9%'],
+      rotate: [0, -12], scale: [1, .86],
+      duration: RECORD_SWAP_MIDPOINT - 160, ease: 'inOutQuad',
+    }, 160);
+    timeline.call(() => {
+      load(nextIndex);
+      loaded = true;
+    }, RECORD_SWAP_MIDPOINT);
+    if (assembly) timeline.add(assembly, {
+      opacity: [0, 1], x: ['27%', '0%'], y: ['-9%', '0%'],
+      rotate: [12, 0], scale: [.86, 1],
+      duration: RECORD_SWAP_DURATION - RECORD_SWAP_MIDPOINT, ease: 'inOutQuad',
+    }, RECORD_SWAP_MIDPOINT);
+    timeline.call(() => completeSwap?.(), RECORD_SWAP_DURATION);
   };
 
   const togglePlayback = (): void => {
     if (swapInProgress) return;
-    if (pauseFadeTimer !== undefined) {
+    if (pauseFade !== undefined) {
       cancelPauseFade();
       return;
     }
@@ -250,6 +287,12 @@ export function initializeMusicPlayer(
     setPlaying(false);
     if (trackLabel) trackLabel.textContent = '音频无法加载';
   });
+  root.addEventListener('visibilitychange', () => {
+    if (root.hidden) finishPendingMotion();
+  });
+  reducedMotion?.addEventListener('change', () => {
+    if (reducedMotion.matches) finishPendingMotion();
+  });
   record?.addEventListener('click', (event) => {
     if (swapInProgress || record.disabled) return;
     if ((event as MouseEvent).detail >= 2) {
@@ -258,7 +301,7 @@ export function initializeMusicPlayer(
       advanceTrack();
       return;
     }
-    if (pauseFadeTimer !== undefined) {
+    if (pauseFade !== undefined) {
       cancelPauseFade();
       return;
     }
@@ -306,7 +349,10 @@ if (typeof document !== 'undefined') {
   document.addEventListener('astro:after-swap', () => { void initializeMusicPlayer(); });
   document.addEventListener('astro:page-load', () => { void initializeMusicPlayer(); });
   window.addEventListener('pageshow', (event) => {
-    if (event.persisted) void initializeMusicPlayer();
+    if (event.persisted) {
+      if (audio) audio.currentTime = 0;
+      void initializeMusicPlayer();
+    }
   });
   initializeMusicPlayer();
 }

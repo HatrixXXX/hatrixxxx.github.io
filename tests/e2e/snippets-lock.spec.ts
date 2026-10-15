@@ -36,6 +36,21 @@ test('snippet overview and detail require the existing admin key', async ({ page
   await expect(page.locator('.snippet-card')).toHaveCount(files.length);
   await expect(page.locator('[data-timeline-body]')).toHaveAttribute('data-motion', /active|reduced/);
 
+  if (files.length > 1) {
+    const timeline = page.locator('[data-timeline-body]');
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+    await expect.poll(() => timeline.evaluate((body) =>
+      Number(body.style.getPropertyValue('--flow-progress'))
+    )).toBeGreaterThan(0.99);
+    await expect(timeline.locator('[data-timeline-entry]').last()).toHaveAttribute('data-revealed', 'true');
+
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect.poll(() => timeline.evaluate((body) =>
+      Number(body.style.getPropertyValue('--flow-progress'))
+    )).toBeLessThan(0.9);
+    await expect(timeline.locator('[data-timeline-entry]').last()).toHaveAttribute('data-revealed', 'false');
+  }
+
   if (!snippetRoute || !title) return;
   await page.evaluate(() => window.scrollTo({ top: 420, behavior: 'instant' }));
   const savedScroll = await page.evaluate(() => window.scrollY);

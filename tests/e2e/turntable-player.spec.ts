@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
 test('the same playing turntable survives every formerly missing card page', async ({ page }) => {
   await page.addInitScript(() => {
     const NativeAudio = window.Audio;
@@ -108,6 +110,7 @@ test('the chassis and record keep the reference top-down proportions on desktop 
 
 test('the record plays, pauses, shuffles on double click, and reveals the track on hover', async ({ page }) => {
   await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
   const player = page.locator('[data-music-player]');
   await player.locator('[data-player-toggle]').click();
   const record = player.locator('[data-player-record]');
@@ -151,7 +154,7 @@ test('the record plays, pauses, shuffles on double click, and reveals the track 
   await record.dblclick();
   await expect(player).toHaveAttribute('data-record-swap', 'true');
   await expect(record).toBeDisabled();
-  await expect(player.locator('.record-assembly')).toHaveCSS('animation-name', 'record-exchange');
+  await expect(player.locator('[data-player-record-assembly]')).toHaveCSS('animation-name', 'none');
   await expect(track).not.toHaveText('半岛铁盒-周杰伦');
   await expect(player).toHaveAttribute('data-playback-state', 'playing');
   const selectedTrack = await track.textContent();
@@ -171,5 +174,26 @@ test('reduced motion presents the engaged arm without rotation or transition', a
   await expect(player.locator('[data-turntable-tonearm]')).toHaveCSS('transition-duration', '0s');
   await player.locator('[data-player-record]').dblclick();
   await expect(player).not.toHaveAttribute('data-record-swap', 'true');
+  await expect(player).toHaveAttribute('data-playback-state', 'playing');
+});
+
+test('enabling reduced motion finishes a record exchange immediately', async ({ page }) => {
+  await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const player = page.locator('[data-music-player]');
+  await player.locator('[data-player-toggle]').click();
+  const record = player.locator('[data-player-record]');
+
+  await record.dblclick();
+  await expect(player).toHaveAttribute('data-record-swap', 'true');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+
+  const state = await player.evaluate((element) => ({
+    swapping: element.hasAttribute('data-record-swap'),
+    disabled: (element.querySelector('[data-player-record]') as HTMLButtonElement).disabled,
+    transform: (element.querySelector('[data-player-record-assembly]') as HTMLElement).style.transform,
+    opacity: (element.querySelector('[data-player-record-assembly]') as HTMLElement).style.opacity,
+  }));
+  expect(state).toEqual({ swapping: false, disabled: false, transform: '', opacity: '' });
   await expect(player).toHaveAttribute('data-playback-state', 'playing');
 });

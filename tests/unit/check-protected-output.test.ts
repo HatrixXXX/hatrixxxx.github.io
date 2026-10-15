@@ -90,6 +90,27 @@ describe('protected output audit', () => {
     expect(result.errors.join('\n')).not.toContain(PRIVATE_BODY);
   });
 
+  it('detects private body text embedded in a binary output', async () => {
+    await writeFixture();
+    await writeFile(join(distRoot, 'assets', 'leaked-text.bin'), Buffer.concat([
+      Buffer.from([0, 255, 0]), Buffer.from(PRIVATE_BODY), Buffer.from([255, 0])
+    ]));
+
+    const result = await inspectProtectedOutput(contentRoot, distRoot);
+
+    expect(result.errors).toContain('assets/leaked-text.bin: protected Markdown body plaintext');
+  });
+
+  it('treats private punctuation as literal text', async () => {
+    const privatePhrase = 'Private [formula] (a+b) costs $42 and stays protected.';
+    await writeFixture(privatePhrase);
+    await writeFile(join(distRoot, 'leaked-punctuation.html'), `<p>${privatePhrase}</p>`, 'utf8');
+
+    const result = await inspectProtectedOutput(contentRoot, distRoot);
+
+    expect(result.errors).toContain('leaked-punctuation.html: protected Markdown body plaintext');
+  });
+
   it.each([
     ['quoted', (value: string) => `<aside data-private-note="${value}">short</aside>`],
     ['unquoted', (value: string) => `<aside data-private-note=${value}>short</aside>`],

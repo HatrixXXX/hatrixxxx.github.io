@@ -1,0 +1,5 @@
+All images in this directory were provided by the site owner on 2026-10-15.
+The source filenames map to the project names and numbered gallery order.
+The WebP derivatives were made with Sharp at the original pixel dimensions:
+quality 90 for still images and quality 82 for the two animated RoboMaster GIFs.
+The animated images retain their original frame counts.

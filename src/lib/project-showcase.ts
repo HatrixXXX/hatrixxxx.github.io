@@ -1,4 +1,4 @@
-export function wrapIndex(index: number, length: number): number {
-  if (length <= 0) return 0;
-  return ((index % length) + length) % length;
+export function previewDescription(description: string): string {
+  const characters = Array.from(description.trim());
+  return characters.length <= 100 ? characters.join('') : `${characters.slice(0, 99).join('')}…`;
 }

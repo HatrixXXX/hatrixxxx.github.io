@@ -3,6 +3,8 @@
 // - Mouse wheel over the rail scrolls through cards with spring damping
 // - First card starts active; last card can be active with lower whitespace
 
+import { animate } from 'animejs';
+
 const RAIL_SELECTOR = '[data-post-coverflow]';
 const INDEX_KEY = 'blog-coverflow-index';
 const FROM_POST_KEY = 'blog-coverflow-from-post';
@@ -23,6 +25,8 @@ interface CoverflowState {
   lastTime: number | null;
   wheelAccum: number;
   reducedMotion: boolean;
+  dockedCard: HTMLElement | null;
+  dockPulse: ReturnType<typeof animate> | null;
 }
 
 const railStates = new WeakMap<HTMLElement, CoverflowState>();
@@ -42,12 +46,39 @@ function stateFor(rail: HTMLElement): CoverflowState {
       raf: null,
       lastTime: null,
       wheelAccum: 0,
-      reducedMotion: reducedMotionMq.matches
+      reducedMotion: reducedMotionMq.matches,
+      dockedCard: null,
+      dockPulse: null
     };
     railStates.set(rail, s);
   }
   s.reducedMotion = reducedMotionMq.matches;
   return s;
+}
+
+function clearDockPulse(state: CoverflowState): void {
+  state.dockPulse?.cancel();
+  state.dockPulse = null;
+  state.dockedCard?.style.removeProperty('--dock-light');
+}
+
+function updateDock(rail: HTMLElement, card: HTMLElement): void {
+  const state = stateFor(rail);
+  if (state.dockedCard === card) return;
+  clearDockPulse(state);
+  state.dockedCard = card;
+  if (state.reducedMotion || document.hidden) return;
+
+  card.style.setProperty('--dock-light', '1');
+  state.dockPulse = animate(card, {
+    '--dock-light': 0,
+    duration: 460,
+    ease: 'outCubic',
+    onComplete: () => {
+      card.style.removeProperty('--dock-light');
+      state.dockPulse = null;
+    }
+  });
 }
 
 function applyTransforms(rail: HTMLElement, currentIndex: number): void {
@@ -80,6 +111,8 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
     const tabIndex = absOffset > 1.5 ? -1 : 0;
     if (titleLink && titleLink.tabIndex !== tabIndex) titleLink.tabIndex = tabIndex;
   }
+  const active = cards[Math.max(0, Math.min(cardCount - 1, Math.round(currentIndex)))];
+  if (active) updateDock(rail, active);
 }
 
 function cancelRaf(state: CoverflowState): void {
@@ -290,6 +323,8 @@ function initRail(rail: HTMLElement): void {
   state.target  = startIndex;
   state.velocity = 0;
   state.wheelAccum = 0;
+  clearDockPulse(state);
+  state.dockedCard = cards[startIndex] ?? null;
   applyTransforms(rail, startIndex);
 }
 
@@ -298,6 +333,21 @@ function initAllRails(): void {
 }
 
 document.addEventListener('astro:page-load', initAllRails);
+document.addEventListener('astro:before-swap', () => {
+  document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
+    const state = railStates.get(rail);
+    if (!state) return;
+    cancelRaf(state);
+    clearDockPulse(state);
+  });
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) return;
+  document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
+    const state = railStates.get(rail);
+    if (state) clearDockPulse(state);
+  });
+});
 initAllRails();
 
 window.addEventListener('resize', () => {
@@ -313,6 +363,7 @@ reducedMotionMq.addEventListener('change', () => {
     s.reducedMotion = reducedMotionMq.matches;
     if (reducedMotionMq.matches) {
       cancelRaf(s);
+      clearDockPulse(s);
       s.current = s.target;
       applyTransforms(rail, s.current);
     }

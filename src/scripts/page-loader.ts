@@ -1,4 +1,5 @@
 import { waitForImages } from '@/lib/image-readiness';
+import { animate, createTimeline, cubicBezier, waapi } from 'animejs';
 
 /**
  * 全站页面加载遮罩（page-loader.ts）
@@ -84,7 +85,11 @@ interface State {
   numEl:    HTMLElement | null;
   mode:     'initial' | 'transition';
   progress: number;
-  raf:      number;
+  progressMotion?: ReturnType<typeof animate>;
+  shutterMotion?: ReturnType<typeof createTimeline>;
+  openingMotion?: ReturnType<typeof waapi.animate>[];
+  shutterClosed?: boolean;
+  cleanup?: () => void;
   finished: boolean;
 }
 
@@ -94,7 +99,7 @@ function buildState(el: HTMLElement, mode: State['mode']): State {
     arcs:  Array.from(el.querySelectorAll<SVGCircleElement>('.pl-arc')),
     numEl: el.querySelector<HTMLElement>('.pl-pct-num'),
     mode,
-    progress: 0, raf: 0, finished: false,
+    progress: 0, finished: false,
   };
 }
 
@@ -107,20 +112,41 @@ function applyPct(s: State, pct: number): void {
 
 /** ease-out cubic 假进度推到 target */
 function fakeProgress(s: State, target: number, ms = 2400): void {
-  const from = s.progress;
-  const t0   = performance.now();
-  const tick = (now: number): void => {
-    if (s.finished) return;
-    const t = Math.min((now - t0) / ms, 1);
-    applyPct(s, from + (target - from) * (1 - (1 - t) ** 3));
-    if (t < 1) s.raf = requestAnimationFrame(tick);
-  };
-  s.raf = requestAnimationFrame(tick);
+  s.progressMotion?.cancel();
+  const value = { pct: s.progress };
+  s.progressMotion = animate(value, {
+    pct: target,
+    duration: ms,
+    ease: 'out(3)',
+    onUpdate: () => { if (!s.finished) applyPct(s, value.pct); },
+  });
 }
 
 // ── Show / Complete ───────────────────────────────────────────────────────────
 
 let activeLoader: State | null = null;
+
+function closeShutter(s: State): ReturnType<typeof createTimeline> | undefined {
+  const left = s.el.querySelector<HTMLElement>('.pl-shutter-leaf--left');
+  const right = s.el.querySelector<HTMLElement>('.pl-shutter-leaf--right');
+  if (!left || !right) return;
+  const ease = cubicBezier(.65, 0, .25, 1);
+  const motion = createTimeline({ autoplay: false })
+    .sync(waapi.animate(left, {
+      transform: ['translateX(-50%)', 'translateX(0)'],
+      duration: 460,
+      ease,
+      autoplay: false,
+    }), 0)
+    .sync(waapi.animate(right, {
+      transform: ['translateX(50%)', 'translateX(0)'],
+      duration: 460,
+      ease,
+      autoplay: false,
+    }), 0);
+  motion.play();
+  return motion;
+}
 
 function showLoader(mode: State['mode'] = 'initial'): State | null {
   const el = document.getElementById('page-loader');
@@ -130,50 +156,75 @@ function showLoader(mode: State['mode'] = 'initial'): State | null {
   el.classList.add('pl-visible');
   if (mode === 'transition') {
     el.classList.add('pl-transition');
-    void el.offsetWidth;
     el.classList.add('pl-closed');
   }
   delete document.documentElement.dataset.initialPageLoader;
   const s = buildState(el, mode);
   activeLoader = s;
   applyPct(s, 0);
+  if (mode === 'transition' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    s.shutterMotion = closeShutter(s);
+  }
   return s;
 }
 
 function waitForShutterClose(s: State): Promise<void> {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
-  const leaf = s.el.querySelector<HTMLElement>('.pl-shutter-leaf--left');
-  if (!leaf) return Promise.resolve();
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    s.shutterClosed = true;
+    return Promise.resolve();
+  }
+  const shutterMotion = s.shutterMotion;
+  if (!shutterMotion) return Promise.resolve();
   return new Promise((resolve) => {
     const finish = () => {
-      leaf.removeEventListener('transitionend', onEnd);
       window.clearTimeout(fallback);
+      s.shutterClosed = true;
       resolve();
     };
-    const onEnd = (event: TransitionEvent) => {
-      if (event.target === leaf && event.propertyName === 'transform') finish();
-    };
-    const fallback = window.setTimeout(finish, SHUTTER_CLOSE_FALLBACK_MS);
-    leaf.addEventListener('transitionend', onEnd);
+    const fallback = window.setTimeout(() => {
+      shutterMotion.complete();
+      finish();
+    }, SHUTTER_CLOSE_FALLBACK_MS);
+    void shutterMotion.then(finish);
   });
 }
 
 function complete(s: State): void {
   if (s.finished || activeLoader !== s) return;
   s.finished = true;
-  cancelAnimationFrame(s.raf);
+  s.progressMotion?.cancel();
   applyPct(s, 100);
   s.el.classList.add('pl-done');
   const cleanup = (): void => {
     if (activeLoader !== s) return;
+    s.shutterMotion?.revert();
+    s.openingMotion?.forEach((motion) => motion.revert());
+    s.cleanup = undefined;
     activeLoader = null;
     delete document.documentElement.dataset.initialPageLoader;
     delete document.documentElement.dataset.initialPageLoaderStartedAt;
     s.el.classList.remove('pl-visible', 'pl-done', 'pl-transition', 'pl-closed');
     s.el.innerHTML = '';
   };
-  if (s.mode === 'transition' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    window.setTimeout(cleanup, 0);
+  s.cleanup = cleanup;
+  if (s.mode === 'transition') {
+    if (document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.setTimeout(cleanup, 0);
+      return;
+    }
+    const leaves = [...s.el.querySelectorAll<HTMLElement>('.pl-shutter-leaf')];
+    const transforms = s.shutterClosed
+      ? ['translateX(0)', 'translateX(0)'] as const
+      : leaves.map((leaf) => getComputedStyle(leaf).transform) as [string, string];
+    s.shutterMotion?.revert();
+    leaves.forEach((leaf, index) => { leaf.style.transform = transforms[index]; });
+    s.openingMotion = leaves.map((leaf, index) => waapi.animate(leaf, {
+      transform: [transforms[index], index === 0 ? 'translateX(-50%)' : 'translateX(50%)'],
+      duration: 460,
+      ease: cubicBezier(.65, 0, .25, 1),
+    }));
+    void Promise.all(s.openingMotion.map((motion) => motion.then())).then(cleanup);
+    window.setTimeout(cleanup, 700);
     return;
   }
   s.el.addEventListener('transitionend', cleanup, { once: true });
@@ -267,7 +318,7 @@ function waitHomeDone(s: State): void {
     settled = true;
     window.clearTimeout(guard);
     controller.abort();
-    cancelAnimationFrame(s.raf);
+    s.progressMotion?.cancel();
     if (resetOverlay) {
       s.finished = true;
       if (activeLoader === s) activeLoader = null;
@@ -558,7 +609,20 @@ document.addEventListener('astro:page-load', () => {
 // before-preparation 触发了（pending 被设置），但 page-load 从未触发，
 // 页面重新可见时 pending 仍然悬空。
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') drainPending();
+  if (document.hidden) {
+    if (activeLoader?.mode === 'transition') {
+      if (activeLoader.finished) activeLoader.cleanup?.();
+      else activeLoader.shutterMotion?.complete();
+    }
+  } else {
+    drainPending();
+  }
+});
+const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+motionPreference.addEventListener('change', () => {
+  if (!motionPreference.matches || activeLoader?.mode !== 'transition') return;
+  if (activeLoader.finished) activeLoader.cleanup?.();
+  else activeLoader.shutterMotion?.complete();
 });
 window.addEventListener('pageshow', (e) => {
   // bfcache 恢复时 e.persisted === true

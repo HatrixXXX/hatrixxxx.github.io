@@ -108,6 +108,18 @@ describe('content utilities', () => {
     });
   });
 
+  it('includes the public post summary in search terms and excerpts', () => {
+    const source = {
+      ...post('summary-post', '2026-02-03'),
+      data: { ...post('summary-post', '2026-02-03').data, summary: '独有摘要关键词' },
+      body: '正文没有这个词。'
+    } as PostEntry & { body: string };
+
+    const document = search.toSearchDocument(source);
+    expect(document.text).toContain('独有摘要关键词');
+    expect(document.paragraphs).toContain('独有摘要关键词');
+  });
+
   it('extracts searchable paragraphs and overlapping Chinese tokens', () => {
     expect(markdownToParagraphs).toBeTypeOf('function');
     expect(tokenizeSearchText).toBeTypeOf('function');

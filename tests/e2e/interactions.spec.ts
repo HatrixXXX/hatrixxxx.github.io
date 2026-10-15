@@ -42,7 +42,7 @@ test('search loads its index once, limits results and closes with Escape', async
   expect(indexRequests).toBe(0);
 
   await page.keyboard.press('Control+K');
-  const searchbox = page.getByRole('searchbox', { name: '搜索文章' });
+  const searchbox = page.getByRole('searchbox', { name: '搜索全站' });
   await expect(searchbox).toBeFocused();
   await searchbox.fill('FPGA');
   await expect(page.locator('[data-search-result]').first()).toBeVisible();
@@ -55,7 +55,7 @@ test('search loads its index once, limits results and closes with Escape', async
   await page.getByRole('link', { name: '作品橱窗', exact: true }).click();
   await expect(page).toHaveURL('/creation/');
   await page.keyboard.press('Control+K');
-  await expect(page.getByRole('searchbox', { name: '搜索文章' })).toBeFocused();
+  await expect(page.getByRole('searchbox', { name: '搜索全站' })).toBeFocused();
   expect(indexRequests).toBe(1);
 });
 
@@ -76,7 +76,7 @@ test('search retries after the first index request fails', async ({ page }) => {
   await page.keyboard.press('Escape');
 
   await page.keyboard.press('Control+K');
-  await page.getByRole('searchbox', { name: '搜索文章' }).fill('FPGA');
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('FPGA');
   await expect(page.locator('[data-search-result]').first()).toBeVisible();
   expect(attempts).toBe(2);
 });
@@ -98,7 +98,7 @@ test('search results show a highlighted body excerpt and carry the query to the 
 
   await page.goto('/');
   await page.keyboard.press('Control+K');
-  await page.getByRole('searchbox', { name: '搜索文章' }).fill('矩阵');
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('矩阵');
 
   const result = page.locator('[data-search-result]').first();
   await expect(result.locator('[data-search-excerpt] mark')).toHaveText('矩阵');

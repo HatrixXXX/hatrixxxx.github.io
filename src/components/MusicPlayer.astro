@@ -70,7 +70,7 @@ const currentTrack = playlist[0];
         <circle cx="345" cy="236" r="2.6" fill="#ffd200" />
       </svg>
 
-      <div class="record-assembly">
+      <div class="record-assembly" data-player-record-assembly>
         <div class="record-disc" data-turntable-record aria-hidden="true"></div>
         <button
           class="record-button"
@@ -180,16 +180,7 @@ const currentTrack = playlist[0];
   .music-player[data-playback-state='playing'] .record-disc,
   .music-player[data-playback-state='buffering'] .record-disc { animation: record-spin 1.8s linear infinite; }
   @keyframes record-spin { to { transform: rotate(360deg); } }
-  .music-player[data-record-swap='true'] .record-assembly {
-    animation: record-exchange 560ms cubic-bezier(.4, 0, .2, 1) 160ms both;
-  }
-  @keyframes record-exchange {
-    0% { opacity: 1; transform: none; }
-    45% { opacity: 0; transform: translate(-24%, -8%) rotate(-10deg) scale(.88); }
-    49% { opacity: 0; transform: translate(-27%, -9%) rotate(-12deg) scale(.86); }
-    50% { opacity: 0; transform: translate(27%, -9%) rotate(12deg) scale(.86); }
-    100% { opacity: 1; transform: none; }
-  }
+  .music-player[data-record-swap='true'] .record-assembly { transition: none; }
 
   .record-button {
     position: absolute;

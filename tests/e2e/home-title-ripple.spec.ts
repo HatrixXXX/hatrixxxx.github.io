@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
 test('Hatrix glow spreads from the click point without navigation or visible rings', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#page-loader')).toBeHidden();
@@ -29,6 +31,27 @@ test('Hatrix keeps still feedback without navigation for reduced motion', async 
   expect(await control.locator('h1').evaluate((node) => getComputedStyle(node).animationName)).toBe('none');
   await expect(control).not.toHaveAttribute('data-rippling', '', { timeout: 1_000 });
   await expect(page).toHaveURL('/');
+});
+
+test('repeated title activation continues the glow from its current radius', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const control = page.locator('.identity-name .identity-trigger');
+  const title = page.locator('.identity-name h1');
+  await control.click();
+  await expect.poll(() => title.evaluate((node) =>
+    Number.parseFloat(getComputedStyle(node, '::after').getPropertyValue('--hatrix-glow-radius'))
+  )).toBeGreaterThan(35);
+
+  const radii = await control.evaluate((button) => {
+    const heading = button.parentElement!.querySelector('h1')!;
+    const radius = () => Number.parseFloat(getComputedStyle(heading, '::after').getPropertyValue('--hatrix-glow-radius'));
+    const before = radius();
+    (button as HTMLButtonElement).click();
+    return { before, after: radius() };
+  });
+  expect(radii.after).toBeGreaterThan(radii.before * 0.75);
+  await expect(control.locator('..')).not.toHaveAttribute('data-rippling', '', { timeout: 2_000 });
 });
 
 test('keyboard activation starts the glow from the title center', async ({ page }) => {

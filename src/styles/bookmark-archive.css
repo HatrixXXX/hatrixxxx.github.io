@@ -271,8 +271,6 @@
 .favorites-random svg { width: 20px; height: 20px; }
 .favorites-random:hover { filter: brightness(1.1); transform: translateY(-2px); }
 .favorites-random:active { filter: brightness(.9); transform: translateY(2px); }
-.favorites-console[data-spinning] .favorites-random svg { animation: favorites-spin 750ms linear infinite; }
-@keyframes favorites-spin { to { rotate: 360deg; } }
 .favorites-status { width: 1px; height: 1px; overflow: hidden; position: absolute; clip-path: inset(50%); white-space: nowrap; }
 
 @media (max-width: 820px) {

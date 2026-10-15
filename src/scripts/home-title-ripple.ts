@@ -1,3 +1,5 @@
+import { animate } from 'animejs';
+
 let cleanup: (() => void) | undefined;
 
 function initializeTitleRipple(): void {
@@ -12,6 +14,8 @@ function initializeTitleRipple(): void {
   const controller = new AbortController();
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let finishTimer = 0;
+  let glow: ReturnType<typeof animate> | undefined;
+  let activation = 0;
 
   const onClick = (event: MouseEvent): void => {
     if (event.defaultPrevented || event.button !== 0) return;
@@ -21,19 +25,41 @@ function initializeTitleRipple(): void {
     const y = event.detail === 0 ? title.offsetHeight / 2 : Math.min(title.offsetHeight, Math.max(0, (event.clientY - rect.top) * title.offsetHeight / rect.height));
     title.style.setProperty('--ripple-x', `${x}px`);
     title.style.setProperty('--ripple-y', `${y}px`);
+    const radius = Number.parseFloat(getComputedStyle(title, '::after').getPropertyValue('--hatrix-glow-radius')) || 0;
+    glow?.cancel();
+    title.style.setProperty('--hatrix-glow-radius', `${radius}px`);
     wrapper.removeAttribute('data-rippling');
     void title.offsetWidth;
     wrapper.setAttribute('data-rippling', '');
 
     window.clearTimeout(finishTimer);
-    finishTimer = window.setTimeout(() => wrapper.removeAttribute('data-rippling'), reducedMotion.matches ? 220 : 800);
+    const current = ++activation;
+    const finish = () => {
+      if (current !== activation) return;
+      wrapper.removeAttribute('data-rippling');
+      title.style.removeProperty('--hatrix-glow-radius');
+      glow = undefined;
+    };
+    if (reducedMotion.matches) {
+      finishTimer = window.setTimeout(finish, 220);
+    } else {
+      glow = animate(title, {
+        '--hatrix-glow-radius': [`${radius}px`, '230px'],
+        duration: 800,
+        ease: 'out(3)',
+        onComplete: finish,
+      });
+    }
   };
 
   control.addEventListener('click', onClick, { signal: controller.signal });
   cleanup = () => {
     controller.abort();
     window.clearTimeout(finishTimer);
+    activation += 1;
+    glow?.revert();
     wrapper.removeAttribute('data-rippling');
+    title.style.removeProperty('--hatrix-glow-radius');
   };
 }
 

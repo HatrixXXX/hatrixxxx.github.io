@@ -56,7 +56,7 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
 
   await page.goto('/creation/');
   await expect(page.getByText('作品内容还没添加')).toHaveCount(0);
-  await expect(page.locator('[data-project-page]')).toHaveCount(5);
+  await expect(page.locator('[data-project-badge]')).toHaveCount(15);
 
   await page.goto('/about/hobbies/');
   await expect(page.locator('main').getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', /HatrixXXX/);
@@ -68,7 +68,7 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
   const searchResponse = await request.get('/search-index.json');
   expect(searchResponse.headers()['content-type']).toMatch(/^application\/json/);
   const search = await searchResponse.json();
-  expect(search).toHaveLength(15);
+  expect(search.filter((document: { url: string }) => document.url.startsWith('/posts/'))).toHaveLength(15);
   for (const document of search) {
     expect(document).not.toHaveProperty('category');
     expect(document).not.toHaveProperty('tags');
@@ -134,10 +134,10 @@ test('locked posts are excluded from public search results', async ({ page }) =>
   });
   await page.goto('/', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: '搜索' }).click();
-  await page.getByRole('searchbox', { name: '搜索文章' }).fill('Public locked title');
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('Public locked title');
 
   await expect(page.locator('[data-search-result]')).toHaveCount(0);
-  await expect(page.locator('[data-search-status]')).toHaveText('没有找到相关文章');
+  await expect(page.locator('[data-search-status]')).toHaveText('没有找到相关内容');
 });
 
 test('404 retains site navigation', async ({ page }) => {

@@ -81,6 +81,47 @@ test('a client navigation closes both shutter leaves before swapping pages, then
   await expect(loader).toBeHidden();
 });
 
+test('the shutter visibly pulls apart after the destination becomes ready', async ({ page }) => {
+  await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  let release!: () => void;
+  let requested!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const requestStarted = new Promise<void>((resolve) => { requested = resolve; });
+  await page.route('**/blogs/', async (route) => {
+    requested();
+    await gate;
+    await route.continue();
+  });
+  const loader = page.locator('#page-loader');
+  try {
+    await page.locator('.desktop-nav a[href="/blogs/"]').click();
+    await requestStarted;
+    await expect.poll(() => loader.locator('.pl-shutter-leaf--left').evaluate((leaf) =>
+      leaf.getBoundingClientRect().left)).toBeGreaterThanOrEqual(-1);
+    await page.evaluate(() => {
+      const runtime = window as Window & { __shutterRevealPositions?: number[] };
+      runtime.__shutterRevealPositions = [];
+      const element = document.querySelector('#page-loader')!;
+      const sample = () => {
+        if (element.classList.contains('pl-done')) {
+          const leaf = element.querySelector<HTMLElement>('.pl-shutter-leaf--left');
+          if (leaf) runtime.__shutterRevealPositions!.push(leaf.getBoundingClientRect().left);
+        }
+        if (element.classList.contains('pl-visible')) requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+  } finally {
+    release();
+  }
+  await expect(page).toHaveURL('/blogs/');
+  await expect(loader).toBeHidden();
+  const positions = await page.evaluate(() =>
+    (window as Window & { __shutterRevealPositions?: number[] }).__shutterRevealPositions ?? []);
+  expect(positions.some((left) => left < -40 && left > -page.viewportSize()!.width / 2 + 40)).toBe(true);
+});
+
 test('the shutter covers a tall mobile viewport through the menu navigation', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/plans/');
@@ -135,6 +176,74 @@ test('reduced motion still covers navigation without a sliding animation', async
     releaseNavigation();
   }
 
+  await expect(page).toHaveURL('/blogs/');
+  await expect(loader).toBeHidden();
+});
+
+test('hiding during shutter closure settles the leaves before page swap', async ({ page }) => {
+  await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  let release!: () => void;
+  let requested!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const requestStarted = new Promise<void>((resolve) => { requested = resolve; });
+  await page.route('**/blogs/', async (route) => {
+    requested();
+    await gate;
+    await route.continue();
+  });
+  const loader = page.locator('#page-loader');
+  try {
+    await page.locator('.desktop-nav a[href="/blogs/"]').click();
+    await requestStarted;
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect.poll(() => loader.evaluate((element) => {
+      const leaves = [...element.querySelectorAll<HTMLElement>('.pl-shutter-leaf')];
+      if (leaves.length !== 2) return false;
+      const [left, right] = leaves.map((leaf) => leaf.getBoundingClientRect());
+      return left.left >= -1 && right.right <= innerWidth + 1;
+    })).toBe(true);
+  } finally {
+    release();
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+  }
+  await page.waitForTimeout(750);
+  await expect(loader).toBeHidden();
+});
+
+test('switching to reduced motion settles an active shutter immediately', async ({ page }) => {
+  await page.goto('/about/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  let release!: () => void;
+  let requested!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const requestStarted = new Promise<void>((resolve) => { requested = resolve; });
+  await page.route('**/blogs/', async (route) => {
+    requested();
+    await gate;
+    await route.continue();
+  });
+  const loader = page.locator('#page-loader');
+  try {
+    await page.locator('.desktop-nav a[href="/blogs/"]').click();
+    await requestStarted;
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const closed = await loader.evaluate((element) => {
+      const leaves = [...element.querySelectorAll<HTMLElement>('.pl-shutter-leaf')];
+      if (leaves.length !== 2) return false;
+      const [left, right] = leaves.map((leaf) => leaf.getBoundingClientRect());
+      return left.left >= -1 && right.right <= innerWidth + 1;
+    });
+    expect(closed).toBe(true);
+  } finally {
+    release();
+  }
   await expect(page).toHaveURL('/blogs/');
   await expect(loader).toBeHidden();
 });

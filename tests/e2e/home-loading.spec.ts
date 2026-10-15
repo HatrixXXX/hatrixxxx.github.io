@@ -313,7 +313,7 @@ test('keeps the persisted player aligned with the current homepage panel on retu
     expect(Math.abs(geometry.player.width - geometry.panel.width)).toBeLessThan(1);
     expect(Math.abs(geometry.player.height - geometry.panel.height)).toBeLessThan(1);
     if (visit === 2) break;
-    await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
+    await page.locator('[data-home-stage]').getByRole('link', { name: '关于我', exact: true }).click();
     await expect(player).toHaveAttribute('data-display-mode', 'dock');
     await page.locator('[data-back-button]').click();
     await expect(page).toHaveURL('/');
@@ -438,8 +438,8 @@ test('a canceled return-home navigation keeps the dock player ready and usable',
   });
   await page.goto('/');
   await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
-  await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
-  await expect(page).toHaveURL('/plans/');
+  await page.locator('[data-home-stage]').getByRole('link', { name: '关于我', exact: true }).click();
+  await expect(page).toHaveURL('/about/');
   const player = page.locator('[data-music-player]');
   await player.evaluate((node) => node.setAttribute('data-persist-probe', 'original'));
   let release!: () => void;
@@ -461,7 +461,7 @@ test('a canceled return-home navigation keeps the dock player ready and usable',
       anchor.click();
       anchor.remove();
     });
-    await expect(page).toHaveURL('/plans/#canceled-return');
+    await expect(page).toHaveURL('/about/#canceled-return');
     await expect(player).toHaveAttribute('data-layout-state', 'ready');
     await expect(player).toHaveAttribute('data-display-mode', 'dock');
     await expect(player).toBeVisible();
@@ -473,7 +473,7 @@ test('a canceled return-home navigation keeps the dock player ready and usable',
     release();
   }
   await page.unrouteAll({ behavior: 'wait' });
-  await expect(page).toHaveURL('/plans/#canceled-return');
+  await expect(page).toHaveURL('/about/#canceled-return');
   await expect(player).toHaveAttribute('data-layout-state', 'ready');
   await expect(player).toHaveAttribute('data-display-mode', 'dock');
   await expect(player).toHaveAttribute('data-persist-probe', 'original');

@@ -1,106 +1,99 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import ProjectArtwork from '@/components/ProjectArtwork.astro';
+import { previewDescription } from '@/lib/project-showcase';
 
 interface Props {
   projects: CollectionEntry<'projects'>[];
 }
 
 const { projects } = Astro.props;
-const groups = Array.from({ length: Math.ceil(projects.length / 6) }, (_, page) => projects.slice(page * 6, page * 6 + 6));
+const shelfCapacity = 5;
+const shelves = Array.from({ length: Math.ceil(projects.length / shelfCapacity) }, (_, shelf) =>
+  projects.slice(shelf * shelfCapacity, (shelf + 1) * shelfCapacity)
+);
+const jarSpecimenIds = new Set([
+  'fpga-3dgs', 'robomaster', 'quadrotor', 'car-series', 'lab-wall',
+  'armor-keychain', 'wheel-leg-keychain', 'rm-ruler', 'three-year-summary', 'conet',
+  'infantry-handbook', 'painted-mouse', 'paper-models', 'personal-website', 'usb3-hub'
+]);
+const compactJarSpecimenIds = new Set([
+  'armor-keychain', 'car-series', 'wheel-leg-keychain', 'rm-ruler', 'three-year-summary',
+  'conet', 'infantry-handbook', 'paper-models', 'personal-website', 'usb3-hub'
+]);
+const jarImageFor = (project: CollectionEntry<'projects'>) =>
+  jarSpecimenIds.has(project.id) ? `/assets/project-jar-specimens/${project.id}.webp` : project.data.cover;
 ---
 
-<main class="project-showcase" data-project-showcase data-selected="0" data-mobile-view="catalog" aria-label="作品橱窗">
+<main class="project-showcase" data-project-showcase data-selected="0" aria-label="作品橱窗">
   <h1 class="visually-hidden">作品橱窗</h1>
   <div class="showcase-viewport">
     <div class="showcase-window" data-showcase-window>
-      <span class="showcase-crest" data-showcase-crest aria-hidden="true"><img src="/assets/projects/project-showcase-crest.webp" width="220" height="220" alt="" /></span>
-      <section class="showcase-catalog" data-catalog-panel aria-label="选择作品">
-          {groups.length === 0 && <p class="showcase-empty">作品待加入。</p>}
-          {groups.map((group, page) => (
-            <div class="showcase-badge-grid" data-catalog-page={page} hidden={page !== 0}>
-              {group.map((project, slot) => {
-                const index = page * 6 + slot;
+      <section class="showcase-catalog" data-catalog-panel aria-label="作品展位">
+          {shelves.map((shelf, shelfIndex) => (
+            <div class="showcase-shelf-scroll">
+            <section class="showcase-badge-grid" data-project-shelf aria-label={`第${shelfIndex + 1}层作品平台`}>
+              <img class="showcase-shelf" src="/assets/projects/project-cabinet-shelf.webp" width="1600" height="247" alt="" aria-hidden="true" draggable="false" />
+              {shelf.map((project, slot) => {
+                const index = shelfIndex * shelfCapacity + slot;
+                const jarImage = jarImageFor(project);
                 return (
                   <button class="showcase-badge" type="button" data-project-badge={index} data-badge-theme={project.data.theme} aria-pressed={index === 0 ? 'true' : 'false'}>
-                    <span class="showcase-badge-crown" aria-hidden="true"></span>
-                    <span class="showcase-badge-art">
-                      {project.data.cover ? <img src={project.data.cover} alt="" loading="lazy" decoding="async" /> : <ProjectArtwork theme={project.data.theme} />}
+                    <span class="showcase-vessel" data-compact-art={compactJarSpecimenIds.has(project.id) ? '' : undefined} aria-hidden="true">
+                      <span class="showcase-badge-art">
+                        {jarImage ? <img src={jarImage} alt="" loading="lazy" decoding="async" draggable="false" /> : <ProjectArtwork theme={project.data.theme} />}
+                      </span>
+                      <img class="showcase-jar" src="/assets/projects/project-cabinet-jar.webp" width="320" height="572" alt="" draggable="false" />
                     </span>
                     <span class="showcase-badge-name">{project.data.title}</span>
-                    <span class="showcase-badge-medallion" aria-hidden="true"></span>
                   </button>
                 );
               })}
-              {Array.from({ length: 6 - group.length }, () => <span class="showcase-empty-mount" data-empty-mount aria-hidden="true"><span></span></span>)}
+            </section>
             </div>
           ))}
-          {groups.length > 1 && (
-            <div class="showcase-catalog-pagination">
-              <button type="button" data-catalog-prev aria-label="上一组作品">‹</button>
-              <span data-catalog-count>1 / {groups.length}</span>
-              <button type="button" data-catalog-next aria-label="下一组作品">›</button>
-            </div>
-          )}
       </section>
-      <section class="showcase-detail-shell" data-detail-panel aria-label="作品详情">
+      <dialog class="showcase-detail-shell" data-detail-panel data-project-dialog aria-label="作品详情" tabindex="-1">
         {projects.map((project, index) => {
-          const { title, description, category, theme, cover, coverAlt, experience, moment } = project.data;
+          const { title, description, theme, cover, coverAlt } = project.data;
+          const jarImage = jarImageFor(project);
           const gallery = project.data.gallery as { src: string; alt: string; caption?: string }[];
-          const tags = project.data.tags as string[];
-          const tech = project.data.tech as string[];
-          const links = project.data.links as { label: string; url: string }[];
-          const slideCount = gallery.length + 1;
+          const slideCount = gallery.length + (cover || gallery.length === 0 ? 1 : 0);
           return (
             <article class="showcase-detail" data-project-detail={index} data-project-theme={theme} hidden={index !== 0}>
-              <div class="showcase-detail-top">
-                <button type="button" class="showcase-back-catalog" data-back-catalog aria-label="返回作品展位">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m13 5-7 7 7 7M6 12h13" /></svg>
-                </button>
+              <div class="showcase-expanded-vessel" data-expanded-vessel data-compact-art={compactJarSpecimenIds.has(project.id) ? '' : undefined} aria-hidden="true">
+                <span class="showcase-expanded-art">
+                  {jarImage ? <img src={jarImage} alt="" loading="lazy" decoding="async" draggable="false" /> : <ProjectArtwork theme={theme} />}
+                </span>
+                <img class="showcase-expanded-jar" src="/assets/projects/project-cabinet-jar.webp" width="320" height="572" alt="" draggable="false" />
+                <span class="showcase-expanded-name">{title}</span>
               </div>
-              <div class="showcase-detail-scroll" data-detail-scroll data-lenis-prevent>
-                <div class="showcase-media" data-carousel data-slide-count={slideCount}>
-                  <div class="showcase-carousel-viewport" tabindex="0" role="region" aria-label={title + '图片展示'} data-carousel-viewport data-lenis-prevent-horizontal>
+              <div class="showcase-info-card" data-info-card>
+                <div class="showcase-info-image" data-project-carousel data-slide-count={slideCount}>
+                  <div class="showcase-carousel-viewport" data-carousel-viewport tabindex={slideCount > 1 ? 0 : undefined} role="region" aria-label={`${title}图片展示`}>
                     <div class="showcase-carousel-track" data-carousel-track>
-                      <figure class="showcase-slide" data-carousel-slide>
-                        {cover ? <img src={cover} alt={coverAlt || title + '的概念封面'} loading="lazy" decoding="async" /> : <ProjectArtwork theme={theme} />}
-                        {!cover && <figcaption>概念封面 · 实际照片待补充</figcaption>}
-                      </figure>
+                      {(cover || gallery.length === 0) && (
+                        <figure class="showcase-carousel-slide" data-carousel-slide>
+                          {cover ? <img src={cover} alt={coverAlt || title} loading="lazy" decoding="async" draggable="false" /> : <ProjectArtwork theme={theme} />}
+                          {!cover && <figcaption>概念封面 · 实际照片待补充</figcaption>}
+                        </figure>
+                      )}
                       {gallery.map((photo) => (
-                        <figure class="showcase-slide" data-carousel-slide>
-                          <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
+                        <figure class="showcase-carousel-slide" data-carousel-slide>
+                          <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" draggable="false" />
                           {photo.caption && <figcaption>{photo.caption}</figcaption>}
                         </figure>
                       ))}
                     </div>
                   </div>
-                  {slideCount > 1 && (
-                    <div class="showcase-carousel-controls">
-                      <button type="button" data-carousel-prev aria-label="上一张图片"><span aria-hidden="true">‹</span></button>
-                      <span data-carousel-counter>01 / {String(slideCount).padStart(2, '0')}</span>
-                      <button type="button" data-carousel-next aria-label="下一张图片"><span aria-hidden="true">›</span></button>
-                    </div>
-                  )}
+                  {slideCount > 1 && <span class="visually-hidden" data-carousel-counter aria-live="polite">01 / {String(slideCount).padStart(2, '0')}</span>}
                 </div>
-                <div class="showcase-copy">
-                  <h2>{title}</h2>
-                  <div class="showcase-tags" aria-label="作品标签">
-                    <span>{category}</span>
-                    {tags.map((tag) => <span>{tag}</span>)}
-                  </div>
-                  <p class="showcase-description">{description}</p>
-                  <div class="showcase-story">
-                    <section><h3>制作经历</h3><p>{experience || '制作经历待补充。'}</p></section>
-                    <section><h3>过程趣事</h3><p>{moment || '过程趣事待补充。'}</p></section>
-                  </div>
-                  {tech.length > 0 && <div class="showcase-tech" aria-label="相关技术">{tech.map((item) => <span>{item}</span>)}</div>}
-                  {links.length > 0 && <div class="showcase-links">{links.map((link) => <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div>}
-                </div>
+                <p data-project-intro>{previewDescription(description)}</p>
               </div>
             </article>
           );
         })}
-      </section>
+      </dialog>
 
     </div>
   </div>

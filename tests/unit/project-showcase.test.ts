@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { wrapIndex } from '../../src/lib/project-showcase';
+import { previewDescription } from '../../src/lib/project-showcase';
 
-describe('project showcase carousel', () => {
-  it('wraps in both directions without leaving the slide range', () => {
-    expect(wrapIndex(1, 3)).toBe(1);
-    expect(wrapIndex(3, 3)).toBe(0);
-    expect(wrapIndex(-1, 3)).toBe(2);
-    expect(wrapIndex(0, 1)).toBe(0);
+describe('project introduction', () => {
+  it('keeps a short description intact and limits a long one to 100 characters', () => {
+    expect(previewDescription('项目介绍待补充。')).toBe('项目介绍待补充。');
+    const preview = previewDescription('项'.repeat(101));
+    expect(Array.from(preview)).toHaveLength(100);
+    expect(preview.endsWith('…')).toBe(true);
   });
 });

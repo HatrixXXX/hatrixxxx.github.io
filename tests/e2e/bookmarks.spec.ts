@@ -46,3 +46,18 @@ test('random spin visibly turns and then settles on a different link', async ({ 
   await expect(page.locator('[data-favorites-status]')).toContainText('已选中', { timeout: 10000 });
   await expect(selected).not.toHaveText('扬神的博客');
 });
+
+test('random spin cancels when the page becomes hidden', async ({ page }) => {
+  await page.goto('/favorites/');
+  await page.getByRole('button', { name: '随机转一个链接' }).click();
+  await expect(page.locator('[data-favorites-reel]')).toHaveAttribute('aria-busy', 'true');
+  const stillBusy = await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    return document.querySelector('[data-favorites-reel]')?.getAttribute('aria-busy');
+  });
+  expect(stillBusy).toBeNull();
+  const selected = await page.locator('[data-favorites-selected]').textContent();
+  await page.waitForTimeout(1200);
+  await expect(page.locator('[data-favorites-selected]')).toHaveText(selected ?? '');
+});

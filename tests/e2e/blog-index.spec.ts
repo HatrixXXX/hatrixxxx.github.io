@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
 test('blog index lists every published post in date order', async ({ page }) => {
   await page.goto('/blogs/');
 
@@ -288,6 +290,28 @@ test('clicking a side card selects it without opening the article', async ({ pag
 
   await expect(card).toHaveAttribute('data-active', 'true');
   await expect(page).toHaveURL('/blogs/');
+});
+
+test('dock feedback follows the selected card and clears when retargeted', async ({ page }) => {
+  await page.goto('/blogs/');
+  const rail = page.locator('[data-post-coverflow]');
+  const second = rail.locator('[data-post-card]').nth(1);
+  const third = rail.locator('[data-post-card]').nth(2);
+
+  await second.dispatchEvent('click');
+  await expect(second).toHaveAttribute('data-active', 'true');
+  await expect.poll(() => second.evaluate((card) =>
+    Number(card.style.getPropertyValue('--dock-light'))
+  )).toBeGreaterThan(0);
+
+  await third.dispatchEvent('click');
+  await expect(third).toHaveAttribute('data-active', 'true');
+  await expect.poll(() => second.evaluate((card) =>
+    card.style.getPropertyValue('--dock-light')
+  )).toBe('');
+  await expect.poll(() => third.evaluate((card) =>
+    card.style.getPropertyValue('--dock-light')
+  )).toBe('');
 });
 
 test('clicking the empty area of the active card opens its article', async ({ page }) => {

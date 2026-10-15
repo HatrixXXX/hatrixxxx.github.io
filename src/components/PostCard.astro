@@ -102,7 +102,8 @@ const coverProps = !post.data.cover
     width: 3px;
     background: linear-gradient(180deg, transparent, rgb(255 210 0 / 80%) 48%, transparent);
     content: '';
-    opacity: calc(var(--center-proximity, 0) * .7);
+    opacity: calc(var(--center-proximity, 0) * .7 + var(--dock-light, 0) * .3);
+    filter: brightness(calc(1 + var(--dock-light, 0) * .6));
     pointer-events: none;
   }
 
@@ -137,16 +138,6 @@ const coverProps = !post.data.cover
   .post-card[data-active='true'] .post-card-clamp {
     opacity: 1;
     filter: brightness(1.2) drop-shadow(0 5px 8px rgb(0 0 0 / 60%));
-  }
-
-  .post-card[data-active='true']::after {
-    animation: card-dock-light 460ms var(--ease-out);
-  }
-
-  @keyframes card-dock-light {
-    from { opacity: 0; filter: brightness(1); }
-    55% { opacity: 1; filter: brightness(1.6); }
-    to { opacity: .7; filter: brightness(1); }
   }
 
   .post-card-media {
@@ -472,10 +463,6 @@ const coverProps = !post.data.cover
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .post-card[data-active='true']::after {
-      animation: none;
-    }
-
     .post-card-clamp {
       transition: none;
     }

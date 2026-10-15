@@ -76,6 +76,27 @@ function plainText(value: string): string {
     .trim();
 }
 
+function literalMatchers(values: string[]): RegExp[] {
+  const distinct = [...new Set(values)];
+  const special = '\\^$.*+?()[]{}|';
+  const matchers: RegExp[] = [];
+  for (let start = 0; start < distinct.length; start += 1024) {
+    const pattern = distinct.slice(start, start + 1024)
+      .map((value) => Array.from(value, (character) => special.includes(character) ? '\\' + character : character).join(''))
+      .join('|');
+    try {
+      matchers.push(new RegExp(pattern));
+    } catch {
+      throw new Error('Unable to compile protected output matcher');
+    }
+  }
+  return matchers;
+}
+
+function containsAny(matchers: RegExp[], value: string): boolean {
+  return matchers.some((matcher) => matcher.test(value));
+}
+
 function bodySnippets(content: string, publicMetadata: string): string[] {
   const withoutImages = content.replace(MARKDOWN_IMAGE, ' ').replace(HTML_IMAGE, ' ');
   const publicText = plainText(publicMetadata);
@@ -206,6 +227,10 @@ export async function inspectProtectedOutput(
   const resolvedDistRoot = resolve(distRoot);
   const errors = new Set<string>();
   const sources = await protectedSources(resolvedContentRoot, snippetsRoot, errors);
+  const metadataMatchers = literalMatchers(sources.flatMap((source) => source.metadataValues));
+  const bodyMatchers = literalMatchers(sources.flatMap((source) => source.bodySnippets));
+  const resources = sources.flatMap((source) => source.resources);
+  const resourceNameMatchers = literalMatchers(resources.map((resource) => resource.name).filter(Boolean));
 
   let outputFiles: string[];
   try {
@@ -223,23 +248,17 @@ export async function inspectProtectedOutput(
     const text = output.bytes.toString('utf8');
     const decodedText = decodeEntities(text);
     const normalizedText = plainText(text);
-    for (const source of sources) {
-      if (source.metadataValues.some((value) => decodedText.includes(value) || normalizedText.includes(value))) {
-        errors.add(`${output.relativePath}: protected snippet metadata plaintext`);
-      }
-      if (source.bodySnippets.some(
-        (snippet) => decodedText.includes(snippet) || normalizedText.includes(snippet)
-      )) {
-        errors.add(`${output.relativePath}: protected Markdown body plaintext`);
-      }
-      for (const resource of source.resources) {
-        if (resource.bytes.length > 0 && output.bytes.indexOf(resource.bytes) !== -1) {
-          errors.add(`${output.relativePath}: original protected resource bytes`);
-        }
-        if (resource.name && text.includes(resource.name)) {
-          errors.add(`${output.relativePath}: original protected resource name`);
-        }
-      }
+    if (containsAny(metadataMatchers, decodedText) || containsAny(metadataMatchers, normalizedText)) {
+      errors.add(output.relativePath + ': protected snippet metadata plaintext');
+    }
+    if (containsAny(bodyMatchers, decodedText) || containsAny(bodyMatchers, normalizedText)) {
+      errors.add(output.relativePath + ': protected Markdown body plaintext');
+    }
+    if (resources.some((resource) => resource.bytes.length > 0 && output.bytes.indexOf(resource.bytes) !== -1)) {
+      errors.add(output.relativePath + ': original protected resource bytes');
+    }
+    if (containsAny(resourceNameMatchers, text)) {
+      errors.add(output.relativePath + ': original protected resource name');
     }
   }
 

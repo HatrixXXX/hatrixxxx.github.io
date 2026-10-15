@@ -105,7 +105,7 @@ export function toSearchDocument(post: PostEntry): SearchDocument {
   const metadata = markdownToPlainText(post.data.title);
   const paragraphs = post.data.locked
     ? []
-    : markdownToParagraphs((post as PostEntry & { body?: string }).body ?? '');
+    : [markdownToPlainText(post.data.summary ?? ''), ...markdownToParagraphs((post as PostEntry & { body?: string }).body ?? '')].filter(Boolean);
 
   return {
     id: post.id,
