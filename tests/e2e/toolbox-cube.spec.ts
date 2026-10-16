@@ -28,7 +28,7 @@ test('hover lifts one cube and leaving the tray returns it to its socket', async
   await page.addStyleTag({ content: '[data-magnetic-frame] { display: none !important; } .tool-deck { animation: none !important; transform: none !important; }' });
 
   const triggers = page.locator('[data-cube-trigger]');
-  const canvas = page.locator('[data-cube-preview] canvas');
+  const canvas = page.locator('[data-cube-preview] [data-cube-canvas]');
   await expect(triggers.first()).toBeEnabled();
   await page.waitForFunction(() => !document.querySelector('#page-loader')?.classList.contains('pl-visible'));
   const box = await canvas.boundingBox();
@@ -99,7 +99,7 @@ test('touching a cube does not leave a hover lift behind', async ({ browser }, t
     const trigger = page.locator('[data-cube-trigger]').first();
     await expect(trigger).toBeEnabled();
     await page.waitForFunction(() => !document.querySelector('#page-loader')?.classList.contains('pl-visible'));
-    const canvas = page.locator('[data-cube-preview] canvas');
+    const canvas = page.locator('[data-cube-preview] [data-cube-canvas]');
     const canvasBox = await canvas.boundingBox();
     const triggerBox = await trigger.boundingBox();
     expect(canvasBox).not.toBeNull();
@@ -443,7 +443,9 @@ test('wheel and arrow keys leave the enlarged cube at a fixed size and angle', a
 
 test('a short click over a background link closes the cube without activating the link', async ({ page }) => {
   await page.goto('/toolbox/');
+  const root = page.locator('[data-tool-cube]');
   await page.getByRole('button', { name: '放大查看 VS Code 方块' }).click();
+  await expect(root).not.toHaveAttribute('data-cube-transitioning', '');
 
   const dialog = page.getByRole('dialog', { name: 'VS Code 方块预览' });
   const backgroundLink = page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '收藏夹' });
@@ -526,7 +528,7 @@ test('touch drags rotate the cube without allowing pinch zoom', async ({ browser
 
 test('the cube stays visible after dragging and closing the inspection view', async ({ page }) => {
   await page.goto('/toolbox/');
-  const preview = page.locator('[data-cube-preview] canvas');
+  const preview = page.locator('[data-cube-preview] [data-cube-canvas]');
   const visibleCubePixels = async () => {
     const { data, info } = await sharp(await preview.screenshot()).raw().toBuffer({ resolveWithObject: true });
     let count = 0;
@@ -580,7 +582,7 @@ test('touch drag can be closed and returns the cube to its preview', async ({ br
     await page.touchscreen.tap(3, 3);
 
     await expect(dialog).not.toBeVisible();
-    await expect(page.locator('[data-cube-preview] canvas')).toBeVisible();
+    await expect(page.locator('[data-cube-preview] [data-cube-canvas]')).toBeVisible();
   } finally {
     await context.close();
   }
