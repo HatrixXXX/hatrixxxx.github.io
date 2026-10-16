@@ -58,7 +58,7 @@ function initializePageScroll(): void {
     stopInertiaOnNavigate: true,
     allowNestedScroll: true,
     prevent: (node) => node.matches(
-      '[data-post-coverflow], [data-post-rail], [data-project-dialog], [data-search-overlay], [data-mobile-menu], [data-gallery-track]'
+      '[data-post-coverflow], [data-post-rail], [data-project-dialog], [data-cube-dialog], [data-search-overlay], [data-mobile-menu], [data-gallery-track]'
     )
   });
 }

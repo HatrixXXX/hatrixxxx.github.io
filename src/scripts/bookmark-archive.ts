@@ -30,6 +30,19 @@ const spinTravelWeight = spinFastDuration + spinTransitionWeight + spinBrakeWeig
 const paddleSwing = 44;
 const wheelPixelsPerBlade = 110;
 
+function sampleRebound(rebound: number): { position: number; velocity: number } {
+  const settled = rebound ** 3 * (10 - 15 * rebound + 6 * rebound ** 2);
+  const remaining = 1 - settled;
+  const envelope = remaining ** spinReboundDecay;
+  const phase = 4 * Math.PI * rebound;
+  const remainingSpeed = -30 * rebound ** 2 * (1 - rebound) ** 2;
+  const envelopeSpeed = rebound < 1 ? spinReboundDecay * remaining ** (spinReboundDecay - 1) * remainingSpeed : 0;
+  return {
+    position: envelope * Math.cos(phase),
+    velocity: rebound < 1 ? (envelopeSpeed * Math.cos(phase) - envelope * 4 * Math.PI * Math.sin(phase)) / spinReboundDuration : 0
+  };
+}
+
 function bindBookmarkArchive(): void {
   const root = document.querySelector<HTMLElement>('[data-favorites]:not([data-bound])');
   if (!root) return;
@@ -58,15 +71,19 @@ function bindBookmarkArchive(): void {
   });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const abort = new AbortController();
-  const bookmarkIndex = Number(new URLSearchParams(location.search).get('bookmark'));
-  let selected = Number.isInteger(bookmarkIndex) && bookmarkIndex >= 0 && bookmarkIndex < items.length ? bookmarkIndex : 0;
+  const bookmarkParam = new URLSearchParams(location.search).get('bookmark');
+  const bookmarkIndex = Number(bookmarkParam);
+  const hasBookmarkTarget = bookmarkParam !== null && /^\d+$/.test(bookmarkParam)
+    && bookmarkIndex < items.length;
+  let selected = hasBookmarkTarget ? bookmarkIndex : 0;
   const allIndices = items.map((_, index) => index);
   let randomOrder = shuffleQuoteOrder(allIndices.filter((index) => index !== selected));
   let progress = selected;
   let targetProgress = selected;
-  let motion: { kind: 'step' | 'spin'; from: number; to: number; start: number; duration: number; lastIndex: number; direction: number; spinSpeed: number; swing: number; startAngle: number; startWave: number } | undefined;
+  let motion: { kind: 'step' | 'spin' | 'arrival'; from: number; to: number; start: number; duration: number; lastIndex: number; direction: number; spinSpeed: number; swing: number; startAngle: number; startWave: number } | undefined;
   let frame: number | undefined;
   let settleTimer: number | undefined;
+  let flashingBlade: HTMLButtonElement | undefined;
   let wheelSettleTimer: number | undefined;
   let wheelActive = false;
   let wheelSettling = false;
@@ -193,14 +210,22 @@ function bindBookmarkArchive(): void {
     clearSparks();
     consoleElement.removeAttribute('data-spinning');
     consoleElement.removeAttribute('data-settling');
+    if (flashingBlade) delete flashingBlade.dataset.flash;
+    flashingBlade = undefined;
   }
 
-  function settle(): void {
+  function settle(flashBlade = false): void {
     consoleElement.dataset.settling = '';
+    if (flashBlade && !reduced.matches) {
+      flashingBlade = items[selected].element;
+      flashingBlade.dataset.flash = '';
+    }
     settleTimer = window.setTimeout(() => {
       consoleElement.removeAttribute('data-settling');
+      if (flashingBlade) delete flashingBlade.dataset.flash;
+      flashingBlade = undefined;
       settleTimer = undefined;
-    }, 420);
+    }, flashBlade ? 560 : 420);
   }
 
   function select(index: number, announce = true): void {
@@ -208,9 +233,14 @@ function bindBookmarkArchive(): void {
     showSelection(announce);
   }
 
-  function animateTo(to: number, kind: 'step' | 'spin', duration: number, swing = paddleSwing): void {
+  function animateTo(to: number, kind: 'step' | 'spin' | 'arrival', duration: number, swing = paddleSwing): void {
+    if (kind === 'arrival') {
+      progress = to - spinOvershoot;
+      setPaddles(swing * Math.abs(Math.sin(Math.PI * progress)));
+      renderPosition();
+    }
     targetProgress = to;
-    const direction = Math.sign(to - progress);
+    const direction = kind === 'arrival' ? -1 : Math.sign(to - progress);
     const spinSpeed = kind === 'spin' ? (to + direction * spinOvershoot - progress) / spinTravelWeight : 0;
     motion = { kind, from: progress, to, start: performance.now(), duration, lastIndex: Math.round(progress), direction,
       spinSpeed, swing,
@@ -240,24 +270,19 @@ function bindBookmarkArchive(): void {
           speed *= spinBrakeSpeedRatio * (1 - 3 * brake ** 2 + 2 * brake ** 3);
         } else {
           const rebound = (elapsedMs - spinApproachDuration) / spinReboundDuration;
-          const settled = rebound ** 3 * (10 - 15 * rebound + 6 * rebound ** 2);
-          const remaining = 1 - settled;
-          const envelope = remaining ** spinReboundDecay;
-          const phase = 4 * Math.PI * rebound;
-          progress = current.to + current.direction * spinOvershoot * envelope * Math.cos(phase);
-          if (rebound < 1) {
-            const remainingSpeed = -30 * rebound ** 2 * (1 - rebound) ** 2;
-            const envelopeSpeed = spinReboundDecay * remaining ** (spinReboundDecay - 1) * remainingSpeed;
-            speed = current.direction * spinOvershoot * (envelopeSpeed * Math.cos(phase) - envelope * 4 * Math.PI * Math.sin(phase)) / spinReboundDuration;
-          } else speed = 0;
+          const sample = sampleRebound(rebound);
+          progress = current.to + current.direction * spinOvershoot * sample.position;
+          speed = current.direction * spinOvershoot * sample.velocity;
         }
         setReelBlur(speed, current.spinSpeed);
         sparkAtCrossing(previousProgress, progress, speed, current.spinSpeed, now);
+      } else if (kind === 'arrival') {
+        progress = current.to + current.direction * spinOvershoot * sampleRebound(elapsed).position;
       } else {
         progress = current.from + (current.to - current.from) * (1 - (1 - elapsed) ** 3);
       }
       let wave = -current.direction * current.swing * Math.abs(Math.sin(Math.PI * progress));
-      if (kind === 'spin' && elapsedMs >= spinApproachDuration) {
+      if (kind === 'arrival' || (kind === 'spin' && elapsedMs >= spinApproachDuration)) {
         const overshot = current.to + current.direction * spinOvershoot;
         const overshootWave = -current.direction * current.swing * Math.abs(Math.sin(Math.PI * overshot));
         // The paddles use the same damped displacement as the reel, without a separate clock.
@@ -278,7 +303,7 @@ function bindBookmarkArchive(): void {
         progress = current.to;
         cancelSpin(true);
         select(Math.round(progress));
-        settle();
+        settle(kind === 'spin' || kind === 'arrival');
       }
     };
     frame = requestAnimationFrame(tick);
@@ -475,6 +500,26 @@ function bindBookmarkArchive(): void {
 
   setPaddles(0);
   showSelection();
+  if (hasBookmarkTarget) {
+    const startArrival = () => {
+      if (!root.isConnected || reduced.matches) return;
+      reel.setAttribute('aria-busy', 'true');
+      animateTo(selected, 'arrival', spinReboundDuration);
+    };
+    const loader = document.getElementById('page-loader');
+    const loaderVisible = () => loader?.classList.contains('pl-visible')
+      || document.documentElement.dataset.initialPageLoader === 'visible';
+    if (loaderVisible()) {
+      const observer = new MutationObserver(() => {
+        if (loaderVisible()) return;
+        observer.disconnect();
+        startArrival();
+      });
+      if (loader) observer.observe(loader, { attributes: true, attributeFilter: ['class'] });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-initial-page-loader'] });
+      abort.signal.addEventListener('abort', () => observer.disconnect(), { once: true });
+    } else startArrival();
+  }
 }
 
 document.addEventListener('astro:page-load', bindBookmarkArchive);

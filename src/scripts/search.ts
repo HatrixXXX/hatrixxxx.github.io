@@ -145,21 +145,6 @@ document.addEventListener('astro:page-load', () => {
       document.querySelector<HTMLButtonElement>(`[data-project-badge="${project}"]`)?.click();
     });
   }
-  if (pathname === '/favorites/') {
-    const bookmark = searchParams.get('bookmark');
-    if (bookmark && /^\d+$/.test(bookmark)) queueMicrotask(() => {
-      document.querySelector<HTMLButtonElement>(`[data-favorites-item][data-index="${bookmark}"]`)?.click();
-    });
-  }
-  if (pathname === '/toolbox/') {
-    const tool = searchParams.get('tool');
-    if (!tool || !/^\d+$/.test(tool)) return;
-    const card = document.querySelectorAll<HTMLAnchorElement>('[data-tool-module]')[Number(tool)];
-    if (!card) return;
-    card.scrollIntoView({ behavior: 'instant', block: 'center' });
-    card.dataset.searchHighlight = '';
-    window.setTimeout(() => { delete card.dataset.searchHighlight; }, 2400);
-  }
 });
 
 document.addEventListener('click', (event) => {

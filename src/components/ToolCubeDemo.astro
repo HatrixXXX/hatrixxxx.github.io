@@ -1,0 +1,234 @@
+---
+import type { SoftwareTool } from '@/data/software-tools';
+
+interface Props {
+  tools: readonly SoftwareTool[];
+}
+
+const { tools } = Astro.props;
+const tool = tools[0];
+---
+
+<section
+  class="cube-demo"
+  data-tool-cube
+  data-tools={JSON.stringify(tools.map(({ name, icon, description }) => ({ name, icon, description })))}
+  aria-label="工具方块陈列"
+>
+  <div class="cube-demo__copy">
+    <strong>{tools.length} 个工具方块</strong>
+    <span>每个工具使用独立六面贴图</span>
+    <span>每个方块均可点击放大查看</span>
+  </div>
+  <div class="cube-demo__stage" data-cube-preview aria-busy="true">
+    <canvas class="cube-demo__preview-snapshot" data-cube-preview-snapshot aria-hidden="true" hidden></canvas>
+    <img src={tool.icon} alt="" width="72" height="72" data-cube-fallback />
+    <span class="cube-demo__status" data-cube-status aria-live="polite">模型载入中</span>
+  </div>
+  {tools.map((item, index) => (
+    <button
+      class="cube-demo__trigger"
+      type="button"
+      aria-label={`放大查看 ${item.name} 方块`}
+      data-cube-trigger
+      data-cube-index={index}
+      disabled
+    ></button>
+  ))}
+  <dialog class="cube-demo__dialog" aria-label={`${tool.name} 方块预览`} data-cube-dialog tabindex="-1">
+    <div class="cube-demo__expanded-stage" data-cube-expanded></div>
+    <div class="cube-demo__info" data-cube-info>
+      <strong class="cube-demo__info-name" data-cube-name>{tool.name}</strong>
+      <p class="cube-demo__info-description" data-cube-description>{tool.description}</p>
+    </div>
+  </dialog>
+</section>
+
+<script>
+  let cleanup: (() => void) | undefined;
+  let observer: IntersectionObserver | undefined;
+
+  function scheduleToolCube() {
+    const root = document.querySelector<HTMLElement>('[data-tool-cube]');
+    if (!root || root.dataset.cubeScheduled !== undefined) return;
+    root.dataset.cubeScheduled = '';
+    const start = async () => {
+      observer?.disconnect();
+      observer = undefined;
+      const { mountToolCube } = await import('@/scripts/tool-cube');
+      if (root.isConnected) cleanup = mountToolCube(root);
+    };
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void start();
+      }, { rootMargin: '160px' });
+      observer.observe(root);
+    } else {
+      void start();
+    }
+  }
+
+  document.addEventListener('astro:page-load', scheduleToolCube);
+  document.addEventListener('astro:before-swap', () => {
+    observer?.disconnect();
+    observer = undefined;
+    cleanup?.();
+    cleanup = undefined;
+  });
+  scheduleToolCube();
+</script>
+
+<style>
+  :global(html:has(.cube-demo__dialog[open])) { overflow: hidden; }
+
+  .cube-demo {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cube-demo__copy {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .cube-demo__trigger {
+    position: absolute;
+    z-index: 2;
+    top: var(--cube-trigger-y, 64%);
+    left: var(--cube-trigger-x, 50%);
+    width: max(28px, var(--cube-trigger-width, 44px));
+    height: max(28px, var(--cube-trigger-height, 44px));
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+  }
+
+  .cube-demo__trigger:disabled { cursor: wait; }
+
+  .cube-demo__trigger:focus-visible {
+    outline: 3px solid #f8d36c;
+    outline-offset: 3px;
+  }
+
+  .cube-demo__stage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .cube-demo__preview-snapshot {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cube-demo__preview-snapshot[hidden] { display: none; }
+
+  .cube-demo__expanded-stage {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    background: transparent;
+  }
+
+  .cube-demo__stage img {
+    position: absolute;
+    top: var(--cube-trigger-y, 72%);
+    left: var(--cube-trigger-x, 50%);
+    opacity: 0.65;
+    transform: translate(-50%, -50%);
+  }
+
+  .cube-demo__stage img[hidden] { display: none; }
+
+  .cube-demo__status {
+    position: absolute;
+    right: 0;
+    bottom: 12%;
+    left: 0;
+    color: #dac69c;
+    font-size: 0.7rem;
+    text-align: center;
+  }
+
+  .cube-demo__status[hidden] { display: none; }
+
+  :global([data-cube-canvas]) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  .cube-demo__dialog {
+    box-sizing: border-box;
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #f5e8c9;
+  }
+
+  .cube-demo__dialog::backdrop {
+    background: rgb(3 5 9 / var(--cube-backdrop-alpha, 62%));
+    backdrop-filter: none;
+  }
+
+  .cube-demo__dialog[open] {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .cube-demo__expanded-stage { min-height: 0; }
+
+  .cube-demo__info {
+    position: absolute;
+    z-index: 1;
+    right: clamp(1rem, 5vw, 4rem);
+    bottom: clamp(1rem, 4vh, 2.5rem);
+    left: clamp(1rem, 5vw, 4rem);
+    display: grid;
+    gap: 0.25rem;
+    justify-items: center;
+    pointer-events: none;
+    text-align: center;
+    text-shadow: 0 2px 14px rgb(0 0 0 / 85%);
+  }
+
+  .cube-demo__info-name {
+    color: var(--color-heading);
+    font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .cube-demo__info-description {
+    max-width: 46rem;
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  :global(.tool-deck:has(.cube-demo__dialog[open])) { animation-play-state: paused; }
+</style>

@@ -3,7 +3,6 @@ import { ABOUT_SECTION_LINKS, PRIMARY_NAV_ITEMS } from '@/config/navigation';
 import { isConfiguredLockedPage } from '@/config/protected-content';
 import { SITE } from '@/config/site';
 import { BOOKMARKS } from '@/data/bookmarks';
-import { SOFTWARE_TOOLS } from '@/data/software-tools';
 import type { SearchDocument } from './search';
 
 function document(id: string, url: string, title: string, paragraphs: string[]): SearchDocument {
@@ -16,7 +15,7 @@ export function publicSiteSearchDocuments(projects: CollectionEntry<'projects'>[
     '/creation/': 'Hatrix 的作品展示与制作记录。',
     '/about/': `${SITE.author.name} ${SITE.description} 这里记录技术研发、学习笔记与作品进展。`,
     '/favorites/': '收藏的网址与简要介绍。',
-    '/toolbox/': '收录日常学习和开发中使用的软件。',
+    '/toolbox/': '展示工具方块样机。',
     '/friends/': '长按传送门，随机前往一位朋友的站点。',
     '/playground/': '复古电子工作台'
   };
@@ -36,8 +35,6 @@ export function publicSiteSearchDocuments(projects: CollectionEntry<'projects'>[
     ...pages.map(({ title, url, description }) => document(`page:${url}`, url, title, [description])),
     ...BOOKMARKS.map(({ title, url, category, description }, index) =>
       document(`bookmark:${url}`, `/favorites/?bookmark=${index}`, title, [`收藏夹 · ${category}`, description])),
-    ...SOFTWARE_TOOLS.map(({ name, href, purpose, description }, index) =>
-      document(`tool:${href}`, `/toolbox/?tool=${index}`, name, [`工具箱 · ${purpose}`, description])),
     ...sortedProjects.map((project, index) =>
       document(`project:${project.id}`, `/creation/?project=${index}`, project.data.title,
         ['作品橱窗', project.data.description, ...project.data.gallery.flatMap(({ caption }: { caption?: string }) => caption ? [caption] : [])]))

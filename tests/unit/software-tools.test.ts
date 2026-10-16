@@ -5,13 +5,13 @@ import sharp from 'sharp';
 import { SOFTWARE_TOOLS } from '../../src/data/software-tools';
 
 const listedNames = [
-  'VS Code', 'Git', 'CLion', 'Pycharm', 'Anaconda', 'SolidWorks', 'Blender',
+  'VS Code', 'Git', 'CC Switch', 'CLion', 'Pycharm', 'Anaconda', 'SolidWorks', 'Blender',
   'Bamboo Studio', 'Altium Designer', 'Kicad', 'CubeMX', 'Keil', 'Ozone',
   'Vivado', 'Quartus', 'Matlab', 'Multisim', 'MobaXterm', 'VMware',
   'Acrobat DC', 'Adobe Illustrator', 'Adobe Media Encoder',
   'Adobe Photoshop', 'Adobe Premiere Pro', 'Everything', 'Honeyview',
   'Potplayer', 'Typora', 'Zotero', 'PicGo', 'Q-dir', '7-zip', 'Geek',
-  'Snipaste', 'Bandicam', 'DiskGenius', 'Spacesniffer', 'CrystalDiskMark',
+  'Snipaste', 'Bandicam', 'DiskGenius', 'Spacesniffer', 'CPU-Z',
   'ContextMenuManager'
 ];
 

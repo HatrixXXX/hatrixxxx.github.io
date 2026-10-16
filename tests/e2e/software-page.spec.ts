@@ -1,111 +1,50 @@
 import { expect, test } from '@playwright/test';
-import { SOFTWARE_TOOLS } from '../../src/data/software-tools';
 
-test('toolbox presents nine readable colored cards per row', async ({ page }) => {
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
+test('toolbox shows the three-dimensional sample without flat tool cards', async ({ page }) => {
   await page.goto('/toolbox/');
 
-  const cards = page.locator('[data-tool-module]');
-  await expect(page.locator('[data-tool-readout]')).toHaveCount(0);
-  await expect(page.locator('.tool-category')).toHaveCount(0);
-  await expect(page.locator('[data-tool-grid]')).toHaveCount(1);
-  await expect(cards).toHaveCount(SOFTWARE_TOOLS.length);
-
-  const columns = await page.locator('[data-tool-grid]').evaluate((grid) =>
-    getComputedStyle(grid).gridTemplateColumns.split(' ').length
-  );
-  expect(columns).toBe(9);
-
-  const first = cards.first();
-  await expect(first.locator('[data-tool-title]')).toHaveText('VS Code');
-  await expect(first.locator('[data-tool-purpose]')).toHaveText('代码编辑');
-  await expect(first.locator('[data-tool-kind-badge]')).toHaveText('软件');
-  await expect(first.locator('[data-tool-led]')).toHaveCount(2);
-  await expect(first.locator('img')).toHaveAttribute('src', '/assets/tool-icons/vs-code.png');
-
-  const cardBox = await first.boundingBox();
-  const iconAreaBox = await first.locator('.tool-module__center').boundingBox();
-  const purposeBox = await first.locator('[data-tool-purpose]').boundingBox();
-  if (!cardBox || !iconAreaBox || !purposeBox) throw new Error('Missing card geometry');
-  expect(cardBox.width).toBeGreaterThan(110);
-  expect(purposeBox.y).toBeGreaterThanOrEqual(iconAreaBox.y + iconAreaBox.height - 1);
-  expect(purposeBox.y + purposeBox.height).toBeLessThanOrEqual(cardBox.y + cardBox.height + 1);
-
-  const clippedTitles = await page.locator('[data-tool-title]').evaluateAll((titles) =>
-    titles.filter((title) => title.scrollHeight > title.clientHeight + 1).map((title) => title.textContent)
-  );
-  expect(clippedTitles).toEqual([]);
-
-  const last = page.getByRole('link', { name: /ContextMenuManager.*右键菜单/ });
-  await expect(last.locator('[data-tool-kind-badge]')).toHaveText('软件');
-  await expect(last).toHaveAttribute('href', 'https://github.com/BluePointLilac/ContextMenuManager');
-  await expect(last).toHaveAttribute('target', '_blank');
-  await expect(last).toHaveAttribute('rel', 'noreferrer');
-
-  const firstColor = await first.evaluate((card) => getComputedStyle(card).borderColor);
-  const toolchainColor = await page.getByRole('link', { name: /SolidWorks/ }).evaluate((card) => getComputedStyle(card).borderColor);
-  const everydayColor = await page.getByRole('link', { name: /Everything/ }).evaluate((card) => getComputedStyle(card).borderColor);
-  const imageColor = await page.getByRole('link', { name: /Snipaste/ }).evaluate((card) => getComputedStyle(card).borderColor);
-  expect(new Set([firstColor, toolchainColor, everydayColor, imageColor]).size).toBe(4);
-
-  const brokenIcons = await cards.locator('img').evaluateAll(async (images) => {
-    const sources = images.map((image) => (image as HTMLImageElement).src);
-    return (await Promise.all(sources.map((src) => new Promise<string | null>((resolve) => {
-      const image = new Image();
-      image.onload = () => resolve(image.naturalWidth > 0 ? null : src);
-      image.onerror = () => resolve(src);
-      image.src = src;
-    })))).filter((src): src is string => src !== null);
-  });
-  expect(brokenIcons).toEqual([]);
+  await expect(page.locator('[data-tool-cube]')).toBeVisible();
+  await expect(page.getByRole('button', { name: '放大查看 VS Code 方块' })).toBeEnabled();
+  await expect(page.locator('[data-cube-trigger]')).toHaveCount(40);
+  await expect(page.locator('[data-tool-cube]')).toHaveAttribute('data-cube-count', '40');
+  await expect(page.locator('[data-foam-trigger]')).toHaveCount(0);
+  await expect(page.locator('[data-tool-module], .tool-socket')).toHaveCount(0);
 });
 
-test('full descriptions appear above a card on hover and keyboard focus', async ({ page }) => {
+test('each tool cube opens its matching inspection view and attracts the magnetic cursor', async ({ page }) => {
   await page.goto('/toolbox/');
-  await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
-
-  const solidWorks = page.getByRole('link', { name: /SolidWorks.*机械零件/ });
-  const tooltip = solidWorks.locator('[data-tool-tooltip]');
-  await expect(tooltip).toContainText('创建机械零件、装配体和工程图');
-  await solidWorks.hover();
-  await expect(tooltip).toHaveCSS('opacity', '1');
-
-  const cardBox = await solidWorks.boundingBox();
-  const tooltipBox = await tooltip.boundingBox();
-  if (!cardBox || !tooltipBox) throw new Error('Missing card or tooltip geometry');
-  expect(tooltipBox.y + tooltipBox.height).toBeLessThan(cardBox.y);
-  expect(tooltipBox.y).toBeGreaterThanOrEqual(60);
-  expect(Math.abs(tooltipBox.x + tooltipBox.width / 2 - cardBox.x - cardBox.width / 2)).toBeLessThan(1);
-  await expect(tooltip).toHaveCSS('border-radius', '12px');
-  await expect(tooltip).toHaveCSS('background-color', 'rgb(48, 49, 57)');
-
-  const snipaste = page.getByRole('link', { name: /Snipaste.*截图/ });
-  await snipaste.focus();
-  await expect(snipaste).toBeFocused();
-  await expect(snipaste.locator('[data-tool-tooltip]')).toHaveCSS('opacity', '1');
-  expect(await snipaste.evaluate((card) => getComputedStyle(card).outlineStyle)).not.toBe('none');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const cube = page.getByRole('button', { name: '放大查看 ContextMenuManager 方块' });
+  await expect(cube).toBeEnabled();
+  const box = await cube.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await expect(page.locator('body > [data-magnetic-frame]')).toHaveAttribute('data-active', '');
+  await cube.click({ force: true });
+  await expect(page.getByRole('dialog', { name: 'ContextMenuManager 方块预览' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(cube).toBeFocused();
 });
 
-test('phone cards retain readable labels and avoid horizontal overflow', async ({ browser }) => {
+test('phone toolbox keeps the cube within the viewport', async ({ browser }) => {
   const context = await browser.newContext({
     hasTouch: true,
     isMobile: true,
     viewport: { width: 390, height: 844 }
   });
-  const page = await context.newPage();
-  await page.goto('/toolbox/');
-
-  const columns = await page.locator('[data-tool-grid]').evaluate((grid) =>
-    getComputedStyle(grid).gridTemplateColumns.split(' ').length
-  );
-  expect(columns).toBe(3);
-  await expect(page.locator('[data-tool-readout]')).toHaveCount(0);
-  await expect(page.locator('[data-tool-module]').first().locator('[data-tool-title]')).toBeVisible();
-  await expect(page.locator('[data-tool-module]').first().locator('[data-tool-purpose]')).toBeVisible();
-
-  const viewport = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth
-  }));
-  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth);
-  await context.close();
+  try {
+    const page = await context.newPage();
+    await page.goto('/toolbox/');
+    await expect(page.locator('[data-tool-cube]')).toBeVisible();
+    await expect(page.locator('[data-tool-module], .tool-socket')).toHaveCount(0);
+    const viewport = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth
+    }));
+    expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth);
+  } finally {
+    await context.close();
+  }
 });

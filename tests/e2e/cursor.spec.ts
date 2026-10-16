@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
 test('blank blog space keeps the site cursor', async ({ page }) => {
   await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();
@@ -108,7 +110,7 @@ test('magnetic frame covers links, cards, and other site controls', async ({ pag
 
   await page.goto('/toolbox/');
   await expect(page.locator('#page-loader')).toBeHidden();
-  await page.locator('[data-tool-module]').first().hover();
+  await page.locator('[data-cube-trigger]').hover();
   await expect(page.locator('[data-magnetic-frame]')).toHaveAttribute('data-active', '');
   await page.goto('/blogs/');
   await expect(page.locator('#page-loader')).toBeHidden();

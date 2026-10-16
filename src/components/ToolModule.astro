@@ -213,12 +213,12 @@ const kindLabel = tool.kind === 'link' ? '在线' : '软件';
   }
 
   @media (max-width: 1280px) {
-    .tool-module:nth-child(9n + 1) .tool-module__tooltip {
+    .tool-module:nth-of-type(9n + 1) .tool-module__tooltip {
       left: 0;
       transform: none;
     }
 
-    .tool-module:nth-child(9n) .tool-module__tooltip {
+    .tool-module:nth-of-type(9n) .tool-module__tooltip {
       right: 0;
       left: auto;
       transform: none;
@@ -226,19 +226,21 @@ const kindLabel = tool.kind === 'link' ? '在线' : '软件';
   }
 
   @media (max-width: 1100px) {
-    .tool-module:nth-child(9n + 1) .tool-module__tooltip,
-    .tool-module:nth-child(9n) .tool-module__tooltip {
+    .tool-module__title--compact { font-size: 0.6rem; }
+
+    .tool-module:nth-of-type(9n + 1) .tool-module__tooltip,
+    .tool-module:nth-of-type(9n) .tool-module__tooltip {
       right: auto;
       left: 50%;
       transform: translateX(-50%);
     }
 
-    .tool-module:nth-child(8n + 1) .tool-module__tooltip {
+    .tool-module:nth-of-type(8n + 1) .tool-module__tooltip {
       left: 0;
       transform: none;
     }
 
-    .tool-module:nth-child(8n) .tool-module__tooltip {
+    .tool-module:nth-of-type(8n) .tool-module__tooltip {
       right: 0;
       left: auto;
       transform: none;
@@ -246,19 +248,39 @@ const kindLabel = tool.kind === 'link' ? '在线' : '软件';
   }
 
   @media (max-width: 800px) {
-    .tool-module:nth-child(8n + 1) .tool-module__tooltip,
-    .tool-module:nth-child(8n) .tool-module__tooltip {
+    .tool-module:nth-of-type(8n + 1) .tool-module__tooltip,
+    .tool-module:nth-of-type(8n) .tool-module__tooltip {
       right: auto;
       left: 50%;
       transform: translateX(-50%);
     }
 
-    .tool-module:nth-child(6n + 1) .tool-module__tooltip {
+    .tool-module:nth-of-type(4n + 1) .tool-module__tooltip {
       left: 0;
       transform: none;
     }
 
-    .tool-module:nth-child(6n) .tool-module__tooltip {
+    .tool-module:nth-of-type(4n) .tool-module__tooltip {
+      right: 0;
+      left: auto;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .tool-module:nth-of-type(4n + 1) .tool-module__tooltip,
+    .tool-module:nth-of-type(4n) .tool-module__tooltip {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tool-module:nth-of-type(3n + 1) .tool-module__tooltip {
+      left: 0;
+      transform: none;
+    }
+
+    .tool-module:nth-of-type(3n) .tool-module__tooltip {
       right: 0;
       left: auto;
       transform: none;
@@ -266,22 +288,26 @@ const kindLabel = tool.kind === 'link' ? '在线' : '软件';
   }
 
   @media (max-width: 560px) {
-    .tool-module__title { font-size: 0.76rem; }
-    .tool-module__purpose { font-size: 0.7rem; }
+    .tool-module { grid-template-rows: 1.35rem minmax(0, 1fr) 1.1rem; }
+    .tool-module__title { font-size: 0.62rem; }
+    .tool-module__title--compact { font-size: 0.5rem; }
+    .tool-module__center img { width: min(2.6rem, 72%); }
+    .tool-module__kind { font-size: 0.5rem; }
+    .tool-module__purpose { font-size: 0.6rem; line-height: 1.1rem; }
 
-    .tool-module:nth-child(6n + 1) .tool-module__tooltip,
-    .tool-module:nth-child(6n) .tool-module__tooltip {
+    .tool-module:nth-of-type(3n + 1) .tool-module__tooltip,
+    .tool-module:nth-of-type(3n) .tool-module__tooltip {
       right: auto;
       left: 50%;
       transform: translateX(-50%);
     }
 
-    .tool-module:nth-child(3n + 1) .tool-module__tooltip {
+    .tool-module:nth-of-type(2n + 1) .tool-module__tooltip {
       left: 0;
       transform: none;
     }
 
-    .tool-module:nth-child(3n) .tool-module__tooltip {
+    .tool-module:nth-of-type(2n) .tool-module__tooltip {
       right: 0;
       left: auto;
       transform: none;

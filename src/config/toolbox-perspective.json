@@ -1,0 +1,35 @@
+{
+  "camera": {
+    "fov": 35,
+    "promptElevation": 62
+  },
+  "insert": {
+    "rimSocketRatio": 0.42
+  },
+  "landscape": {
+    "source": "case-shell-thin-landscape-source.png",
+    "asset": "case-shell-thin-landscape.webp",
+    "haloMask": "case-halo-mask-landscape.png",
+    "model": "foam-slots-10x4.glb",
+    "sourceSize": [1635, 962],
+    "assetSize": [1488, 876],
+    "distance": 18,
+    "elevation": 77.115,
+    "columns": 10,
+    "rows": 4,
+    "opening": [[204, 187], [1431, 187], [1462, 220], [1513, 745], [1513, 765], [124, 765], [124, 745], [172, 220]]
+  },
+  "portrait": {
+    "source": "case-shell-thin-portrait-source.png",
+    "asset": "case-shell-thin-portrait.webp",
+    "haloMask": "case-halo-mask-portrait.png",
+    "model": "foam-slots-4x10.glb",
+    "sourceSize": [1027, 1532],
+    "assetSize": [944, 1408],
+    "distance": 30,
+    "elevation": 74.46,
+    "columns": 4,
+    "rows": 10,
+    "opening": [[245, 183], [780, 183], [799, 220], [836, 1325], [836, 1350], [190, 1350], [190, 1325], [221, 220]]
+  }
+}

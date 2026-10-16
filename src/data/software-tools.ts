@@ -23,6 +23,7 @@ export interface SoftwareTool {
 export const SOFTWARE_TOOLS: readonly SoftwareTool[] = [
   { name: 'VS Code', purpose: '代码编辑', description: '编辑代码并通过扩展配置开发环境', href: 'https://code.visualstudio.com/', icon: '/assets/tool-icons/vs-code.png', kind: 'software', category: 'development' },
   { name: 'Git', purpose: '版本管理', description: '记录、比较和合并代码版本', href: 'https://git-scm.com/', icon: '/assets/tool-icons/git.png', kind: 'software', category: 'development' },
+  { name: 'CC Switch', purpose: 'AI 配置切换', description: '管理并切换 Claude Code、Codex 等 AI 编程工具的服务配置', href: 'https://ccswitch.io/', icon: '/assets/tool-icons/cc-switch.png', kind: 'software', category: 'development' },
   { name: 'CLion', purpose: 'C/C++ 开发', description: '编写、调试 C/C++ 项目并管理构建', href: 'https://www.jetbrains.com/clion/', icon: '/assets/tool-icons/clion.png', kind: 'software', category: 'development' },
   { name: 'Pycharm', purpose: 'Python 开发', description: '编写、运行和调试 Python 项目', href: 'https://www.jetbrains.com/pycharm/', icon: '/assets/tool-icons/pycharm.png', kind: 'software', category: 'development' },
   { name: 'Anaconda', purpose: '环境管理', description: '管理 Python 环境和数据科学软件包', href: 'https://www.anaconda.com/download', icon: '/assets/tool-icons/anaconda.png', kind: 'software', category: 'development' },
@@ -58,6 +59,6 @@ export const SOFTWARE_TOOLS: readonly SoftwareTool[] = [
   { name: 'Bandicam', purpose: '屏幕录制', description: '录制屏幕、游戏或外接视频设备', href: 'https://www.bandicam.com/', icon: '/assets/tool-icons/bandicam.png', kind: 'software', category: 'image' },
   { name: 'DiskGenius', purpose: '磁盘管理', description: '管理磁盘分区、备份和恢复数据', href: 'https://www.diskgenius.com/', icon: '/assets/tool-icons/diskgenius.png', kind: 'software', category: 'everyday' },
   { name: 'Spacesniffer', purpose: '空间分析', description: '用空间树图查看磁盘占用', href: 'https://www.uderzo.it/main_products/space_sniffer/', icon: '/assets/tool-icons/spacesniffer.png', kind: 'software', category: 'everyday' },
-  { name: 'CrystalDiskMark', purpose: '磁盘测速', description: '测试存储设备顺序与随机读写速度', href: 'https://crystalmark.info/en/software/crystaldiskmark/', icon: '/assets/tool-icons/crystaldiskmark.png', kind: 'software', category: 'everyday' },
+  { name: 'CPU-Z', purpose: '硬件信息', description: '查看处理器、主板、内存与实时频率等硬件信息', href: 'https://www.cpuid.com/softwares/cpu-z.html', icon: '/assets/tool-icons/cpu-z.png', kind: 'software', category: 'everyday' },
   { name: 'ContextMenuManager', purpose: '右键菜单', description: '启用、禁用和整理 Windows 右键菜单项', href: 'https://github.com/BluePointLilac/ContextMenuManager', icon: '/assets/tool-icons/contextmenumanager.png', kind: 'software', category: 'everyday' }
 ];

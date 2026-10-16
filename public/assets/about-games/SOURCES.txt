@@ -1,0 +1,45 @@
+About page game covers
+======================
+
+The cover images identify the games listed by the site owner. They remain the
+property of their respective publishers and are used here only as small cover
+art thumbnails on a non-commercial personal profile page.
+
+Steam library covers (retrieved 2026-10-16)
+------------------------------------------------
+
+Hades
+Source page: https://store.steampowered.com/app/1145360/Hades/
+Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/1145360/library_600x900_2x.jpg
+Local file: hades.webp
+
+Kingdom Rush
+Source page: https://store.steampowered.com/app/246420/Kingdom_Rush___Tower_Defense/
+Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/246420/library_600x900_2x.jpg
+Local file: kingdom-rush.webp
+
+9 Kings
+Source page: https://store.steampowered.com/app/2784470/9_Kings/
+Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/2784470/library_600x900_2x.jpg
+Local file: nine-kings.webp
+
+Dead Cells
+Source page: https://store.steampowered.com/app/588650/Dead_Cells/
+Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/588650/library_600x900_2x.jpg
+Local file: dead-cells.webp
+
+Turing Complete
+Source page: https://store.steampowered.com/app/1444480/Turing_Complete/
+Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/1444480/library_600x900_2x.jpg
+Local file: turing-complete.webp
+
+Hearthstone composite cover (retrieved 2026-10-16)
+--------------------------------------------------
+
+Source page: https://hearthstone.blizzard.com/en-us
+Background source: https://blz-contentstack-images.akamaized.net/v3/assets/bltc965041283bac56c/blt88e01facd00a0a1f/64beb07e250c7cd6f3c73540/MastheadMobile_BG.png
+Logo source: https://blz-contentstack-images.akamaized.net/v3/assets/bltc965041283bac56c/bltce748775e32f8c04/5f0769f35d2ae808119fb2dd/homepage_logo.png
+Local file: hearthstone.webp
+
+The two official Hearthstone assets were resized and composited into a 2:3
+thumbnail. All six local thumbnails were encoded as 480 x 720 WebP files.

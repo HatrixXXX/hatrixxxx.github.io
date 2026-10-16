@@ -42,7 +42,7 @@ diskgenius.png <- D:/ToolChain/DiskGenius/DiskGenius.exe
 spacesniffer.png <- D:/ToolChain/Spacesniffer/SpaceSniffer.exe
 contextmenumanager.png <- D:/ToolChain/ContextMenuManager/ContextMenuManager.NET.4.0.exe
 
-Remaining entries: no matching application icon was found on D:
+Additional icons from upstream artwork:
 Devicon (MIT; local license: LICENSE-devicon.txt)
 https://github.com/devicons/devicon
 clion.png <- icons/clion/clion-original.svg
@@ -54,12 +54,13 @@ anaconda.png <- svg/anaconda.svg
 vmware.png <- svg/vmware-workstation.svg
 
 Other application artwork
+cpu-z.png <- https://www.cpuid.com/medias/images/softwares/cpu-z.svg
+cc-switch.png <- https://github.com/farion1231/cc-switch/blob/main/src-tauri/icons/128x128%402x.png
 adobe-premiere-pro.png <- https://main--cc--adobecom.aem.live/cc-shared/assets/img/product-icons/svg/premiere-pro.svg
 kicad.png <- https://gitlab.com/kicad/code/kicad/-/raw/master/resources/bitmaps_png/icons/icon_kicad.png
 quartus.png <- https://www.pngaaa.com/detail/4783836
 multisim.png <- https://mt-library.web.app/imgs/App/Multisim/multisim.png
 mobaxterm.png <- https://mobaxterm.mobatek.net/img/moba/xterm_logo.png
-crystaldiskmark.png <- https://community.chocolatey.org/content/packageimages/crystaldiskmark.9.0.3.png
 
 User-supplied reference
 solidworks.png <- E:/CollegeData/15548578ed7bfe96220573887d3667f1.jpg

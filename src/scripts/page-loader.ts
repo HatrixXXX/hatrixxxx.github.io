@@ -12,7 +12,7 @@ import { animate, createTimeline, cubicBezier, waapi } from 'animejs';
  * 触发规则
  * --------
  * - 直接打开或刷新页面时显示圆环加载器。
- * - 同源 HTML 客户端跳转每次显示左右双瓣遮罩。
+ * - 跨页面同源 HTML 客户端跳转显示左右双瓣遮罩。
  * - 外部链接、非 HTML 目标（/rss.xml 等）不触发。
  *
  * 时序
@@ -501,7 +501,7 @@ function drainPending(): void {
 document.addEventListener('astro:before-preparation', (raw) => {
   const event = raw as unknown as { to?: URL; loader?: () => Promise<void>; signal?: AbortSignal };
   const to = event.to;
-  const replacesOverlay = !!to && isSameOriginPage(to);
+  const replacesOverlay = !!to && to.pathname !== location.pathname && isSameOriginPage(to);
   cancelHomeWait?.(!replacesOverlay);
   pageReadinessController?.abort();
   if (!to || !replacesOverlay) return;

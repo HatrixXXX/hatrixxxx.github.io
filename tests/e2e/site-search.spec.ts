@@ -16,7 +16,7 @@ test('search index includes public pages and individual cards without locked con
     expect(documents.some((document) => document.url === url), `${url} should be searchable`).toBe(true);
   }
   expect(documents.some((document) => document.title === 'HDL Bits' && document.url.startsWith('/favorites/?bookmark='))).toBe(true);
-  expect(documents.some((document) => document.title === 'Vivado' && document.url.startsWith('/toolbox/?tool='))).toBe(true);
+  expect(documents.some((document) => document.url.startsWith('/toolbox/?tool='))).toBe(false);
   expect(documents.some((document) => document.title === 'CoNet 在线笔记' && document.url.startsWith('/creation/?project='))).toBe(true);
   expect(documents.some((document) => document.title === 'Polaris' || document.url === 'https://polaris.xn--6qq986b3xl/')).toBe(false);
   expect(documents.every((document) => document.url.startsWith('/'))).toBe(true);
@@ -38,20 +38,39 @@ test('a bookmark result selects its entry on the favorites page', async ({ page 
   await expect(page.locator('[data-favorites-item][data-selected="true"]')).toHaveAttribute('data-url', 'https://hdlbits.01xz.net/wiki/Problem_sets');
 });
 
-test('a tool result highlights its card briefly on the toolbox page', async ({ page }) => {
+test('the toolbox page remains available through site search', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Control+K');
-  await page.getByRole('searchbox', { name: '搜索全站' }).fill('Vivado');
-  const result = page.locator('[data-search-result]').filter({ has: page.locator('strong', { hasText: /^Vivado$/ }) });
-  await expect(result).toHaveAttribute('href', /\/toolbox\/\?tool=\d+/);
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('工具箱');
+  const result = page.locator('[data-search-result]').filter({ has: page.locator('strong', { hasText: /^工具箱$/ }) });
+  await expect(result).toHaveAttribute('href', '/toolbox/');
   await result.click();
 
-  await expect(page).toHaveURL(/\/toolbox\/\?tool=\d+/);
-  const card = page.locator('[data-tool-module][data-search-highlight]');
-  await expect(card.locator('[data-tool-title]')).toHaveText('Vivado');
-  await expect(card).toBeInViewport();
-  await expect(card).toHaveCSS('outline-style', 'solid');
-  await expect(card).toHaveCount(0, { timeout: 5000 });
+  await expect(page).toHaveURL(/\/toolbox\/$/);
+  await expect(page.locator('[data-tool-cube]')).toBeVisible();
+});
+
+test('a toolbox result on the current page skips the page transition', async ({ page }) => {
+  await page.goto('/toolbox/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.evaluate(() => {
+    const runtime = window as Window & { searchShutters?: number };
+    runtime.searchShutters = 0;
+    const loader = document.querySelector('#page-loader')!;
+    new MutationObserver(() => {
+      if (loader.classList.contains('pl-transition')) runtime.searchShutters! += 1;
+    }).observe(loader, { attributes: true, attributeFilter: ['class'] });
+  });
+
+  await page.keyboard.press('Control+K');
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('工具箱');
+  await page.locator('[data-search-result]').filter({ has: page.locator('strong', { hasText: /^工具箱$/ }) }).click();
+
+  await expect(page).toHaveURL(/\/toolbox\/$/);
+  await expect(page.locator('[data-search-overlay]')).toBeHidden();
+  await expect(page.locator('[data-tool-cube]')).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { searchShutters?: number }).searchShutters)).toBe(0);
+  await expect(page.locator('#page-loader')).toBeHidden();
 });
 
 test('search never creates a clickable result for an unsafe destination', async ({ page }) => {

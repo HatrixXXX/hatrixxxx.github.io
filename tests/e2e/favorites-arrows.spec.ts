@@ -70,6 +70,86 @@ test('selector plates follow the spinning reel and return to rest', async ({ pag
   expect(settled).toEqual(['matrix(1, 0, 0, 1, 0, 0)', 'matrix(1, 0, 0, 1, 0, 0)']);
 });
 
+test('a bookmark deep link rocks its blade and selectors before the blade flashes', async ({ page }) => {
+  await page.goto('/favorites/?bookmark=2', { waitUntil: 'domcontentloaded' });
+  const reel = page.locator('[data-favorites-reel]');
+  const selected = page.locator('[data-favorites-item][data-index="2"]');
+  const samples = await page.evaluate(async () => {
+    const loader = document.querySelector<HTMLElement>('#page-loader');
+    const loaderVisible = () => loader?.classList.contains('pl-visible')
+      || document.documentElement.dataset.initialPageLoader === 'visible';
+    if (loaderVisible()) await new Promise<void>((resolve) => {
+      const observer = new MutationObserver(() => {
+        if (loaderVisible()) return;
+        observer.disconnect();
+        resolve();
+      });
+      if (loader) observer.observe(loader, { attributes: true, attributeFilter: ['class'] });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-initial-page-loader'] });
+    });
+    const reel = document.querySelector<HTMLElement>('[data-favorites-reel]')!;
+    const plate = document.querySelector<HTMLElement>('.favorites-reel__paddle-plate')!;
+    const selected = document.querySelector<HTMLElement>('[data-favorites-item][data-index="2"]')!;
+    const result: Array<{ progress: number; angle: number; busy: string | null; flashing: boolean }> = [];
+    for (let index = 0; index < 38; index += 1) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const matrix = new DOMMatrix(getComputedStyle(plate).transform);
+      result.push({ progress: Number(reel.dataset.progress), angle: Math.atan2(matrix.b, matrix.a), busy: reel.getAttribute('aria-busy'), flashing: selected.hasAttribute('data-flash') });
+    }
+    return result;
+  });
+  await expect(page.locator('#page-loader')).toBeHidden();
+  expect(samples.some(({ progress, angle, busy, flashing }) => busy === 'true' && !flashing
+    && Math.abs(progress - 2) > .01 && Math.abs(angle) > .015), JSON.stringify(samples)).toBe(true);
+  const directions = samples.filter(({ progress, busy }) => busy === 'true' && Math.abs(progress - 2) > .003)
+    .map(({ progress }) => Math.sign(progress - 2));
+  expect(directions.filter((direction, index) => index > 0 && direction !== directions[index - 1]).length).toBeGreaterThanOrEqual(3);
+  await expect(reel).not.toHaveAttribute('aria-busy', 'true');
+  await expect(selected).toHaveAttribute('data-flash', '');
+  await expect.poll(() => selected.evaluate((item) => getComputedStyle(item, '::after').animationName)).toBe('favorites-blade-flash');
+  await expect(selected).not.toHaveAttribute('data-flash', '', { timeout: 2000 });
+});
+
+test('a search result rocks the selected blade after the page transition', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Control+K');
+  await page.locator('[data-search-input]').fill('HDL Bits');
+  await page.locator('[data-search-result]').filter({ has: page.locator('strong', { hasText: /^HDL Bits$/ }) }).click();
+  await expect(page).toHaveURL(/\/favorites\/\?bookmark=\d+/);
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await expect(page.locator('[data-favorites-item][data-title="HDL Bits"]')).toHaveAttribute('data-flash', '');
+  await expect(page.locator('[data-favorites-selected]')).toHaveText('HDL Bits');
+});
+
+test('the random blade flashes only after its spin stops', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/favorites/');
+  const reel = page.locator('[data-favorites-reel]');
+  await page.locator('[data-favorites-random]').click();
+  await expect(reel).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('[data-favorites-item][data-flash]')).toHaveCount(0);
+  await expect(reel).not.toHaveAttribute('aria-busy', 'true', { timeout: 10000 });
+  const selected = page.locator('[data-favorites-item][data-selected="true"]');
+  await expect(selected).toHaveAttribute('data-flash', '');
+  await expect.poll(() => selected.evaluate((item) => getComputedStyle(item, '::after').animationName)).toBe('favorites-blade-flash');
+  await expect.poll(() => selected.evaluate((item) => getComputedStyle(item, '::after').maskImage)).toContain('reel-blade-mobile-v5.webp');
+  await expect(page.locator('[data-favorites-item][data-flash]')).toHaveCount(0, { timeout: 2000 });
+});
+
+test('reduced motion selects deep links and random entries without rocking or flashing', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/favorites/?bookmark=2');
+  const reel = page.locator('[data-favorites-reel]');
+  await expect(page.locator('[data-favorites-item][data-index="2"]')).toHaveAttribute('data-selected', 'true');
+  await expect(reel).not.toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('[data-favorites-item][data-flash]')).toHaveCount(0);
+  await page.locator('[data-favorites-random]').click();
+  await expect(page.locator('[data-favorites-item][data-index="2"]')).toHaveAttribute('data-selected', 'false');
+  await expect(reel).not.toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('[data-favorites-item][data-flash]')).toHaveCount(0);
+  await expect.poll(() => reel.getAttribute('data-progress')).toMatch(/^-?\d+\.0000$/);
+});
+
 test('interrupting a random spin keeps the selector plate at its current angle', async ({ page }) => {
   await page.goto('/favorites/');
   await page.getByRole('button', { name: '随机转一个链接' }).click();

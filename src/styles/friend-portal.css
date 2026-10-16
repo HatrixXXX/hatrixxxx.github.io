@@ -19,6 +19,14 @@
   outline: none;
 }
 
+.friend-portal > :is(.portal-aperture, .portal-frame, .portal-hover-ring, .portal-readout) {
+  animation: portal-float 4s ease-in-out infinite;
+}
+
+.friend-portal[data-hidden='true'] > :is(.portal-aperture, .portal-frame, .portal-hover-ring, .portal-readout) {
+  animation-play-state: paused;
+}
+
 .portal-aperture {
   position: absolute;
   inset: 0;
@@ -202,7 +210,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :is(.portal-vortex, .portal-hint) {
+  .friend-portal > :is(.portal-aperture, .portal-frame, .portal-hover-ring, .portal-readout),
+  .portal-vortex,
+  .portal-hint {
     animation: none;
   }
 
@@ -216,6 +226,10 @@
   .portal-progress {
     transition: none;
   }
+}
+
+@keyframes portal-float {
+  50% { transform: translateY(-16px); }
 }
 
 @keyframes portal-vortex-turn {
