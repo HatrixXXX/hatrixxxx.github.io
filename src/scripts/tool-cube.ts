@@ -7,21 +7,27 @@ import perspective from '@/config/toolbox-perspective.json';
 import {
   calculateInspectionStartPose,
   calculateSocketCubePose,
+  matchQuaternionAcrossCameras,
   rotateQuaternionAroundScreenYAxis
 } from '@/lib/toolbox-cube-projection';
 
 const toolboxAssetRevision = '20261016-v20';
+const minimumLiftMs = 420;
+const inspectionAutoRotationSpeed = 0.000704;
+const inspectionFloatAmplitude = 0.18;
+const inspectionFloatPeriod = 2400;
 
 export function mountToolCube(root: HTMLElement): () => void {
   const triggers = [...root.querySelectorAll<HTMLButtonElement>('[data-cube-trigger]')];
   const trigger = triggers[0];
   const preview = root.querySelector<HTMLElement>('[data-cube-preview]')!;
   const previewSnapshot = root.querySelector<HTMLCanvasElement>('[data-cube-preview-snapshot]')!;
+  const restSnapshot = root.querySelector<HTMLCanvasElement>('[data-cube-rest-snapshot]')!;
   const expanded = root.querySelector<HTMLElement>('[data-cube-expanded]')!;
   const dialog = root.querySelector<HTMLDialogElement>('[data-cube-dialog]')!;
+  const info = root.querySelector<HTMLElement>('[data-cube-info]')!;
   const infoName = root.querySelector<HTMLElement>('[data-cube-name]')!;
   const infoDescription = root.querySelector<HTMLElement>('[data-cube-description]')!;
-  const fallback = root.querySelector<HTMLImageElement>('[data-cube-fallback]')!;
   const status = root.querySelector<HTMLElement>('[data-cube-status]')!;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const narrowScreen = matchMedia('(max-width: 800px)');
@@ -59,8 +65,13 @@ export function mountToolCube(root: HTMLElement): () => void {
   let liftCubes: THREE.Group[] = [];
   const cubeRestY: number[] = [];
   const liftAnimations = new Map<number, ReturnType<typeof animate>>();
+  const liftStartedAt = new Map<number, number>();
+  const liftReturnTimers = new Map<number, number>();
   let liftDistance = 0;
   let inspectedCube: THREE.Group | undefined;
+  let inspectionFloatStartedAt = 0;
+  const inspectedRestQuaternion = new THREE.Quaternion();
+  const previewCameraQuaternion = new THREE.Quaternion();
   let cubeBaseWidth = 2;
   let desktopFoam: THREE.Group | undefined;
   let mobileFoam: THREE.Group | undefined;
@@ -99,8 +110,8 @@ export function mountToolCube(root: HTMLElement): () => void {
   const shellMaterial = new THREE.MeshBasicMaterial({ transparent: true, depthTest: false, depthWrite: false, toneMapped: false });
   const shellPlane = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), shellMaterial);
   shellScene.add(shellPlane);
-  const belowInsertSurface = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
-  const aboveInsertSurface = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const keepBelowInsertSurface = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+  const keepAboveInsertSurface = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
   const room = new RoomEnvironment();
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -138,20 +149,31 @@ export function mountToolCube(root: HTMLElement): () => void {
     renderer.clear();
     renderer.render(scene, camera);
     if (raised.some(Boolean)) {
-      renderer.clippingPlanes = [aboveInsertSurface];
+      renderer.clippingPlanes = [keepBelowInsertSurface];
       renderer.render(liftScene, camera);
       renderer.clippingPlanes = [];
     }
     renderer.clearDepth();
     renderer.render(shellScene, shellCamera);
     if (raised.some(Boolean)) {
-      renderer.clippingPlanes = [belowInsertSurface];
+      renderer.clippingPlanes = [keepAboveInsertSurface];
       renderer.clearDepth();
       renderer.render(liftScene, camera);
       renderer.clippingPlanes = [];
     }
     cubes.forEach((cube, index) => { cube.visible = originalVisibility[index]; });
     renderer.autoClear = true;
+  };
+
+  const captureRestSnapshot = () => {
+    const originalY = cubes.map((cube) => cube.position.y);
+    cubes.forEach((cube, index) => { cube.position.y = cubeRestY[index]; });
+    renderPreview();
+    restSnapshot.width = renderer.domElement.width;
+    restSnapshot.height = renderer.domElement.height;
+    restSnapshot.getContext('2d')?.drawImage(renderer.domElement, 0, 0);
+    cubes.forEach((cube, index) => { cube.position.y = originalY[index]; });
+    if (cubes.some((cube, index) => cube.position.y !== cubeRestY[index])) renderPreview();
   };
 
   const capturePreviewSnapshot = (excludedCube: THREE.Group) => {
@@ -194,7 +216,10 @@ export function mountToolCube(root: HTMLElement): () => void {
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     controls.handleResize();
-    if (!active) renderPreview();
+    if (!active) {
+      if (cubes.length && shellTextures.length) captureRestSnapshot();
+      else renderPreview();
+    }
   };
   const observer = new ResizeObserver(resize);
   observer.observe(preview);
@@ -221,6 +246,7 @@ export function mountToolCube(root: HTMLElement): () => void {
     camera.position.set(0, Math.sin(elevation) * layout.distance, Math.cos(elevation) * layout.distance);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
+    previewCameraQuaternion.copy(camera.quaternion);
     cubes.forEach((cube, index) => {
       const row = Math.floor(index / insert.columns);
       const column = index % insert.columns;
@@ -266,6 +292,25 @@ export function mountToolCube(root: HTMLElement): () => void {
   const liftCube = (index: number, raised: boolean) => {
     const cube = cubes[index];
     if (!cube || active) return;
+    const pendingReturn = liftReturnTimers.get(index);
+    if (pendingReturn !== undefined) {
+      clearTimeout(pendingReturn);
+      liftReturnTimers.delete(index);
+    }
+    if (raised) {
+      liftStartedAt.set(index, performance.now());
+    } else {
+      const remaining = minimumLiftMs - (performance.now() - (liftStartedAt.get(index) ?? -Infinity));
+      if (!reducedMotion.matches && !document.hidden && remaining > 0) {
+        liftReturnTimers.set(index, window.setTimeout(() => {
+          liftReturnTimers.delete(index);
+          liftStartedAt.delete(index);
+          liftCube(index, false);
+        }, remaining));
+        return;
+      }
+      liftStartedAt.delete(index);
+    }
     const targetY = cubeRestY[index] + (raised ? liftDistance : 0);
     liftAnimations.get(index)?.cancel();
     liftAnimations.delete(index);
@@ -348,11 +393,13 @@ export function mountToolCube(root: HTMLElement): () => void {
     iconTextures = loadedIcons;
     cubes = loadedIcons.map((iconTexture, index) => {
       iconTexture.colorSpace = THREE.SRGBColorSpace;
+      iconTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
       const iconMaterial = new THREE.MeshBasicMaterial({
         map: iconTexture,
         transparent: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
+        alphaTest: 0.05,
+        depthWrite: true,
+        side: THREE.FrontSide,
         toneMapped: false
       });
       const cube = gltf.scene.clone(true);
@@ -362,6 +409,10 @@ export function mountToolCube(root: HTMLElement): () => void {
         face.position.set(x * 1.035, y * 1.035, z * 1.035);
         face.rotation.set(rx, ry, 0);
         const icon = new THREE.Mesh(iconGeometry, iconMaterial);
+        const image = iconTexture.image as HTMLImageElement;
+        const aspect = image.naturalWidth / image.naturalHeight;
+        if (aspect > 1) icon.scale.y = 1 / aspect;
+        else icon.scale.x = aspect;
         icon.position.z = 0.01;
         face.add(icon);
         cube.add(face);
@@ -413,13 +464,15 @@ export function mountToolCube(root: HTMLElement): () => void {
     }
     scene.add(desktopFoam, mobileFoam);
     setPreviewPose();
-    fallback.hidden = true;
-    status.hidden = true;
-    preview.setAttribute('aria-busy', 'false');
-    root.dataset.cubeReady = '';
-    root.dataset.cubeCount = String(cubes.length);
-    triggers.forEach((button) => { button.disabled = false; });
-    renderPreview();
+    captureRestSnapshot();
+    requestAnimationFrame(() => {
+      if (disposed) return;
+      status.hidden = true;
+      preview.setAttribute('aria-busy', 'false');
+      root.dataset.cubeCount = String(cubes.length);
+      triggers.forEach((button) => { button.disabled = false; });
+      root.dataset.cubeReady = '';
+    });
   }).catch(() => {
     if (!disposed) {
       root.dataset.cubeError = '';
@@ -440,6 +493,13 @@ export function mountToolCube(root: HTMLElement): () => void {
       }
       const transition = inspectionTransition;
       if (transition && inspectedCube) {
+        if (!transition.closing && !reducedMotion.matches) {
+          rotateQuaternionAroundScreenYAxis(
+            transition.endQuaternion,
+            camera.quaternion,
+            delta * inspectionAutoRotationSpeed
+          );
+        }
         const elapsed = Math.min((now - transition.startedAt) / transition.duration, 1);
         const progress = 1 - Math.pow(1 - elapsed, 4);
         inspectedCube.position.lerpVectors(
@@ -447,6 +507,10 @@ export function mountToolCube(root: HTMLElement): () => void {
           transition.endPosition,
           progress
         );
+        if (!transition.closing && !reducedMotion.matches) {
+          inspectedCube.position.y += Math.sin((now - inspectionFloatStartedAt) * Math.PI * 2 / inspectionFloatPeriod)
+            * inspectionFloatAmplitude * progress;
+        }
         inspectedCube.scale.setScalar(THREE.MathUtils.lerp(transition.startScale, transition.endScale, progress));
         inspectedCube.quaternion.slerpQuaternions(
           transition.startQuaternion,
@@ -455,7 +519,9 @@ export function mountToolCube(root: HTMLElement): () => void {
         );
         if (transition.closing) {
           dialog.style.setProperty('--cube-backdrop-alpha', `${(1 - progress) * 62}%`);
-          previewSnapshot.style.opacity = String(progress);
+          const settle = Math.min(1, Math.max(0, (elapsed - 0.68) / 0.32));
+          restSnapshot.style.opacity = String(settle);
+          renderer.domElement.style.opacity = String(1 - settle);
         }
         if (elapsed === 1) {
           finishClosing = transition.closing;
@@ -463,10 +529,16 @@ export function mountToolCube(root: HTMLElement): () => void {
           delete root.dataset.cubeTransitioning;
           if (!finishClosing) controls.enabled = true;
         }
-      } else if (inspection === 'cube' && !interacting && !reducedMotion.matches) {
-        if (inspectedCube) {
-          rotateQuaternionAroundScreenYAxis(inspectedCube.quaternion, camera.quaternion, delta * 0.00088);
+      } else if (inspection === 'cube' && inspectedCube && !reducedMotion.matches) {
+        if (!interacting) {
+          rotateQuaternionAroundScreenYAxis(
+            inspectedCube.quaternion,
+            camera.quaternion,
+            delta * inspectionAutoRotationSpeed
+          );
         }
+        inspectedCube.position.y = Math.sin((now - inspectionFloatStartedAt) * Math.PI * 2 / inspectionFloatPeriod)
+          * inspectionFloatAmplitude;
       }
       if (!transition) controls.update();
       renderer.render(scene, camera);
@@ -481,9 +553,14 @@ export function mountToolCube(root: HTMLElement): () => void {
   };
 
   const showInspection = (sourceRect: DOMRect) => {
+    inspectionFloatStartedAt = performance.now();
+    info.hidden = false;
     dialog.style.setProperty('--cube-backdrop-alpha', '62%');
-    previewSnapshot.hidden = true;
-    previewSnapshot.style.opacity = '0';
+    previewSnapshot.hidden = false;
+    previewSnapshot.style.opacity = '1';
+    restSnapshot.hidden = true;
+    restSnapshot.style.opacity = '0';
+    renderer.domElement.style.removeProperty('opacity');
     dialog.showModal();
     expanded.append(renderer.domElement);
     active = true;
@@ -526,6 +603,9 @@ export function mountToolCube(root: HTMLElement): () => void {
   };
   const openCube = (event: Event) => {
     if (root.dataset.cubeReady === undefined) return;
+    liftReturnTimers.forEach(clearTimeout);
+    liftReturnTimers.clear();
+    liftStartedAt.clear();
     liftAnimations.forEach((motion) => motion.cancel());
     liftAnimations.clear();
     const button = event.currentTarget as HTMLButtonElement;
@@ -536,6 +616,7 @@ export function mountToolCube(root: HTMLElement): () => void {
     infoName.textContent = tools[cubeIndex].name;
     infoDescription.textContent = tools[cubeIndex].description;
     inspectedCube = cubes[cubeIndex];
+    inspectedRestQuaternion.copy(inspectedCube.quaternion);
     capturePreviewSnapshot(inspectedCube);
     group.visible = true;
     desktopFoam!.visible = false;
@@ -553,6 +634,7 @@ export function mountToolCube(root: HTMLElement): () => void {
   };
   const closeInspection = () => {
     if (!active || !inspectedCube || inspectionTransition?.closing) return;
+    info.hidden = true;
     pointerGesture = undefined;
     controls.enabled = false;
     interacting = false;
@@ -564,7 +646,9 @@ export function mountToolCube(root: HTMLElement): () => void {
     camera.updateMatrixWorld();
     inspectedCube.updateMatrixWorld(true);
     previewSnapshot.hidden = false;
-    previewSnapshot.style.opacity = '0';
+    previewSnapshot.style.opacity = '1';
+    restSnapshot.hidden = false;
+    restSnapshot.style.opacity = '0';
     const currentView = camera.matrixWorldInverse.clone();
     const currentModel = inspectedCube.matrixWorld.clone();
     camera.position.set(0, narrowScreen.matches ? -1.2 : -0.8, narrowScreen.matches ? 13.5 : 9);
@@ -586,7 +670,11 @@ export function mountToolCube(root: HTMLElement): () => void {
       startScale: inspectedCube.scale.x,
       endScale: targetPose.scale,
       startQuaternion: inspectedCube.quaternion.clone(),
-      endQuaternion: new THREE.Quaternion(),
+      endQuaternion: matchQuaternionAcrossCameras(
+        inspectedRestQuaternion,
+        previewCameraQuaternion,
+        camera.quaternion
+      ),
       closing: true
     };
     root.dataset.cubeTransitioning = '';
@@ -602,15 +690,18 @@ export function mountToolCube(root: HTMLElement): () => void {
     controls.enabled = false;
     controls.reset();
     group.visible = true;
+    document.querySelector<HTMLElement>('[data-back-button]')?.focus({ preventScroll: true });
     setPreviewPose();
+    renderer.domElement.style.removeProperty('opacity');
     preview.append(renderer.domElement);
     resize();
     previewSnapshot.hidden = true;
     previewSnapshot.style.opacity = '0';
+    restSnapshot.hidden = true;
+    restSnapshot.style.opacity = '0';
     inspection = undefined;
     inspectedCube = undefined;
     pointerGesture = undefined;
-    opener.focus();
   };
   triggers.forEach((button) => button.addEventListener('click', openCube));
   triggers.forEach((button, index) => {
@@ -672,6 +763,8 @@ export function mountToolCube(root: HTMLElement): () => void {
     observer.disconnect();
     narrowScreen.removeEventListener('change', onLayoutChange);
     reducedMotion.removeEventListener('change', onReducedMotionChange);
+    liftReturnTimers.forEach(clearTimeout);
+    liftReturnTimers.clear();
     liftAnimations.forEach((motion) => motion.cancel());
     liftAnimations.clear();
     controls.dispose();

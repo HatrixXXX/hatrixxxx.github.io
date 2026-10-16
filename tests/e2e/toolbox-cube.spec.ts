@@ -84,6 +84,43 @@ test('hover lifts one cube and leaving the tray returns it to its socket', async
   expect(await changedPixels(motionRest, await capture())).toBeLessThan(10);
 });
 
+test('quickly crossing cubes still shows each lift before they settle', async ({ page }) => {
+  await page.goto('/toolbox/');
+  await page.addStyleTag({ content: '[data-magnetic-frame] { display: none !important; } .tool-deck { animation: none !important; transform: none !important; }' });
+  const triggers = page.locator('[data-cube-trigger]');
+  await expect(triggers.first()).toBeEnabled();
+  await page.waitForFunction(() => !document.querySelector('#page-loader')?.classList.contains('pl-visible'));
+
+  const canvas = page.locator('[data-cube-preview] [data-cube-canvas]');
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  const capture = () => page.screenshot({ clip: box! });
+  const changedPixels = async (before: Buffer, after: Buffer) => {
+    const first = await sharp(before).raw().toBuffer();
+    const second = await sharp(after).raw().toBuffer();
+    let changed = 0;
+    for (let pixel = 0; pixel < first.length; pixel += 4) {
+      if (Math.max(...[0, 1, 2].map((channel) =>
+        Math.abs(first[pixel + channel] - second[pixel + channel])
+      )) > 5) changed++;
+    }
+    return changed;
+  };
+  const atRest = await capture();
+  for (const index of [0, 1]) {
+    const triggerBox = await triggers.nth(index).boundingBox();
+    expect(triggerBox).not.toBeNull();
+    await page.mouse.move(triggerBox!.x + triggerBox!.width / 2, triggerBox!.y + triggerBox!.height / 2);
+    await page.waitForTimeout(25);
+  }
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(220);
+  expect(await changedPixels(atRest, await capture())).toBeGreaterThan(200);
+
+  await page.waitForTimeout(500);
+  expect(await changedPixels(atRest, await capture())).toBeLessThan(10);
+});
+
 test('touching a cube does not leave a hover lift behind', async ({ browser }, testInfo) => {
   const context = await browser.newContext({
     baseURL: testInfo.project.use.baseURL,
@@ -138,13 +175,90 @@ test('loading state does not expose an amber panel through the toolbox opening',
   expect(await warmPixelRatio(await page.screenshot({ clip: centerClip(loadingBox!) }))).toBeLessThan(0.1);
 });
 
-test('inspection shows only the cube over a dimmed page', async ({ page }) => {
+test('waiting for the toolbox model does not show a lone software icon', async ({ page }) => {
+  let releaseModel!: () => void;
+  const pendingModel = new Promise<void>((resolve) => { releaseModel = resolve; });
+  await page.route('**/assets/toolbox/rounded-metal-cube.glb*', async (route) => {
+    await pendingModel;
+    await route.continue();
+  });
+
+  try {
+    await page.goto('/toolbox/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-cube-preview]')).toHaveAttribute('aria-busy', 'true');
+    await expect(page.locator('[data-cube-fallback]')).toBeHidden();
+  } finally {
+    releaseModel();
+  }
+  await expect(page.locator('[data-tool-cube]')).toHaveAttribute('data-cube-ready', '');
+});
+
+test('entering the toolbox keeps the shutter closed until all cubes render', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  let releaseModel!: () => void;
+  const pendingModel = new Promise<void>((resolve) => { releaseModel = resolve; });
+  await page.goto('/blogs/');
+  await expect(page.locator('#page-loader')).toBeHidden();
+  await page.route('**/assets/toolbox/rounded-metal-cube.glb*', async (route) => {
+    await pendingModel;
+    await route.continue();
+  });
+
+  try {
+    await page.locator('.desktop-nav a[href="/toolbox/"]').click();
+    await expect(page).toHaveURL('/toolbox/');
+    await expect(page.locator('[data-cube-preview]')).toHaveAttribute('aria-busy', 'true');
+    await page.waitForTimeout(1_200);
+    await expect(page.locator('#page-loader')).toHaveClass(/pl-visible.*pl-closed/);
+    await expect(page.locator('#page-loader')).not.toHaveClass(/pl-done/);
+  } finally {
+    releaseModel();
+  }
+
+  await expect(page.locator('[data-tool-cube]')).toHaveAttribute('data-cube-ready', '');
+  await expect(page.locator('[data-tool-cube]')).toHaveAttribute('data-cube-count', '40');
+  await expect(page.locator('#page-loader')).toBeHidden();
+});
+
+test('refreshing the toolbox keeps the splash until its cubes render', async ({ page }) => {
+  let releaseModel!: () => void;
+  const pendingModel = new Promise<void>((resolve) => { releaseModel = resolve; });
+  await page.route('**/assets/toolbox/rounded-metal-cube.glb*', async (route) => {
+    await pendingModel;
+    await route.continue();
+  });
+
+  try {
+    await page.goto('/toolbox/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-cube-preview]')).toHaveAttribute('aria-busy', 'true');
+    await page.waitForTimeout(1_200);
+    await expect(page.locator('#page-loader')).toBeVisible();
+    await expect(page.locator('#page-loader')).not.toHaveClass(/pl-done/);
+  } finally {
+    releaseModel();
+  }
+
+  await expect(page.locator('[data-tool-cube]')).toHaveAttribute('data-cube-count', '40');
+  await expect(page.locator('#page-loader')).toBeHidden();
+});
+
+test('inspection keeps the toolbox visible beneath the dimmed modal', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/toolbox/');
   await page.getByRole('button', { name: '放大查看 VS Code 方块' }).click();
 
   const dialog = page.getByRole('dialog', { name: 'VS Code 方块预览' });
   await expect(dialog).toBeVisible();
+  const background = page.locator('[data-cube-preview-snapshot]');
+  await expect(background).toBeVisible();
+  await expect(background).toHaveCSS('opacity', '1');
+  const image = Buffer.from((await background.evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).split(',')[1], 'base64');
+  const { data, info } = await sharp(image).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let visiblePixels = 0;
+  for (let offset = 0; offset < data.length; offset += info.channels) {
+    if (data[offset + 3] > 20 && Math.max(data[offset], data[offset + 1], data[offset + 2]) > 20) visiblePixels++;
+  }
+  expect(visiblePixels).toBeGreaterThan(5_000);
   const viewport = page.viewportSize();
   const dialogBox = await dialog.boundingBox();
   expect(dialogBox).toEqual({ x: 0, y: 0, width: viewport!.width, height: viewport!.height });
@@ -194,7 +308,7 @@ test('return animation restores the page brightness with the cube movement', asy
   await expect(page.getByRole('dialog', { name: 'VS Code 方块预览' })).not.toBeVisible();
 });
 
-test('return animation reveals the toolbox contents behind the returning cube', async ({ page }) => {
+test('return animation keeps the toolbox contents visible behind the returning cube', async ({ page }) => {
   await page.goto('/toolbox/');
   const root = page.locator('[data-tool-cube]');
   const cube = page.getByRole('button', { name: '放大查看 VS Code 方块' });
@@ -207,8 +321,7 @@ test('return animation reveals the toolbox contents behind the returning cube', 
   await page.waitForTimeout(100);
   await expect(snapshot).toBeVisible();
   const opacity = Number(await snapshot.evaluate((canvas) => getComputedStyle(canvas).opacity));
-  expect(opacity).toBeGreaterThan(0);
-  expect(opacity).toBeLessThan(1);
+  expect(opacity).toBe(1);
 
   const dataUrl = await snapshot.evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
   const image = Buffer.from(dataUrl.split(',')[1], 'base64');
@@ -223,6 +336,42 @@ test('return animation reveals the toolbox contents behind the returning cube', 
   await expect(page.getByRole('dialog', { name: 'VS Code 方块预览' })).not.toBeVisible();
 });
 
+test('the final return frame matches the cube resting in its socket', async ({ page }) => {
+  await page.goto('/toolbox/');
+  const cube = page.locator('[data-cube-index="15"]');
+  await expect(cube).toBeEnabled();
+  const box = await cube.boundingBox();
+  expect(box).not.toBeNull();
+  const clip = {
+    x: box!.x + box!.width / 2 - 90,
+    y: box!.y + box!.height / 2 - 90,
+    width: 180,
+    height: 180
+  };
+  await cube.dispatchEvent('click');
+  const root = page.locator('[data-tool-cube]');
+  await expect(root).not.toHaveAttribute('data-cube-transitioning', '');
+  await page.evaluate(() => {
+    const dialog = document.querySelector<HTMLDialogElement>('[data-cube-dialog]')!;
+    (window as typeof window & { finishCubeClose?: () => void }).finishCubeClose = dialog.close.bind(dialog);
+    dialog.close = () => { document.documentElement.dataset.cubeCloseReady = ''; };
+  });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => document.documentElement.dataset.cubeCloseReady !== undefined);
+  const before = await sharp(await page.screenshot({ clip })).ensureAlpha().raw().toBuffer();
+  await page.evaluate(() => (window as typeof window & { finishCubeClose: () => void }).finishCubeClose());
+  await expect(page.locator('[data-cube-dialog]')).not.toBeVisible();
+  await page.waitForFunction(() => document.querySelector('[data-cube-preview] [data-cube-canvas]'));
+  const after = await sharp(await page.screenshot({ clip })).ensureAlpha().raw().toBuffer();
+  let changedPixels = 0;
+  for (let offset = 0; offset < before.length; offset += 4) {
+    if (Math.max(...[0, 1, 2].map((channel) =>
+      Math.abs(before[offset + channel] - after[offset + channel])
+    )) > 20) changedPixels++;
+  }
+  expect(changedPixels / (clip.width * clip.height)).toBeLessThan(0.05);
+});
+
 test('the enlarged cube keeps comfortable space around itself', async ({ page }) => {
   await page.goto('/toolbox/');
   await page.getByRole('button', { name: '放大查看 VS Code 方块' }).click();
@@ -230,30 +379,31 @@ test('the enlarged cube keeps comfortable space around itself', async ({ page })
   const root = page.locator('[data-tool-cube]');
   await expect(root).not.toHaveAttribute('data-cube-transitioning', '');
   const canvas = page.locator('[data-cube-dialog] canvas');
-  const first = await sharp(await canvas.screenshot()).raw().toBuffer({ resolveWithObject: true });
   await page.waitForTimeout(400);
-  const second = await sharp(await canvas.screenshot()).raw().toBuffer();
-  const { data, info } = first;
-  let top = info.height;
-  let bottom = 0;
-  for (let y = 0; y < info.height; y++) {
-    for (let x = 0; x < info.width; x++) {
-      const offset = (y * info.width + x) * info.channels;
-      const changed = Math.max(...[0, 1, 2].map((channel) =>
-        Math.abs(data[offset + channel] - second[offset + channel])
-      ));
-      if (changed > 8) {
-        top = Math.min(top, y);
-        bottom = Math.max(bottom, y);
+  const { height, cubeHeight } = await canvas.evaluate(async (element) => {
+    const surface = element as HTMLCanvasElement;
+    const gl = surface.getContext('webgl2')!;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const pixels = new Uint8Array(surface.width * surface.height * 4);
+    gl.readPixels(0, 0, surface.width, surface.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    let top = surface.height;
+    let bottom = 0;
+    for (let y = 0; y < surface.height; y++) {
+      for (let x = 0; x < surface.width; x++) {
+        if (pixels[(y * surface.width + x) * 4 + 3] > 40) {
+          top = Math.min(top, y);
+          bottom = Math.max(bottom, y);
+        }
       }
     }
-  }
+    return { height: surface.height, cubeHeight: bottom - top };
+  });
 
-  expect(bottom - top).toBeGreaterThan(info.height * 0.18);
-  expect(bottom - top).toBeLessThan(info.height * 0.5);
+  expect(cubeHeight).toBeGreaterThan(height * 0.18);
+  expect(cubeHeight).toBeLessThan(height * 0.5);
 });
 
-test('tool cube opens for inspection and returns focus on Escape', async ({ page }) => {
+test('tool cube opens for inspection and Escape returns without selecting the cube', async ({ page }) => {
   await page.goto('/toolbox/');
 
   const root = page.locator('[data-tool-cube]');
@@ -270,7 +420,9 @@ test('tool cube opens for inspection and returns focus on Escape', async ({ page
   await expect(inspection).toBeVisible();
   await expect(root).toHaveAttribute('data-cube-transitioning', '');
   await expect(inspection).not.toBeVisible();
-  await expect(cube).toBeFocused();
+  await expect(cube).not.toBeFocused();
+  await expect(page.locator('[data-back-button]')).toBeFocused();
+  expect(await cube.evaluate((element) => element.matches(':focus-visible'))).toBe(false);
 
   await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '收藏夹' }).click();
   await expect(page).toHaveURL(/\/favorites\/$/);
@@ -279,6 +431,45 @@ test('tool cube opens for inspection and returns focus on Escape', async ({ page
   await expect(page.getByRole('button', { name: '放大查看 VS Code 方块' })).toBeEnabled();
   await page.getByRole('button', { name: '放大查看 VS Code 方块' }).dispatchEvent('click');
   await expect(page.getByRole('dialog', { name: 'VS Code 方块预览' })).toBeVisible();
+});
+
+test('the enlarged cube visibly floats while it rotates', async ({ page }) => {
+  await page.goto('/toolbox/');
+  await page.locator('[data-cube-index="0"]').click();
+  const root = page.locator('[data-tool-cube]');
+  await expect(root).not.toHaveAttribute('data-cube-transitioning', '');
+
+  const motion = await page.locator('[data-cube-dialog] canvas').evaluate(async (element) => {
+    const canvas = element as HTMLCanvasElement;
+    const gl = canvas.getContext('webgl2')!;
+    const centers: number[] = [];
+    let visiblePixels = 0;
+    for (let sample = 0; sample < 6; sample++) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const result = await new Promise<{ center: number; pixels: number }>((resolve) => {
+        requestAnimationFrame(() => {
+          const pixels = new Uint8Array(canvas.width * canvas.height * 4);
+          gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          let count = 0;
+          let weightedY = 0;
+          for (let y = 0; y < canvas.height; y += 2) {
+            for (let x = canvas.width / 4; x < canvas.width * 3 / 4; x += 2) {
+              if (pixels[(y * canvas.width + x) * 4 + 3] <= 40) continue;
+              count++;
+              weightedY += y;
+            }
+          }
+          resolve({ center: weightedY / count, pixels: count });
+        });
+      });
+      centers.push(result.center);
+      visiblePixels = Math.max(visiblePixels, result.pixels);
+    }
+    return { range: Math.max(...centers) - Math.min(...centers), visiblePixels };
+  });
+
+  expect(motion.visiblePixels).toBeGreaterThan(5_000);
+  expect(motion.range).toBeGreaterThan(32);
 });
 
 test('dragging beyond the former panel edge stays enlarged until a separate short click', async ({ page }) => {
@@ -318,6 +509,91 @@ test('the clicked cube travels into an uncluttered inspection view', async ({ pa
   await expect(inspection).not.toContainText('拖动全方位旋转');
   await expect(root).toHaveAttribute('data-cube-transitioning', '');
   await expect(root).not.toHaveAttribute('data-cube-transitioning', '');
+});
+
+test('the cube keeps rotating through the final part of its enlargement', async ({ page }) => {
+  await page.goto('/toolbox/');
+  await page.getByRole('button', { name: '放大查看 VS Code 方块' }).click();
+  const canvas = page.locator('[data-cube-dialog] canvas');
+
+  const motion = await canvas.evaluate(async (element) => {
+    const target = element as HTMLCanvasElement;
+    const root = target.closest<HTMLElement>('[data-tool-cube]')!;
+    const gl = target.getContext('webgl2');
+    if (!gl) return { changedChannels: 0, transitioningAtStart: false, transitioningAtEnd: false };
+    const read = () => {
+      const pixels = new Uint8Array(target.width * target.height * 4);
+      gl.readPixels(0, 0, target.width, target.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      return pixels;
+    };
+    const readNextFrame = () => new Promise<Uint8Array>((resolve) => {
+      requestAnimationFrame(() => resolve(read()));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const transitioningAtStart = root.dataset.cubeTransitioning !== undefined;
+    const first = await readNextFrame();
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    const transitioningAtEnd = root.dataset.cubeTransitioning !== undefined;
+    const second = await readNextFrame();
+    let changed = 0;
+    for (let index = 0; index < first.length; index++) {
+      if (Math.abs(first[index] - second[index]) > 5) changed++;
+    }
+    return { changedChannels: changed, transitioningAtStart, transitioningAtEnd };
+  });
+
+  expect(motion.transitioningAtStart).toBe(true);
+  expect(motion.transitioningAtEnd).toBe(true);
+  expect(motion.changedChannels).toBeGreaterThan(150_000);
+});
+
+test('software information sits midway between the cube and viewport bottom on smaller screens', async ({ page }) => {
+  test.setTimeout(90_000);
+  for (const viewport of [{ width: 1536, height: 695 }, { width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/toolbox/');
+    await page.addStyleTag({ content: '.tool-deck { animation: none !important; transform: none !important; }' });
+    await page.getByRole('button', { name: '放大查看 VS Code 方块' }).click();
+    await expect(page.locator('[data-tool-cube]')).not.toHaveAttribute('data-cube-transitioning', '');
+
+    const canvas = page.locator('[data-cube-dialog] canvas');
+    const { data: first, info: pixels } = await sharp(await canvas.screenshot()).raw().toBuffer({ resolveWithObject: true });
+    await page.waitForTimeout(350);
+    const second = await sharp(await canvas.screenshot()).raw().toBuffer();
+    let cubeBottom = 0;
+    for (let y = 0; y < pixels.height; y++) {
+      for (let x = 0; x < pixels.width; x++) {
+        const offset = (y * pixels.width + x) * pixels.channels;
+        if (Math.max(...[0, 1, 2].map((channel) =>
+          Math.abs(first[offset + channel] - second[offset + channel])
+        )) > 12) cubeBottom = y;
+      }
+    }
+
+    const info = await page.locator('[data-cube-info]').boundingBox();
+    expect(info).not.toBeNull();
+    expect(info!.y).toBeGreaterThan(cubeBottom + 12);
+    expect(Math.abs(info!.y + info!.height / 2 - (cubeBottom + viewport.height) / 2)).toBeLessThan(35);
+  }
+});
+
+test('clicking to return a cube hides its information before shrinking begins', async ({ page }) => {
+  await page.goto('/toolbox/');
+  await page.addStyleTag({ content: '.tool-deck { animation: none !important; transform: none !important; }' });
+  await page.getByRole('button', { name: '放大查看 VS Code 方块' }).click();
+  await expect(page.locator('[data-tool-cube]')).not.toHaveAttribute('data-cube-transitioning', '');
+
+  const closing = await page.evaluate(() => {
+    const dialog = document.querySelector<HTMLDialogElement>('[data-cube-dialog]')!;
+    const root = document.querySelector<HTMLElement>('[data-tool-cube]')!;
+    const info = document.querySelector<HTMLElement>('[data-cube-info]')!;
+    const click = { bubbles: true, button: 0, isPrimary: true, pointerId: 1, pointerType: 'mouse' };
+    dialog.dispatchEvent(new PointerEvent('pointerdown', click));
+    dialog.dispatchEvent(new PointerEvent('pointerup', click));
+    return { dialogOpen: dialog.open, shrinking: root.dataset.cubeTransitioning !== undefined, infoDisplay: getComputedStyle(info).display };
+  });
+
+  expect(closing).toEqual({ dialogOpen: true, shrinking: true, infoDisplay: 'none' });
 });
 
 test('inspection shows the selected software name and one-sentence summary', async ({ page }) => {

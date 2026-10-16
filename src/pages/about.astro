@@ -25,4 +25,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   :global(html),
   :global(body.about-page) { overflow: hidden; }
+
+  @media (max-width: 1240px) {
+    .about-main { height: auto; min-height: 100dvh; overflow: visible; padding-bottom: 2rem; }
+    :global(html),
+    :global(body.about-page) { overflow: auto; }
+  }
 </style>
+
+<script>
+  import '@/scripts/about-card-fold';
+</script>

@@ -22,7 +22,7 @@ const tool = tools[0];
   </div>
   <div class="cube-demo__stage" data-cube-preview aria-busy="true">
     <canvas class="cube-demo__preview-snapshot" data-cube-preview-snapshot aria-hidden="true" hidden></canvas>
-    <img src={tool.icon} alt="" width="72" height="72" data-cube-fallback />
+    <canvas class="cube-demo__preview-snapshot" data-cube-rest-snapshot aria-hidden="true" hidden></canvas>
     <span class="cube-demo__status" data-cube-status aria-live="polite">模型载入中</span>
   </div>
   {tools.map((item, index) => (
@@ -145,16 +145,6 @@ const tool = tools[0];
     background: transparent;
   }
 
-  .cube-demo__stage img {
-    position: absolute;
-    top: var(--cube-trigger-y, 72%);
-    left: var(--cube-trigger-x, 50%);
-    opacity: 0.65;
-    transform: translate(-50%, -50%);
-  }
-
-  .cube-demo__stage img[hidden] { display: none; }
-
   .cube-demo__status {
     position: absolute;
     right: 0;
@@ -205,7 +195,7 @@ const tool = tools[0];
     position: absolute;
     z-index: 1;
     right: clamp(1rem, 5vw, 4rem);
-    bottom: clamp(1rem, 4vh, 2.5rem);
+    bottom: calc(clamp(1rem, 4vh, 2.5rem) + 110px);
     left: clamp(1rem, 5vw, 4rem);
     display: grid;
     gap: 0.25rem;
@@ -213,6 +203,24 @@ const tool = tools[0];
     pointer-events: none;
     text-align: center;
     text-shadow: 0 2px 14px rgb(0 0 0 / 85%);
+  }
+
+  .cube-demo__info[hidden] { display: none; }
+
+  @media (min-width: 801px) and (max-height: 900px) {
+    .cube-demo__info {
+      top: 88dvh;
+      bottom: auto;
+      transform: translateY(-50%);
+    }
+  }
+
+  @media (max-width: 800px) {
+    .cube-demo__info {
+      top: min(calc(75dvh + 18vw), calc(100dvh - 5rem));
+      bottom: auto;
+      transform: translateY(-50%);
+    }
   }
 
   .cube-demo__info-name {
@@ -226,7 +234,7 @@ const tool = tools[0];
     max-width: 46rem;
     margin: 0;
     color: var(--color-text);
-    font-size: 1rem;
+    font-size: 2rem;
     line-height: 1.55;
   }
 

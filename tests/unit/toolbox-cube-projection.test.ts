@@ -7,6 +7,7 @@ import perspective from '../../src/config/toolbox-perspective.json';
 import {
   calculateInspectionStartPose,
   calculateSocketCubePose,
+  matchQuaternionAcrossCameras,
   rotateQuaternionAroundScreenYAxis
 } from '../../src/lib/toolbox-cube-projection';
 
@@ -76,6 +77,18 @@ test('rotates an inspected cube around the camera screen vertical axis', () => {
 
   expect(actual.angleTo(expected)).toBeLessThan(1e-10);
   expect(actual.angleTo(localAxisResult)).toBeGreaterThan(0.01);
+});
+
+test('matches the resting cube orientation across inspection and preview cameras', () => {
+  const previewCamera = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.82, 0.18, -0.11));
+  const inspectionCamera = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.09, -0.36, 0.04));
+  const restingCube = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.12, 0.24, -0.08));
+
+  const returningCube = matchQuaternionAcrossCameras(restingCube, previewCamera, inspectionCamera);
+  const previewView = previewCamera.clone().invert().multiply(restingCube);
+  const inspectionView = inspectionCamera.clone().invert().multiply(returningCube);
+
+  expect(inspectionView.angleTo(previewView)).toBeLessThan(1e-10);
 });
 
 describe.each(layouts)('$key toolbox cube projection', ({ layout }) => {

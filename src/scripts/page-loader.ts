@@ -411,6 +411,30 @@ function waitForLabScene(): Promise<void> {
   });
 }
 
+function waitForToolboxCubes(signal: AbortSignal): Promise<void> {
+  if (!document.body.classList.contains('software-page')) return Promise.resolve();
+  const root = document.querySelector<HTMLElement>('[data-tool-cube]');
+  if (!root) return Promise.resolve();
+  const settled = () => root.dataset.cubeReady !== undefined
+    || root.dataset.cubeError !== undefined
+    || root.dataset.cubeUnavailable !== undefined;
+  if (settled()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => { if (settled()) finish(); });
+    const finish = () => {
+      observer.disconnect();
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    signal.addEventListener('abort', finish, { once: true });
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['data-cube-ready', 'data-cube-error', 'data-cube-unavailable']
+    });
+    if (settled() || signal.aborted) finish();
+  });
+}
+
 function waitForGuestbook(signal: AbortSignal): Promise<void> {
   const section = document.querySelector<HTMLElement>('[data-twikoo-variant="guestbook"]');
   if (!section) return Promise.resolve();
@@ -466,6 +490,7 @@ function waitPageBackgroundDone(s: State, background: Promise<boolean>, minimumM
     background,
     portalArtwork,
     waitForLabScene(),
+    waitForToolboxCubes(controller.signal),
     waitForGuestbook(controller.signal),
     waitForProtectedGate(controller.signal),
     new Promise((resolve) => window.setTimeout(resolve, minimumMs)),

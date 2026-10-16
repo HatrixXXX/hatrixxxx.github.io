@@ -80,6 +80,12 @@
 .favorites-readout h2{margin-top:1px;font-size:14px}
 .favorites-readout__description{margin-top:1px;font-size:9px;line-height:1.15}
 }
+@media(min-width:1900px) and (max-width:1999px) and (max-height:1200px) and (max-resolution:1.1dppx),
+  (min-width:1200px) and (max-width:1599px) and (max-height:1200px) and (min-resolution:1.2dppx) and (max-resolution:1.6dppx){
+html:has(.favorites-page),body:has(.favorites-page){overflow:hidden}
+.favorites-page{height:100dvh;min-height:0;overflow:hidden}
+.favorites-console{scale:.7}
+}
 @media(prefers-reduced-motion:reduce){
 .favorites-console *,.favorites-console *::before,.favorites-console *::after{animation-duration:0s!important;transition-duration:0s!important}
 }

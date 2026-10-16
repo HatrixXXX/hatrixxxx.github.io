@@ -2,11 +2,14 @@ Toolbox icon sources
 ====================
 
 The toolbox inventory is maintained in src/data/software-tools.ts.
-The 28 icons in the first section were copied
-from software installed on this computer's D: drive. Executable icons
-were extracted from their Windows icon resources without running them.
-All icons occupy 128x128 PNG canvases with transparent outer margins;
-the application's own colored tile remains part of its icon.
+The installed-software icons were copied from this computer's D: drive.
+Executable icons were extracted from Windows icon resources without
+running the applications. Native PNG frames are kept at 256 or 512px;
+native DIB frames are kept in 256px ICO containers. The local SVGs have
+512x512 intrinsic dimensions. Two source-limited PNGs remain at 128px:
+SolidWorks and Q-dir. No 128px icon was merely enlarged to claim
+higher source resolution. Vivado, MobaXterm, and SpaceSniffer are 512px
+transparent PNGs reconstructed from their original app marks.
 
 The local D: paths are provenance only. The website serves local PNGs
 and does not depend on those installed applications at runtime. Product
@@ -17,24 +20,23 @@ vs-code.png <- D:/Develop/VSCode/Microsoft VS Code/Code.exe
 git.png <- D:/Develop/Git/Git/mingw64/share/git/git-for-windows.ico
 blender.png <- D:/General/Blender/blender.exe
 bambu-studio.png <- D:/Develop/BambooStudio/Bambu Studio/resources/images/BambuStudio_192px.png
-altium-designer.png <- D:/Develop/AltiumDesigner/X2.EXE
+altium-designer.ico <- D:/Develop/AltiumDesigner/X2.EXE
 stm32cubemx.png <- D:/Develop/CubeMX/help/STM32CubeMX.png
 keil.png <- D:/Develop/Keil/UV4/UV4.exe
 ozone.png <- D:/Develop/Ozone/Ozone.exe
 vivado.png <- D:/Develop/Xilinx/Vitis/2024.2/doc/images/vivado_logo.ico
 matlab.png <- D:/Develop/Matlab/bin/win64/MATLAB.exe
-adobe-acrobat.png <- D:/General/Adobe/Acrobat DC/Acrobat/Acrobat.exe
+adobe-acrobat.ico <- D:/General/Adobe/Acrobat DC/Acrobat/Acrobat.exe
 adobe-illustrator.png <- D:/General/Adobe/Adobe Illustrator 2025/Support Files/Contents/Windows/Illustrator.exe.bak
 adobe-media-encoder.png <- D:/General/Adobe/Adobe Media Encoder 2025/Adobe Media Encoder.exe.bak
 adobe-photoshop.png <- D:/General/Adobe/Adobe Photoshop 2025/Photoshop.exe.bak
 everything.png <- D:/ToolChain/Everything/Everything.exe
 honeyview.png <- D:/General/HoneyView/Honeyview.exe
 potplayer.png <- D:/General/PotPlayer/PotPlayerMini64.exe
-typora.png <- D:/General/Typora/Typora.exe
+typora.png <- D:/General/Typora/resources/assets/icon/icon_512x512.png
 zotero.png <- D:/General/Zotero/zotero.exe
 picgo.png <- D:/General/PicGo/PicGo.exe
 q-dir.png <- D:/ToolChain/Q-dir/Q-Dir/Q-Dir.exe
-7zip.png <- D:/ToolChain/7-Zip/7zFM.exe
 geek.png <- D:/ToolChain/geek.exe
 snipaste.png <- D:/ToolChain/Snipaste/Snipaste.exe
 bandicam.png <- D:/ToolChain/Bandicam/App/Bandicam/bdcam.exe
@@ -45,22 +47,57 @@ contextmenumanager.png <- D:/ToolChain/ContextMenuManager/ContextMenuManager.NET
 Additional icons from upstream artwork:
 Devicon (MIT; local license: LICENSE-devicon.txt)
 https://github.com/devicons/devicon
-clion.png <- icons/clion/clion-original.svg
-pycharm.png <- icons/pycharm/pycharm-original.svg
+clion.svg <- icons/clion/clion-original.svg
+pycharm.svg <- icons/pycharm/pycharm-original.svg
 
 Dashboard Icons (Apache-2.0; local license: LICENSE-dashboard-icons.txt)
 https://github.com/homarr-labs/dashboard-icons
-anaconda.png <- svg/anaconda.svg
-vmware.png <- svg/vmware-workstation.svg
+anaconda.svg <- svg/anaconda.svg
+vmware.svg <- svg/vmware-workstation.svg
 
 Other application artwork
-cpu-z.png <- https://www.cpuid.com/medias/images/softwares/cpu-z.svg
+cpu-z.svg <- https://www.cpuid.com/medias/images/softwares/cpu-z.svg
 cc-switch.png <- https://github.com/farion1231/cc-switch/blob/main/src-tauri/icons/128x128%402x.png
-adobe-premiere-pro.png <- https://main--cc--adobecom.aem.live/cc-shared/assets/img/product-icons/svg/premiere-pro.svg
-kicad.png <- https://gitlab.com/kicad/code/kicad/-/raw/master/resources/bitmaps_png/icons/icon_kicad.png
-quartus.png <- https://www.pngaaa.com/detail/4783836
+adobe-premiere-pro.svg <- https://main--cc--adobecom.aem.live/cc-shared/assets/img/product-icons/svg/premiere-pro.svg
+kicad.ico <- https://gitlab.com/kicad/code/kicad/-/raw/master/resources/bitmaps_png/icons/icon_kicad.ico
+quartus.png <- https://image.pngaaa.com/836/4783836.png
 multisim.png <- https://mt-library.web.app/imgs/App/Multisim/multisim.png
 mobaxterm.png <- https://mobaxterm.mobatek.net/img/moba/xterm_logo.png
+
+7zip.svg <- https://commons.wikimedia.org/wiki/File:7z_favicon.svg
+
+7-Zip favicon vector by Iketsi, licensed CC BY 4.0:
+https://creativecommons.org/licenses/by/4.0/
+The source matches the installed 7zFM.exe icon. Adaptation: centered its
+16x12 artwork in a transparent square with the previous icon's margins
+and 512x512 intrinsic size.
+
+Reconstructed 512px marks:
+
+Vivado: Three flat-color polygons traced from the installed icon and
+rasterized at 512x512, preserving the original transparent gap.
+
+MobaXterm: The official image is only 48x48. The 512px transparent asset
+is an imagegen edit of the original app mark.
+
+SpaceSniffer: The largest icon frame in the installed executable and the
+newer official release is only 48x48. The 512px transparent asset is an
+imagegen edit of that mark.
+
+Imagegen edit prompts (built-in tool; 1254px outputs cleaned of isolated
+alpha artifacts and reduced to 512px):
+
+MobaXterm: Faithfully reconstruct the existing dark terminal panel, thin
+silver-gray beveled frame, white >_ glyph, and interlocked red, blue, and
+lime-green blocks. Preserve their arrangement, proportions, palette, and
+dimensional shading. Improve edge clarity only. Transparent outside the
+icon silhouette; no added text, symbols, shadow, glow, or redesign.
+
+SpaceSniffer: Faithfully reconstruct the existing single golden-yellow
+jigsaw piece with circular head, rounded arms, right-side notch, two short
+feet, bright upper-left highlights, and amber bevel. Improve edge clarity
+only. Transparent outside the piece; no text, extra pieces, shadow, glow,
+or redesign.
 
 User-supplied reference
 solidworks.png <- E:/CollegeData/15548578ed7bfe96220573887d3667f1.jpg

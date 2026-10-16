@@ -14,13 +14,13 @@ Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/1145360/library_
 Local file: hades.webp
 
 Kingdom Rush
-Source page: https://store.steampowered.com/app/246420/Kingdom_Rush___Tower_Defense/
-Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/246420/library_600x900_2x.jpg
+Source page: https://store.steampowered.com/app/2849080/Kingdom_Rush_5_Alliance_TD/
+Image source: https://shared.steamstatic.com/store_item_assets/steam/apps/2849080/library_600x900_2x.jpg
 Local file: kingdom-rush.webp
 
 9 Kings
 Source page: https://store.steampowered.com/app/2784470/9_Kings/
-Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/2784470/library_600x900_2x.jpg
+Image source: https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2784470/92a7f2f1164eb5f566a7c87f2eb4b6fa558aeac0/library_600x900_schinese_2x.jpg
 Local file: nine-kings.webp
 
 Dead Cells
@@ -30,16 +30,14 @@ Local file: dead-cells.webp
 
 Turing Complete
 Source page: https://store.steampowered.com/app/1444480/Turing_Complete/
-Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/1444480/library_600x900_2x.jpg
+Image source: https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1444480/bf109d83c8dfb406bb149423bc684fcbeedaeb8a/library_capsule_2x.jpg
 Local file: turing-complete.webp
 
-Hearthstone composite cover (retrieved 2026-10-16)
---------------------------------------------------
+Hearthstone cover (provided by the site owner 2026-10-16)
+---------------------------------------------------------
 
-Source page: https://hearthstone.blizzard.com/en-us
-Background source: https://blz-contentstack-images.akamaized.net/v3/assets/bltc965041283bac56c/blt88e01facd00a0a1f/64beb07e250c7cd6f3c73540/MastheadMobile_BG.png
-Logo source: https://blz-contentstack-images.akamaized.net/v3/assets/bltc965041283bac56c/bltce748775e32f8c04/5f0769f35d2ae808119fb2dd/homepage_logo.png
+Source image: 694959713c18363adb9ab6371d6399ca.jpg (1024 x 1440)
 Local file: hearthstone.webp
 
-The two official Hearthstone assets were resized and composited into a 2:3
-thumbnail. All six local thumbnails were encoded as 480 x 720 WebP files.
+The provided image was cropped to the existing 2:3 cover ratio. All six local
+thumbnails are encoded as 480 x 720 WebP files.

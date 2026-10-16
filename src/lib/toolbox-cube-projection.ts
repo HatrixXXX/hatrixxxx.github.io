@@ -20,6 +20,16 @@ export function rotateQuaternionAroundScreenYAxis(
   return objectQuaternion.premultiply(screenYAxisRotation);
 }
 
+export function matchQuaternionAcrossCameras(
+  objectQuaternion: THREE.Quaternion,
+  sourceCameraQuaternion: THREE.Quaternion,
+  targetCameraQuaternion: THREE.Quaternion
+) {
+  return targetCameraQuaternion.clone()
+    .multiply(sourceCameraQuaternion.clone().invert())
+    .multiply(objectQuaternion);
+}
+
 export function calculateInspectionStartPose(
   camera: THREE.PerspectiveCamera,
   canvas: ViewportRect,
