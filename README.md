@@ -162,7 +162,7 @@ git -C .private-content add posts
 git -C .private-content commit -m "content: update posts"
 ```
 
-仅新增或修改博客 `.private-content/posts/`、随笔 `.private-snippets/snippets/` 或计划 `.private-plans/plans/` 下的 `.md` 文件时，可双击项目根目录的 `publish-posts.cmd`。它会先检查三个私有仓库，再只提交并推送有 Markdown 改动的仓库；窗口会停留以便查看结果，需要本机安装 Git。脚本不运行本地测试或构建；若任一私有仓库还有其他改动、删除或尚未推送的提交，会在推送前停止，计划仓库首次推送除外。各私有仓库推送后由 GitHub Actions 通知站点构建部署。
+要提交并推送博客、随笔、计划三个私有仓库的所有文件改动，可双击项目根目录的 `publish-posts.cmd`。它会先检查三个仓库，再提交各仓库全部未提交改动，并推送有新提交的仓库；窗口会停留以便查看结果，需要本机安装 Git。脚本不运行本地测试或构建；存在合并冲突或本地分支与 `origin/master` 分叉时，会在推送前停止。计划仓库首次推送无需 `origin/master`。各私有仓库推送后由 GitHub Actions 通知站点构建部署。
 
 不要把文章、加锁正文图片或其他私密资源复制回公开仓库。
 

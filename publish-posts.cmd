@@ -45,46 +45,57 @@ try {
             throw "$($collection.Label)私有仓库必须位于 master 分支"
         }
 
-        $status = Git $directory 'status --porcelain=v1 -z --untracked-files=all' $true
+        $status = Git $directory 'status --porcelain=v1 -z --untracked-files=all --no-renames' $true
         $entries = @([regex]::Split($status, "`0") | Where-Object { $_.Length -gt 0 })
-        $markdownPath = '^' + [regex]::Escape($collection.Folder) + '/(?:[^/]+/)*[^/]+\.md$'
         foreach ($entry in $entries) {
             $state = $entry.Substring(0, 2)
-            $path = $entry.Substring(3)
-            if ($state -notin @(' M', 'M ', 'MM', 'A ', 'AM', '??') -or
-                $path -cnotmatch $markdownPath) {
-                throw "$($collection.Label)只允许新增或修改 $($collection.Folder)/ 下的 .md 文件：$path"
+            if ($state -in @('DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU')) {
+                throw "$($collection.Label)存在尚未解决的合并冲突：$($entry.Substring(3))"
             }
         }
-        if ($entries.Count -eq 0) { continue }
+        $hasWorkingChanges = $entries.Count -gt 0
 
         $remoteHead = Git $directory 'rev-parse --verify refs/remotes/origin/master' $true $true
         if ($null -eq $remoteHead -and $collection.Repository -ne '.private-plans') {
+            if (-not $hasWorkingChanges) { continue }
             throw "$($collection.Label)缺少 origin/master，请先手动处理仓库状态"
         }
+        $hasCommittedChanges = $null -eq $remoteHead
         if ($null -ne $remoteHead) {
             $head = (Git $directory 'rev-parse HEAD' $true).Trim()
+            $remoteCommit = $remoteHead.Trim()
             $upstreamName = (Git $directory 'rev-parse --abbrev-ref @{upstream}' $true).Trim()
-            if ($upstreamName -cne 'origin/master' -or $head -cne $remoteHead.Trim()) {
+            if ($upstreamName -cne 'origin/master') {
                 throw "$($collection.Label)本地 master 与 origin/master 不一致，请先手动处理已有提交"
             }
+            $hasCommittedChanges = $head -cne $remoteCommit
+            if ($hasCommittedChanges) {
+                $base = (Git $directory ('merge-base ' + $remoteCommit + ' ' + $head) $true).Trim()
+                if ($base -cne $remoteCommit) {
+                    throw "$($collection.Label)本地 master 与 origin/master 不一致，请先手动处理已有提交"
+                }
+            }
         }
+        if (-not $hasWorkingChanges -and -not $hasCommittedChanges) { continue }
         $pending += [pscustomobject]@{
             Label = $collection.Label
             Directory = $directory
             Folder = $collection.Folder
             FirstPush = ($null -eq $remoteHead)
+            HasWorkingChanges = $hasWorkingChanges
         }
     }
 
     if ($pending.Count -eq 0) {
-        Write-Host '博客、随笔和计划均没有待推送的 Markdown 改动'
+        Write-Host '三个私有仓库均没有待推送的改动'
         exit 0
     }
     foreach ($item in $pending) {
         Write-Host "正在提交并推送$($item.Label)..."
-        Git $item.Directory ('add --all -- ' + $item.Folder + '/')
-        Git $item.Directory ('-c core.hooksPath=/dev/null commit -m "content: update ' + $item.Folder + '"')
+        if ($item.HasWorkingChanges) {
+            Git $item.Directory 'add --all'
+            Git $item.Directory '-c core.hooksPath=/dev/null commit -m "chore: update private repository"'
+        }
         if ($item.FirstPush) {
             Git $item.Directory 'push -u origin master'
         } else {
