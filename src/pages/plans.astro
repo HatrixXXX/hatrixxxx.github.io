@@ -12,13 +12,13 @@ const plans = sortPlans(await getCollection('plans'));
   <BackButton href="/" label="返回主页" cornerAligned={true} />
   <main class="plans-main">
     <h1 class="visually-hidden">计划</h1>
-    <section class="plans-viewport" data-plans-carousel tabindex="0" aria-label="计划文章卡片" aria-describedby="plans-instructions">
-      <div class="plans-track" data-plans-track>
-        {plans.map((plan, index) => {
+    <section class="plans-viewport" aria-label="计划文章卡片">
+      <div class="plans-track">
+        {plans.map((plan) => {
           const visual = planVisual(plan.id);
           const image = visual?.image;
           return (
-            <a class="plan-card" data-plan-card data-plan-icon={image ?? 'knowledge'} href={planPath(plan.id)} draggable="false" style={`--card-index: ${index}; --plan-icon: url('/assets/plans-cards/${image ?? 'knowledge'}.svg')`}>
+            <a class="plan-card" data-plan-icon={image ?? 'knowledge'} href={planPath(plan.id)} draggable="false" style={`--plan-icon: url('/assets/plans-cards/${image ?? 'knowledge'}.svg')`}>
               <div class="plan-card__image" aria-hidden="true">
                 <img src={image ? `/assets/plans-cards/${image}.webp` : '/assets/blog-cards/default-cover.webp'} alt="" width="600" height="800" loading="eager" decoding="async" draggable="false" />
               </div>
@@ -32,10 +32,5 @@ const plans = sortPlans(await getCollection('plans'));
         })}
       </div>
     </section>
-    <p id="plans-instructions" class="visually-hidden">左右滑动、滚动鼠标滚轮或使用左右方向键浏览计划卡片。</p>
   </main>
 </BaseLayout>
-
-<script>
-  import '@/scripts/plans-carousel';
-</script>

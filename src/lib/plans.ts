@@ -1,8 +1,10 @@
 export const PLAN_VISUALS = [
   { title: '作息规律', image: 'routine' },
-  { title: '选购清单', image: 'shopping' },
-  { title: '生活常识', image: 'knowledge' },
   { title: '人脉维护', image: 'contacts' },
+  { title: '公司信息', image: 'company' },
+  { title: '生活常识', image: 'knowledge' },
+  { title: '选购清单', image: 'shopping' },
+  { title: '代办清单', image: 'todo' },
   { title: '每日任务', image: 'tasks' }
 ] as const;
 
