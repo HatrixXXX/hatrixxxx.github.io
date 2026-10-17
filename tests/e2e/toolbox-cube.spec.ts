@@ -472,6 +472,53 @@ test('the enlarged cube visibly floats while it rotates', async ({ page }) => {
   expect(motion.range).toBeGreaterThan(32);
 });
 
+test('the enlarged cube keeps floating vertically after a diagonal drag', async ({ page }) => {
+  await page.goto('/toolbox/');
+  await page.locator('[data-cube-index="0"]').click();
+  await expect(page.locator('[data-tool-cube]')).not.toHaveAttribute('data-cube-transitioning', '');
+
+  const canvas = page.locator('[data-cube-dialog] canvas');
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + box!.width * 0.78, box!.y + box!.height * 0.2, { steps: 16 });
+  await page.waitForTimeout(150);
+
+  const motion = await canvas.evaluate(async (element) => {
+    const surface = element as HTMLCanvasElement;
+    const gl = surface.getContext('webgl2')!;
+    const centers: Array<{ x: number; y: number }> = [];
+    for (let sample = 0; sample < 9; sample++) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      centers.push(await new Promise<{ x: number; y: number }>((resolve) => requestAnimationFrame(() => {
+        const pixels = new Uint8Array(surface.width * surface.height * 4);
+        gl.readPixels(0, 0, surface.width, surface.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        let count = 0;
+        let sumX = 0;
+        let sumY = 0;
+        for (let y = 0; y < surface.height; y += 2) {
+          for (let x = surface.width / 4; x < surface.width * 3 / 4; x += 2) {
+            if (pixels[(y * surface.width + x) * 4 + 3] <= 40) continue;
+            count++;
+            sumX += x;
+            sumY += y;
+          }
+        }
+        resolve({ x: sumX / count, y: sumY / count });
+      })));
+    }
+    return {
+      horizontal: Math.max(...centers.map(({ x }) => x)) - Math.min(...centers.map(({ x }) => x)),
+      vertical: Math.max(...centers.map(({ y }) => y)) - Math.min(...centers.map(({ y }) => y))
+    };
+  });
+  await page.mouse.up();
+
+  expect(motion.vertical).toBeGreaterThan(30);
+  expect(motion.horizontal).toBeLessThan(8);
+});
+
 test('dragging beyond the former panel edge stays enlarged until a separate short click', async ({ page }) => {
   await page.goto('/toolbox/');
   const root = page.locator('[data-tool-cube]');

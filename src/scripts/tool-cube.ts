@@ -72,6 +72,7 @@ export function mountToolCube(root: HTMLElement): () => void {
   let inspectionFloatStartedAt = 0;
   const inspectedRestQuaternion = new THREE.Quaternion();
   const previewCameraQuaternion = new THREE.Quaternion();
+  const screenUp = new THREE.Vector3();
   let cubeBaseWidth = 2;
   let desktopFoam: THREE.Group | undefined;
   let mobileFoam: THREE.Group | undefined;
@@ -486,6 +487,7 @@ export function mountToolCube(root: HTMLElement): () => void {
     const delta = Math.min(now - lastFrame, 50);
     lastFrame = now;
     let finishClosing = false;
+    let floatOffset = 0;
     if (document.visibilityState === 'visible') {
       if (reducedMotion.matches && !inspectionTransition && !interacting) {
         frame = requestAnimationFrame(render);
@@ -508,7 +510,7 @@ export function mountToolCube(root: HTMLElement): () => void {
           progress
         );
         if (!transition.closing && !reducedMotion.matches) {
-          inspectedCube.position.y += Math.sin((now - inspectionFloatStartedAt) * Math.PI * 2 / inspectionFloatPeriod)
+          floatOffset = Math.sin((now - inspectionFloatStartedAt) * Math.PI * 2 / inspectionFloatPeriod)
             * inspectionFloatAmplitude * progress;
         }
         inspectedCube.scale.setScalar(THREE.MathUtils.lerp(transition.startScale, transition.endScale, progress));
@@ -537,10 +539,14 @@ export function mountToolCube(root: HTMLElement): () => void {
             delta * inspectionAutoRotationSpeed
           );
         }
-        inspectedCube.position.y = Math.sin((now - inspectionFloatStartedAt) * Math.PI * 2 / inspectionFloatPeriod)
+        inspectedCube.position.set(0, 0, 0);
+        floatOffset = Math.sin((now - inspectionFloatStartedAt) * Math.PI * 2 / inspectionFloatPeriod)
           * inspectionFloatAmplitude;
       }
       if (!transition) controls.update();
+      if (floatOffset && inspectedCube) {
+        inspectedCube.position.addScaledVector(screenUp.set(0, 1, 0).applyQuaternion(camera.quaternion), floatOffset);
+      }
       renderer.render(scene, camera);
     }
     if (finishClosing) {
