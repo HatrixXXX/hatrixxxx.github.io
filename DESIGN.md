@@ -277,7 +277,11 @@ AI-Infra 的视觉线索对应具体部件：左侧平板诊断屏显示机体�
 
 ### About interests imagery
 
-`/about/` 的四张生活爱好卡片在桌面使用 `public/assets/about-interests/*-wide.webp` 的 1920×240 横幅：左侧用同场景的暗色柔和延展托住实时文字，右侧保留唱 K 的麦克风、长跑者、笔涂模型和追番屏幕等主体。窄屏通过 `<picture>` 继续使用原有 3:1 图片，避免极宽图被横向裁掉。标题、说明、描边和悬浮扫光仍由页面实时绘制；复现提示词存于 `docs/design-references/about-interests-wide/prompts.md`。
+`/about/` 的四张生活爱好卡片在桌面使用 `public/assets/about-interests/*-wide.webp` 的 1920×240 横幅：左侧用同场景的暗色柔和延展托住实时文字，右侧保留唱 K 的麦克风、长跑者、笔涂模型和追番屏幕等主体。窄屏通过 `<picture>` 继续使用原有 3:1 图片，避免极宽图被横向裁掉。标题、说明、描边和悬浮扫光仍由页面实时绘制。
+
+`/plans/` 从独立私有仓库 `.private-plans/plans/` 读取 Markdown，以文件名作为卡片标题和文章路径。桌面五张加高、加宽的竖向卡片在同一横排完整显示，窄屏和今后新增条目可横向拖动、触控滑动、滚轮或方向键浏览；到边界立即停住，没有回弹反馈，首末卡片完整露出。入场时卡片从右侧快速进入，减少动态效果时直接呈现。卡片延续生活爱好的彩色细框和扫光，五张分别使用铜橙、洋红、薄荷绿、黄、蓝作为边框、图片轻微色相、图标与标题的共同强调色。H-3 共构舱科幻工业场景图向下平缓渐暗；同色 SVG 图标与主标题间距紧凑，作为一组在卡片下部水平居中，图标按轮廓调整到相近的视觉大小。图标不带圆框，本体大小接近标题字号。卡片不显示副标题或文章状态，也没有硬性的横向分界。整张卡片是链接，分别打开同名详情页；空 Markdown 的详情显示“正文待补充”。五张场景图和图标位于 `public/assets/plans-cards/`，已选首页与内页背景未改动。计划总览和详情沿用管理员 key 加锁，详情的正文与相对图片必须输出密文。
+
+计划页在宽度低于 2560px、仍展示五卡并排的桌面视口中，将整排卡片等比缩至原尺寸的 80%，仍以导航下方的剩余空间居中；窄屏横向浏览保持原尺寸。
 
 ### Homepage, imagery and persistent player
 
@@ -304,8 +308,8 @@ AI-Infra 的视觉线索对应具体部件：左侧平板诊断屏显示机体�
 | 其他页面背景 | `public/assets/backgrounds/background.png` | 用户选定的独立内页背景；本次首页改图不修改它 |
 | 加锁门禁素材 | `public/assets/protected-gate/*.webp` | 锁芯冠件、背板金属、密码槽、深色机械按钮与勾选框金属座均为本项目原创位图，经 Sharp 优化；文字和操作状态实时渲染，新版按钮源图和提示词见 `docs/design-references/protected-gate-button/` |
 | 作品橱窗机械平台与玻璃罐 | `public/assets/projects/project-cabinet-*.webp` | 平台后层、罐壳前层 |
-| 工具箱透视箱体、内衬与工具方块 | `public/assets/toolbox/case-shell-thin-landscape.webp`、`case-shell-thin-portrait.webp`、`case-halo-mask-landscape.png`、`case-halo-mask-portrait.png`；`foam-slots-10x4.glb`、`foam-slots-4x10.glb`；`insert-top-detail-v5.webp`、`insert-slot-detail-v5.webp`；`rounded-metal-cube.glb` | 横版与竖版箱体为短切角薄壁装甲壳，中央开口和外侧透明，箱壳图片位于 WebGL 上层；填满中孔的独立轮廓遮罩只在箱体最外缘生成暖黄色光晕，不在内框产生橙线。内衬模型本身是水平矩形板，桌面 10 列 × 4 行、手机 4 列 × 10 行，方槽沿两轴规整排列，四边留 `0.42` 个槽宽。生图提示记录垂直视角 35°、俯角 62°；按最终箱壳左右内壁校准后，WebGL 横版使用垂直视角 35°、俯角 77.115°，竖版使用 35°、74.46°，均零水平偏航，槽阵列外边与箱壳内壁斜率误差小于 0.005。内衬为无光材质，顶面深石墨灰、槽壁和槽底逐级加深，不受环境灯光与全局曝光影响；两张强模糊、去色并压缩对比度的低频细节贴图只提供轻微明暗质感，没有金属反光、bump、拉丝条纹或噪点。40 个工具各使用一个独立圆角金属方块与对应六面图标，按数据顺序逐槽放置；鼠标悬停或键盘聚焦时，命中的方块沿世界竖直轴从槽中抬起，初段仍由槽壁遮住表面以下的部分，离开后可中断并回落，减少动态效果时直接呈现抬起或归位状态，触控不保留悬停抬升。每个方块都有独立按钮，可打开对应名称的旋转预览，并自动使用全站磁力光标框。页面不提供内衬放大入口，桌面页面不滚动。模型构建、素材母图和完整提示词见 `docs/design-references/toolbox-case/` |
-| 工具方块面材 | `public/assets/toolbox/rounded-metal-cube.glb`、`metal-face-v2.webp` | 六面共用与箱壳同色系的中灰银贵金属装甲框，并保留蓝紫底调、铜缝、下沉石墨图标内板、角部固定件与青/琥珀短灯；图标内板不加等距凸起细纹。贴图只补充底色、细拉丝和轻微使用痕迹，避免发白铝色与镜面铬感，金属反光由 PBR 材质与现场灯光呈现。图标仍实时叠加；母图、完整提示词及构建方式见 `docs/design-references/tool-cube/prompts.md` |
+| 工具箱透视箱体、内衬与工具方块 | `public/assets/toolbox/case-shell-thin-landscape.webp`、`case-shell-thin-portrait.webp`、`case-halo-mask-landscape.png`、`case-halo-mask-portrait.png`；`foam-slots-10x4.glb`、`foam-slots-4x10.glb`；`insert-top-detail-v5.webp`、`insert-slot-detail-v5.webp`；`rounded-metal-cube.glb` | 横版与竖版箱体为短切角薄壁装甲壳，中央开口和外侧透明，箱壳图片位于 WebGL 上层；填满中孔的独立轮廓遮罩只在箱体最外缘生成暖黄色光晕，不在内框产生橙线。内衬模型本身是水平矩形板，桌面 10 列 × 4 行、手机 4 列 × 10 行，方槽沿两轴规整排列，四边留 `0.42` 个槽宽。生图提示记录垂直视角 35°、俯角 62°；按最终箱壳左右内壁校准后，WebGL 横版使用垂直视角 35°、俯角 77.115°，竖版使用 35°、74.46°，均零水平偏航，槽阵列外边与箱壳内壁斜率误差小于 0.005。内衬为无光材质，顶面深石墨灰、槽壁和槽底逐级加深，不受环境灯光与全局曝光影响；两张强模糊、去色并压缩对比度的低频细节贴图只提供轻微明暗质感，没有金属反光、bump、拉丝条纹或噪点。40 个工具各使用一个独立圆角金属方块与对应六面图标，按数据顺序逐槽放置；鼠标悬停或键盘聚焦时，命中的方块沿世界竖直轴从槽中抬起，初段仍由槽壁遮住表面以下的部分，离开后可中断并回落，减少动态效果时直接呈现抬起或归位状态，触控不保留悬停抬升。每个方块都有独立按钮，可打开对应名称的旋转预览，并自动使用全站磁力光标框。页面不提供内衬放大入口，桌面页面不滚动。运行时素材位于 `public/assets/toolbox/` |
+| 工具方块面材 | `public/assets/toolbox/rounded-metal-cube.glb`、`metal-face-v2.webp` | 六面共用与箱壳同色系的中灰银贵金属装甲框，并保留蓝紫底调、铜缝、下沉石墨图标内板、角部固定件与青/琥珀短灯；图标内板不加等距凸起细纹。贴图只补充底色、细拉丝和轻微使用痕迹，避免发白铝色与镜面铬感，金属反光由 PBR 材质与现场灯光呈现。图标仍实时叠加；运行时贴图位于 `public/assets/toolbox/` |
 | 作品玻璃罐内透明主体 | `public/assets/project-jar-specimens/*.webp` | 15 件竖版透明素材只用于罐内陈列，主体底端留在罐底金属座上方，玻璃罐前层覆盖主体；原项目照片仍用于详情轮播。运行时仅使用优化后的 WebP |
 | 原作品图鉴封面 | `public/assets/projects/project-atlas-cover-v1.webp` | 用户选定的原图保持不变，现行页面不加载它 |
 | 博客列表装甲外壳 | `public/assets/blog-cards/desktop-frame.webp`、`mobile-frame.webp` | 用户生成的桌面与手机卡片素材；题图窗和文字窗已挖空，按显示尺寸作为实时内容的前景透明 WebP |

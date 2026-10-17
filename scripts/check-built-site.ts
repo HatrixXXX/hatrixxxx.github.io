@@ -9,6 +9,7 @@ import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security
 import { contentRoot } from '../src/lib/content-root';
 import { snippetRoot } from '../src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from '../src/lib/snippets';
+import { planPath } from '../src/lib/plans';
 import {
   dangerousBrowserUrlKind,
   isApprovedRemoteImageUrl,
@@ -56,6 +57,7 @@ export interface ProjectBuiltSiteCheckOptions {
   expectedPostCount?: number;
   sourceContentRoot?: string;
   sourceSnippetsRoot?: string;
+  sourcePlansRoot?: string;
 }
 
 export interface BuiltSiteCheckResult {
@@ -576,6 +578,8 @@ export async function inspectProjectBuiltSite(
   const postsDirectory = resolve(sourceContentRoot, 'posts');
   const sourceSnippetsRoot = resolve(projectRoot, options.sourceSnippetsRoot ?? '.private-snippets');
   const snippetsDirectory = resolve(sourceSnippetsRoot, 'snippets');
+  const sourcePlansRoot = resolve(projectRoot, options.sourcePlansRoot ?? process.env.HATRIX_PLANS_DIR ?? '.private-plans');
+  const plansDirectory = resolve(sourcePlansRoot, 'plans');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
   const routes: string[] = [];
   for (const file of postFiles) {
@@ -621,6 +625,13 @@ export async function inspectProjectBuiltSite(
     if (!(await resolvesToOutput(distPath, route))) {
       errors.push(`Missing expected snippet route: ${route}`);
     }
+  }
+
+  const planFiles = await filesInOrEmpty(plansDirectory, errors, `Unable to read source plans directory: ${plansDirectory}`);
+  for (const file of planFiles) {
+    if (!/\.md$/i.test(file)) continue;
+    const route = planPath(relative(plansDirectory, file).replace(/\.md$/i, ''));
+    if (!(await resolvesToOutput(distPath, decodeURIComponent(route)))) errors.push(`Missing expected plan route: ${route}`);
   }
 
   const result = await inspectBuiltSite(distPath, routes, {

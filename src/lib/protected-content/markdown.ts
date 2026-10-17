@@ -7,6 +7,7 @@ import { siteMarkdownConfig } from '../../config/markdown';
 import { contentRoot } from '../content-root';
 import type { PostEntry } from '../content';
 import { snippetRoot } from '../snippet-root';
+import { planRoot } from '../plan-root';
 import { base64url, utf8 } from './encoding';
 
 export interface ProtectedAsset {
@@ -29,12 +30,12 @@ interface ProtectedImageContext {
   postId: string;
   postPath: string;
   contentRoot: string;
-  collection: 'posts' | 'snippets';
+  collection: 'posts' | 'snippets' | 'plans';
   key: CryptoKey;
   assets: Map<string, ProtectedAsset>;
 }
 
-type ProtectedEntry = PostEntry | CollectionEntry<'snippets'>;
+type ProtectedEntry = PostEntry | CollectionEntry<'snippets'> | CollectionEntry<'plans'>;
 
 const TRANSPARENT_PIXEL =
   'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -78,7 +79,8 @@ async function sourceContext(post: ProtectedEntry): Promise<{ postPath: string; 
 
   try {
     const canonicalRoot = await realpath(
-      post.collection === 'snippets' ? snippetRoot('snippets') : contentRoot('posts')
+      post.collection === 'snippets' ? snippetRoot('snippets') :
+      post.collection === 'plans' ? planRoot('plans') : contentRoot('posts')
     );
     if (pathIsWithin(canonicalRoot, postPath)) {
       return { postPath, contentRoot: canonicalRoot };

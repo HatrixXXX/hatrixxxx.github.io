@@ -131,6 +131,7 @@ async function checkUrl(url: string): Promise<string | undefined> {
   return lastNetworkError;
 }
 
+
 /** Checks each unique URL with at most 12 workers and three ten-second network attempts. */
 export async function checkImages(urls: string[], concurrency = DEFAULT_CONCURRENCY): Promise<ImageCheckResult> {
   const uniqueUrls = [...new Set(urls)];

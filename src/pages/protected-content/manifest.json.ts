@@ -16,18 +16,24 @@ import { utf8 } from '../../lib/protected-content/encoding';
 import { adminKeyFromEnvironment } from '../../lib/protected-content/server';
 import { postPath } from '../../lib/urls';
 import { snippetPath } from '../../lib/snippets';
+import { planPath } from '../../lib/plans';
 
 const VERIFIER_TEXT = 'hatrix-protected-content';
 
 export const prerender = true;
 
-export function publicProtectedRoutes(posts: PostEntry[], snippets: CollectionEntry<'snippets'>[] = []): string[] {
+export function publicProtectedRoutes(
+  posts: PostEntry[],
+  snippets: CollectionEntry<'snippets'>[] = [],
+  plans: CollectionEntry<'plans'>[] = []
+): string[] {
   const routes = [
     ...LOCKED_PAGE_PATHS,
     ...posts
       .filter(({ data }) => data.locked)
       .map(({ data }) => postPath(data.legacySlug)),
-    ...snippets.map(({ id }) => snippetPath(id))
+    ...snippets.map(({ id }) => snippetPath(id)),
+    ...plans.map(({ id }) => planPath(id))
   ];
 
   return [...new Set(routes.map(normalizeRoutePath))].sort();
@@ -36,7 +42,8 @@ export function publicProtectedRoutes(posts: PostEntry[], snippets: CollectionEn
 export const GET: APIRoute = async () => {
   const posts = await getCollection('posts');
   const snippets = await getCollection('snippets');
-  const routes = publicProtectedRoutes(posts, snippets);
+  const plans = await getCollection('plans');
+  const routes = publicProtectedRoutes(posts, snippets, plans);
   let verifier = null;
 
   if (routes.length > 0) {

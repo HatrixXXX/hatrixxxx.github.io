@@ -10,6 +10,8 @@ import { contentRoot } from './src/lib/content-root';
 import { postPath } from './src/lib/urls';
 import { snippetRoot } from './src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from './src/lib/snippets';
+import { planRoot } from './src/lib/plan-root';
+import { planPath } from './src/lib/plans';
 
 function markdownFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -39,6 +41,12 @@ function sitemapExcludedRoutes(): Set<string> {
   if (existsSync(snippetsRoot)) {
     for (const file of markdownFiles(snippetsRoot)) {
       routes.add(normalizeRoutePath(snippetPath(snippetIdFromFile(basename(file)))));
+    }
+  }
+  const plansRoot = planRoot('plans');
+  if (existsSync(plansRoot)) {
+    for (const file of markdownFiles(plansRoot)) {
+      routes.add(normalizeRoutePath(planPath(basename(file).replace(/\.md$/i, ''))));
     }
   }
   return routes;

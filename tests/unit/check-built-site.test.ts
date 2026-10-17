@@ -391,6 +391,7 @@ it('aggregates missing post output errors without throwing', async () => {
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
   await writeSiteFile(root, '.private-content/posts/example.md', '---\nlegacySlug: absent\n---\n');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
   await writeSiteFile(root, 'dist/index.html');
   await writeSiteFile(root, 'dist/404.html');
   await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
@@ -417,6 +418,7 @@ it('requires a generated route for every source post', async () => {
   await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
   await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
 
   for (let index = 0; index < 14; index += 1) {
     const slug = `published-${index}`;
@@ -446,6 +448,7 @@ it('checks the fixed link count only while snippets are empty', async () => {
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
   await writeSiteFile(root, '.private-content/posts/.gitkeep');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
   await writeSiteFile(root, 'dist/posts/.gitkeep');
   await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}<body><a href="/404.html">404</a></body></html>`);
   await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);

@@ -34,7 +34,9 @@ corepack pnpm test:e2e
 
 ## 推送前检查
 
-用户明确要求推送时，必须依次通过：
+仅博客、随笔或计划私有仓库的 `posts/`、`snippets/`、`plans/` Markdown 新增或修改，且明确双击 `publish-posts.cmd` 时，跳过本地测试与构建，直接提交并推送有改动的私有仓库；脚本会拒绝混入其他文件改动。站点的 GitHub Actions 在推送后执行检查。此流程不推送公开仓库。
+
+除上述纯文章 Markdown 快捷流程外，用户明确要求推送时，必须依次通过：
 
 1. `corepack pnpm test:run`
 2. `corepack pnpm build && corepack pnpm check:site`

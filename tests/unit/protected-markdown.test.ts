@@ -16,6 +16,7 @@ let postsRoot: string;
 let postPath: string;
 let previousContentDir: string | undefined;
 let previousSnippetsDir: string | undefined;
+let previousPlansDir: string | undefined;
 
 function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntry {
   return {
@@ -38,11 +39,13 @@ function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntr
 beforeEach(async () => {
   previousContentDir = process.env.HATRIX_CONTENT_DIR;
   previousSnippetsDir = process.env.HATRIX_SNIPPETS_DIR;
+  previousPlansDir = process.env.HATRIX_PLANS_DIR;
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-markdown-'));
   postsRoot = join(temporaryRoot, 'posts');
   postPath = join(postsRoot, 'nested', 'private.md');
   process.env.HATRIX_CONTENT_DIR = temporaryRoot;
   process.env.HATRIX_SNIPPETS_DIR = temporaryRoot;
+  process.env.HATRIX_PLANS_DIR = temporaryRoot;
   await mkdir(join(postsRoot, 'nested'), { recursive: true });
   await copyFile(fixtureImage, join(postsRoot, 'nested', 'private-image.png'));
   await writeFile(postPath, '# fixture', 'utf8');
@@ -56,10 +59,29 @@ afterEach(async () => {
   }
   if (previousSnippetsDir === undefined) delete process.env.HATRIX_SNIPPETS_DIR;
   else process.env.HATRIX_SNIPPETS_DIR = previousSnippetsDir;
+  if (previousPlansDir === undefined) delete process.env.HATRIX_PLANS_DIR;
+  else process.env.HATRIX_PLANS_DIR = previousPlansDir;
   await rm(temporaryRoot, { recursive: true, force: true });
 });
 
 describe('protected Markdown', () => {
+  it('keeps plan images inside the encrypted asset pipeline', async () => {
+    const plansRoot = join(temporaryRoot, 'plans');
+    const planFile = join(plansRoot, '选购清单.md');
+    await mkdir(plansRoot, { recursive: true });
+    await writeFile(planFile, '# fixture', 'utf8');
+    await copyFile(fixtureImage, join(plansRoot, 'private-image.png'));
+    const plan = {
+      id: '选购清单', collection: 'plans', filePath: planFile,
+      body: '![private plan image](./private-image.png)', data: {}
+    } as CollectionEntry<'plans'>;
+
+    const result = await renderProtectedMarkdown(plan, keyBytes);
+
+    expect(result.html).toContain('data-protected-src="/protected-content/assets/');
+    expect(result.html).not.toContain('private-image.png');
+    expect(result.assets).toHaveLength(1);
+  });
   it('encrypts snippet Markdown images from the private snippets checkout', async () => {
     const snippetsRoot = join(temporaryRoot, 'snippets');
     const snippetPath = join(snippetsRoot, 'private.md');

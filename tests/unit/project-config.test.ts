@@ -252,6 +252,8 @@ describe('Astro project tooling', () => {
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
+      { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
+      { action: 'actions/checkout', revision: '3d3c42e5aac5ba805825da76410c181273ba90b1', version: 'v7' },
       { action: 'actions/configure-pages', revision: '45bfe0192ca1faeb007ade9deae92b16b8254a0d', version: 'v6' },
       { action: 'actions/setup-node', revision: '820762786026740c76f36085b0efc47a31fe5020', version: 'v7' },
       { action: 'actions/cache', revision: '55cc8345863c7cc4c66a329aec7e433d2d1c52a9', version: 'v6' },
@@ -324,7 +326,7 @@ describe('Astro project tooling', () => {
 
     expect(workflow).toContain('  push:\n    branches: [master]');
     expect(workflow).toContain('  workflow_dispatch:');
-    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated]');
+    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated, plans-updated]');
     expect(productionJob).toContain("github.event_name == 'repository_dispatch'");
     expect(productionJob).toContain(
       "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'"
@@ -377,7 +379,7 @@ describe('Astro project tooling', () => {
     const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private snippets');
     const provenance = workflowStep(productionJob, 'Record private snippets SHA');
 
-    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated]');
+    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated, plans-updated]');
     expect(dispatchValidation).toContain("if: github.event.action == 'snippets-updated'");
     expect(dispatchValidation).toContain('DISPATCH_SNIPPETS_SHA: ${{ github.event.client_payload.snippets_sha }}');
     expect(dispatchValidation).toContain('^[0-9a-fA-F]{40}$');
@@ -391,6 +393,26 @@ describe('Astro project tooling', () => {
     expect(provenance).toContain('"$DISPATCH_TYPE" == "snippets-updated"');
     expect(provenance).toContain('"$snippets_sha" != "$DISPATCH_SNIPPETS_SHA"');
     expect(provenance).toContain('echo "sha=$snippets_sha" >> "$GITHUB_OUTPUT"');
+  });
+
+  it('checks out and verifies the dispatched private plans commit', () => {
+    const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
+    const productionJob = workflowJob(workflow, 'build-production');
+    const dispatchValidation = workflowStep(productionJob, 'Validate dispatched plans SHA');
+    const dispatchCheckout = workflowStep(productionJob, 'Checkout dispatched private plans');
+    const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private plans');
+    const provenance = workflowStep(productionJob, 'Record private plans SHA');
+
+    expect(dispatchValidation).toContain("if: github.event.action == 'plans-updated'");
+    expect(dispatchValidation).toContain('DISPATCH_PLANS_SHA: ${{ github.event.client_payload.plans_sha }}');
+    expect(dispatchValidation).toContain('^[0-9a-fA-F]{40}$');
+    expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-plans');
+    expect(dispatchCheckout).toContain('ssh-key: ${{ secrets.HATRIX_PLANS_DEPLOY_KEY }}');
+    expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.plans_sha }}');
+    expect(defaultBranchCheckout).toContain("if: github.event.action != 'plans-updated'");
+    expect(defaultBranchCheckout).not.toContain('ref:');
+    expect(provenance).toContain('plans_sha="$(git -C .private-plans rev-parse HEAD)"');
+    expect(provenance).toContain('"$plans_sha" != "$DISPATCH_PLANS_SHA"');
   });
 
   it('never persists secret-bearing Astro state from a Pages build', () => {

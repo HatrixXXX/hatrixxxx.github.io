@@ -1,19 +1,41 @@
 ---
+import { getCollection } from 'astro:content';
 import BackButton from '@/components/BackButton.astro';
-import EmptyState from '@/components/EmptyState.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { planPath, planVisual, sortPlans } from '@/lib/plans';
+import '@/styles/plans.css';
+
+const plans = sortPlans(await getCollection('plans'));
 ---
 
-<BaseLayout title="计划" bodyClass="nav-content-page plain-page">
+<BaseLayout title="计划" bodyClass="plans-page nav-content-page plain-page">
   <BackButton href="/" label="返回主页" cornerAligned={true} />
-  <main class="plans-main container">
-    <EmptyState title="暂时没有公开的计划" />
+  <main class="plans-main">
+    <h1 class="visually-hidden">计划</h1>
+    <section class="plans-viewport" data-plans-carousel tabindex="0" aria-label="计划文章卡片" aria-describedby="plans-instructions">
+      <div class="plans-track" data-plans-track>
+        {plans.map((plan, index) => {
+          const visual = planVisual(plan.id);
+          const image = visual?.image;
+          return (
+            <a class="plan-card" data-plan-card data-plan-icon={image ?? 'knowledge'} href={planPath(plan.id)} draggable="false" style={`--card-index: ${index}; --plan-icon: url('/assets/plans-cards/${image ?? 'knowledge'}.svg')`}>
+              <div class="plan-card__image" aria-hidden="true">
+                <img src={image ? `/assets/plans-cards/${image}.webp` : '/assets/blog-cards/default-cover.webp'} alt="" width="600" height="800" loading="eager" decoding="async" draggable="false" />
+              </div>
+              <div class="plan-card__copy">
+                <span class="plan-card__icon" aria-hidden="true"><span></span></span>
+                <h2>{plan.id}</h2>
+              </div>
+              <span class="plan-card__sheen" aria-hidden="true"></span>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+    <p id="plans-instructions" class="visually-hidden">左右滑动、滚动鼠标滚轮或使用左右方向键浏览计划卡片。</p>
   </main>
 </BaseLayout>
 
-<style>
-  .plans-main {
-    max-width: 920px;
-    padding-block: clamp(2.5rem, 6vw, 5rem);
-  }
-</style>
+<script>
+  import '@/scripts/plans-carousel';
+</script>

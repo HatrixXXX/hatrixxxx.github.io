@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { contentRoot } from '../src/lib/content-root';
 import { snippetRoot } from '../src/lib/snippet-root';
+import { planRoot } from '../src/lib/plan-root';
 
 export interface ProtectedOutputCheckResult {
   errors: string[];
@@ -133,10 +134,10 @@ function imageReferences(content: string): string[] {
   return references;
 }
 
-async function protectedSources(contentRoot: string, snippetsRoot: string, errors: Set<string>): Promise<ProtectedSource[]> {
+async function protectedSources(contentRoot: string, snippetsRoot: string, plansRoot: string, errors: Set<string>): Promise<ProtectedSource[]> {
   const postsRoot = resolve(contentRoot, 'posts');
   const sources: ProtectedSource[] = [];
-  for (const [root, kind] of [[postsRoot, 'posts'], [resolve(snippetsRoot), 'snippets']] as const) {
+  for (const [root, kind] of [[postsRoot, 'posts'], [resolve(snippetsRoot), 'snippets'], [resolve(plansRoot), 'plans']] as const) {
     let sourceFiles: string[];
     try {
       sourceFiles = (await filesIn(root)).filter((file) => /\.mdx?$/i.test(file));
@@ -221,12 +222,13 @@ function hasNoindex(html: string): boolean {
 export async function inspectProtectedOutput(
   contentRoot: string,
   distRoot: string,
-  snippetsRoot = snippetRoot('snippets')
+  snippetsRoot = snippetRoot('snippets'),
+  plansRoot = planRoot('plans')
 ): Promise<ProtectedOutputCheckResult> {
   const resolvedContentRoot = resolve(contentRoot);
   const resolvedDistRoot = resolve(distRoot);
   const errors = new Set<string>();
-  const sources = await protectedSources(resolvedContentRoot, snippetsRoot, errors);
+  const sources = await protectedSources(resolvedContentRoot, snippetsRoot, plansRoot, errors);
   const metadataMatchers = literalMatchers(sources.flatMap((source) => source.metadataValues));
   const bodyMatchers = literalMatchers(sources.flatMap((source) => source.bodySnippets));
   const resources = sources.flatMap((source) => source.resources);

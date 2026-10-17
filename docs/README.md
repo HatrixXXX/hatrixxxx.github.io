@@ -16,10 +16,4 @@
 
 ## 设计记录
 
-配色饱和度参考图与共构城世界观指南放在[设计参考](design-references/)；使用边界和现行视觉规则见 [DESIGN.md](../DESIGN.md)。
-
-当前外观规则见 [DESIGN.md](../DESIGN.md)；[首页设计记录](superpowers/specs/2026-09-25-home-dashboard-design.md)保留历史方案。加锁与搜索分别见[加锁内容设计](superpowers/specs/2026-09-03-protected-content-design.md)和[搜索设计](superpowers/specs/2026-09-06-search-content-highlight-design.md)。
-
-[设计与实施记录索引](superpowers/README.md)说明历史文档的优先级和常用主题入口。旧文档中的草稿目录、`draft`、`type`、`series`、`seriesOrder`、`math`、`mermaid` 字段，文章类型页、打字封面、拖动揭开、侧栏播放器及旧计数均为历史状态，不应直接重跑旧迁移步骤。
-
-全站外观规则见 [DESIGN.md](../DESIGN.md)，本轮范围、素材取舍和验证见[2026-09-25 视觉实施记录](superpowers/specs/2026-09-25-liupin-visual-system-design.md)及[实现计划](superpowers/plans/2026-09-25-liupin-visual-system.md)。布局沿用当前实现。
+现行视觉规则见 [DESIGN.md](../DESIGN.md)；配色参考图与共构城世界观指南放在[设计参考](design-references/)。[设计与实施记录索引](superpowers/README.md)提供历史方案的主题入口与优先级；首页、加锁内容和搜索的旧方案也从该索引查找。旧记录中的草稿目录、`draft`、`type`、`series`、`seriesOrder`、`math`、`mermaid` 字段，以及文章类型页、打字封面、拖动揭开、侧栏播放器和旧计数都不代表当前实现，不应直接重跑旧迁移步骤。

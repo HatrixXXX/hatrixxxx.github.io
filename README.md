@@ -162,6 +162,8 @@ git -C .private-content add posts
 git -C .private-content commit -m "content: update posts"
 ```
 
+仅新增或修改博客 `.private-content/posts/`、随笔 `.private-snippets/snippets/` 或计划 `.private-plans/plans/` 下的 `.md` 文件时，可双击项目根目录的 `publish-posts.cmd`。它会先检查三个私有仓库，再只提交并推送有 Markdown 改动的仓库；窗口会停留以便查看结果，需要本机安装 Git。脚本不运行本地测试或构建；若任一私有仓库还有其他改动、删除或尚未推送的提交，会在推送前停止，计划仓库首次推送除外。各私有仓库推送后由 GitHub Actions 通知站点构建部署。
+
 不要把文章、加锁正文图片或其他私密资源复制回公开仓库。
 
 ## 新增作品
@@ -244,7 +246,7 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:images` | 远程图片 inventory、固定 commit 与可访问性 |
 | `pnpm build` | 图片预检、静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章和随笔路由、CNAME、站内链接和发布体积 |
+| `pnpm check:site` | 文章、随笔和计划路由、CNAME、站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，以及 Windows 视觉基线 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
@@ -268,13 +270,14 @@ Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留�
 
 ## 部署
 
-`.github/workflows/pages-deploy.yml` 支持五种入口：
+`.github/workflows/pages-deploy.yml` 支持六种入口：
 
 - 文章私有仓库 `master` push：`notify-site.yml` 发送 `content-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的文章提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
 - 随笔私有仓库 `master` push：`notify-site.yml` 发送 `snippets-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的随笔提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
+- 计划私有仓库 `master` push：`notify-site.yml` 发送 `plans-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的计划提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
 - 公开仓库 `master` push：检出私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
 - 手动运行公开 workflow：同样读取私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
-- 公开仓库 pull request：只使用 `tests/fixtures/private-content` 和测试 key 运行单元测试、Astro check、build 与 fixture 模式的 `check:site`，不读取生产 Secret、正式私有仓库，也不部署。
+- 公开仓库 pull request：只使用 `tests/fixtures/private-content`、`tests/fixtures/private-snippets`、`tests/fixtures/private-plans` 和测试 key 运行单元测试、Astro check、build 与 fixture 模式的 `check:site`，不读取生产 Secret、正式私有仓库，也不部署。
 
 生产构建或检查失败时，deploy job 不会运行，线上仍保留上一个 Pages 版本。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
 
@@ -287,12 +290,14 @@ GitHub 需要以下 Secret，值不得写进仓库：
 | `HATRIX_ADMIN_KEY` | `HatrixXXX/hatrixxxx.github.io` | 构建加密使用；不是 token，至少 8 个字符 |
 | `HATRIX_CONTENT_TOKEN` | `HatrixXXX/hatrixxxx.github.io` | fine-grained token，只授权 `HatrixXXX/hatrix-content` 的 Contents read |
 | `HATRIX_SNIPPETS_DEPLOY_KEY` | `HatrixXXX/hatrixxxx.github.io` | 随笔私有仓库的只读 deploy key 私钥，用于构建时检出随笔 |
+| `HATRIX_PLANS_DEPLOY_KEY` | `HatrixXXX/hatrixxxx.github.io` | 计划私有仓库的只读 deploy key 私钥，用于构建时检出计划 |
 | `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-content` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
 | `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-snippets` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
+| `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-plans` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
 
 Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留言板共用 `src/components/TwikooComments.astro`，样式在 `src/styles/twikoo.css`。访客只需填写昵称，同一浏览器会记住上次填写的昵称；邮箱和网址不显示。评论数据保存在独立的 Cloudflare Worker 和 D1，部署、检查与回退见 `docs/operations/twikoo.md`。原 GitHub Discussions 留言保留在 GitHub，不迁移。
 
-不要恢复根目录 `CNAME`，也不要提交 `.env.local`、`.private-content/`、`.private-snippets/`、`dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
+不要恢复根目录 `CNAME`，也不要提交 `.env.local`、`.private-content/`、`.private-snippets/`、`.private-plans/`、`dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
 
 ## 构建失败排查
 
@@ -301,7 +306,7 @@ Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留�
 - `pnpm check:images` 检查 jsDelivr inventory 和远程地址，把结果写入 `reports/image-check.json`。如果视觉差异只发生在含远程图片的文章，先看报告。网络恢复后重跑 `pnpm check:images`，清理根目录 `.astro/` 和 `node_modules/.astro/data-store.json`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要用 inventory 或视觉基线更新掩盖远程图片失败。
 - `pnpm check:protected` 检查现有 `dist/` 是否含加锁正文片段、原图片字节、原文件名、错误的索引规则或 sitemap URL。加锁正文使用远程图片、绝对路径或越界相对路径时，Astro 渲染会先失败。修正文或加密边界；不要放宽审计、替换期望密文，或把泄漏输出当成新基线。
 
-生产构建还可能因 `.private-content/posts/` 或 `.private-snippets/snippets/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token 或随笔只读 deploy key 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。
+生产构建还可能因 `.private-content/posts/`、`.private-snippets/snippets/` 或 `.private-plans/plans/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token、随笔或计划只读 deploy key 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。
 
 
 ## 实验场与后续 3D 页面

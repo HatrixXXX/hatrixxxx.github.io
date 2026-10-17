@@ -8,6 +8,7 @@ import { postSchema } from './lib/post-schema';
 import { snippetRoot } from './lib/snippet-root';
 import { snippetSchema } from './lib/snippet-schema';
 import { snippetIdFromFile } from './lib/snippets';
+import { planRoot } from './lib/plan-root';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(contentRoot('posts')).href }),
@@ -21,6 +22,15 @@ const snippets = defineCollection({
     generateId: ({ entry }) => snippetIdFromFile(entry)
   }),
   schema: snippetSchema
+});
+
+const plans = defineCollection({
+  loader: glob({
+    pattern: '*.md',
+    base: pathToFileURL(planRoot('plans')).href,
+    generateId: ({ entry }) => entry.replace(/\.md$/i, '')
+  }),
+  schema: z.object({})
 });
 
 const projects = defineCollection({
@@ -58,4 +68,4 @@ const projects = defineCollection({
   })
 });
 
-export const collections = { posts, snippets, projects };
+export const collections = { posts, snippets, plans, projects };

@@ -12,11 +12,13 @@ import {
 } from '../../src/lib/protected-content/crypto';
 import { base64 } from '../../src/lib/protected-content/encoding';
 
-const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[] }));
+const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], plans: [] as CollectionEntry<'plans'>[] }));
 
 vi.mock('astro:content', () => ({
   getCollection: async (collection: string, filter?: (post: PostEntry) => unknown) =>
-    collection === 'snippets' ? contentState.snippets : filter ? contentState.posts.filter(filter) : contentState.posts
+    collection === 'snippets' ? contentState.snippets :
+    collection === 'plans' ? contentState.plans.filter((plan) => !filter || filter(plan as never)) :
+    filter ? contentState.posts.filter(filter) : contentState.posts
 }));
 
 vi.mock('astro:env/server', () => ({
@@ -68,6 +70,7 @@ beforeEach(async () => {
 afterEach(async () => {
   contentState.posts = [];
   contentState.snippets = [];
+  contentState.plans = [];
   if (previousContentDir === undefined) delete process.env.HATRIX_CONTENT_DIR;
   else process.env.HATRIX_CONTENT_DIR = previousContentDir;
   if (previousAdminKey === undefined) delete process.env.HATRIX_ADMIN_KEY;
