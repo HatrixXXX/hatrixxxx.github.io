@@ -10,8 +10,8 @@ body.plans-page main.plans-main {
 }
 
 .plans-viewport {
-  --plan-gap: clamp(10px, 1.2vw, 22px);
-  width: min(calc(100% - 3rem), 2100px);
+  --plan-gap: clamp(8px, .96vw, 17.6px);
+  width: min(calc(80% - 2.4rem), 1680px);
 }
 
 .plans-track {
@@ -128,7 +128,7 @@ body.plans-page main.plans-main {
   .plan-card__copy { --plan-title-size: clamp(1rem, 2vw, 1.4rem); }
 }
 @media (max-width: 600px) {
-  .plans-viewport { width: calc(100% - 2rem); }
+  .plans-viewport { width: calc(80% - 1.6rem); }
   .plan-card { flex-basis: calc((100% - var(--plan-gap)) / 2); aspect-ratio: 3 / 4; }
   .plan-card__copy { --plan-title-size: clamp(.9rem, 3.4vw, 1.1rem); gap: .2rem; padding: .5rem; }
 }

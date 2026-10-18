@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 import BackButton from '@/components/BackButton.astro';
+import BackToTop from '@/components/BackToTop.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { planPath } from '@/lib/plans';
 import { deriveContentKeyBytes } from '@/lib/protected-content/crypto';
@@ -34,7 +35,13 @@ const protectedHtml = plan.body?.trim()
       </div>
     </article>
   </main>
+  <BackToTop />
+  <BackToTop direction="bottom" />
 </BaseLayout>
+
+<script>
+  import '@/scripts/back-to-top';
+</script>
 
 <style>
   .plan-entry-main { width: min(100% - 2rem, 940px); padding-block: clamp(6rem, 11vw, 9rem) 5rem; }

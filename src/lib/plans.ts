@@ -3,7 +3,7 @@ export const PLAN_VISUALS = [
   { title: '人脉维护', image: 'contacts' },
   { title: '公司信息', image: 'company' },
   { title: '生活常识', image: 'knowledge' },
-  { title: '代办清单', image: 'todo' }
+  { title: '待办清单', image: 'todo' }
 ] as const;
 
 export const planPath = (id: string) => `/plans/${encodeURIComponent(id)}/`;

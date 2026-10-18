@@ -39,6 +39,8 @@
 - 动效必须反馈真实状态，可中断，并在减少动态效果时直接呈现结果。涉及动效的桌面、手机、键盘、触控和 `prefers-reduced-motion` 检查留到推送前；不为普通反馈引入全站 3D 依赖或自动发声。
 - UI UX Pro Max 从项目根目录运行 `python .agents/skills/ui-ux-pro-max/scripts/search.py`。Windows 下调用 `.agents/skills/impeccable/scripts/impeccable.cmd`，并把 `IMPECCABLE_HOME` 设为项目内 `.impeccable`；运行时文件和引擎二进制不提交。
 
+一句常用的prompt：用 visual-asset-upgradeup 提升质感，要求素材符合我网站的整体风格、配色方案、视觉元素和设计、背景和世界观设定；要科幻工业机械风格。
+
 ## 常用命令
 
 ```powershell

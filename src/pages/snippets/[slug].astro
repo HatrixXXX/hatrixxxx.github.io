@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 import BackButton from '@/components/BackButton.astro';
+import BackToTop from '@/components/BackToTop.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getAdjacentSnippets, snippetPath, sortSnippets } from '@/lib/snippets';
 import { deriveContentKeyBytes } from '@/lib/protected-content/crypto';
@@ -69,6 +70,8 @@ const date = new Intl.DateTimeFormat('zh-CN', {
       )}
     </article>
   </main>
+  <BackToTop />
+  <BackToTop direction="bottom" />
 </BaseLayout>
 
 <style>
@@ -188,6 +191,8 @@ const date = new Intl.DateTimeFormat('zh-CN', {
 </style>
 
 <script>
+  import '@/scripts/back-to-top';
+
   const bindSnippetReturn = () => {
     const back = document.querySelector<HTMLAnchorElement>('body.snippet-entry-page [data-back-button]');
     if (!back || back.dataset.snippetReturnBound) return;

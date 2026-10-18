@@ -108,7 +108,7 @@ const { direction = 'top' } = Astro.props;
     transform: rotate(180deg);
   }
 
-  body.snippets-page .back-to-top[data-back-to-top] {
+  .back-to-top[data-back-to-top] {
     bottom: calc(max(5rem, env(safe-area-inset-bottom)) + 6.5rem);
   }
 
@@ -118,7 +118,7 @@ const { direction = 'top' } = Astro.props;
       bottom: max(2.5rem, env(safe-area-inset-bottom));
     }
 
-    body.snippets-page .back-to-top[data-back-to-top] {
+    .back-to-top[data-back-to-top] {
       bottom: calc(max(2.5rem, env(safe-area-inset-bottom)) + 6.5rem);
     }
   }

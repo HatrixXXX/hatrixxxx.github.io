@@ -188,9 +188,12 @@ test('post back-to-top button appears after scrolling and returns to the page st
   await page.goto('/posts/Infra-概率论/');
 
   const backToTop = page.locator('[data-back-to-top]');
+  const goToBottom = page.locator('[data-back-to-bottom]');
   await expect(backToTop).toHaveCount(1);
+  await expect(goToBottom).toHaveCount(1);
   await expect(backToTop).toHaveAttribute('aria-label', '回到顶部');
   await expect(backToTop).toBeHidden();
+  await expect(goToBottom).toBeVisible();
 
   await page.evaluate(() => window.scrollTo(0, 1_200));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1_200);
@@ -200,11 +203,17 @@ test('post back-to-top button appears after scrolling and returns to the page st
   expect(buttonBox.width).toBe(88);
   expect(buttonBox.height).toBe(88);
   expect(buttonBox.x + buttonBox.width).toBe(1440 - 80);
-  expect(buttonBox.y + buttonBox.height).toBe(900 - 80);
+  expect(buttonBox.y + buttonBox.height).toBe(900 - 80 - 104);
 
+  await goToBottom.click();
+  await expect.poll(() => page.evaluate(() =>
+    Math.round(document.documentElement.scrollHeight - window.innerHeight - window.scrollY)
+  )).toBeLessThanOrEqual(2);
+  await expect(goToBottom).toBeHidden();
   await backToTop.click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(backToTop).toBeHidden();
+  await expect(goToBottom).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 1_200));
@@ -214,10 +223,11 @@ test('post back-to-top button appears after scrolling and returns to the page st
   expect(mobileBox.width).toBe(88);
   expect(mobileBox.height).toBe(88);
   expect(mobileBox.x + mobileBox.width).toBe(390 - 40);
-  expect(mobileBox.y + mobileBox.height).toBe(844 - 40);
+  expect(mobileBox.y + mobileBox.height).toBe(844 - 40 - 104);
 
   await page.goto('/blogs/');
   await expect(page.getByRole('button', { name: '回到顶部' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '去往底部' })).toHaveCount(0);
 });
 
 test('mobile post back button stays inside the fixed navigation', async ({ page }) => {
