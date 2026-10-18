@@ -25,7 +25,7 @@ body.plans-page main.plans-main {
 .plan-card {
   --plan-tone: var(--color-link);
   position: relative;
-  flex: 0 0 calc((100% - 6 * var(--plan-gap)) / 7);
+  flex: 0 0 calc((100% - 5 * var(--plan-gap)) / 6);
   min-width: 0;
   aspect-ratio: 7 / 16;
   overflow: hidden;
@@ -43,7 +43,6 @@ body.plans-page main.plans-main {
 .plan-card[data-plan-icon='contacts'] { --plan-tone: #ffae62; }
 .plan-card[data-plan-icon='company'] { --plan-tone: #ffe06a; }
 .plan-card[data-plan-icon='knowledge'] { --plan-tone: #62e3a4; }
-.plan-card[data-plan-icon='shopping'] { --plan-tone: #59dce9; }
 .plan-card[data-plan-icon='todo'] { --plan-tone: #83bcff; }
 .plan-card[data-plan-icon='tasks'] { --plan-tone: #c9a0ff; }
 
@@ -100,7 +99,6 @@ body.plans-page main.plans-main {
   font-size: var(--plan-title-size);
 }
 .plan-card__icon span { display: block; width: 1em; height: 1em; background: var(--plan-tone); -webkit-mask: var(--plan-icon) center / contain no-repeat; mask: var(--plan-icon) center / contain no-repeat; transform: scale(var(--icon-scale, 1)); }
-.plan-card[data-plan-icon='shopping'] { --icon-scale: 1.14; }
 .plan-card[data-plan-icon='knowledge'] { --icon-scale: 1.16; }
 .plan-card[data-plan-icon='tasks'] { --icon-scale: 1.15; }
 
@@ -127,8 +125,8 @@ body.plans-page main.plans-main {
   .plan-card:hover .plan-card__sheen { left: 130%; opacity: .8; }
 }
 
-@media (max-width: 1100px) {
-  .plan-card { flex-basis: calc((100% - 3 * var(--plan-gap)) / 4); aspect-ratio: 5 / 8; }
+@media (max-width: 900px) {
+  .plan-card { flex-basis: calc((100% - 2 * var(--plan-gap)) / 3); aspect-ratio: 5 / 8; }
   .plan-card__copy { --plan-title-size: clamp(1rem, 2vw, 1.4rem); }
 }
 @media (max-width: 600px) {
