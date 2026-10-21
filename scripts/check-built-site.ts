@@ -7,6 +7,7 @@ import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
 import { contentRoot } from '../src/lib/content-root';
+import { planRoot } from '../src/lib/plan-root';
 import { snippetRoot } from '../src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from '../src/lib/snippets';
 import { planPath } from '../src/lib/plans';
@@ -578,7 +579,7 @@ export async function inspectProjectBuiltSite(
   const postsDirectory = resolve(sourceContentRoot, 'posts');
   const sourceSnippetsRoot = resolve(projectRoot, options.sourceSnippetsRoot ?? '.private-snippets');
   const snippetsDirectory = resolve(sourceSnippetsRoot, 'snippets');
-  const sourcePlansRoot = resolve(projectRoot, options.sourcePlansRoot ?? process.env.HATRIX_PLANS_DIR ?? '.private-plans');
+  const sourcePlansRoot = resolve(projectRoot, options.sourcePlansRoot ?? '.private-plans');
   const plansDirectory = resolve(sourcePlansRoot, 'plans');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
   const routes: string[] = [];
@@ -649,7 +650,8 @@ async function main(): Promise<void> {
     expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
     expectedPostCount: fixtureMode ? 2 : 13,
     sourceContentRoot: contentRoot(),
-    sourceSnippetsRoot: snippetRoot()
+    sourceSnippetsRoot: snippetRoot(),
+    sourcePlansRoot: planRoot()
   });
 
   console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);
