@@ -443,6 +443,27 @@ it('requires a generated route for every source post', async () => {
   ]));
 });
 
+it('requires plan routes only for Markdown files loaded from the plans root', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
+  await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, '.private-content/posts/.gitkeep');
+  await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/visible.md', '---\ntitle: Visible\n---\n');
+  await writeSiteFile(root, '.private-plans/plans/research/source.md', 'Supporting research');
+  await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}</html>`);
+  await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);
+  await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'dist/rss.xml', '<rss/>');
+  await writeSiteFile(root, 'dist/search-index.json', '[]');
+  await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
+  await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
+
+  const result = await inspectProjectBuiltSite(root, { expectedPostCount: 0 });
+
+  expect(result.errors.filter((error) => error.startsWith('Missing expected plan route:')))
+    .toEqual(['Missing expected plan route: /plans/visible/']);
+});
+
 it('checks the fixed link count only while snippets are empty', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');

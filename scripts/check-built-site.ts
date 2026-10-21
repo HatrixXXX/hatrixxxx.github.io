@@ -629,8 +629,9 @@ export async function inspectProjectBuiltSite(
 
   const planFiles = await filesInOrEmpty(plansDirectory, errors, `Unable to read source plans directory: ${plansDirectory}`);
   for (const file of planFiles) {
-    if (!/\.md$/i.test(file)) continue;
-    const route = planPath(relative(plansDirectory, file).replace(/\.md$/i, ''));
+    const entry = relative(plansDirectory, file);
+    if (/[\\/]/.test(entry) || !/\.md$/i.test(entry)) continue;
+    const route = planPath(entry.replace(/\.md$/i, ''));
     if (!(await resolvesToOutput(distPath, decodeURIComponent(route)))) errors.push(`Missing expected plan route: ${route}`);
   }
 

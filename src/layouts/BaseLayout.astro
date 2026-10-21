@@ -127,7 +127,7 @@ const showSakanaCharacters = isAboutPage;
     <link rel="preload" href={ibmPlexMono400Url} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
     {!isHome && <link rel="preload" href={pageBackgroundSrc} as="image" fetchpriority="high" />}
-    {Astro.url.pathname === '/blogs/' && (
+    {(Astro.url.pathname === '/blogs/' || Astro.url.pathname === '/plans/') && (
       <>
         <link rel="preload" href="/assets/blog-cards/desktop-frame.webp" as="image" media="(min-width: 721px)" />
         <link rel="preload" href="/assets/blog-cards/mobile-frame.webp" as="image" media="(max-width: 720px)" />
@@ -169,6 +169,12 @@ const showSakanaCharacters = isAboutPage;
       import '@/scripts/site-stats';
       import '@/scripts/page-loader';
       import '@/scripts/document-title';
+
+      const loadPlanCoverflow = () => {
+        if (location.pathname === '/plans/') void import('@/scripts/post-coverflow');
+      };
+      document.addEventListener('astro:page-load', loadPlanCoverflow);
+      loadPlanCoverflow();
     </script>
     {showSakanaCharacters && (
       <script>

@@ -38,7 +38,7 @@ pnpm test:e2e
 
 - `.private-content/posts/`：已发布文章。`.private-content/` 是独立的私有 Git 仓库，整个目录由公开仓库忽略
 - `.private-snippets/snippets/`：随笔 Markdown。`.private-snippets/` 是另一个私有 Git 仓库，由公开仓库忽略
-- `src/content/projects/`：作品集合；填写规则见 `docs/projects-content.md`
+- `src/content/projects/`：作品集合；填写规则见[新增作品](#新增作品)
 - `src/data/playlist.ts`：音乐列表
 - `public/assets/`：网站图片、图标、纹理、光标和音频；首页原图与人物分块源图也在此目录
 - `public/`：CNAME、manifest 和第三方告知等站点根文件
@@ -177,7 +177,12 @@ git -C .private-content commit -m "content: update posts"
 title: 示例作品
 description: 作品解决的问题和目前进度
 status: active
-cover: /assets/projects/project-atlas-cover-v1.webp
+cover: /assets/project-images/example-cover.webp
+coverAlt: 示例作品的实物照片
+gallery:
+  - src: /assets/project-images/example-01.webp
+    alt: 从侧面拍摄的作品
+    caption: 第一版样机
 tech:
   - Astro
   - TypeScript
@@ -189,7 +194,7 @@ order: 10
 ---
 ```
 
-`status` 只能是 `idea`、`active`、`done` 或 `archived`。`cover` 可省略；`tech`、`links`、`featured` 和 `order` 有默认值，但建议在内容文件里写清楚。集合为空时，作品页显示空状态。
+`status` 只能是 `idea`、`active`、`done` 或 `archived`。`description` 建议不超过 100 字；填写 `cover` 时必须填写 `coverAlt`。`cover` 和 `gallery` 图片放在 `public/assets/project-images/`，`gallery` 按数组顺序展示，每张必须有 `src` 和 `alt`，`caption` 可选。`cover` 可省略；`tech`、`links`、`featured` 和 `order` 有默认值，但建议在内容文件里写清楚。集合为空时，作品页显示空状态。
 
 ## 添加音乐
 

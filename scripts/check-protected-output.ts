@@ -77,25 +77,40 @@ function plainText(value: string): string {
     .trim();
 }
 
-function literalMatchers(values: string[]): RegExp[] {
-  const distinct = [...new Set(values)];
-  const special = '\\^$.*+?()[]{}|';
-  const matchers: RegExp[] = [];
-  for (let start = 0; start < distinct.length; start += 1024) {
-    const pattern = distinct.slice(start, start + 1024)
-      .map((value) => Array.from(value, (character) => special.includes(character) ? '\\' + character : character).join(''))
-      .join('|');
-    try {
-      matchers.push(new RegExp(pattern));
-    } catch {
-      throw new Error('Unable to compile protected output matcher');
-    }
-  }
-  return matchers;
+const MATCH_PREFIX_LENGTH = 8;
+
+interface LiteralMatchers {
+  prefixes: Map<string, string[]>;
+  firstCharacters: Set<string>;
+  shortValues: string[];
 }
 
-function containsAny(matchers: RegExp[], value: string): boolean {
-  return matchers.some((matcher) => matcher.test(value));
+function literalMatchers(values: string[]): LiteralMatchers {
+  const prefixes = new Map<string, string[]>();
+  const firstCharacters = new Set<string>();
+  const shortValues: string[] = [];
+  for (const value of new Set(values)) {
+    if (value.length < MATCH_PREFIX_LENGTH) {
+      shortValues.push(value);
+      continue;
+    }
+    const prefix = value.slice(0, MATCH_PREFIX_LENGTH);
+    firstCharacters.add(prefix[0]);
+    const candidates = prefixes.get(prefix) ?? [];
+    candidates.push(value);
+    prefixes.set(prefix, candidates);
+  }
+  return { prefixes, firstCharacters, shortValues };
+}
+
+function containsAny(matchers: LiteralMatchers, value: string): boolean {
+  if (matchers.shortValues.some((candidate) => value.includes(candidate))) return true;
+  for (let index = 0; index <= value.length - MATCH_PREFIX_LENGTH; index += 1) {
+    if (!matchers.firstCharacters.has(value[index])) continue;
+    const candidates = matchers.prefixes.get(value.slice(index, index + MATCH_PREFIX_LENGTH));
+    if (candidates?.some((candidate) => value.startsWith(candidate, index))) return true;
+  }
+  return false;
 }
 
 function bodySnippets(content: string, publicMetadata: string): string[] {

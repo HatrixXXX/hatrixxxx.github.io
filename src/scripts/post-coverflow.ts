@@ -6,8 +6,14 @@
 import { animate } from 'animejs';
 
 const RAIL_SELECTOR = '[data-post-coverflow]';
-const INDEX_KEY = 'blog-coverflow-index';
-const FROM_POST_KEY = 'blog-coverflow-from-post';
+const COVERFLOWS = {
+  blog: { listPath: '/blogs/', detailPath: '/posts/', indexKey: 'blog-coverflow-index', fromDetailKey: 'blog-coverflow-from-post' },
+  plan: { listPath: '/plans/', detailPath: '/plans/', indexKey: 'plan-coverflow-index', fromDetailKey: 'plan-coverflow-from-detail' }
+} as const;
+
+function coverflowFor(rail: HTMLElement) {
+  return rail.dataset.coverflowKind === 'plan' ? COVERFLOWS.plan : COVERFLOWS.blog;
+}
 
 // Spring constants
 const SPRING_STIFFNESS = 260;
@@ -200,21 +206,19 @@ document.addEventListener('astro:before-preparation', (e) => {
   const fromPath = event.from.pathname;
   const toPath   = event.to.pathname;
 
-  const isBlogList = (p: string) => p === '/blogs/';
-
-  if (isBlogList(fromPath) && toPath.startsWith('/posts/')) {
-    // Leaving the blog list → entering a post: persist the current index.
-    const rail = document.querySelector<HTMLElement>(RAIL_SELECTOR);
-    if (rail) ssSet(INDEX_KEY, String(stateFor(rail).target));
-    ssSet(FROM_POST_KEY, '1');
-  } else if (isBlogList(toPath)) {
-    if (fromPath.startsWith('/posts/')) {
-      // Returning from a post → restore the saved index.
-      ssSet(FROM_POST_KEY, '1');
-    } else {
-      // Arriving from nav, home, or any other origin → reset to card 0.
-      ssDel(INDEX_KEY);
-      ssDel(FROM_POST_KEY);
+  for (const [kind, flow] of Object.entries(COVERFLOWS)) {
+    const isDetail = (path: string) => path.startsWith(flow.detailPath) && path !== flow.listPath;
+    if (fromPath === flow.listPath && isDetail(toPath)) {
+      const rail = document.querySelector<HTMLElement>(`${RAIL_SELECTOR}[data-coverflow-kind="${kind}"]`);
+      if (rail) ssSet(flow.indexKey, String(stateFor(rail).target));
+      ssSet(flow.fromDetailKey, '1');
+    } else if (toPath === flow.listPath) {
+      if (isDetail(fromPath)) {
+        ssSet(flow.fromDetailKey, '1');
+      } else {
+        ssDel(flow.indexKey);
+        ssDel(flow.fromDetailKey);
+      }
     }
   }
 });
@@ -308,16 +312,17 @@ document.addEventListener('touchcancel', () => { touchSwipe = null; });
 function initRail(rail: HTMLElement): void {
   const state = stateFor(rail);
   const cards = getCards(rail);
+  const flow = coverflowFor(rail);
 
-  const fromPost = ssGet(FROM_POST_KEY) === '1';
-  const rawIndex = ssGet(INDEX_KEY);
+  const fromPost = ssGet(flow.fromDetailKey) === '1';
+  const rawIndex = ssGet(flow.indexKey);
   const parsedIndex = rawIndex !== null ? parseInt(rawIndex, 10) : NaN;
   const startIndex = (fromPost && Number.isFinite(parsedIndex) && parsedIndex >= 0)
     ? Math.min(parsedIndex, Math.max(0, cards.length - 1))
     : 0;
 
   // Consume the flag so a subsequent non-post navigation resets to card 0.
-  ssDel(FROM_POST_KEY);
+  ssDel(flow.fromDetailKey);
 
   state.current = startIndex;
   state.target  = startIndex;
@@ -332,7 +337,19 @@ function initAllRails(): void {
   document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach(initRail);
 }
 
-document.addEventListener('astro:page-load', initAllRails);
+function syncPageMotion(): void {
+  document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
+    rail.toggleAttribute('data-page-hidden', document.hidden);
+  });
+}
+
+function initializeCoverflows(): void {
+  initAllRails();
+  syncPageMotion();
+}
+
+document.addEventListener('astro:page-load', initializeCoverflows);
+document.addEventListener('hatrix:protected-content-ready', initializeCoverflows);
 document.addEventListener('astro:before-swap', () => {
   document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
     const state = railStates.get(rail);
@@ -342,13 +359,14 @@ document.addEventListener('astro:before-swap', () => {
   });
 });
 document.addEventListener('visibilitychange', () => {
+  syncPageMotion();
   if (!document.hidden) return;
   document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
     const state = railStates.get(rail);
     if (state) clearDockPulse(state);
   });
 });
-initAllRails();
+initializeCoverflows();
 
 window.addEventListener('resize', () => {
   document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {

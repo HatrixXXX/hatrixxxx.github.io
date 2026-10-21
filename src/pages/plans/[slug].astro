@@ -29,7 +29,7 @@ const protectedHtml = plan.body?.trim()
   <BackButton href="/plans/" label="返回计划总览" belowHeader={true} />
   <main class="plan-entry-main container">
     <article data-post>
-      <header class="plan-entry-header"><h1>{plan.id}</h1></header>
+      <header class="plan-entry-header"><h1>{plan.data.title}</h1></header>
       <div class="prose">
         {protectedHtml !== undefined ? <Fragment set:html={protectedHtml} /> : <p>正文待补充。</p>}
       </div>

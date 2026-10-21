@@ -1,27 +1,33 @@
 ---
 import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
 import readingTime from 'reading-time';
 import LockIndicator from '@/components/LockIndicator.astro';
 import type { PostEntry } from '@/lib/content';
+import { planPath } from '@/lib/plans';
 import { postPath } from '@/lib/urls';
 
-interface Props {
-  post: PostEntry;
+type Props = ({ post: PostEntry; plan?: never } | { plan: CollectionEntry<'plans'>; post?: never }) & {
   index?: number;
   total?: number;
-}
+};
 
-const { post, index = 0, total = 1 } = Astro.props;
-const href = postPath(post.data.legacySlug);
+const { post, plan, index = 0, total = 1 } = Astro.props;
+const href = post ? postPath(post.data.legacySlug) : planPath(plan!.id);
+const title = post?.data.title ?? plan!.data.title;
+const summary = post?.data.summary ?? plan!.data.summary;
+const pubDate = post?.data.pubDate ?? plan!.data.pubDate;
+const body = post ? post.body : plan!.body;
+const isLocked = Boolean(post?.data.locked);
 const isAboveFold = index < 2;
-const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
+const minutes = Math.max(1, Math.ceil(readingTime(body ?? '').minutes));
 const published = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
   month: '2-digit',
   day: '2-digit'
-}).format(post.data.pubDate);
+}).format(pubDate);
 const position = `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
-const coverProps = post.data.cover?.startsWith('/')
+const coverProps = post?.data.cover?.startsWith('/')
   ? { width: 1600, height: 900 }
   : { width: 768, height: 404 };
 ---
@@ -29,7 +35,7 @@ const coverProps = post.data.cover?.startsWith('/')
 <article data-post-card class="post-card">
   <div class="post-card-media" aria-hidden="true">
     <Image
-      src={post.data.cover || '/assets/blog-cards/default-cover.webp'}
+      src={post?.data.cover || '/assets/blog-cards/default-cover.webp'}
       alt=""
       {...coverProps}
       layout="constrained"
@@ -45,18 +51,18 @@ const coverProps = post.data.cover?.startsWith('/')
   <div class="post-card-content">
     <div class="post-card-header">
       <span class="post-card-position" aria-label={`第 ${index + 1} 篇，共 ${total} 篇`}>{position}</span>
-      <time datetime={post.data.pubDate.toISOString()}>{published}</time>
+      <time datetime={pubDate.toISOString()}>{published}</time>
     </div>
     <div class="post-card-body">
       <h2>
-        <a href={href} data-locked-link={post.data.locked ? '' : undefined}>
-          {post.data.title}{post.data.locked && <LockIndicator />}
+        <a href={href} data-locked-link={isLocked ? '' : undefined}>
+          {title}{isLocked && <LockIndicator />}
         </a>
       </h2>
-      <p class="post-card-excerpt">{post.data.summary}</p>
+      <p class="post-card-excerpt">{summary}</p>
     </div>
     <div class="post-card-footer">
-      <span aria-label={`预计阅读 ${minutes} 分钟`}>{minutes} 分钟</span>
+      {plan && !plan.body?.trim() ? <span>正文待补充</span> : <span aria-label={`预计阅读 ${minutes} 分钟`}>{minutes} 分钟</span>}
       <svg class="post-card-terminal" width="72" height="20" viewBox="0 0 72 20" fill="none" aria-hidden="true" focusable="false">
         <path d="M1 16h35l7-7h16M17 4h42M43 9V4" stroke="var(--color-copper)" stroke-width="1.25" />
         <path d="M1 12h20M1 8h12" stroke="var(--color-copper)" stroke-width="1.25" opacity=".55" />

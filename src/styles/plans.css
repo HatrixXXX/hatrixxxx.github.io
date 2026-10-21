@@ -11,7 +11,7 @@ body.plans-page main.plans-main {
 
 .plans-viewport {
   --plan-gap: clamp(8px, .96vw, 17.6px);
-  width: min(calc(80% - 2.4rem), 1680px);
+  width: min(calc(90% - 2.4rem), 1680px);
 }
 
 .plans-track {
@@ -25,7 +25,7 @@ body.plans-page main.plans-main {
 .plan-card {
   --plan-tone: var(--color-link);
   position: relative;
-  flex: 0 0 calc((100% - 4 * var(--plan-gap)) / 5);
+  flex: 0 0 calc((100% - 5 * var(--plan-gap)) / 6);
   min-width: 0;
   aspect-ratio: 7 / 16;
   overflow: hidden;
@@ -40,6 +40,7 @@ body.plans-page main.plans-main {
 }
 
 .plan-card[data-plan-icon='routine'] { --plan-tone: #ff7777; }
+.plan-card[data-plan-icon='lighthouse'] { --plan-tone: #ffad6f; }
 .plan-card[data-plan-icon='contacts'] { --plan-tone: #ffe06a; }
 .plan-card[data-plan-icon='company'] { --plan-tone: #62e3a4; }
 .plan-card[data-plan-icon='knowledge'] { --plan-tone: #83bcff; }
@@ -123,7 +124,7 @@ body.plans-page main.plans-main {
   .plan-card:hover .plan-card__sheen { left: 130%; opacity: .8; }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .plan-card { flex-basis: calc((100% - 2 * var(--plan-gap)) / 3); aspect-ratio: 5 / 8; }
   .plan-card__copy { --plan-title-size: clamp(1rem, 2vw, 1.4rem); }
 }

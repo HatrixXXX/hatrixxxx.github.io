@@ -30,7 +30,11 @@ const plans = defineCollection({
     base: pathToFileURL(planRoot('plans')).href,
     generateId: ({ entry }) => entry.replace(/\.md$/i, '')
   }),
-  schema: z.object({})
+  schema: z.object({
+    title: z.string().trim().min(1),
+    summary: z.string().trim().min(1).max(100),
+    pubDate: z.coerce.date()
+  })
 });
 
 const projects = defineCollection({

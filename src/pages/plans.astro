@@ -1,36 +1,38 @@
 ---
 import { getCollection } from 'astro:content';
+import PostList from '@/components/PostList.astro';
 import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { planPath, planVisual, sortPlans } from '@/lib/plans';
-import '@/styles/plans.css';
+import { sortPlans } from '@/lib/plans';
 
 const plans = sortPlans(await getCollection('plans'));
 ---
 
-<BaseLayout title="计划" bodyClass="plans-page nav-content-page plain-page">
+<BaseLayout title="计划" bodyClass="plans-page plain-page">
   <BackButton href="/" label="返回主页" cornerAligned={true} />
-  <main class="plans-main">
-    <h1 class="visually-hidden">计划</h1>
-    <section class="plans-viewport" aria-label="计划文章卡片">
-      <div class="plans-track">
-        {plans.map((plan) => {
-          const visual = planVisual(plan.id);
-          const image = visual?.image;
-          return (
-            <a class="plan-card" data-plan-icon={image ?? 'knowledge'} href={planPath(plan.id)} draggable="false" style={`--plan-icon: url('/assets/plans-cards/${image ?? 'knowledge'}.svg')`}>
-              <div class="plan-card__image" aria-hidden="true">
-                <img src={image ? `/assets/plans-cards/${image}.webp` : '/assets/blog-cards/default-cover.webp'} alt="" width="600" height="800" loading="eager" decoding="async" draggable="false" />
-              </div>
-              <div class="plan-card__copy">
-                <span class="plan-card__icon" aria-hidden="true"><span></span></span>
-                <h2>{plan.id}</h2>
-              </div>
-              <span class="plan-card__sheen" aria-hidden="true"></span>
-            </a>
-          );
-        })}
-      </div>
-    </section>
+  <main class="blog-main">
+    {plans.length > 0 ? <PostList plans={plans} /> : <p class="empty-state">暂无计划文章。</p>}
   </main>
 </BaseLayout>
+
+<style>
+  :global(body.plans-page) { --blog-header-height: 60px; }
+  :global(body.plans-page:has([data-protected-state='ready'])) { overflow: hidden; }
+  :global(body.plans-page [data-protected-mount] > main.blog-main) {
+    height: 100dvh;
+    padding-top: var(--blog-header-height);
+  }
+
+  .blog-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .empty-state {
+    margin: auto;
+    color: var(--color-muted);
+    text-align: center;
+  }
+</style>

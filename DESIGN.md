@@ -279,9 +279,9 @@ AI-Infra 的视觉线索对应具体部件：左侧平板诊断屏显示机体�
 
 `/about/` 的四张生活爱好卡片在桌面使用 `public/assets/about-interests/*-wide.webp` 的 1920×240 横幅：左侧用同场景的暗色柔和延展托住实时文字，右侧保留唱 K 的麦克风、长跑者、笔涂模型和追番屏幕等主体。窄屏通过 `<picture>` 继续使用原有 3:1 图片，避免极宽图被横向裁掉。标题、说明、描边和悬浮扫光仍由页面实时绘制。
 
-`/plans/` 从独立私有仓库 `.private-plans/plans/` 读取 Markdown，以文件名作为卡片标题和文章路径。五张卡片按作息规律、人脉维护、公司信息、生活常识、待办清单排列；宽屏同排居中，较窄屏幕按每排三张或两张换行，末排居中。卡片直接呈现，不再轮播或横向滑动，窄屏页面可纵向浏览。卡片延续生活爱好的彩色细框和扫光，五张依次使用红、黄、绿、蓝、紫作为边框、图片轻微色相、图标与标题的共同强调色。H-3 共构舱科幻工业场景图向下平缓渐暗；同色 SVG 图标与主标题间距紧凑，作为一组在卡片下部水平居中，图标按轮廓调整到相近的视觉大小。图标不带圆框，本体大小接近标题字号。卡片不显示副标题或文章状态，也没有硬性的横向分界。整张卡片是链接，分别打开同名详情页；空 Markdown 的详情显示“正文待补充”。场景图和图标位于 `public/assets/plans-cards/`，新增场景图的母图与提示词位于 `docs/design-references/plans-cards/`；已选首页与内页背景未改动。计划总览和详情沿用管理员 key 加锁，详情的正文与相对图片必须输出密文。
+`/plans/` 从独立私有仓库 `.private-plans/plans/` 读取所有 Markdown，以文件名作为文章路径；新增文件无需修改卡片配置。每篇计划在 frontmatter 中填写 `title`、`summary` 和 `pubDate`，总览按日期从新到旧显示真实标题、摘要、日期和阅读时间。总览沿用博客文章的纵向卡片轨道、装甲外框、全息文字窗和切换交互，所有计划卡片统一使用 `public/assets/blog-cards/default-cover.webp`。当前卡片可进入详情页；空 Markdown 的详情显示“正文待补充”。计划总览和详情沿用管理员 key 加锁，详情正文与相对图片必须输出密文。
 
-计划页五张卡片的宽高和间距缩至此前的 80%，整组保持居中；随可用宽度调整卡片比例与字号，确保宽屏完整同排，较窄屏幕的卡片和标题仍可完整显示。博客、随笔和计划文章详情页与随笔总览页共用右下角纵向排列的回到顶部、去往底部按钮，分别在向下滚动后和距离页底还有内容时显示。
+计划总览跟随博客卡片轨道的桌面与手机布局；从计划详情返回时恢复先前的卡片位置。博客、随笔和计划文章详情页与随笔总览页共用右下角纵向排列的回到顶部、去往底部按钮，分别在向下滚动后和距离页底还有内容时显示。
 
 ### Homepage, imagery and persistent player
 
@@ -313,7 +313,7 @@ AI-Infra 的视觉线索对应具体部件：左侧平板诊断屏显示机体�
 | 作品玻璃罐内透明主体 | `public/assets/project-jar-specimens/*.webp` | 15 件竖版透明素材只用于罐内陈列，主体底端留在罐底金属座上方，玻璃罐前层覆盖主体；原项目照片仍用于详情轮播。运行时仅使用优化后的 WebP |
 | 原作品图鉴封面 | `public/assets/projects/project-atlas-cover-v1.webp` | 用户选定的原图保持不变，现行页面不加载它 |
 | 博客列表装甲外壳 | `public/assets/blog-cards/desktop-frame.webp`、`mobile-frame.webp` | 用户生成的桌面与手机卡片素材；题图窗和文字窗已挖空，按显示尺寸作为实时内容的前景透明 WebP |
-| 博客卡片无题图封面 | `public/assets/blog-cards/default-cover.webp` | 用户生成；仅在文章没有题图时显示 |
+| 博客卡片无题图及计划卡片默认封面 | `public/assets/blog-cards/default-cover.webp` | 用户生成；博客没有题图时及所有计划卡片显示 |
 | 博客资料匣导轨与锁扣 | `public/assets/blog-cards/guide-rail.webp`、`locking-clamp.webp` | 用户提供的图片经透明边缘裁切和 WebP 转换；导轨位于卡片后方，每张卡片两侧均有随卡移动的锁扣 |
 | 首页本地纹理 | `public/assets/home-textures/*.svg` | 按 v5 立绘与 v6 工坊中的机柜、铜导线和状态灯元素绘制 |
 | 首页选用纹理 | `public/assets/home-textures/*.png`、`public/assets/home-textures/blue-metal-plate.jpg` | nublet 的防滑钢板和 Poly Haven 的蓝灰涂装钢板为 CC0；HorrorPen 的电路纹理为 CC BY 3.0。来源与许可见 `public/third-party-notices.txt` |

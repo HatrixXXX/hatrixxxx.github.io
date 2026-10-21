@@ -59,7 +59,7 @@ corepack pnpm test:e2e
 - `.private-content/posts/` 是已发布博客文章的唯一正文来源，也是独立私有仓库。公开仓库不跟踪文章 Markdown、加锁正文图片或其他私密资源。
 - `.private-snippets/snippets/` 是随笔来源，位于独立私有仓库 `HatrixXXX/hatrix-snippets`；公开仓库不跟踪随笔源文件。随笔总览和详情使用现有管理员 key 加锁，标题、摘要、正文和正文相对图片进入加密产物；URL 与 `public/` 封面仍公开。
 - `.env.local` 保存本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；禁止提交、分享或复制到内容仓库。
-- `src/content/projects/` 是作品集合，填写规则见 `docs/projects-content.md`；作品状态只能是 `idea|active|done|archived`。
+- `src/content/projects/` 是作品集合，填写规则见 [README.md 的“新增作品”](README.md#新增作品)；作品状态只能是 `idea|active|done|archived`。
 - `src/data/playlist.ts` 允许为空；空歌单不创建 `Audio` 对象，也不填演示数据。计划为空同样合法。
 - `src/config/navigation.ts` 是主导航、关于子页和首页快捷链接的唯一来源；`src/config/site.ts` 保存域名、作者、社交链接、Twikoo 后端和站点验证信息。
 - `public/assets/` 是网站图片、图标、纹理、光标和音频的统一目录；`src/` 不存放运行时素材。首页分块源图与运行时资源只放在 `public/assets/home/` 对应目录。
