@@ -1,127 +1,360 @@
-export {};
+import { createTimeline } from 'animejs';
 
-const TURN_DURATION = 740;
-const SCAN_DURATION = 620;
-const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function bindProjectBook(): void {
-  const book = document.querySelector<HTMLElement>('[data-project-book]:not([data-bound])');
-  if (!book) return;
-  book.dataset.bound = '';
-
-  const leaves = Array.from(book.querySelectorAll<HTMLElement>('[data-book-leaf]'));
-  const status = book.querySelector<HTMLElement>('[data-book-status]');
-  let turnTimer: number | undefined;
-  let scanTimer: number | undefined;
-  let unsealTimer: number | undefined;
-
-  const turnTo = (next: number) => {
-    const current = Number(book.dataset.currentPage);
-    if (next === current || next < 0 || next >= leaves.length) return;
-    if (turnTimer !== undefined) window.clearTimeout(turnTimer);
-    if (scanTimer !== undefined) window.clearTimeout(scanTimer);
-    if (unsealTimer !== undefined) window.clearTimeout(unsealTimer);
-    unsealTimer = undefined;
-    book.removeAttribute('data-unsealing');
-    leaves.forEach((leaf) => leaf.removeAttribute('data-turning'));
-
-    const destination = leaves[next].querySelector<HTMLElement>('[data-project-page]');
-    if (destination) {
-      destination.dataset.pending = '';
-      destination.removeAttribute('data-scanning');
-      destination.removeAttribute('data-revealed');
-      destination.closest<HTMLElement>('[data-book-leaf]')?.querySelector<HTMLElement>('.folio-scroll')?.scrollTo({ top: 0 });
-    }
-
-    const moving = leaves[next > current ? current : next];
-    moving.dataset.turning = '';
-    book.dataset.currentPage = String(next);
-    book.focus({ preventScroll: true });
-    leaves.forEach((leaf, index) => {
-      leaf.toggleAttribute('data-flipped', index < next);
-      leaf.toggleAttribute('data-active', index === next);
-      leaf.inert = index !== next;
-      leaf.setAttribute('aria-hidden', index === next ? 'false' : 'true');
-    });
-    if (status) status.textContent = next === 0 ? '返回图鉴封面' : '正在翻阅项目档案';
-
-    const finishTurn = () => {
-      if (!book.isConnected) return;
-      moving.removeAttribute('data-turning');
-      if (next === 0) {
-        book.querySelector<HTMLButtonElement>('[data-open-book]')?.focus({ preventScroll: true });
-        return;
-      }
-      if (!destination) return;
-      destination.removeAttribute('data-pending');
-      if (reducedMotion()) {
-        destination.dataset.revealed = '';
-        if (status) status.textContent = `已读取：${destination.querySelector('h2')?.textContent ?? ''}`;
-        destination.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
-        return;
-      }
-      destination.dataset.scanning = '';
-      if (status) status.textContent = '正在扫描当前作品';
-      scanTimer = window.setTimeout(() => {
-        if (!book.isConnected || Number(book.dataset.currentPage) !== next) return;
-        destination.removeAttribute('data-scanning');
-        destination.dataset.revealed = '';
-        if (status) status.textContent = `已读取：${destination.querySelector('h2')?.textContent ?? ''}`;
-        destination.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
-      }, SCAN_DURATION);
-    };
-
-    if (reducedMotion()) finishTurn();
-    else turnTimer = window.setTimeout(finishTurn, TURN_DURATION);
+function sourceOffset(source: DOMRect, destination: DOMRect) {
+  return {
+    x: source.left - destination.left,
+    y: source.top - destination.top,
+    scale: source.width / destination.width
   };
+}
 
-  book.addEventListener('click', (event) => {
-    if (!(event.target instanceof Element)) return;
-    if (event.target.closest('[data-open-book]')) {
-      if (book.hasAttribute('data-unsealing')) return;
-      if (reducedMotion()) return turnTo(1);
-      book.dataset.unsealing = '';
-      unsealTimer = window.setTimeout(() => {
-        if (book.isConnected) turnTo(1);
-      }, 260);
+type Carousel = { move: (direction: -1 | 1) => void; scroll: (delta: number) => void; reset: () => void; finish: () => void };
+
+function bindCarousel(media: HTMLElement, reducedMotion: MediaQueryList): Carousel | undefined {
+  const viewport = media.querySelector<HTMLElement>('[data-carousel-viewport]');
+  const track = media.querySelector<HTMLElement>('[data-carousel-track]');
+  const counter = media.querySelector<HTMLElement>('[data-carousel-counter]');
+  if (!viewport || !track) return;
+  const slides = Array.from(track.querySelectorAll<HTMLElement>('[data-carousel-slide]'));
+  const length = slides.length;
+  if (length < 2) return;
+
+  const before = slides.slice(-2).map((slide) => slide.cloneNode(true) as HTMLElement);
+  const after = slides.slice(0, 2).map((slide) => slide.cloneNode(true) as HTMLElement);
+  for (const clone of [...before, ...after]) {
+    clone.removeAttribute('data-carousel-slide');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.inert = true;
+  }
+  track.prepend(...before);
+  track.append(...after);
+
+  const renderedSlides = Array.from(track.children) as HTMLElement[];
+  let current = 2;
+  let target = 2;
+  let velocity = 0;
+  let frameId: number | null = null;
+  let lastTime: number | null = null;
+  let announcedIndex = -1;
+  let wheelTimer: number | undefined;
+  let wheelDirection = 1;
+  const normalize = () => {
+    while (current < 1) { current += length; target += length; }
+    while (current > length + 2) { current -= length; target -= length; }
+  };
+  const place = () => {
+    renderedSlides.forEach((slide, index) => {
+      const distance = index - current;
+      const proximity = Math.abs(distance);
+      slide.style.transform = `translateX(${-50 + distance * 60}%) scale(${1 - 0.42 * Math.min(proximity, 1)})`;
+      slide.style.opacity = String(Math.max(0.18, 0.58 ** proximity));
+      slide.style.zIndex = String(Math.round(100 - proximity * 10));
+      slide.style.pointerEvents = proximity < 0.5 ? 'auto' : 'none';
+    });
+    const nearest = ((Math.round(current) - 2) % length + length) % length;
+    if (counter && nearest !== announcedIndex) {
+      announcedIndex = nearest;
+      counter.textContent = `${String(nearest + 1).padStart(2, '0')} / ${String(length).padStart(2, '0')}`;
+    }
+  };
+  const stopFrame = () => {
+    if (frameId !== null) cancelAnimationFrame(frameId);
+    frameId = null;
+    lastTime = null;
+  };
+  const clearWheelTimer = () => {
+    if (wheelTimer !== undefined) window.clearTimeout(wheelTimer);
+    wheelTimer = undefined;
+  };
+  const nearestTarget = () => Math.round(target + wheelDirection * 0.001);
+  const settle = () => {
+    stopFrame();
+    current = target;
+    velocity = 0;
+    normalize();
+    delete media.dataset.carouselMoving;
+    place();
+  };
+  const finish = () => {
+    clearWheelTimer();
+    target = nearestTarget();
+    settle();
+  };
+  const step = (time: number) => {
+    frameId = null;
+    const dt = Math.min(lastTime === null ? 16 : time - lastTime, 50) / 1000;
+    lastTime = time;
+    velocity += (260 * (target - current) - 28 * velocity) * dt;
+    current += velocity * dt;
+    normalize();
+    if (Math.abs(target - current) < 0.005 && Math.abs(velocity) < 0.005) {
+      settle();
       return;
     }
-    if (event.target.closest('[data-turn-prev]')) return turnTo(Number(book.dataset.currentPage) - 1);
-    if (event.target.closest('[data-turn-next]')) return turnTo(Number(book.dataset.currentPage) + 1);
-    const galleryButton = event.target.closest<HTMLButtonElement>('[data-gallery-prev], [data-gallery-next]');
-    if (!galleryButton) return;
-    const track = galleryButton.closest<HTMLElement>('.folio-media')?.querySelector<HTMLElement>('[data-gallery-track]');
-    if (!track) return;
-    const current = Math.round(track.scrollLeft / track.clientWidth);
-    const direction = galleryButton.hasAttribute('data-gallery-next') ? 1 : -1;
-    const index = Math.max(0, Math.min(track.children.length - 1, current + direction));
-    track.scrollTo({ left: index * track.clientWidth, behavior: reducedMotion() ? 'auto' : 'smooth' });
-  });
-
-  book.addEventListener('keydown', (event) => {
-    if (event.target instanceof Element && event.target.closest('[data-gallery-track]')) return;
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      turnTo(Number(book.dataset.currentPage) + 1);
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      turnTo(Number(book.dataset.currentPage) - 1);
+    place();
+    frameId = requestAnimationFrame(step);
+  };
+  const schedule = () => {
+    if (reducedMotion.matches) {
+      settle();
+      return;
     }
-  });
+    media.dataset.carouselMoving = '';
+    if (frameId === null) frameId = requestAnimationFrame(step);
+  };
+  const move = (direction: -1 | 1) => {
+    clearWheelTimer();
+    target = Math.round(target) + direction;
+    schedule();
+  };
+  const scroll = (delta: number) => {
+    if (delta === 0) return;
+    clearWheelTimer();
+    wheelDirection = Math.sign(delta);
+    target += delta / 240;
+    schedule();
+    wheelTimer = window.setTimeout(() => {
+      wheelTimer = undefined;
+      target = nearestTarget();
+      schedule();
+    }, 160);
+  };
+  const reset = () => {
+    clearWheelTimer();
+    stopFrame();
+    current = 2;
+    target = 2;
+    velocity = 0;
+    announcedIndex = -1;
+    delete media.dataset.carouselMoving;
+    place();
+  };
 
-  book.querySelectorAll<HTMLElement>('[data-gallery-track]').forEach((track) => {
-    const count = track.closest<HTMLElement>('.folio-media')?.querySelector<HTMLElement>('[data-gallery-count]');
-    if (!count) return;
-    track.addEventListener('scroll', () => {
-      const index = Math.round(track.scrollLeft / track.clientWidth) + 1;
-      count.textContent = `${String(index).padStart(2, '0')} / ${String(track.children.length).padStart(2, '0')}`;
-    }, { passive: true });
+  let startX: number | undefined;
+  let pointerId: number | undefined;
+  let suppressClick = false;
+  viewport.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    startX = event.clientX;
+    pointerId = event.pointerId;
+    viewport.setPointerCapture(event.pointerId);
+  });
+  viewport.addEventListener('pointerup', (event) => {
+    if (startX === undefined || event.pointerId !== pointerId) return;
+    const distance = event.clientX - startX;
+    startX = undefined;
+    pointerId = undefined;
+    if (Math.abs(distance) < 42) return;
+    suppressClick = true;
+    move(distance < 0 ? 1 : -1);
+    window.setTimeout(() => { suppressClick = false; }, 350);
+  });
+  viewport.addEventListener('pointercancel', () => { startX = undefined; pointerId = undefined; });
+  viewport.addEventListener('click', (event) => {
+    if (!suppressClick) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClick = false;
+  });
+  viewport.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    move(event.key === 'ArrowRight' ? 1 : -1);
+  });
+  place();
+  return { move, scroll, finish, reset };
+}
+
+function bindProjectShowcase(): void {
+  const showcase = document.querySelector<HTMLElement>('[data-project-showcase]:not([data-bound])');
+  if (!showcase) return;
+  showcase.dataset.bound = '';
+
+  const dialog = showcase.querySelector<HTMLDialogElement>('[data-detail-panel]');
+  if (!dialog) return;
+  const badges = Array.from(showcase.querySelectorAll<HTMLButtonElement>('[data-project-badge]'));
+  const details = Array.from(dialog.querySelectorAll<HTMLElement>('[data-project-detail]'));
+  const status = showcase.querySelector<HTMLElement>('[data-showcase-status]');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const controller = new AbortController();
+  const carousels = new Map<HTMLElement, Carousel>();
+  dialog.querySelectorAll<HTMLElement>('[data-project-carousel]').forEach((media) => {
+    const carousel = bindCarousel(media, reducedMotion);
+    if (carousel) carousels.set(media, carousel);
+  });
+  let motionTimeline: ReturnType<typeof createTimeline> | undefined;
+  const motion = { x: 0, y: 0, scale: 1, card: 0, cardX: -36, backdrop: 0 };
+  let sourceBadge: HTMLButtonElement | undefined;
+  let previousOverflow = '';
+  let active = false;
+  let closing = false;
+
+  const selected = () => Number(showcase.dataset.selected);
+  const expandedVessel = () => details[selected()]?.querySelector<HTMLElement>('[data-expanded-vessel]');
+  const infoCard = () => details[selected()]?.querySelector<HTMLElement>('[data-info-card]');
+  const renderMotion = () => {
+    const vessel = expandedVessel();
+    const card = infoCard();
+    if (vessel) vessel.style.transform = `translate(${motion.x}px, ${motion.y}px) scale(${motion.scale})`;
+    if (card) {
+      card.style.opacity = String(motion.card);
+      card.style.transform = `translateX(${motion.cardX}px)`;
+    }
+    dialog.style.setProperty('--showcase-backdrop-alpha', String(motion.backdrop));
+  };
+
+  const cleanup = (returnFocus: boolean) => {
+    if (!active) return;
+    motionTimeline?.cancel();
+    motionTimeline = undefined;
+    carousels.forEach((carousel) => carousel.finish());
+    expandedVessel()?.style.removeProperty('transform');
+    infoCard()?.style.removeProperty('transform');
+    infoCard()?.style.removeProperty('opacity');
+    dialog.style.removeProperty('--showcase-backdrop-alpha');
+    sourceBadge?.style.removeProperty('visibility');
+    document.documentElement.style.overflow = previousOverflow;
+    delete dialog.dataset.ready;
+    delete dialog.dataset.closing;
+    active = false;
+    closing = false;
+    if (returnFocus) sourceBadge?.focus({ preventScroll: true });
+  };
+
+  const finishClose = () => {
+    if (dialog.open) dialog.close();
+    cleanup(true);
+  };
+
+  const finishOpen = () => {
+    motionTimeline?.cancel();
+    motionTimeline = undefined;
+    Object.assign(motion, { x: 0, y: 0, scale: 1, card: 1, cardX: 0, backdrop: 0.78 });
+    expandedVessel()?.style.removeProperty('transform');
+    infoCard()?.style.removeProperty('transform');
+    infoCard()?.style.removeProperty('opacity');
+    dialog.style.setProperty('--showcase-backdrop-alpha', '0.78');
+    dialog.dataset.ready = '';
+  };
+
+  const closeDetail = () => {
+    if (!dialog.open || closing) return;
+    closing = true;
+    const vessel = expandedVessel();
+    const source = sourceBadge?.querySelector<HTMLElement>('.showcase-vessel');
+    if (reducedMotion.matches || !vessel || !source) return finishClose();
+
+    motionTimeline?.cancel();
+    vessel.style.transform = 'none';
+    const destinationBounds = vessel.getBoundingClientRect();
+    renderMotion();
+    const destination = sourceOffset(source.getBoundingClientRect(), destinationBounds);
+    dialog.dataset.closing = '';
+    motionTimeline = createTimeline({
+      onUpdate: renderMotion,
+      onComplete: () => { if (dialog.open) finishClose(); }
+    })
+      .add(motion, { x: destination.x, y: destination.y, scale: destination.scale, duration: 380, ease: 'inOut(2)' }, 0)
+      .add(motion, { card: 0, cardX: -36, duration: 180, ease: 'in(2)' }, 0)
+      .add(motion, { backdrop: 0, duration: 380, ease: 'in(2)' }, 0);
+  };
+
+  const openDetail = (index: number) => {
+    if (dialog.open || closing) return;
+    // A native close event can arrive after the dialog has already been reopened.
+    if (active) cleanup(false);
+    const detail = details[index];
+    const badge = badges[index];
+    const source = badge?.querySelector<HTMLElement>('.showcase-vessel');
+    if (!detail || !badge || !source) return;
+    const sourceBounds = source.getBoundingClientRect();
+    showcase.dataset.selected = String(index);
+    badges.forEach((item, badgeIndex) => item.setAttribute('aria-pressed', badgeIndex === index ? 'true' : 'false'));
+    details.forEach((item, detailIndex) => {
+      item.hidden = detailIndex !== index;
+      item.inert = detailIndex !== index;
+    });
+    const media = detail.querySelector<HTMLElement>('[data-project-carousel]');
+    if (media) carousels.get(media)?.reset();
+    const title = badge.textContent?.trim() ?? '';
+    if (status) status.textContent = `当前作品：${title}`;
+    dialog.setAttribute('aria-label', `作品详情：${title}`);
+    sourceBadge = badge;
+    previousOverflow = document.documentElement.style.overflow;
+    active = true;
+    dialog.style.setProperty('--showcase-backdrop-alpha', '0');
+    dialog.showModal();
+    document.documentElement.style.overflow = 'hidden';
+    badge.style.visibility = 'hidden';
+    dialog.focus({ preventScroll: true });
+
+    const vessel = expandedVessel();
+    const card = detail.querySelector<HTMLElement>('[data-info-card]');
+    if (reducedMotion.matches || !vessel || !card) {
+      dialog.style.setProperty('--showcase-backdrop-alpha', '0.78');
+      dialog.dataset.ready = '';
+      return;
+    }
+    Object.assign(motion, sourceOffset(sourceBounds, vessel.getBoundingClientRect()), { card: 0, cardX: -36, backdrop: 0 });
+    renderMotion();
+    motionTimeline = createTimeline({
+      onUpdate: renderMotion,
+      onComplete: () => {
+        Object.assign(motion, { x: 0, y: 0, scale: 1, card: 1, cardX: 0, backdrop: 0.78 });
+        renderMotion();
+        if (dialog.open && !closing) dialog.dataset.ready = '';
+      }
+    })
+      .add(motion, { x: 0, y: 0, scale: 1, duration: 520, ease: 'out(3)' }, 0)
+      .add(motion, { backdrop: 0.78, duration: 520, ease: 'out(2)' }, 0)
+      .add(motion, { card: 1, cardX: 0, duration: 260, ease: 'out(3)' }, 520);
+  };
+
+  dialog.addEventListener('cancel', (event) => { event.preventDefault(); void closeDetail(); });
+  dialog.addEventListener('close', () => { if (!dialog.open) cleanup(true); });
+  dialog.addEventListener('click', () => { void closeDetail(); });
+  reducedMotion.addEventListener('change', () => {
+    if (!reducedMotion.matches || !dialog.open) return;
+    carousels.forEach((carousel) => carousel.finish());
+    if (closing) return finishClose();
+    finishOpen();
+  }, { signal: controller.signal });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    carousels.forEach((carousel) => carousel.finish());
+    if (!dialog.open) return;
+    if (closing) finishClose();
+    else finishOpen();
+  }, { signal: controller.signal });
+  document.addEventListener('wheel', (event) => {
+    if (!dialog.open) return;
+    const target = event.target;
+    const media = target instanceof Element ? target.closest<HTMLElement>('[data-project-carousel]') : null;
+    const carousel = media ? carousels.get(media) : undefined;
+    if (carousel) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const direction = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      const normalized = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? direction * 24
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? direction * 300
+        : direction;
+      carousel.scroll(normalized);
+      return;
+    }
+    if (target instanceof Node && target !== dialog && dialog.contains(target) && dialog.scrollHeight > dialog.clientHeight) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, { capture: true, passive: false, signal: controller.signal });
+  document.addEventListener('astro:before-swap', () => {
+    if (dialog.open) finishClose();
+    controller.abort();
+  }, { once: true, signal: controller.signal });
+  showcase.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const badge = event.target.closest<HTMLButtonElement>('[data-project-badge]');
+    if (badge) openDetail(Number(badge.dataset.projectBadge));
   });
 }
 
-document.addEventListener('astro:page-load', bindProjectBook);
-document.addEventListener('visibilitychange', () => {
-  const book = document.querySelector<HTMLElement>('[data-project-book]');
-  book?.toggleAttribute('data-paused', document.hidden);
-});
-bindProjectBook();
+document.addEventListener('astro:page-load', bindProjectShowcase);
+bindProjectShowcase();

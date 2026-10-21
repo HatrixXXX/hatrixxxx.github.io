@@ -95,12 +95,18 @@ async function renderResults(input: HTMLInputElement): Promise<void> {
       .search(query, { prefix: true, fuzzy: 0.2, combineWith: 'AND' })
       .filter((match) => {
         if (match.locked) return false;
+        try {
+          const target = new URL(String(match.url), window.location.origin);
+          if (target.origin !== window.location.origin) return false;
+        } catch {
+          return false;
+        }
         const terms = searchTerms(query);
         const haystack = normalizeSearchText([match.title, ...(match.paragraphs ?? [])].join(' '));
         return terms.every((term) => haystack.includes(term));
       })
       .slice(0, RESULT_LIMIT);
-    status.textContent = matches.length > 0 ? `找到 ${matches.length} 条结果` : '没有找到相关文章';
+    status.textContent = matches.length > 0 ? `找到 ${matches.length} 条结果` : '没有找到相关内容';
     for (const match of matches) {
       const item = document.createElement('li');
       const link = document.createElement('a');
@@ -108,8 +114,8 @@ async function renderResults(input: HTMLInputElement): Promise<void> {
       const excerpt = document.createElement('span');
       excerpt.dataset.searchExcerpt = '';
       const target = new URL(String(match.url), window.location.origin);
-      target.searchParams.set('q', query);
-      link.href = `${target.pathname}${target.search}`;
+      if (target.pathname.startsWith('/posts/')) target.searchParams.set('q', query);
+      link.href = `${target.pathname}${target.search}${target.hash}`;
       link.dataset.searchResult = '';
       title.textContent = String(match.title);
       appendHighlightedText(excerpt, excerptForMatch(match.paragraphs ?? [], query), query);
@@ -128,6 +134,16 @@ document.addEventListener('keydown', (event) => {
     void openSearch();
   } else if (event.key === 'Escape') {
     closeSearch();
+  }
+});
+
+document.addEventListener('astro:page-load', () => {
+  const { pathname, searchParams } = new URL(window.location.href);
+  if (pathname === '/creation/') {
+    const project = searchParams.get('project');
+    if (project && /^\d+$/.test(project)) queueMicrotask(() => {
+      document.querySelector<HTMLButtonElement>(`[data-project-badge="${project}"]`)?.click();
+    });
   }
 });
 

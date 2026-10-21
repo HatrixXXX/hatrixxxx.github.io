@@ -7,8 +7,10 @@ import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
 import { contentRoot } from '../src/lib/content-root';
+import { planRoot } from '../src/lib/plan-root';
 import { snippetRoot } from '../src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from '../src/lib/snippets';
+import { planPath } from '../src/lib/plans';
 import {
   dangerousBrowserUrlKind,
   isApprovedRemoteImageUrl,
@@ -19,7 +21,7 @@ import { parseSrcset } from 'srcset';
 
 const MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 // Includes the static noscript character fallback as well as the runtime layers.
-export const EXPECTED_LOCAL_LINKS = 1713;
+export const EXPECTED_LOCAL_LINKS = 1733;
 const APPROVED_EXTERNAL_SCRIPTS = new Set([
   'https://events.vercount.one/js',
   'https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js'
@@ -56,6 +58,7 @@ export interface ProjectBuiltSiteCheckOptions {
   expectedPostCount?: number;
   sourceContentRoot?: string;
   sourceSnippetsRoot?: string;
+  sourcePlansRoot?: string;
 }
 
 export interface BuiltSiteCheckResult {
@@ -571,11 +574,13 @@ export async function inspectProjectBuiltSite(
   options: ProjectBuiltSiteCheckOptions = {}
 ): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
-  const expectedPostCount = options.expectedPostCount ?? 15;
+  const expectedPostCount = options.expectedPostCount ?? 13;
   const sourceContentRoot = resolve(projectRoot, options.sourceContentRoot ?? '.private-content');
   const postsDirectory = resolve(sourceContentRoot, 'posts');
   const sourceSnippetsRoot = resolve(projectRoot, options.sourceSnippetsRoot ?? '.private-snippets');
   const snippetsDirectory = resolve(sourceSnippetsRoot, 'snippets');
+  const sourcePlansRoot = resolve(projectRoot, options.sourcePlansRoot ?? '.private-plans');
+  const plansDirectory = resolve(sourcePlansRoot, 'plans');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
   const routes: string[] = [];
   for (const file of postFiles) {
@@ -623,6 +628,14 @@ export async function inspectProjectBuiltSite(
     }
   }
 
+  const planFiles = await filesInOrEmpty(plansDirectory, errors, `Unable to read source plans directory: ${plansDirectory}`);
+  for (const file of planFiles) {
+    const entry = relative(plansDirectory, file);
+    if (/[\\/]/.test(entry) || !/\.md$/i.test(entry)) continue;
+    const route = planPath(entry.replace(/\.md$/i, ''));
+    if (!(await resolvesToOutput(distPath, decodeURIComponent(route)))) errors.push(`Missing expected plan route: ${route}`);
+  }
+
   const result = await inspectBuiltSite(distPath, routes, {
     sourceCnamePath: resolve(projectRoot, 'public/CNAME'),
     expectedLocalLinks: snippetFiles.length === 0 ? options.expectedLocalLinks : undefined
@@ -635,9 +648,10 @@ async function main(): Promise<void> {
   const fixtureMode = process.argv.includes('--fixtures');
   const result = await inspectProjectBuiltSite(process.cwd(), {
     expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
-    expectedPostCount: fixtureMode ? 2 : 15,
+    expectedPostCount: fixtureMode ? 2 : 13,
     sourceContentRoot: contentRoot(),
-    sourceSnippetsRoot: snippetRoot()
+    sourceSnippetsRoot: snippetRoot(),
+    sourcePlansRoot: planRoot()
   });
 
   console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);

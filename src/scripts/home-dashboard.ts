@@ -288,6 +288,8 @@ function initializeHomeDashboard(): void {
   const { signal } = controller;
   const clock = stage.querySelector<HTMLTimeElement>('[data-home-clock]')!;
   const digits = [...clock.querySelectorAll<HTMLElement>('[data-clock-digit]')];
+  const clockCard = stage.querySelector<HTMLButtonElement>('[data-home-clock-card]')!;
+  clockCard.disabled = false;
   const levelBadge = stage.querySelector<HTMLElement>('[data-home-level]')!;
   const levelNumber = stage.querySelector<HTMLElement>('[data-level-number]')!;
   const levelRing = stage.querySelector<SVGCircleElement>('[data-level-progress]')!;
@@ -345,6 +347,25 @@ function initializeHomeDashboard(): void {
       if (digit.textContent !== numbers[index]) digit.textContent = numbers[index];
     });
   };
+
+  let lastClockActivationAt = -Infinity;
+  const glitchClock = (): void => {
+    clockCard.removeAttribute('data-clock-glitch');
+    void clockCard.offsetWidth;
+    clockCard.setAttribute('data-clock-glitch', '');
+  };
+  clockCard.addEventListener('click', (event) => {
+    if (event.detail !== 0) return;
+    const now = performance.now();
+    if (now - lastClockActivationAt < 350) {
+      glitchClock();
+      lastClockActivationAt = -Infinity;
+    } else lastClockActivationAt = now;
+  }, { signal });
+  clockCard.addEventListener('dblclick', glitchClock, { signal });
+  clockCard.addEventListener('animationend', (event) => {
+    if (event.target === clockCard) clockCard.removeAttribute('data-clock-glitch');
+  }, { signal });
 
   const queueTyping = (step: () => void, delay: number): void => {
     typingTimer = window.setTimeout(step, delay);
@@ -447,6 +468,7 @@ function initializeHomeDashboard(): void {
   const clockTimer = window.setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
   cleanup = () => {
     controller.abort();
+    clockCard.removeAttribute('data-clock-glitch');
     stopPanelMotion();
     stopLevelSpin();
     window.clearInterval(clockTimer);

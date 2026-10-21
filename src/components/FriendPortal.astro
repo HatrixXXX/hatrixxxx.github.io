@@ -49,6 +49,7 @@ import '@/styles/friend-portal.css';
 </div>
 
 <script>
+  import { animate } from 'animejs';
   import { shuffleQuoteOrder } from '@/lib/quote-order';
 
   const HOLD_MS = 1000;
@@ -76,18 +77,20 @@ import '@/styles/friend-portal.css';
 
     const controller = new AbortController();
     const { signal } = controller;
-    let frame = 0;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let chargeAnimation: ReturnType<typeof animate> | undefined;
+    let holdTimer = 0;
     let openTimer = 0;
-    let startedAt = 0;
     let heldPointer: number | null = null;
     let heldKey: string | null = null;
 
     function reset() {
-      cancelAnimationFrame(frame);
+      chargeAnimation?.cancel();
+      chargeAnimation = undefined;
+      clearTimeout(holdTimer);
       clearTimeout(openTimer);
-      frame = 0;
+      holdTimer = 0;
       openTimer = 0;
-      startedAt = 0;
       heldPointer = null;
       heldKey = null;
       portal!.dataset.state = 'idle';
@@ -117,23 +120,27 @@ import '@/styles/friend-portal.css';
       newTab.focus();
     }
 
-    function tick(now: number) {
-      const fraction = Math.min((now - startedAt) / HOLD_MS, 1);
+    function renderProgress(fraction: number) {
       progress!.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - fraction));
       value!.textContent = `${Math.floor(fraction * 100)}%`;
-      if (fraction < 1) {
-        frame = requestAnimationFrame(tick);
-        return;
-      }
-      openRandomFriend();
     }
 
     function start() {
       if (portal!.dataset.state !== 'idle') return;
-      startedAt = performance.now();
       portal!.dataset.state = 'charging';
       status!.textContent = '正在充能，持续按住 1 秒';
-      frame = requestAnimationFrame(tick);
+      if (reduced.matches) {
+        holdTimer = window.setTimeout(openRandomFriend, HOLD_MS);
+        return;
+      }
+      const charge = { fraction: 0 };
+      chargeAnimation = animate(charge, {
+        fraction: 1,
+        duration: HOLD_MS,
+        ease: 'linear',
+        onUpdate: () => renderProgress(charge.fraction),
+        onComplete: openRandomFriend,
+      });
     }
 
     portal.addEventListener('pointerdown', (event) => {
@@ -174,6 +181,9 @@ import '@/styles/friend-portal.css';
     document.addEventListener('visibilitychange', () => {
       portal.dataset.hidden = String(document.hidden);
       if (document.hidden && portal.dataset.state !== 'idle') reset();
+    }, { signal });
+    reduced.addEventListener('change', () => {
+      if (portal.dataset.state === 'charging') reset();
     }, { signal });
     window.addEventListener('pageshow', reset, { signal });
     window.addEventListener('focus', () => {

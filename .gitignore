@@ -7,6 +7,7 @@ dist/
 .astro/
 .private-content/
 .private-snippets/
+.private-plans/
 .env.local
 
 # Test and audit output
@@ -16,6 +17,8 @@ reports/
 /output/tmp/
 
 # Agent work files
+tmp/
+/.codex-tmp/
 /.tmp/
 .superpowers/
 .worktrees/

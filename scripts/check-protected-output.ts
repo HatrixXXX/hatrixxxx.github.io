@@ -3,6 +3,8 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { contentRoot } from '../src/lib/content-root';
+import { snippetRoot } from '../src/lib/snippet-root';
+import { planRoot } from '../src/lib/plan-root';
 
 export interface ProtectedOutputCheckResult {
   errors: string[];
@@ -10,6 +12,7 @@ export interface ProtectedOutputCheckResult {
 
 interface ProtectedSource {
   bodySnippets: string[];
+  metadataValues: string[];
   resources: Array<{ name: string; bytes: Buffer }>;
 }
 
@@ -74,6 +77,42 @@ function plainText(value: string): string {
     .trim();
 }
 
+const MATCH_PREFIX_LENGTH = 8;
+
+interface LiteralMatchers {
+  prefixes: Map<string, string[]>;
+  firstCharacters: Set<string>;
+  shortValues: string[];
+}
+
+function literalMatchers(values: string[]): LiteralMatchers {
+  const prefixes = new Map<string, string[]>();
+  const firstCharacters = new Set<string>();
+  const shortValues: string[] = [];
+  for (const value of new Set(values)) {
+    if (value.length < MATCH_PREFIX_LENGTH) {
+      shortValues.push(value);
+      continue;
+    }
+    const prefix = value.slice(0, MATCH_PREFIX_LENGTH);
+    firstCharacters.add(prefix[0]);
+    const candidates = prefixes.get(prefix) ?? [];
+    candidates.push(value);
+    prefixes.set(prefix, candidates);
+  }
+  return { prefixes, firstCharacters, shortValues };
+}
+
+function containsAny(matchers: LiteralMatchers, value: string): boolean {
+  if (matchers.shortValues.some((candidate) => value.includes(candidate))) return true;
+  for (let index = 0; index <= value.length - MATCH_PREFIX_LENGTH; index += 1) {
+    if (!matchers.firstCharacters.has(value[index])) continue;
+    const candidates = matchers.prefixes.get(value.slice(index, index + MATCH_PREFIX_LENGTH));
+    if (candidates?.some((candidate) => value.startsWith(candidate, index))) return true;
+  }
+  return false;
+}
+
 function bodySnippets(content: string, publicMetadata: string): string[] {
   const withoutImages = content.replace(MARKDOWN_IMAGE, ' ').replace(HTML_IMAGE, ' ');
   const publicText = plainText(publicMetadata);
@@ -110,54 +149,58 @@ function imageReferences(content: string): string[] {
   return references;
 }
 
-async function protectedSources(contentRoot: string, errors: Set<string>): Promise<ProtectedSource[]> {
+async function protectedSources(contentRoot: string, snippetsRoot: string, plansRoot: string, errors: Set<string>): Promise<ProtectedSource[]> {
   const postsRoot = resolve(contentRoot, 'posts');
-  let sourceFiles: string[];
-  try {
-    sourceFiles = (await filesIn(postsRoot)).filter((file) => /\.mdx?$/i.test(file));
-  } catch {
-    errors.add('posts: unable to read protected content sources');
-    return [];
-  }
-
   const sources: ProtectedSource[] = [];
-  for (const sourceFile of sourceFiles) {
-    const parsed = matter(await readFile(sourceFile, 'utf8'));
-    if (parsed.data.locked !== true) continue;
-
-    const sourceName = outputPath(contentRoot, sourceFile);
-    const references = imageReferences(parsed.content);
-    const resources: Array<{ name: string; bytes: Buffer }> = [];
-    for (const reference of references) {
-      if (REMOTE_REFERENCE.test(reference)) {
-        errors.add(`${sourceName}: locked Markdown contains a remote body image`);
-        continue;
-      }
-
-      let decodedReference: string;
-      try {
-        decodedReference = decodeURIComponent(reference.split(/[?#]/, 1)[0]);
-      } catch {
-        errors.add(`${sourceName}: locked Markdown contains an invalid resource reference`);
-        continue;
-      }
-      const resourcePath = resolve(dirname(sourceFile), decodedReference);
-      if (!pathIsWithin(postsRoot, resourcePath)) {
-        errors.add(`${sourceName}: locked Markdown resource leaves the content root`);
-        continue;
-      }
-      try {
-        if (!(await stat(resourcePath)).isFile()) throw new Error('not a file');
-        resources.push({ name: basename(resourcePath), bytes: await readFile(resourcePath) });
-      } catch {
-        errors.add(`${sourceName}: locked Markdown resource cannot be read`);
-      }
+  for (const [root, kind] of [[postsRoot, 'posts'], [resolve(snippetsRoot), 'snippets'], [resolve(plansRoot), 'plans']] as const) {
+    let sourceFiles: string[];
+    try {
+      sourceFiles = (await filesIn(root)).filter((file) => /\.mdx?$/i.test(file));
+    } catch {
+      errors.add(`${kind}: unable to read protected content sources`);
+      continue;
     }
+    for (const sourceFile of sourceFiles) {
+      const parsed = matter(await readFile(sourceFile, 'utf8'));
+      if (kind === 'posts' && parsed.data.locked !== true) continue;
 
-    sources.push({
-      bodySnippets: bodySnippets(parsed.content, JSON.stringify(parsed.data)),
-      resources
-    });
+      const sourceName = `${kind}/${outputPath(root, sourceFile)}`;
+      const references = imageReferences(parsed.content);
+      const resources: Array<{ name: string; bytes: Buffer }> = [];
+      for (const reference of references) {
+        if (REMOTE_REFERENCE.test(reference)) {
+          errors.add(`${sourceName}: locked Markdown contains a remote body image`);
+          continue;
+        }
+
+        let decodedReference: string;
+        try {
+          decodedReference = decodeURIComponent(reference.split(/[?#]/, 1)[0]);
+        } catch {
+          errors.add(`${sourceName}: locked Markdown contains an invalid resource reference`);
+          continue;
+        }
+        const resourcePath = resolve(dirname(sourceFile), decodedReference);
+        if (!pathIsWithin(root, resourcePath)) {
+          errors.add(`${sourceName}: locked Markdown resource leaves the content root`);
+          continue;
+        }
+        try {
+          if (!(await stat(resourcePath)).isFile()) throw new Error('not a file');
+          resources.push({ name: basename(resourcePath), bytes: await readFile(resourcePath) });
+        } catch {
+          errors.add(`${sourceName}: locked Markdown resource cannot be read`);
+        }
+      }
+
+      sources.push({
+        bodySnippets: bodySnippets(parsed.content, kind === 'posts' ? JSON.stringify(parsed.data) : ''),
+        metadataValues: kind === 'snippets'
+          ? [parsed.data.title, parsed.data.description].filter((value): value is string => typeof value === 'string')
+          : [],
+        resources
+      });
+    }
   }
   return sources;
 }
@@ -193,12 +236,18 @@ function hasNoindex(html: string): boolean {
 
 export async function inspectProtectedOutput(
   contentRoot: string,
-  distRoot: string
+  distRoot: string,
+  snippetsRoot = snippetRoot('snippets'),
+  plansRoot = planRoot('plans')
 ): Promise<ProtectedOutputCheckResult> {
   const resolvedContentRoot = resolve(contentRoot);
   const resolvedDistRoot = resolve(distRoot);
   const errors = new Set<string>();
-  const sources = await protectedSources(resolvedContentRoot, errors);
+  const sources = await protectedSources(resolvedContentRoot, snippetsRoot, plansRoot, errors);
+  const metadataMatchers = literalMatchers(sources.flatMap((source) => source.metadataValues));
+  const bodyMatchers = literalMatchers(sources.flatMap((source) => source.bodySnippets));
+  const resources = sources.flatMap((source) => source.resources);
+  const resourceNameMatchers = literalMatchers(resources.map((resource) => resource.name).filter(Boolean));
 
   let outputFiles: string[];
   try {
@@ -216,20 +265,17 @@ export async function inspectProtectedOutput(
     const text = output.bytes.toString('utf8');
     const decodedText = decodeEntities(text);
     const normalizedText = plainText(text);
-    for (const source of sources) {
-      if (source.bodySnippets.some(
-        (snippet) => decodedText.includes(snippet) || normalizedText.includes(snippet)
-      )) {
-        errors.add(`${output.relativePath}: protected Markdown body plaintext`);
-      }
-      for (const resource of source.resources) {
-        if (resource.bytes.length > 0 && output.bytes.indexOf(resource.bytes) !== -1) {
-          errors.add(`${output.relativePath}: original protected resource bytes`);
-        }
-        if (resource.name && text.includes(resource.name)) {
-          errors.add(`${output.relativePath}: original protected resource name`);
-        }
-      }
+    if (containsAny(metadataMatchers, decodedText) || containsAny(metadataMatchers, normalizedText)) {
+      errors.add(output.relativePath + ': protected snippet metadata plaintext');
+    }
+    if (containsAny(bodyMatchers, decodedText) || containsAny(bodyMatchers, normalizedText)) {
+      errors.add(output.relativePath + ': protected Markdown body plaintext');
+    }
+    if (resources.some((resource) => resource.bytes.length > 0 && output.bytes.indexOf(resource.bytes) !== -1)) {
+      errors.add(output.relativePath + ': original protected resource bytes');
+    }
+    if (containsAny(resourceNameMatchers, text)) {
+      errors.add(output.relativePath + ': original protected resource name');
     }
   }
 

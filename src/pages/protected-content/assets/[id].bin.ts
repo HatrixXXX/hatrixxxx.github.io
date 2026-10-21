@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import type { APIRoute } from 'astro';
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import type { PostEntry } from '../../../lib/content';
 import { deriveContentKeyBytes, encryptEnvelope, importContentKey } from '../../../lib/protected-content/crypto';
 import {
@@ -21,10 +21,12 @@ export async function getStaticPaths() {
     'posts',
     ({ data }: PostEntry) => data.locked
   );
-  if (posts.length === 0) return [];
+  const snippets = await getCollection('snippets');
+  const plans = await getCollection('plans', (entry: CollectionEntry<'plans'>) => Boolean(entry.body?.trim()));
+  if (posts.length === 0 && snippets.length === 0 && plans.length === 0) return [];
 
   const keyBytes = await deriveContentKeyBytes(adminKeyFromEnvironment());
-  const assets = await collectProtectedAssets(posts, keyBytes);
+  const assets = await collectProtectedAssets([...posts, ...snippets, ...plans], keyBytes);
   return assets.map((asset) => ({ params: { id: asset.id }, props: { asset, keyBytes } }));
 }
 

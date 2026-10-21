@@ -1,24 +1,35 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import BackButton from '@/components/BackButton.astro';
+import BackToTop from '@/components/BackToTop.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { snippetPath } from '@/lib/snippets';
+import { getAdjacentSnippets, snippetPath, sortSnippets } from '@/lib/snippets';
+import { deriveContentKeyBytes } from '@/lib/protected-content/crypto';
+import { renderProtectedMarkdown } from '@/lib/protected-content/markdown';
+import { adminKeyFromEnvironment } from '@/lib/protected-content/server';
 
 interface Props {
   snippet: CollectionEntry<'snippets'>;
+  adjacent: {
+    previous?: CollectionEntry<'snippets'>;
+    next?: CollectionEntry<'snippets'>;
+  };
 }
 
 export const getStaticPaths = (async () => {
-  const snippets = await getCollection('snippets');
+  const snippets = sortSnippets(await getCollection('snippets') as CollectionEntry<'snippets'>[]);
   return snippets.map((snippet: CollectionEntry<'snippets'>) => ({
     params: { slug: snippet.id },
-    props: { snippet }
+    props: { snippet, adjacent: getAdjacentSnippets(snippets, snippet.id) }
   }));
 }) satisfies GetStaticPaths;
 
-const { snippet } = Astro.props;
-const { Content } = await render(snippet);
+const { snippet, adjacent } = Astro.props;
+const protectedHtml = (await renderProtectedMarkdown(
+  snippet,
+  await deriveContentKeyBytes(adminKeyFromEnvironment())
+)).html;
 const canonicalPath = snippetPath(snippet.id);
 const date = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'
@@ -26,10 +37,11 @@ const date = new Intl.DateTimeFormat('zh-CN', {
 ---
 
 <BaseLayout
-  title={snippet.data.title}
-  description={snippet.data.description}
-  image={snippet.data.cover}
+  title="随笔"
+  description="加锁随笔"
   canonicalPath={canonicalPath}
+  noindex={true}
+  locked={true}
   bodyClass="snippet-entry-page plain-page"
 >
   <BackButton href="/snippets/" label="返回随笔总览" belowHeader={true} />
@@ -39,9 +51,27 @@ const date = new Intl.DateTimeFormat('zh-CN', {
         <h1>{snippet.data.title}</h1>
         <time datetime={snippet.data.date.toISOString()}>{date}</time>
       </header>
-      <div class="prose"><Content /></div>
+      <div class="prose"><Fragment set:html={protectedHtml} /></div>
+      {(adjacent.previous || adjacent.next) && (
+        <nav class="adjacent-posts" aria-label="相邻随笔" data-adjacent-snippets>
+          {adjacent.previous ? (
+            <a href={snippetPath(adjacent.previous.id)} rel="prev">
+              <span>上一篇</span>
+              <strong>{adjacent.previous.data.title}</strong>
+            </a>
+          ) : <span aria-hidden="true" />}
+          {adjacent.next && (
+            <a href={snippetPath(adjacent.next.id)} rel="next">
+              <span>下一篇</span>
+              <strong>{adjacent.next.data.title}</strong>
+            </a>
+          )}
+        </nav>
+      )}
     </article>
   </main>
+  <BackToTop />
+  <BackToTop direction="bottom" />
 </BaseLayout>
 
 <style>
@@ -68,12 +98,101 @@ const date = new Intl.DateTimeFormat('zh-CN', {
     font-variant-numeric: tabular-nums;
   }
 
+  .adjacent-posts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+  }
+
+  .adjacent-posts a {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 124px;
+    border: 1px solid var(--chassis-edge);
+    border-radius: var(--radius-card);
+    padding: 1.2rem 1.35rem;
+    background: var(--surface-sheen), var(--color-surface);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove), inset 0 5px 12px rgb(0 0 0 / 18%), 0 10px 24px rgb(3 5 11 / 22%);
+    transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  }
+
+  .adjacent-posts a::before {
+    content: '';
+    position: absolute;
+    top: 9px;
+    left: 1.35rem;
+    width: 65%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-copper), transparent);
+    transform: scaleX(0.615);
+    transform-origin: left;
+    transition: transform var(--duration-normal) var(--ease-out), background-color var(--duration-normal) ease;
+  }
+
+  .adjacent-posts a:hover,
+  .adjacent-posts a:focus-visible {
+    border-color: var(--color-copper);
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 4px var(--chassis-groove), inset 0 5px 12px rgb(0 0 0 / 18%), 0 14px 28px rgb(3 5 11 / 32%);
+  }
+
+  .adjacent-posts a:is(:hover, :focus-visible)::before {
+    background: linear-gradient(90deg, var(--color-accent), var(--color-link), transparent);
+    transform: scaleX(1);
+  }
+
+  .adjacent-posts a:last-child { text-align: right; }
+
+  .adjacent-posts a:last-child::before {
+    right: 1.35rem;
+    left: auto;
+    background: linear-gradient(270deg, var(--color-copper), transparent);
+    transform-origin: right;
+  }
+
+  .adjacent-posts a:last-child:is(:hover, :focus-visible)::before {
+    background: linear-gradient(270deg, var(--color-accent), var(--color-link), transparent);
+  }
+
+  .adjacent-posts a > span {
+    color: var(--color-copper);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .adjacent-posts a > strong {
+    color: var(--color-heading);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .adjacent-posts a:hover > strong { color: var(--color-link); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .adjacent-posts a { transition: none; }
+    .adjacent-posts a:hover,
+    .adjacent-posts a:focus-visible { transform: none; }
+  }
+
+  @media (max-width: 600px) {
+    .adjacent-posts { grid-template-columns: minmax(0, 1fr); }
+    .adjacent-posts > span { display: none; }
+    .adjacent-posts a:last-child { text-align: left; }
+  }
+
   @media (max-width: 768px) {
     .snippet-entry-main { padding-top: 7rem; }
   }
 </style>
 
 <script>
+  import '@/scripts/back-to-top';
+
   const bindSnippetReturn = () => {
     const back = document.querySelector<HTMLAnchorElement>('body.snippet-entry-page [data-back-button]');
     if (!back || back.dataset.snippetReturnBound) return;
@@ -83,5 +202,6 @@ const date = new Intl.DateTimeFormat('zh-CN', {
     });
   };
   document.addEventListener('astro:page-load', bindSnippetReturn);
+  document.addEventListener('hatrix:protected-content-ready', bindSnippetReturn);
   bindSnippetReturn();
 </script>

@@ -17,10 +17,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     aria-hidden="true"
   ></div>
   <div class="header-inner" data-header-controls data-home-controls={homeMode ? '' : undefined}>
-    <button class="admin-logout" type="button" data-admin-logout hidden>
-      退出管理员身份
-    </button>
-
     <nav class="desktop-nav" aria-label="主导航">
       <ul>
         {PRIMARY_NAV_ITEMS.map((item) => (
@@ -38,18 +34,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     </nav>
 
     <div class="header-actions">
-      <button class="header-action" type="button" aria-label="搜索文章" data-open-search>
-        <svg
-          class="search-icon"
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          width="20"
-          height="20"
-        >
-          <circle cx="10.75" cy="10.75" r="6.25"></circle>
-          <path d="m15.5 15.5 4.25 4.25"></path>
-        </svg>
-      </button>
       <button
         class="menu-toggle"
         type="button"
@@ -61,6 +45,24 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
         <span></span>
         <span></span>
         <span></span>
+      </button>
+      <button class="header-action" type="button" aria-label="退出管理员身份" data-admin-logout hidden>
+        <svg class="logout-icon" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+          <path d="M10 4H5v16h5"></path>
+          <path d="M13 8l4 4-4 4M17 12H8"></path>
+        </svg>
+      </button>
+      <button class="header-action" type="button" aria-label="搜索全站" data-open-search>
+        <svg
+          class="search-icon"
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+        >
+          <circle cx="10.75" cy="10.75" r="6.25"></circle>
+          <path d="m15.5 15.5 4.25 4.25"></path>
+        </svg>
       </button>
     </div>
   </div>
@@ -182,6 +184,12 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   @media (min-width: 1320px) {
     .desktop-nav > ul {
       gap: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1200px) and (max-width: 1399px) {
+    .header-inner:has([data-admin-logout]:not([hidden])) .desktop-nav > ul {
+      gap: 0.5rem;
     }
   }
 
@@ -323,27 +331,6 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
     gap: 0.35rem;
   }
 
-  .admin-logout {
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: start;
-    min-height: 40px;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-control);
-    padding: 0.45rem 0.8rem;
-    background: var(--color-inset);
-    color: var(--color-text);
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.8rem;
-  }
-
-  .admin-logout:hover,
-  .admin-logout:focus-visible {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-
   .header-action,
   .menu-toggle {
     position: relative;
@@ -389,7 +376,53 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   }
   .header-action:active, .menu-toggle:active { background: var(--color-inset); box-shadow: var(--shadow-inset); }
 
-  .search-icon {
+  .header-action {
+    border-color: var(--color-copper);
+    clip-path: polygon(0 9px, 9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
+    background: linear-gradient(145deg, var(--color-surface-raised), var(--color-inset));
+    box-shadow: inset 0 0 0 4px rgb(0 0 0 / 22%);
+    color: var(--color-accent);
+  }
+
+  .header-action::before {
+    inset: 5px;
+    width: auto;
+    height: auto;
+    border: 1px solid rgb(216 140 60 / 42%);
+    clip-path: polygon(0 5px, 5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+    background: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .header-action::after {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 5px;
+    height: 3px;
+    background: var(--color-link);
+    box-shadow: 0 0 7px var(--color-link);
+    content: '';
+    pointer-events: none;
+  }
+
+  .header-action:is(:hover, :focus-visible) {
+    background: linear-gradient(145deg, var(--color-surface-raised), var(--color-inset));
+    border-color: var(--color-copper);
+    color: var(--color-accent-strong);
+    box-shadow: inset 0 0 0 4px rgb(0 0 0 / 22%);
+    filter: brightness(1.18);
+  }
+
+  .header-action:is(:hover, :focus-visible)::before { background: none; transform: none; }
+  .header-action:focus-visible { box-shadow: inset 0 0 0 3px var(--color-link); }
+  .header-action:active { filter: brightness(1.35); }
+
+  .search-icon,
+  .logout-icon {
+    width: 23px;
+    height: 23px;
     margin: auto;
     fill: none;
     stroke: currentColor;
@@ -424,18 +457,9 @@ const isCurrent = (href: string) => Astro.url.pathname === href;
   @media (max-width: 1199px) {
     .header-inner {
       display: flex;
-      justify-content: center;
+      justify-content: flex-end;
       width: 100%;
       padding-inline: 16px;
-    }
-
-    .header-inner:has(.admin-logout:not([hidden])) {
-      justify-content: space-between;
-    }
-
-    .admin-logout {
-      max-width: 8.5rem;
-      font-size: 0.72rem;
     }
 
     .desktop-nav {

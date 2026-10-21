@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PostEntry } from '../../src/lib/content';
+import type { CollectionEntry } from 'astro:content';
 import {
   decryptEnvelope,
   deriveContentKeyBytes,
@@ -9,13 +10,14 @@ import {
 import { utf8Decode } from '../../src/lib/protected-content/encoding';
 import { encryptProtectedPageHtml } from '../../src/lib/protected-content/page';
 import { PROTECTED_VERIFIER_AAD } from '../../src/config/protected-content';
+import { planPath } from '../../src/lib/plans';
 
-const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[] }));
+const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], plans: [] as CollectionEntry<'plans'>[] }));
 const configState = vi.hoisted(() => ({ lockedPagePaths: [] as string[] }));
 const previousAdminKey = process.env.HATRIX_ADMIN_KEY;
 
 vi.mock('astro:content', () => ({
-  getCollection: async () => contentState.posts
+  getCollection: async (collection: string) => collection === 'snippets' ? contentState.snippets : collection === 'plans' ? contentState.plans : contentState.posts
 }));
 
 vi.mock('astro:env/server', () => ({
@@ -34,6 +36,8 @@ import {
 
 afterEach(() => {
   contentState.posts = [];
+  contentState.snippets = [];
+  contentState.plans = [];
   configState.lockedPagePaths.splice(0);
   if (previousAdminKey === undefined) delete process.env.HATRIX_ADMIN_KEY;
   else process.env.HATRIX_ADMIN_KEY = previousAdminKey;
@@ -70,11 +74,36 @@ describe('protected page routes', () => {
       fixturePost('public', { locked: false })
     ];
 
-    expect(publicProtectedRoutes(posts)).toEqual([
+    expect(publicProtectedRoutes(posts, [])).toEqual([
       '/about/',
       '/posts/nested/path/',
       '/posts/private/'
     ]);
+  });
+
+  it('registers every snippet detail with the protected overview', async () => {
+    configState.lockedPagePaths.push('/snippets/');
+    contentState.snippets = [{ id: 'quiet-note' }, { id: 'another-note' }] as CollectionEntry<'snippets'>[];
+    process.env.HATRIX_ADMIN_KEY = 'test-admin';
+
+    const response = await GET({} as never);
+    const manifest = await response.json();
+
+    expect(manifest.routes).toEqual(['/snippets/', '/snippets/another-note/', '/snippets/quiet-note/']);
+  });
+
+  it('registers empty and populated plans as protected article routes', async () => {
+    configState.lockedPagePaths.push('/plans/');
+    contentState.plans = [
+      { id: '选购清单', body: '已有正文' },
+      { id: '作息规律', body: '' }
+    ] as CollectionEntry<'plans'>[];
+    process.env.HATRIX_ADMIN_KEY = 'test-admin';
+
+    const response = await GET({} as never);
+    const manifest = await response.json();
+
+    expect(manifest.routes).toEqual(['/plans/', planPath('作息规律'), planPath('选购清单')].sort());
   });
 
   it('publishes an inert manifest without requiring a key when no route is protected', async () => {

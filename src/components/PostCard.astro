@@ -1,40 +1,47 @@
 ---
 import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
 import readingTime from 'reading-time';
 import LockIndicator from '@/components/LockIndicator.astro';
 import type { PostEntry } from '@/lib/content';
+import { planPath } from '@/lib/plans';
 import { postPath } from '@/lib/urls';
 
-interface Props {
-  post: PostEntry;
+type Props = ({ post: PostEntry; plan?: never } | { plan: CollectionEntry<'plans'>; post?: never }) & {
   index?: number;
   total?: number;
-}
+};
 
-const { post, index = 0, total = 1 } = Astro.props;
-const href = postPath(post.data.legacySlug);
+const { post, plan, index = 0, total = 1 } = Astro.props;
+const href = post ? postPath(post.data.legacySlug) : planPath(plan!.id);
+const title = post?.data.title ?? plan!.data.title;
+const summary = post?.data.summary ?? plan!.data.summary;
+const pubDate = post?.data.pubDate ?? plan!.data.pubDate;
+const body = post ? post.body : plan!.body;
+const isLocked = Boolean(post?.data.locked);
 const isAboveFold = index < 2;
-const minutes = Math.max(1, Math.ceil(readingTime(post.body ?? '').minutes));
+const minutes = Math.max(1, Math.ceil(readingTime(body ?? '').minutes));
 const published = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
   month: '2-digit',
   day: '2-digit'
-}).format(post.data.pubDate);
+}).format(pubDate);
 const position = `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
-const coverProps = post.data.cover && !post.data.cover.startsWith('/')
-  ? { inferSize: true as const }
-  : { width: 1600, height: 900 };
+const coverProps = post?.data.cover?.startsWith('/')
+  ? { width: 1600, height: 900 }
+  : { width: 768, height: 404 };
 ---
 
 <article data-post-card class="post-card">
   <div class="post-card-media" aria-hidden="true">
     <Image
-      src={post.data.cover || '/assets/blog-cards/default-cover.webp'}
+      src={post?.data.cover || '/assets/blog-cards/default-cover.webp'}
       alt=""
       {...coverProps}
       layout="constrained"
-      widths={[480, 768, 1024, 1280, 1440]}
-      quality={90}
+      widths={[320, 480, 640, 768]}
+      sizes="(max-width: 720px) 275px, (max-width: 1050px) 320px, 353px"
+      quality={75}
       loading={isAboveFold ? "eager" : "lazy"}
       decoding={isAboveFold ? "sync" : "async"}
       fetchpriority={isAboveFold ? "high" : "auto"}
@@ -44,18 +51,18 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
   <div class="post-card-content">
     <div class="post-card-header">
       <span class="post-card-position" aria-label={`第 ${index + 1} 篇，共 ${total} 篇`}>{position}</span>
-      <time datetime={post.data.pubDate.toISOString()}>{published}</time>
+      <time datetime={pubDate.toISOString()}>{published}</time>
     </div>
     <div class="post-card-body">
       <h2>
-        <a href={href} data-locked-link={post.data.locked ? '' : undefined}>
-          {post.data.title}{post.data.locked && <LockIndicator />}
+        <a href={href} data-locked-link={isLocked ? '' : undefined}>
+          {title}{isLocked && <LockIndicator />}
         </a>
       </h2>
-      <p class="post-card-excerpt">{post.data.summary}</p>
+      <p class="post-card-excerpt">{summary}</p>
     </div>
     <div class="post-card-footer">
-      <span aria-label={`预计阅读 ${minutes} 分钟`}>{minutes} 分钟</span>
+      {plan && !plan.body?.trim() ? <span>正文待补充</span> : <span aria-label={`预计阅读 ${minutes} 分钟`}>{minutes} 分钟</span>}
       <svg class="post-card-terminal" width="72" height="20" viewBox="0 0 72 20" fill="none" aria-hidden="true" focusable="false">
         <path d="M1 16h35l7-7h16M17 4h42M43 9V4" stroke="var(--color-copper)" stroke-width="1.25" />
         <path d="M1 12h20M1 8h12" stroke="var(--color-copper)" stroke-width="1.25" opacity=".55" />
@@ -79,7 +86,7 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
 
   .post-card::before {
     position: absolute;
-    z-index: 0;
+    z-index: 2;
     inset: 0;
     background: url('/assets/blog-cards/desktop-frame.webp') center 45% / 100% auto no-repeat;
     content: '';
@@ -92,14 +99,15 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
 
   .post-card::after {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     top: 18%;
     bottom: 22%;
     left: 41.4%;
     width: 3px;
     background: linear-gradient(180deg, transparent, rgb(255 210 0 / 80%) 48%, transparent);
     content: '';
-    opacity: calc(var(--center-proximity, 0) * .7);
+    opacity: calc(var(--center-proximity, 0) * .7 + var(--dock-light, 0) * .3);
+    filter: brightness(calc(1 + var(--dock-light, 0) * .6));
     pointer-events: none;
   }
 
@@ -110,45 +118,30 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
 
   .post-card-clamp {
     position: absolute;
-    z-index: 3;
+    z-index: 4;
     top: 50%;
     width: clamp(56px, 7.2%, 80px);
     aspect-ratio: 971 / 798;
     background: url('/assets/blog-cards/locking-clamp.webp') center / contain no-repeat;
     filter: drop-shadow(0 5px 8px rgb(0 0 0 / 60%));
-    opacity: 0;
+    opacity: .9;
     pointer-events: none;
-    transition: opacity 120ms ease, transform 280ms var(--ease-out);
+    transition: opacity 120ms ease, filter 180ms var(--ease-out);
   }
 
   .post-card-clamp--left {
-    left: -12px;
-    transform: translate(-18px, -50%);
+    left: 12px;
+    transform: translate(-50%, -50%);
   }
 
   .post-card-clamp--right {
-    right: -12px;
-    transform: translate(18px, -50%) scaleX(-1);
+    right: 12px;
+    transform: translate(50%, -50%) scaleX(-1);
   }
 
-  .post-card[data-active='true'] .post-card-clamp--left {
+  .post-card[data-active='true'] .post-card-clamp {
     opacity: 1;
-    transform: translate(0, -50%);
-  }
-
-  .post-card[data-active='true'] .post-card-clamp--right {
-    opacity: 1;
-    transform: translate(0, -50%) scaleX(-1);
-  }
-
-  .post-card[data-active='true']::after {
-    animation: card-dock-light 460ms var(--ease-out);
-  }
-
-  @keyframes card-dock-light {
-    from { opacity: 0; filter: brightness(1); }
-    55% { opacity: 1; filter: brightness(1.6); }
-    to { opacity: .7; filter: brightness(1); }
+    filter: brightness(1.2) drop-shadow(0 5px 8px rgb(0 0 0 / 60%));
   }
 
   .post-card-media {
@@ -190,20 +183,90 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
   }
 
   .post-card-content {
+    --info-panel-bg: #1e3637ed;
+    --info-panel-active: #1e3637f5;
+    --info-panel-hover: #2c5656f5;
+    --info-panel-accent: #57decc;
+    --info-panel-signal: #87e1d5;
     position: absolute;
     z-index: 1;
-    inset: 10.5% 6.1% 20.5% 45.6%;
+    inset: 10.5% 5.4% 15.5% 44.1%;
     display: flex;
     min-width: 0;
     flex-direction: column;
-    padding: 0.8rem 1.4rem;
+    padding: 0.85rem 1.5rem;
     gap: 0.35rem;
     overflow: hidden;
+    isolation: isolate;
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+    background:
+      radial-gradient(circle at 84% 38%, rgb(87 222 204 / 14%), transparent 43%),
+      linear-gradient(115deg, rgb(239 225 204 / 5%), transparent 55%),
+      var(--info-panel-bg);
+    box-shadow:
+      inset 0 0 0 1px rgb(87 222 204 / 68%),
+      inset 0 0 0 4px rgb(6 12 20 / 42%),
+      inset 0 1px rgb(209 239 245 / 14%);
+    transition: background-color 160ms ease, box-shadow 160ms ease;
   }
 
   .post-card:nth-child(even) .post-card-content {
-    right: 45.6%;
-    left: 6.1%;
+    right: 44.1%;
+    left: 5.4%;
+  }
+
+  .post-card-content::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background:
+      linear-gradient(90deg, var(--info-panel-accent), var(--info-panel-accent)) 19px 11px / 104px 1px no-repeat,
+      linear-gradient(90deg, var(--info-panel-signal), transparent) calc(100% - 96px) 11px / 77px 1px no-repeat,
+      linear-gradient(180deg, transparent 0 49%, rgb(135 225 213 / 3.5%) 50%, transparent 51%) 0 0 / 100% 9px,
+      linear-gradient(90deg, transparent, rgb(87 222 204 / 7%), transparent);
+    content: '';
+    opacity: .9;
+    pointer-events: none;
+  }
+
+  .post-card-content::after {
+    position: absolute;
+    z-index: 0;
+    right: 14px;
+    bottom: 12px;
+    width: 9px;
+    height: 9px;
+    border-right: 1px solid var(--info-panel-signal);
+    border-bottom: 1px solid var(--info-panel-signal);
+    content: '';
+    opacity: .82;
+    pointer-events: none;
+  }
+
+  .post-card-content > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .post-card[data-active='true'] .post-card-content {
+    background:
+      radial-gradient(circle at 84% 38%, rgb(87 222 204 / 18%), transparent 43%),
+      linear-gradient(115deg, rgb(239 225 204 / 7%), transparent 55%),
+      var(--info-panel-active);
+    box-shadow:
+      inset 0 0 0 1px rgb(135 225 213 / 84%),
+      inset 0 0 0 4px rgb(6 12 20 / 42%),
+      inset 0 1px rgb(209 239 245 / 19%);
+  }
+
+  @media (hover: hover) {
+    .post-card[data-active='true']:hover .post-card-content {
+      background-color: var(--info-panel-hover);
+      box-shadow:
+        inset 0 0 0 1px var(--info-panel-accent),
+        inset 0 0 0 4px rgb(6 12 20 / 42%),
+        inset 0 1px rgb(209 239 245 / 24%);
+    }
   }
 
   .post-card-header,
@@ -219,14 +282,17 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
 
   .post-card-header {
     padding-bottom: 0.3rem;
-    border-bottom: 1px solid rgb(216 140 60 / 28%);
+    border-bottom: 1px solid rgb(87 222 204 / 42%);
   }
 
   .post-card-position {
-    color: var(--color-copper);
+    color: var(--info-panel-signal);
     font-family: var(--font-data);
     letter-spacing: 0.06em;
+    text-shadow: 0 0 8px rgb(87 222 204 / 24%);
   }
+
+  .post-card-header time { color: color-mix(in srgb, var(--info-panel-signal) 72%, white); }
 
   .post-card-body {
     display: grid;
@@ -245,13 +311,14 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 72%), 0 0 10px rgb(87 222 204 / 12%);
   }
 
   .post-card-excerpt {
     display: -webkit-box;
     margin: 0;
     overflow: hidden;
-    color: var(--color-muted);
+    color: color-mix(in srgb, var(--info-panel-signal) 42%, var(--color-text));
     font-size: 0.82rem;
     line-height: 1.5;
     -webkit-line-clamp: 2;
@@ -270,19 +337,15 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
     content: '';
   }
 
-  h2 a:hover {
-    color: var(--color-link);
-  }
-
   h2 a:focus-visible {
-    color: var(--color-link);
     outline: 2px solid var(--color-link);
     outline-offset: 3px;
   }
 
   .post-card-footer {
     padding-top: 0.3rem;
-    border-top: 1px solid rgb(216 140 60 / 28%);
+    border-top: 1px solid rgb(87 222 204 / 36%);
+    color: color-mix(in srgb, var(--info-panel-signal) 68%, var(--color-muted));
   }
 
   .post-card-terminal {
@@ -299,7 +362,7 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
 
   @media (max-width: 1050px) and (min-width: 721px) {
     .post-card-content {
-      padding: 0.2rem 0.9rem;
+      padding: 0.35rem 1rem;
       gap: 0;
     }
 
@@ -327,7 +390,7 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
 
   @media (max-width: 720px) {
     .post-card-clamp {
-      display: none;
+      width: clamp(30px, 10%, 38px);
     }
 
     .post-card::before {
@@ -363,9 +426,16 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
 
     .post-card-content,
     .post-card:nth-child(even) .post-card-content {
-      inset: 52% 11.8% 14.4%;
-      padding: 0.45rem 1.1rem;
+      inset: 52% 11.8% 10.5%;
+      padding: 0.52rem 1.05rem;
       gap: 0;
+    }
+
+    .post-card-content::before {
+      background:
+        linear-gradient(90deg, var(--info-panel-accent), var(--info-panel-accent)) 14px 8px / 54px 1px no-repeat,
+        linear-gradient(90deg, var(--info-panel-signal), transparent) calc(100% - 62px) 8px / 48px 1px no-repeat,
+        linear-gradient(180deg, transparent 0 49%, rgb(135 225 213 / 3.5%) 50%, transparent 51%) 0 0 / 100% 8px;
     }
 
     .post-card-header,
@@ -397,11 +467,11 @@ const coverProps = post.data.cover && !post.data.cover.startsWith('/')
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .post-card[data-active='true']::after {
-      animation: none;
+    .post-card-clamp {
+      transition: none;
     }
 
-    .post-card-clamp {
+    .post-card-content {
       transition: none;
     }
   }

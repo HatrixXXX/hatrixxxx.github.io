@@ -25,19 +25,30 @@ if (locked) {
   locked ? (
     <section data-protected-gate data-protected-route={normalizedRoute}>
       <form data-unlock-form>
+        <div class="unlock-console-crown" aria-hidden="true">
+          <img
+            src="/assets/protected-gate/lock-core-crown.webp"
+            width="960"
+            height="237"
+            alt=""
+            decoding="async"
+          />
+        </div>
         <h2>{title}需要管理员权限</h2>
         <label>
           管理员 key
           <input name="key" type="password" autocomplete="off" required disabled />
         </label>
-        <label>
-          <input name="showKey" type="checkbox" disabled />
-          显示 key
-        </label>
-        <label>
-          <input name="remember" type="checkbox" disabled />
-          7 天免解锁
-        </label>
+        <div class="unlock-options">
+          <label>
+            <input name="showKey" type="checkbox" disabled />
+            显示 key
+          </label>
+          <label>
+            <input name="remember" type="checkbox" disabled />
+            7 天免解锁
+          </label>
+        </div>
         <button type="submit" disabled>解锁</button>
         <p aria-live="polite" data-unlock-status></p>
         <noscript><p>解锁加密内容需要启用 JavaScript。</p></noscript>

@@ -2,9 +2,12 @@ import { readFile, realpath } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createMarkdownProcessor, type RemarkPlugin } from '@astrojs/markdown-remark';
+import type { CollectionEntry } from 'astro:content';
 import { siteMarkdownConfig } from '../../config/markdown';
 import { contentRoot } from '../content-root';
 import type { PostEntry } from '../content';
+import { snippetRoot } from '../snippet-root';
+import { planRoot } from '../plan-root';
 import { base64url, utf8 } from './encoding';
 
 export interface ProtectedAsset {
@@ -27,9 +30,12 @@ interface ProtectedImageContext {
   postId: string;
   postPath: string;
   contentRoot: string;
+  collection: 'posts' | 'snippets' | 'plans';
   key: CryptoKey;
   assets: Map<string, ProtectedAsset>;
 }
+
+type ProtectedEntry = PostEntry | CollectionEntry<'snippets'> | CollectionEntry<'plans'>;
 
 const TRANSPARENT_PIXEL =
   'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -56,7 +62,7 @@ function pathIsWithin(root: string, candidate: string): boolean {
   return child === '' || (!child.startsWith(`..${sep}`) && child !== '..' && !isAbsolute(child));
 }
 
-async function sourceContext(post: PostEntry): Promise<{ postPath: string; contentRoot: string }> {
+async function sourceContext(post: ProtectedEntry): Promise<{ postPath: string; contentRoot: string }> {
   if (!post.filePath) {
     throw protectedContentError(post.id, '缺少源文件路径，无法保护正文图片。');
   }
@@ -72,7 +78,10 @@ async function sourceContext(post: PostEntry): Promise<{ postPath: string; conte
   }
 
   try {
-    const canonicalRoot = await realpath(contentRoot('posts'));
+    const canonicalRoot = await realpath(
+      post.collection === 'snippets' ? snippetRoot('snippets') :
+      post.collection === 'plans' ? planRoot('plans') : contentRoot('posts')
+    );
     if (pathIsWithin(canonicalRoot, postPath)) {
       return { postPath, contentRoot: canonicalRoot };
     }
@@ -121,7 +130,7 @@ async function protectImage(reference: string, context: ProtectedImageContext): 
     throw protectedContentError(context.postId, '包含不支持的正文图片格式。');
   }
 
-  const stablePath = relative(context.contentRoot, sourcePath).split(sep).join('/');
+  const stablePath = `${context.collection}/${relative(context.contentRoot, sourcePath).split(sep).join('/')}`;
   const sourceDigest = base64url(new Uint8Array(
     await crypto.subtle.digest('SHA-256', new Uint8Array(await readFile(sourcePath)))
   ));
@@ -184,7 +193,7 @@ function protectedImages(context: ProtectedImageContext): RemarkPlugin {
 }
 
 export async function renderProtectedMarkdown(
-  post: PostEntry,
+  post: ProtectedEntry,
   keyBytes: Uint8Array
 ): Promise<{ html: string; assets: ProtectedAsset[] }> {
   if (post.body === undefined) {
@@ -202,7 +211,7 @@ export async function renderProtectedMarkdown(
   const assets = new Map<string, ProtectedAsset>();
   const processor = await createMarkdownProcessor({
     ...siteMarkdownConfig,
-    remarkPlugins: [protectedImages({ ...source, postId: post.id, key, assets }), ...siteMarkdownConfig.remarkPlugins]
+    remarkPlugins: [protectedImages({ ...source, postId: post.id, collection: post.collection, key, assets }), ...siteMarkdownConfig.remarkPlugins]
   });
   const rendered = await processor.render(post.body, { fileURL: pathToFileURL(source.postPath) });
 
@@ -210,13 +219,13 @@ export async function renderProtectedMarkdown(
 }
 
 export async function collectProtectedAssets(
-  posts: PostEntry[],
+  posts: ProtectedEntry[],
   keyBytes: Uint8Array
 ): Promise<ProtectedAsset[]> {
   const assets = new Map<string, ProtectedAsset>();
 
   for (const post of posts) {
-    if (!post.data.locked) continue;
+    if (post.collection === 'posts' && !post.data.locked) continue;
     for (const asset of (await renderProtectedMarkdown(post, keyBytes)).assets) {
       const existing = assets.get(asset.id);
       if (existing && (existing.sourcePath !== asset.sourcePath || existing.mediaType !== asset.mediaType)) {

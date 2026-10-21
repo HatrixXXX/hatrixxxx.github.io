@@ -84,6 +84,37 @@ test('opening settings hides and disables the three comment controls until close
   await expect(actions).not.toHaveAttribute('inert', '');
 });
 
+test('article comment controls stay in place while refreshing', async ({ page }) => {
+  await page.goto('/posts/Infra-线性代数/');
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
+  const actions = page.locator('.tk-comments-actions');
+  await actions.locator('[data-mock-action="refresh"]').click();
+  await expect(actions).toHaveAttribute('data-mock-loading', '');
+  await expect(actions.locator('[data-twikoo-loading-control="search"]')).toBeVisible();
+  await expect(actions.locator('[data-twikoo-loading-control="refresh"]')).toBeVisible();
+  await expect(actions.locator('[data-twikoo-loading-control]')).toHaveCount(0);
+  await expect(actions.locator('[data-mock-action="search"]')).toBeVisible();
+  await expect(actions.locator('[data-mock-action="refresh"]')).toBeVisible();
+});
+
+test('article settings hide comment controls and restore focus on close', async ({ page }) => {
+  await page.goto('/posts/Infra-线性代数/');
+  await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
+  const actions = page.locator('.tk-comments-actions');
+  const settings = actions.locator('[data-mock-action="settings"]');
+  await settings.focus();
+  await settings.press('Enter');
+  await expect(page.locator('.tk-admin')).toHaveClass(/__show/);
+  await expect(actions).toBeHidden();
+  await expect(actions).toHaveAttribute('inert', '');
+  const close = page.locator('.tk-admin-close');
+  await expect(close).toBeFocused();
+  await close.press('Enter');
+  await expect(actions).toBeVisible();
+  await expect(actions).not.toHaveAttribute('inert', '');
+  await expect(settings).toBeFocused();
+});
+
 test('settings returns keyboard focus when its panel closes', async ({ page }) => {
   const settings = page.locator('.tk-comments-actions').getByRole('button', { name: '设置' });
   await settings.focus();

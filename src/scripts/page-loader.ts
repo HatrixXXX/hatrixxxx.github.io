@@ -1,3 +1,6 @@
+import { waitForImages } from '@/lib/image-readiness';
+import { animate, createTimeline, cubicBezier, waapi } from 'animejs';
+
 /**
  * 全站页面加载遮罩（page-loader.ts）
  *
@@ -8,10 +11,9 @@
  *
  * 触发规则
  * --------
- * - 首次硬导航到同会话内未访问过的页面显示圆环加载器。
- * - 同源 HTML 客户端跳转每次显示左右双瓣遮罩。
+ * - 直接打开或刷新页面时显示圆环加载器。
+ * - 跨页面同源 HTML 客户端跳转显示左右双瓣遮罩。
  * - 外部链接、非 HTML 目标（/rss.xml 等）不触发。
- * - 硬导航的访问记录存 sessionStorage，关标签重置。
  *
  * 时序
  * ----
@@ -20,7 +22,7 @@
  *   闭合完成后交换页面；背景或首页资源就绪后两瓣展开
  *   导航中断时由 abort signal 收回遮罩
  *
- * 硬导航首次访问:
+ * 硬导航:
  *   astro:page-load → showLoader() + 快速跑满 → complete()
  *
  * 硬导航首页:
@@ -35,23 +37,9 @@
  *   wait for readiness or a real load error before the homepage is revealed.
  */
 
-const VISITED_KEY = 'hatrix-visited-pages';
 const HOME_DEADLINE_MS = 8_000;
 const SHUTTER_CLOSE_FALLBACK_MS = 540;
-
-// ── 访问记录 ──────────────────────────────────────────────────────────────────
-
-function getVisited(): string[] {
-  try { return JSON.parse(sessionStorage.getItem(VISITED_KEY) ?? '[]') as string[]; }
-  catch { return []; }
-}
-function markVisited(path: string): void {
-  try {
-    const v = getVisited();
-    if (!v.includes(path)) { v.push(path); sessionStorage.setItem(VISITED_KEY, JSON.stringify(v)); }
-  } catch { /* noop */ }
-}
-function hasVisited(path: string): boolean { return getVisited().includes(path); }
+const PAGE_READINESS_FAILURE_MS = 15_000;
 
 /** 判断目标是否是应该显示加载页的同源 HTML 页面 */
 function isSameOriginPage(url: URL): boolean {
@@ -97,7 +85,11 @@ interface State {
   numEl:    HTMLElement | null;
   mode:     'initial' | 'transition';
   progress: number;
-  raf:      number;
+  progressMotion?: ReturnType<typeof animate>;
+  shutterMotion?: ReturnType<typeof createTimeline>;
+  openingMotion?: ReturnType<typeof waapi.animate>[];
+  shutterClosed?: boolean;
+  cleanup?: () => void;
   finished: boolean;
 }
 
@@ -107,7 +99,7 @@ function buildState(el: HTMLElement, mode: State['mode']): State {
     arcs:  Array.from(el.querySelectorAll<SVGCircleElement>('.pl-arc')),
     numEl: el.querySelector<HTMLElement>('.pl-pct-num'),
     mode,
-    progress: 0, raf: 0, finished: false,
+    progress: 0, finished: false,
   };
 }
 
@@ -120,20 +112,41 @@ function applyPct(s: State, pct: number): void {
 
 /** ease-out cubic 假进度推到 target */
 function fakeProgress(s: State, target: number, ms = 2400): void {
-  const from = s.progress;
-  const t0   = performance.now();
-  const tick = (now: number): void => {
-    if (s.finished) return;
-    const t = Math.min((now - t0) / ms, 1);
-    applyPct(s, from + (target - from) * (1 - (1 - t) ** 3));
-    if (t < 1) s.raf = requestAnimationFrame(tick);
-  };
-  s.raf = requestAnimationFrame(tick);
+  s.progressMotion?.cancel();
+  const value = { pct: s.progress };
+  s.progressMotion = animate(value, {
+    pct: target,
+    duration: ms,
+    ease: 'out(3)',
+    onUpdate: () => { if (!s.finished) applyPct(s, value.pct); },
+  });
 }
 
 // ── Show / Complete ───────────────────────────────────────────────────────────
 
 let activeLoader: State | null = null;
+
+function closeShutter(s: State): ReturnType<typeof createTimeline> | undefined {
+  const left = s.el.querySelector<HTMLElement>('.pl-shutter-leaf--left');
+  const right = s.el.querySelector<HTMLElement>('.pl-shutter-leaf--right');
+  if (!left || !right) return;
+  const ease = cubicBezier(.65, 0, .25, 1);
+  const motion = createTimeline({ autoplay: false })
+    .sync(waapi.animate(left, {
+      transform: ['translateX(-50%)', 'translateX(0)'],
+      duration: 460,
+      ease,
+      autoplay: false,
+    }), 0)
+    .sync(waapi.animate(right, {
+      transform: ['translateX(50%)', 'translateX(0)'],
+      duration: 460,
+      ease,
+      autoplay: false,
+    }), 0);
+  motion.play();
+  return motion;
+}
 
 function showLoader(mode: State['mode'] = 'initial'): State | null {
   const el = document.getElementById('page-loader');
@@ -143,50 +156,75 @@ function showLoader(mode: State['mode'] = 'initial'): State | null {
   el.classList.add('pl-visible');
   if (mode === 'transition') {
     el.classList.add('pl-transition');
-    void el.offsetWidth;
     el.classList.add('pl-closed');
   }
   delete document.documentElement.dataset.initialPageLoader;
   const s = buildState(el, mode);
   activeLoader = s;
   applyPct(s, 0);
+  if (mode === 'transition' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    s.shutterMotion = closeShutter(s);
+  }
   return s;
 }
 
 function waitForShutterClose(s: State): Promise<void> {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
-  const leaf = s.el.querySelector<HTMLElement>('.pl-shutter-leaf--left');
-  if (!leaf) return Promise.resolve();
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    s.shutterClosed = true;
+    return Promise.resolve();
+  }
+  const shutterMotion = s.shutterMotion;
+  if (!shutterMotion) return Promise.resolve();
   return new Promise((resolve) => {
     const finish = () => {
-      leaf.removeEventListener('transitionend', onEnd);
       window.clearTimeout(fallback);
+      s.shutterClosed = true;
       resolve();
     };
-    const onEnd = (event: TransitionEvent) => {
-      if (event.target === leaf && event.propertyName === 'transform') finish();
-    };
-    const fallback = window.setTimeout(finish, SHUTTER_CLOSE_FALLBACK_MS);
-    leaf.addEventListener('transitionend', onEnd);
+    const fallback = window.setTimeout(() => {
+      shutterMotion.complete();
+      finish();
+    }, SHUTTER_CLOSE_FALLBACK_MS);
+    void shutterMotion.then(finish);
   });
 }
 
 function complete(s: State): void {
   if (s.finished || activeLoader !== s) return;
   s.finished = true;
-  cancelAnimationFrame(s.raf);
+  s.progressMotion?.cancel();
   applyPct(s, 100);
   s.el.classList.add('pl-done');
   const cleanup = (): void => {
     if (activeLoader !== s) return;
+    s.shutterMotion?.revert();
+    s.openingMotion?.forEach((motion) => motion.revert());
+    s.cleanup = undefined;
     activeLoader = null;
     delete document.documentElement.dataset.initialPageLoader;
     delete document.documentElement.dataset.initialPageLoaderStartedAt;
     s.el.classList.remove('pl-visible', 'pl-done', 'pl-transition', 'pl-closed');
     s.el.innerHTML = '';
   };
-  if (s.mode === 'transition' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    window.setTimeout(cleanup, 0);
+  s.cleanup = cleanup;
+  if (s.mode === 'transition') {
+    if (document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.setTimeout(cleanup, 0);
+      return;
+    }
+    const leaves = [...s.el.querySelectorAll<HTMLElement>('.pl-shutter-leaf')];
+    const transforms = s.shutterClosed
+      ? ['translateX(0)', 'translateX(0)'] as const
+      : leaves.map((leaf) => getComputedStyle(leaf).transform) as [string, string];
+    s.shutterMotion?.revert();
+    leaves.forEach((leaf, index) => { leaf.style.transform = transforms[index]; });
+    s.openingMotion = leaves.map((leaf, index) => waapi.animate(leaf, {
+      transform: [transforms[index], index === 0 ? 'translateX(-50%)' : 'translateX(50%)'],
+      duration: 460,
+      ease: cubicBezier(.65, 0, .25, 1),
+    }));
+    void Promise.all(s.openingMotion.map((motion) => motion.then())).then(cleanup);
+    window.setTimeout(cleanup, 700);
     return;
   }
   s.el.addEventListener('transitionend', cleanup, { once: true });
@@ -224,6 +262,43 @@ function waitForBackground(isHome: boolean): Promise<boolean> {
   return probe.decode().then(() => true, () => false);
 }
 
+function isInFirstView(element: HTMLElement): boolean {
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0
+    && rect.right > 0 && rect.bottom > 0
+    && rect.left < window.innerWidth && rect.top < window.innerHeight
+    && getComputedStyle(element).visibility === 'visible';
+}
+
+async function waitForPageArtwork(signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return;
+  const images = [...document.images].filter((image) => isInFirstView(image));
+  const backgrounds = new Set<string>();
+  for (const element of [document.body, ...document.body.querySelectorAll('*')]) {
+    if (!(element instanceof HTMLElement) || !isInFirstView(element)) continue;
+    for (const pseudo of [null, '::before', '::after']) {
+      const value = getComputedStyle(element, pseudo).backgroundImage;
+      for (const match of value.matchAll(/url\((?:"([^"]*)"|'([^']*)'|([^)]*))\)/g)) {
+        const src = (match[1] ?? match[2] ?? match[3]).trim();
+        if (src && !src.startsWith('data:')) backgrounds.add(new URL(src, location.href).href);
+      }
+    }
+  }
+  const artwork = Promise.all([
+    waitForImages(images, undefined, signal),
+    ...[...backgrounds].map(async (src) => {
+      if (signal.aborted) return;
+      const probe = new Image();
+      probe.src = src;
+      try { await probe.decode(); } catch { /* A failed image cannot delay the reveal. */ }
+    }),
+  ]);
+  await Promise.race([
+    artwork,
+    new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true })),
+  ]);
+}
+
 function getRemainingHomeDeadline(): number {
   const startedAt = Number(document.documentElement.dataset.initialPageLoaderStartedAt);
   if (!Number.isFinite(startedAt)) return HOME_DEADLINE_MS;
@@ -243,7 +318,7 @@ function waitHomeDone(s: State): void {
     settled = true;
     window.clearTimeout(guard);
     controller.abort();
-    cancelAnimationFrame(s.raf);
+    s.progressMotion?.cancel();
     if (resetOverlay) {
       s.finished = true;
       if (activeLoader === s) activeLoader = null;
@@ -270,6 +345,7 @@ function waitHomeDone(s: State): void {
   void Promise.all([
     waitForBackground(true),
     document.fonts?.ready ?? Promise.resolve(),
+    waitForPageArtwork(controller.signal),
     waitForState(rig, 'characterState', ['ready', 'error'], 'hatrix:character-state', controller.signal),
     Promise.race([
       waitForState(player, 'layoutState', ['ready'], 'hatrix:player-layout-ready', controller.signal),
@@ -283,6 +359,7 @@ function waitHomeDone(s: State): void {
 let pending: State | null = null;
 let initialHomeBootstrapped = false;
 let pageBackgroundWait = 0;
+let pageReadinessController: AbortController | null = null;
 const portalArtworkPromises = new WeakMap<HTMLElement, Promise<void>>();
 
 function waitForPortalArtwork(): Promise<void> {
@@ -334,14 +411,104 @@ function waitForLabScene(): Promise<void> {
   });
 }
 
+function waitForToolboxCubes(signal: AbortSignal): Promise<void> {
+  if (!document.body.classList.contains('software-page')) return Promise.resolve();
+  const root = document.querySelector<HTMLElement>('[data-tool-cube]');
+  if (!root) return Promise.resolve();
+  const settled = () => root.dataset.cubeReady !== undefined
+    || root.dataset.cubeError !== undefined
+    || root.dataset.cubeUnavailable !== undefined;
+  if (settled()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => { if (settled()) finish(); });
+    const finish = () => {
+      observer.disconnect();
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    signal.addEventListener('abort', finish, { once: true });
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['data-cube-ready', 'data-cube-error', 'data-cube-unavailable']
+    });
+    if (settled() || signal.aborted) finish();
+  });
+}
+
+function waitForGuestbook(signal: AbortSignal): Promise<void> {
+  const section = document.querySelector<HTMLElement>('[data-twikoo-variant="guestbook"]');
+  if (!section) return Promise.resolve();
+  const isReady = () => ['ready', 'error', 'unconfigured'].includes(section.dataset.twikooState ?? '');
+  if (isReady()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => { if (isReady()) finish(); });
+    const finish = () => {
+      observer.disconnect();
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    signal.addEventListener('abort', finish, { once: true });
+    observer.observe(section, { attributes: true, attributeFilter: ['data-twikoo-state'] });
+    if (isReady() || signal.aborted) finish();
+  });
+}
+
+function waitForProtectedGate(signal: AbortSignal): Promise<void> {
+  const gate = document.querySelector<HTMLElement>('[data-protected-gate]');
+  if (!gate) return Promise.resolve();
+  const key = gate.querySelector<HTMLInputElement>('input[name="key"]');
+  const status = gate.querySelector<HTMLElement>('[data-unlock-status]');
+  const settled = () => gate.dataset.protectedState === 'ready'
+    || key?.disabled === false
+    || Boolean(status?.textContent && status.textContent !== '正在验证…');
+  if (settled()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => { if (settled()) finish(); });
+    const finish = () => {
+      observer.disconnect();
+      window.clearTimeout(timeout);
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    const timeout = window.setTimeout(finish, 10_000);
+    signal.addEventListener('abort', finish, { once: true });
+    observer.observe(gate, { attributes: true, childList: true, characterData: true, subtree: true });
+    if (settled() || signal.aborted) finish();
+  });
+}
+
 function waitPageBackgroundDone(s: State, background: Promise<boolean>, minimumMs = 0): void {
   const wait = ++pageBackgroundWait;
+  pageReadinessController?.abort();
+  const controller = new AbortController();
+  pageReadinessController = controller;
   fakeProgress(s, 85);
   const portalArtwork = document.body.classList.contains('friends-page')
     ? waitForPortalArtwork()
     : Promise.resolve();
-  void Promise.all([background, portalArtwork, waitForLabScene(), new Promise((resolve) => window.setTimeout(resolve, minimumMs))]).then(() => {
+  const readiness = Promise.all([
+    background,
+    portalArtwork,
+    waitForLabScene(),
+    waitForToolboxCubes(controller.signal),
+    waitForGuestbook(controller.signal),
+    waitForProtectedGate(controller.signal),
+    new Promise((resolve) => window.setTimeout(resolve, minimumMs)),
+  ]).then(async () => {
+    await Promise.all([document.fonts?.ready ?? Promise.resolve(), waitForPageArtwork(controller.signal)]);
+  });
+  let deadline = 0;
+  const failure = new Promise<void>((resolve) => {
+    deadline = window.setTimeout(resolve, PAGE_READINESS_FAILURE_MS);
+  });
+  const canceled = new Promise<void>((resolve) => {
+    controller.signal.addEventListener('abort', () => resolve(), { once: true });
+  });
+  void Promise.race([readiness, failure, canceled]).then(() => {
+    window.clearTimeout(deadline);
+    controller.abort();
     if (wait === pageBackgroundWait) complete(s);
+    if (pageReadinessController === controller) pageReadinessController = null;
   });
 }
 
@@ -359,8 +526,9 @@ function drainPending(): void {
 document.addEventListener('astro:before-preparation', (raw) => {
   const event = raw as unknown as { to?: URL; loader?: () => Promise<void>; signal?: AbortSignal };
   const to = event.to;
-  const replacesOverlay = !!to && isSameOriginPage(to);
+  const replacesOverlay = !!to && to.pathname !== location.pathname && isSameOriginPage(to);
   cancelHomeWait?.(!replacesOverlay);
+  pageReadinessController?.abort();
   if (!to || !replacesOverlay) return;
   const s = showLoader('transition');
   if (!s) return;
@@ -401,7 +569,6 @@ window.addEventListener('pagehide', () => cancelHomeWait?.(true));
 // ── page-load：页面激活 ──────────────────────────────────────────────────────
 
 function onPageLoad(): void {
-  const path   = location.pathname;
   const isHome = document.documentElement.dataset.pageKind === 'home';
   const body = document.body;
   const background = !isHome
@@ -415,7 +582,6 @@ function onPageLoad(): void {
     // VT 导航完成，消费 pending
     const s = pending;
     pending = null;
-    markVisited(path);
     if (isHome) { waitHomeDone(s); } else { waitPageBackgroundDone(s, background!); }
     return;
   }
@@ -425,16 +591,14 @@ function onPageLoad(): void {
   if (document.documentElement.dataset.initialPageLoader === 'expired') {
     delete document.documentElement.dataset.initialPageLoader;
     delete document.documentElement.dataset.initialPageLoaderStartedAt;
-    markVisited(path);
     return;
   }
 
-  // 硬导航：已访问则跳过
-  if (hasVisited(path)) return;
+  // 硬导航由 head 内联标记触发；客户端导航只消费上面的 pending。
+  if (document.documentElement.dataset.initialPageLoader !== 'visible') return;
 
   const s = showLoader();
   if (!s) return;
-  markVisited(path);
 
   if (isHome) {
     fakeProgress(s, 85);
@@ -470,7 +634,20 @@ document.addEventListener('astro:page-load', () => {
 // before-preparation 触发了（pending 被设置），但 page-load 从未触发，
 // 页面重新可见时 pending 仍然悬空。
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') drainPending();
+  if (document.hidden) {
+    if (activeLoader?.mode === 'transition') {
+      if (activeLoader.finished) activeLoader.cleanup?.();
+      else activeLoader.shutterMotion?.complete();
+    }
+  } else {
+    drainPending();
+  }
+});
+const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+motionPreference.addEventListener('change', () => {
+  if (!motionPreference.matches || activeLoader?.mode !== 'transition') return;
+  if (activeLoader.finished) activeLoader.cleanup?.();
+  else activeLoader.shutterMotion?.complete();
 });
 window.addEventListener('pageshow', (e) => {
   // bfcache 恢复时 e.persisted === true

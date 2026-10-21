@@ -1,19 +1,38 @@
 ---
+import { getCollection } from 'astro:content';
+import PostList from '@/components/PostList.astro';
 import BackButton from '@/components/BackButton.astro';
-import EmptyState from '@/components/EmptyState.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { sortPlans } from '@/lib/plans';
+
+const plans = sortPlans(await getCollection('plans'));
 ---
 
-<BaseLayout title="计划" bodyClass="nav-content-page plain-page">
-  <BackButton href="/" label="返回主页" />
-  <main class="plans-main container">
-    <EmptyState title="暂时没有公开的计划" />
+<BaseLayout title="计划" bodyClass="plans-page plain-page">
+  <BackButton href="/" label="返回主页" cornerAligned={true} />
+  <main class="blog-main">
+    {plans.length > 0 ? <PostList plans={plans} /> : <p class="empty-state">暂无计划文章。</p>}
   </main>
 </BaseLayout>
 
 <style>
-  .plans-main {
-    max-width: 920px;
-    padding-block: clamp(2.5rem, 6vw, 5rem);
+  :global(body.plans-page) { --blog-header-height: 60px; }
+  :global(body.plans-page:has([data-protected-state='ready'])) { overflow: hidden; }
+  :global(body.plans-page [data-protected-mount] > main.blog-main) {
+    height: 100dvh;
+    padding-top: var(--blog-header-height);
+  }
+
+  .blog-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .empty-state {
+    margin: auto;
+    color: var(--color-muted);
+    text-align: center;
   }
 </style>

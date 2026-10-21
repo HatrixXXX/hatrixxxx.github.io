@@ -1,0 +1,43 @@
+About page game covers
+======================
+
+The cover images identify the games listed by the site owner. They remain the
+property of their respective publishers and are used here only as small cover
+art thumbnails on a non-commercial personal profile page.
+
+Steam library covers (retrieved 2026-10-16)
+------------------------------------------------
+
+Hades
+Source page: https://store.steampowered.com/app/1145360/Hades/
+Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/1145360/library_600x900_2x.jpg
+Local file: hades.webp
+
+Kingdom Rush
+Source page: https://store.steampowered.com/app/2849080/Kingdom_Rush_5_Alliance_TD/
+Image source: https://shared.steamstatic.com/store_item_assets/steam/apps/2849080/library_600x900_2x.jpg
+Local file: kingdom-rush.webp
+
+9 Kings
+Source page: https://store.steampowered.com/app/2784470/9_Kings/
+Image source: https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2784470/92a7f2f1164eb5f566a7c87f2eb4b6fa558aeac0/library_600x900_schinese_2x.jpg
+Local file: nine-kings.webp
+
+Dead Cells
+Source page: https://store.steampowered.com/app/588650/Dead_Cells/
+Image source: https://cdn.cloudflare.steamstatic.com/steam/apps/588650/library_600x900_2x.jpg
+Local file: dead-cells.webp
+
+Turing Complete
+Source page: https://store.steampowered.com/app/1444480/Turing_Complete/
+Image source: https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1444480/bf109d83c8dfb406bb149423bc684fcbeedaeb8a/library_capsule_2x.jpg
+Local file: turing-complete.webp
+
+Hearthstone cover (provided by the site owner 2026-10-16)
+---------------------------------------------------------
+
+Source image: 694959713c18363adb9ab6371d6399ca.jpg (1024 x 1440)
+Local file: hearthstone.webp
+
+The provided image was cropped to the existing 2:3 cover ratio. All six local
+thumbnails are encoded as 480 x 720 WebP files.

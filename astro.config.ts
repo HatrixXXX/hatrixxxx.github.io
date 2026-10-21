@@ -2,12 +2,16 @@ import { defineConfig } from 'astro/config';
 import type { AstroIntegration } from 'astro';
 import sitemap from '@astrojs/sitemap';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import matter from 'gray-matter';
 import { siteMarkdownConfig } from './src/config/markdown';
 import { LOCKED_PAGE_PATHS, normalizeRoutePath } from './src/config/protected-content';
 import { contentRoot } from './src/lib/content-root';
 import { postPath } from './src/lib/urls';
+import { snippetRoot } from './src/lib/snippet-root';
+import { snippetIdFromFile, snippetPath } from './src/lib/snippets';
+import { planRoot } from './src/lib/plan-root';
+import { planPath } from './src/lib/plans';
 
 function markdownFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -25,11 +29,24 @@ function sitemapExcludedRoutes(): Set<string> {
   ];
   const routes = new Set([...LOCKED_PAGE_PATHS, ...legacyRedirectPaths].map(normalizeRoutePath));
 
-  if (!existsSync(postsRoot)) return routes;
-  for (const file of markdownFiles(postsRoot)) {
-    const { data } = matter(readFileSync(file, 'utf8'));
-    if (data.locked === true && typeof data.legacySlug === 'string') {
-      routes.add(normalizeRoutePath(postPath(data.legacySlug)));
+  if (existsSync(postsRoot)) {
+    for (const file of markdownFiles(postsRoot)) {
+      const { data } = matter(readFileSync(file, 'utf8'));
+      if (data.locked === true && typeof data.legacySlug === 'string') {
+        routes.add(normalizeRoutePath(postPath(data.legacySlug)));
+      }
+    }
+  }
+  const snippetsRoot = snippetRoot('snippets');
+  if (existsSync(snippetsRoot)) {
+    for (const file of markdownFiles(snippetsRoot)) {
+      routes.add(normalizeRoutePath(snippetPath(snippetIdFromFile(basename(file)))));
+    }
+  }
+  const plansRoot = planRoot('plans');
+  if (existsSync(plansRoot)) {
+    for (const file of markdownFiles(plansRoot)) {
+      routes.add(normalizeRoutePath(planPath(basename(file).replace(/\.md$/i, ''))));
     }
   }
   return routes;
@@ -91,6 +108,8 @@ export default defineConfig({
     ]
   },
   vite: {
+    // Concurrent local dev servers must not overwrite one another's optimized deps.
+    cacheDir: `node_modules/.vite-${process.pid}`,
     optimizeDeps: { include: ['mermaid', 'sakana'] },
     build: {
       rollupOptions: {

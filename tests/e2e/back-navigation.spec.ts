@@ -21,27 +21,26 @@ for (const { route, href, label } of [
   });
 }
 
-test('/creation/ keeps the book as its only local control surface', async ({ page }) => {
+test('/creation/ keeps its return action in the header', async ({ page }) => {
   await page.goto('/creation/');
-  await expect(page.locator('[data-back-button]')).toHaveCount(0);
+  await expect(page.locator('[data-back-button]')).toHaveAttribute('href', '/');
   await expect(page.locator('header[data-site-header] .desktop-nav a[href="/"]')).toBeVisible();
 });
 
-test('back button stays at the same top-left position on desktop and mobile', async ({ page }) => {
-  const positions: Array<{ x: number; y: number }> = [];
+test('back button mirrors the search control at both edges of the header', async ({ page }) => {
   for (const viewport of [
     { width: 1440, height: 900 },
     { width: 390, height: 844 }
   ]) {
     await page.setViewportSize(viewport);
     await page.goto('/blogs/');
-    const box = await page.locator('[data-back-button]').boundingBox();
-    if (!box) throw new Error('Missing back button bounds');
-    positions.push({ x: Math.round(box.x), y: Math.round(box.y) });
+    const back = await page.locator('[data-back-button]').boundingBox();
+    const search = await page.locator('[data-open-search]').boundingBox();
+    const header = await page.locator('[data-site-header]').boundingBox();
+    if (!back || !search || !header) throw new Error('Missing header control bounds');
+    expect(Math.round(back.x)).toBe(Math.round(viewport.width - search.x - search.width));
+    expect(Math.round(back.y)).toBe(Math.round(search.y));
+    expect(Math.round(back.width)).toBe(Math.round(search.width));
+    expect(back.y + back.height).toBeLessThanOrEqual(header.y + header.height);
   }
-
-  expect(positions).toEqual([
-    { x: 40, y: 64 },
-    { x: 20, y: 53 }
-  ]);
 });

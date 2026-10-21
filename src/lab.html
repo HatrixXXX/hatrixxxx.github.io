@@ -3887,7 +3887,7 @@ void main() {
   const reduceQuery=matchMedia('(prefers-reduced-motion: reduce)');let reduced=reduceQuery.matches,disposed=false;
   controls.enableDamping=!reduced;
   const P={dark:0x241d32,deep:0x181423,case:0x504159,lilac:0x74607f,light:0xa68c9d,cream:0xa39780,edge:0x241d2e,metal:0x463b52,amber:0xffbd16,teal:0x00dbc0,brass:0x9a7950,orange:0xb86606,gold:0xd9a43b};
-  const meshes=[],targets=[],screens=[],motion=[],wallParts=[],geometries=new Map(),materials=new Map(),textures=[];
+  const meshes=[],targets=[],screens=[],motion=[],geometries=new Map(),materials=new Map(),textures=[];
   const v=(x,y,z)=>new T.Vector3(x,y,z);
   let seed=198607;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
   function cv(w=512,h=512){const c=document.createElement('canvas');c.width=w;c.height=h;return[c,c.getContext('2d')]}
@@ -4014,13 +4014,7 @@ void main() {
     for(let i=0;i<260;i++){const edge=i%4,x=edge===0?rand()*22:edge===1?1000+rand()*24:rand()*1024,y=edge===2?rand()*24:edge===3?1000+rand()*24:rand()*1024;q.fillStyle='#48343f';q.beginPath();q.moveTo(x,y);for(let k=0;k<6;k++)q.lineTo(x+(rand()-.5)*40,y+(rand()-.5)*16);q.fill()}
     for(let i=0;i<200;i++){let x=rand()*1024,y=rand()*1024;q.strokeStyle=i%3?'rgba(48,28,37,.24)':'rgba(255,221,151,.19)';q.lineWidth=rand()*1.2+.4;q.beginPath();q.moveTo(x,y);q.lineTo(x+rand()*45+3,y+rand()*4);q.stroke()}
     q.strokeStyle='#6d4828';q.lineWidth=2;q.strokeRect(30,30,964,964);q.fillStyle='rgba(236,198,96,.63)';q.font='bold 36px monospace';q.fillText('84 ↗ 31',733,934);q.font='bold 17px monospace';q.fillText('ELECTRONIC SERVICE  /  06',61,935);q.strokeRect(59,904,363,47);return tex(c)}
-  function wallMap(){const[c,q]=cv(1024,640);q.fillStyle='#6b518e';q.fillRect(0,0,1024,640);
-    for(let i=0;i<560;i++){let x=rand()*1024,y=rand()*640,r=5+rand()*25;q.fillStyle=i%3?'rgba(163,138,176,.055)':'rgba(36,19,57,.12)';q.beginPath();q.moveTo(x+r,y);for(let k=0;k<9;k++){let a=k/9*Math.PI*2,rr=r*(.7+rand()*.5);q.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr*.6)}q.closePath();q.fill()}
-    q.save();q.translate(-70,437);q.rotate(-.07);q.fillStyle='#bdb0c2';q.font='900 280px sans-serif';q.fillText('シンセサイザー',0,0);q.restore();
-    for(let i=0;i<100;i++){let x=rand()*1024,y=rand()*640;q.fillStyle='rgba(47,25,68,.28)';q.fillRect(x,y,2+rand()*14,2+rand()*9)}
-    for(let i=0;i<25;i++){let x=rand()*1024,y=rand()*640;q.strokeStyle='#392142';q.lineWidth=1+rand()*2;q.beginPath();q.moveTo(x,y);for(let k=0;k<7;k++){x+=(rand()-.5)*35;y+=5+rand()*23;q.lineTo(x,y)}q.stroke();q.strokeStyle='rgba(190,165,191,.35)';q.lineWidth=.6;q.stroke()}
-    for(let i=0;i<10000;i++){q.fillStyle=i%3?'rgba(27,12,43,.14)':'rgba(234,215,243,.08)';q.fillRect(rand()*1024,rand()*640,1+rand()*2,1+rand()*2)}return tex(c)}
-  const boardTex=deskMap(),wallTex=wallMap();
+  const boardTex=deskMap();
   box(model,0,-.46,0,11.2,.84,11.2,mat(0x3b3046,.55,.58,true),.12);
   box(model,0,-.016,0,11.08,.11,11.08,mat(P.orange,.65,.46),.055);
   const deskSurface=mesh(model,new T.PlaneGeometry(10.98,10.98),new T.MeshPhysicalMaterial({map:boardTex,roughness:.88,metalness:0,specularIntensity:.2,bumpMap:boardTex,bumpScale:.025}),0,.047,0);deskSurface.rotation.x=-Math.PI/2;
@@ -4033,13 +4027,6 @@ void main() {
   for(const x of [-5.1,-2.3,2.2,5.1]){const rib=box(model,x,-.45,5.67,.14,.66,.11,mat(0x514258,.48,.55),.025);rib.rotation.z=x<0?-.24:.24}
   const plate=decal(model,3.5,-.34,5.652,1.3,.21,'84 ↗ 31','#2b243a','#c18b27',.03);
   for(let row=0;row<4;row++)for(let col=0;col<10;col++){let x=-4.8+col*1.02,z=2.3+row*.82;if((x>-2.3&&x<1.8)||(x>2&&z<4.0))continue;const slot=box(model,x,.058,z,.055,.018,.23,black,.012);slot.rotation.y=.28;const lip=box(model,x-.029,.071,z,.021,.018,.16,brass,.004);lip.rotation.y=.28}
-  // One open wall fragment; all of its pieces fade when viewed from behind.
-  const wall=group(model,0,2.10,-4.88);const wallBody=box(wall,0,0,0,10.8,4.12,.24,mat(0x514056,.92),.025);
-  const wallFace=mesh(wall,new T.PlaneGeometry(10.78,4.09),new T.MeshStandardMaterial({map:wallTex,roughness:.96,bumpMap:wallTex,bumpScale:.037}),0,0,.126);
-  for(const x of [-5.29,5.29])box(wall,x,0,.02,.10,4.14,.3,mat(0x34303d,.71,.5),.02);
-  box(wall,0,-1.98,.05,10.8,.15,.37,mat(0x3d3049,.8,.3),.016);
-  decal(wall,4.3,1.23,.134,.65,.43,'注意 高圧','#b7a883','#4c2f47',.07);decal(wall,-4.5,-1.08,.135,.62,.35,'点検 / 87','#9c839d','#38283e',-.11);
-  wall.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;wallParts.push(o)}});
   // Main VHS / computer, with a projecting turquoise terminal and a dense top deck.
   const hostMachine=group(model,-.65,.91,.75,-.035);const hostMat=mat(0x615680,.44,.25,true);
   box(hostMachine,0,0,0,4.35,1.5,2.70,hostMat,.16);box(hostMachine,0,.65,.07,4.22,.15,2.67,mat(0x867799,.48,.23,true),.07);
@@ -4132,12 +4119,11 @@ void main() {
   const key=new T.DirectionalLight(0xffdbac,3.4);key.position.set(-4.5,8,6);key.castShadow=true;key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-8,right:8,top:8,bottom:-8,near:.5,far:30});key.shadow.bias=-.00025;key.shadow.normalBias=.025;key.shadow.radius=3;key.target.position.set(0,1,0);scene.add(key,key.target);
   const fill=new T.DirectionalLight(0xc1b3d9,1.3);fill.position.set(0,3,8);scene.add(fill);
   const rim=new T.DirectionalLight(0xa733ff,1.7);rim.position.set(5,5,-4);scene.add(rim);
-  const wallLight=new T.PointLight(0x922cff,37,7,2);wallLight.position.set(-1,3.8,-3.7);scene.add(wallLight);
   const magenta=new T.PointLight(0xe22bc9,5,6,2);magenta.position.set(4.2,4.4,-2.7);scene.add(magenta);
   const cool=new T.PointLight(0x21bfcb,4,5,2);cool.position.set(-3.7,2.8,3.0);scene.add(cool);
   let hovered=null,pointerDown=null,dragging=false,signalKick=0,feedbackUntil=0,lastTexture=-1,lastTime=0,lastRender=0,raf=0,dirty=true,lastFit=1;
   const raycaster=new T.Raycaster(),pointer=new T.Vector2();
-  function pick(event){const r=canvas.getBoundingClientRect();pointer.set((event.clientX-r.left)/r.width*2-1,1-(event.clientY-r.top)/r.height*2);raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(model.children,true);for(const hit of hits){if(hit.object.userData.wallFade)continue;return hit.object.userData.action||null}return null}
+  function pick(event){const r=canvas.getBoundingClientRect();pointer.set((event.clientX-r.left)/r.width*2-1,1-(event.clientY-r.top)/r.height*2);raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(model.children,true);for(const hit of hits)return hit.object.userData.action||null;return null}
   function wake(){dirty=true;if(!raf&&!disposed&&!document.hidden)raf=requestAnimationFrame(render)}
   function select(state){if(hovered===state)return;hovered=state;canvas.dataset.hover=state?.type||'';canvas.style.cursor=state?'pointer':dragging?'grabbing':'grab';wake()}
   function action(state){if(!state)return;const t=performance.now()/1000;state.pressedAt=t;canvas.dataset.interaction=state.type;
@@ -4166,7 +4152,6 @@ void main() {
   }
   function resize(){const width=host.clientWidth,height=host.clientHeight;if(!width||!height)return;renderer.setSize(width,height,false);camera.aspect=width/height;const fit=Math.max(1,1.15/camera.aspect);camera.position.sub(controls.target).multiplyScalar(fit/lastFit).add(controls.target);lastFit=fit;camera.far=150;camera.updateProjectionMatrix();controls.maxDistance=70*fit;controls.update();wake()}
   function render(ms){raf=0;if(disposed||document.hidden)return;if(!dragging&&!dirty&&ms-lastRender<32){raf=requestAnimationFrame(render);return}lastRender=ms;const time=ms/1000,dt=Math.min(.05,time-(lastTime||time));lastTime=time;controls.update();signalKick=reduced?signalKick:signalKick*Math.exp(-dt*2.5);
-    const facing=camera.position.clone().sub(controls.target).normalize().z,wallOpacity=T.MathUtils.smoothstep(facing,-.55,.25)*.90+.10;for(const item of wallParts){item.material.opacity=wallOpacity;item.material.depthWrite=wallOpacity>.98;item.castShadow=wallOpacity>.7;item.userData.wallFade=wallOpacity<.5}
     let active=false;
     for(const state of targets){const hover=state===hovered?1:0;state.hover=reduced?hover:T.MathUtils.damp(state.hover,hover,15,dt);for(const material of state.highlight)material.emissiveIntensity=(material.userData.baseGlow||0)+state.hover*.2;
       if(state.type==='key'){const age=time-(state.pressedAt||-10),press=age<.28?Math.sin(Math.min(1,age/.28)*Math.PI):0;state.root.position.y=state.baseY-(reduced?0:state.hover*.018+press*.067);active||=press>0}

@@ -1,19 +1,26 @@
 ---
 import BackButton from '@/components/BackButton.astro';
-import ToolModule from '@/components/ToolModule.astro';
+import ToolCubeDemo from '@/components/ToolCubeDemo.astro';
 import { SOFTWARE_TOOLS } from '@/data/software-tools';
+import perspective from '@/config/toolbox-perspective.json';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
-const description = '收录日常学习和开发中使用的软件。';
+const description = '展示装入机械工具箱的常用软件方块。';
+const opening = (layout: typeof perspective.landscape) => `polygon(${layout.opening.map(([x, y]) => `${x / layout.sourceSize[0] * 100}% ${y / layout.sourceSize[1] * 100}%`).join(', ')})`;
 ---
 
 <BaseLayout title="工具箱" description={description} bodyClass="software-page nav-content-page plain-page">
-  <BackButton href="/" label="返回主页" />
+  <BackButton href="/" label="返回主页" cornerAligned={true} />
 
   <main class="toolbox-main container" aria-label="工具箱">
-    <div class="tool-deck" data-tool-deck>
-      <div class="tool-grid" data-tool-grid>
-        {SOFTWARE_TOOLS.map((tool) => <ToolModule tool={tool} />)}
+    <div class="tool-deck" data-tool-deck style={`--tool-opening-landscape: ${opening(perspective.landscape)}; --tool-opening-portrait: ${opening(perspective.portrait)}`}>
+      <div class="tool-deck__outline" aria-hidden="true"></div>
+      <picture class="tool-deck__image" aria-hidden="true">
+        <source media="(max-width: 800px)" srcset="/assets/toolbox/case-shell-thin-portrait.webp" />
+        <img src="/assets/toolbox/case-shell-thin-landscape.webp" alt="" width="1488" height="876" decoding="async" />
+      </picture>
+      <div class="tool-stage">
+        <ToolCubeDemo tools={SOFTWARE_TOOLS} />
       </div>
     </div>
   </main>
@@ -21,40 +28,67 @@ const description = '收录日常学习和开发中使用的软件。';
 
 <style>
   :global(body.software-page.nav-content-page.plain-page) > main.toolbox-main {
-    padding-top: calc(var(--header-height) + 4.5rem);
+    width: min(100% - 2rem, 1480px);
+    padding-top: calc(var(--header-height) + 2.5rem);
     padding-bottom: clamp(5rem, 8vw, 7rem);
   }
 
-  .tool-grid {
-    display: grid;
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-    gap: clamp(0.4rem, 0.7vw, 0.65rem);
+  .tool-deck {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    margin-inline: auto;
+    animation: toolbox-deck-float 5.2s ease-in-out infinite;
+    filter: drop-shadow(0 24px 24px rgb(4 5 12 / 48%));
+    will-change: transform;
   }
+
+  @keyframes toolbox-deck-float {
+    0%, 100% { transform: translateY(-7px); }
+    50% { transform: translateY(7px); }
+  }
+
+  .tool-deck__image,
+  .tool-deck__image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .tool-deck__image {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .tool-deck__image img {
+    object-fit: contain;
+  }
+
+  .tool-deck:has([data-cube-ready]) .tool-deck__image { visibility: hidden; }
 
   :global(body.software-page [data-sakana-layer]) {
     display: none;
   }
 
-  @media (min-width: 769px) {
+  @media (min-width: 801px) {
+    :global(body.software-page) { overflow: hidden; }
+
     :global(body.software-page.nav-content-page.plain-page) > main.toolbox-main {
-      padding-top: calc(var(--header-height) + 1rem);
-    }
-
-    .tool-deck {
-      padding-top: 3.5rem;
-    }
-  }
-
-  @media (max-width: 1100px) {
-    .tool-grid {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
+      display: grid;
+      width: 100%;
+      height: 100dvh;
+      padding: var(--header-height) 0 0;
+      place-items: center;
     }
   }
 
   @media (max-width: 800px) {
-    .tool-grid {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+    .tool-deck {
+      width: min(calc(100vw - 1.5rem), 416px);
     }
+
   }
 
   @media (max-width: 560px) {
@@ -62,9 +96,63 @@ const description = '收录日常学习和开发中使用的软件。';
       width: min(100% - 1rem, var(--content-width));
     }
 
-    .tool-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.55rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tool-deck {
+      animation: none;
+      transform: none;
+      will-change: auto;
     }
+  }
+</style>
+
+<style is:inline>
+  body.software-page .tool-deck__outline {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    filter: drop-shadow(0 0 2px rgb(255 205 91 / 85%)) drop-shadow(0 0 16px rgb(255 161 35 / 48%));
+    pointer-events: none;
+  }
+
+  body.software-page .tool-deck__outline::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-bg);
+    mask: url('/assets/toolbox/case-halo-mask-landscape.png') center / 100% 100% no-repeat;
+  }
+
+  body.software-page .tool-stage {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform: none;
+  }
+
+  @media (min-width: 801px) {
+    body.software-page .tool-deck {
+      width: min(calc(80vw - 0.4rem), calc(136dvh - 87.2px));
+      aspect-ratio: 1488 / 876;
+    }
+  }
+
+  @media (min-width: 1900px) and (max-width: 1999px) and (max-height: 1200px) and (max-resolution: 1.1dppx),
+    (min-width: 1200px) and (max-width: 1599px) and (max-height: 1200px) and (min-resolution: 1.2dppx) and (max-resolution: 1.6dppx) {
+    body.software-page .tool-deck {
+      width: min(calc(96vw - 0.48rem), calc(163.2dvh - 104.64px));
+    }
+  }
+
+  @media (max-width: 800px) {
+    body.software-page .tool-deck__outline::before {
+      mask-image: url('/assets/toolbox/case-halo-mask-portrait.png');
+    }
+
+    body.software-page .tool-deck { aspect-ratio: 944 / 1408; }
   }
 </style>

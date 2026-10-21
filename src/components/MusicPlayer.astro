@@ -70,7 +70,7 @@ const currentTrack = playlist[0];
         <circle cx="345" cy="236" r="2.6" fill="#ffd200" />
       </svg>
 
-      <div class="record-assembly">
+      <div class="record-assembly" data-player-record-assembly>
         <div class="record-disc" data-turntable-record aria-hidden="true"></div>
         <button
           class="record-button"
@@ -177,18 +177,10 @@ const currentTrack = playlist[0];
   }
   .music-player[data-record-variant='1'] { --record-label: #344650; --record-label-edge: #566671; }
   .music-player[data-record-variant='2'] { --record-label: #4b3934; --record-label-edge: #735247; }
-  .music-player[data-playback-state='playing'] .record-disc { animation: record-spin 1.8s linear infinite; }
+  .music-player[data-playback-state='playing'] .record-disc,
+  .music-player[data-playback-state='buffering'] .record-disc { animation: record-spin 1.8s linear infinite; }
   @keyframes record-spin { to { transform: rotate(360deg); } }
-  .music-player[data-record-swap='true'] .record-assembly {
-    animation: record-exchange 560ms cubic-bezier(.4, 0, .2, 1) 160ms both;
-  }
-  @keyframes record-exchange {
-    0% { opacity: 1; transform: none; }
-    45% { opacity: 0; transform: translate(-24%, -8%) rotate(-10deg) scale(.88); }
-    49% { opacity: 0; transform: translate(-27%, -9%) rotate(-12deg) scale(.86); }
-    50% { opacity: 0; transform: translate(27%, -9%) rotate(12deg) scale(.86); }
-    100% { opacity: 1; transform: none; }
-  }
+  .music-player[data-record-swap='true'] .record-assembly { transition: none; }
 
   .record-button {
     position: absolute;
@@ -222,7 +214,8 @@ const currentTrack = playlist[0];
     transition: transform 660ms cubic-bezier(.2, .7, .18, 1);
     filter: drop-shadow(2px 3px 2px #080a0d9c);
   }
-  .music-player[data-playback-state='playing'] .tonearm { transform: rotate(0); }
+  .music-player[data-playback-state='playing'] .tonearm,
+  .music-player[data-playback-state='buffering'] .tonearm { transform: rotate(0); }
   .music-player[data-playback-state='changing'] .tonearm { transition-duration: 180ms; }
 
   .track-tooltip {
@@ -250,6 +243,7 @@ const currentTrack = playlist[0];
     transition: opacity 160ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1), visibility 0s linear 220ms;
   }
   .music-player:not([data-record-swap='true']) .record-assembly:hover ~ .track-tooltip,
+  .music-player[data-playback-state='buffering'] .track-tooltip,
   .music-player[data-input-mode='keyboard']:not([data-record-swap='true']) .record-assembly:has(.record-button:focus-visible) ~ .track-tooltip {
     opacity: 1;
     visibility: visible;

@@ -42,7 +42,7 @@ test('search loads its index once, limits results and closes with Escape', async
   expect(indexRequests).toBe(0);
 
   await page.keyboard.press('Control+K');
-  const searchbox = page.getByRole('searchbox', { name: '搜索文章' });
+  const searchbox = page.getByRole('searchbox', { name: '搜索全站' });
   await expect(searchbox).toBeFocused();
   await searchbox.fill('FPGA');
   await expect(page.locator('[data-search-result]').first()).toBeVisible();
@@ -55,7 +55,7 @@ test('search loads its index once, limits results and closes with Escape', async
   await page.getByRole('link', { name: '作品橱窗', exact: true }).click();
   await expect(page).toHaveURL('/creation/');
   await page.keyboard.press('Control+K');
-  await expect(page.getByRole('searchbox', { name: '搜索文章' })).toBeFocused();
+  await expect(page.getByRole('searchbox', { name: '搜索全站' })).toBeFocused();
   expect(indexRequests).toBe(1);
 });
 
@@ -76,7 +76,7 @@ test('search retries after the first index request fails', async ({ page }) => {
   await page.keyboard.press('Escape');
 
   await page.keyboard.press('Control+K');
-  await page.getByRole('searchbox', { name: '搜索文章' }).fill('FPGA');
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('FPGA');
   await expect(page.locator('[data-search-result]').first()).toBeVisible();
   expect(attempts).toBe(2);
 });
@@ -98,7 +98,7 @@ test('search results show a highlighted body excerpt and carry the query to the 
 
   await page.goto('/');
   await page.keyboard.press('Control+K');
-  await page.getByRole('searchbox', { name: '搜索文章' }).fill('矩阵');
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('矩阵');
 
   const result = page.locator('[data-search-result]').first();
   await expect(result.locator('[data-search-excerpt] mark')).toHaveText('矩阵');
@@ -150,10 +150,11 @@ test('mobile menu toggles once and closes on Escape and navigation', async ({ pa
   );
 });
 
-test('PhotoSwipe is requested only when an article image is activated', async ({ page }) => {
+test('PhotoSwipe script is requested only when an article image is activated', async ({ page }) => {
   const lightboxRequests: string[] = [];
   page.on('request', (request) => {
-    if (request.url().toLowerCase().includes('photoswipe')) {
+    const url = new URL(request.url());
+    if (url.pathname.toLowerCase().includes('photoswipe') && url.pathname.endsWith('.js')) {
       lightboxRequests.push(request.url());
     }
   });
@@ -172,6 +173,65 @@ test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
   await expect(image).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('.pswp')).toBeVisible();
+});
+
+test('article lightbox stays within 80 percent and closes when its image or backdrop is clicked', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/posts/Infra-线性代数/');
+  const image = page.locator('article[data-post] .prose img').first();
+  const lightbox = page.locator('.pswp');
+
+  await image.click();
+  await expect(lightbox).toBeVisible();
+  await page.waitForTimeout(350);
+  const enlarged = await lightbox.locator('img.pswp__img:not(.pswp__img--placeholder)').boundingBox();
+  if (!enlarged) throw new Error('Missing enlarged image');
+  expect(enlarged.width).toBeLessThanOrEqual(1440 * 0.8 + 1);
+  expect(enlarged.height).toBeLessThanOrEqual(900 * 0.8 + 1);
+  const background = await lightbox.locator('.pswp__bg').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { opacity: Number(style.opacity), color: style.backgroundColor };
+  });
+  expect(background.opacity).toBeGreaterThanOrEqual(0.65);
+  expect(background.opacity).toBeLessThan(0.8);
+  expect(background.color).not.toBe('rgb(0, 0, 0)');
+
+  await lightbox.locator('img.pswp__img:not(.pswp__img--placeholder)').click();
+  await expect(lightbox).toBeHidden();
+  await image.click();
+  await expect(lightbox).toBeVisible();
+  await page.mouse.click(10, 10);
+  await expect(lightbox).toBeHidden();
+});
+
+test('article body web links open a new tab while the article stays open', async ({ page, context }) => {
+  await page.goto('/posts/Infra-GEMM优化/');
+  const link = page.locator('article[data-post] .prose a[href^="https://"]').first();
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
+  await expect(link).toHaveAttribute('rel', /\bnoreferrer\b/);
+  const articleUrl = page.url();
+  const [newTab] = await Promise.all([context.waitForEvent('page'), link.click()]);
+  await expect(page).toHaveURL(articleUrl);
+  await expect.poll(() => newTab.url()).toContain('zhuanlan.zhihu.com');
+  await newTab.close();
+});
+
+test('article links inserted after protected content loads keep fragment jumps in the current tab', async ({ page }) => {
+  await page.goto('/posts/Infra-GEMM优化/');
+  await page.locator('article[data-post] .prose').evaluate((prose) => {
+    const internal = document.createElement('a');
+    internal.href = '/about/';
+    internal.dataset.testInternalLink = '';
+    const fragment = document.createElement('a');
+    fragment.href = '#gemm';
+    fragment.dataset.testFragmentLink = '';
+    prose.append(internal, fragment);
+    document.dispatchEvent(new Event('hatrix:protected-content-ready'));
+  });
+  await expect(page.locator('[data-test-internal-link]')).toHaveAttribute('target', '_blank');
+  await expect(page.locator('[data-test-internal-link]')).toHaveAttribute('rel', /\bnoopener\b/);
+  await expect(page.locator('[data-test-fragment-link]')).not.toHaveAttribute('target', '_blank');
 });
 
 test('music player persists across about navigation without recreating its audio instance', async ({ page }) => {

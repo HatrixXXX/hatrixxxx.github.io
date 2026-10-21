@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PostEntry } from '../../src/lib/content';
+import type { CollectionEntry } from 'astro:content';
 import {
   decryptEnvelope,
   deriveContentKeyBytes,
@@ -11,10 +12,12 @@ import {
 } from '../../src/lib/protected-content/crypto';
 import { base64 } from '../../src/lib/protected-content/encoding';
 
-const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[] }));
+const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], plans: [] as CollectionEntry<'plans'>[] }));
 
 vi.mock('astro:content', () => ({
-  getCollection: async (_collection: string, filter?: (post: PostEntry) => unknown) =>
+  getCollection: async (collection: string, filter?: (post: PostEntry) => unknown) =>
+    collection === 'snippets' ? contentState.snippets :
+    collection === 'plans' ? contentState.plans.filter((plan) => !filter || filter(plan as never)) :
     filter ? contentState.posts.filter(filter) : contentState.posts
 }));
 
@@ -30,6 +33,7 @@ let postPath: string;
 let imagePath: string;
 let previousContentDir: string | undefined;
 let previousAdminKey: string | undefined;
+let previousSnippetsDir: string | undefined;
 
 function fixturePost(id: string, locked = true): PostEntry {
   return {
@@ -51,6 +55,7 @@ function fixturePost(id: string, locked = true): PostEntry {
 beforeEach(async () => {
   previousContentDir = process.env.HATRIX_CONTENT_DIR;
   previousAdminKey = process.env.HATRIX_ADMIN_KEY;
+  previousSnippetsDir = process.env.HATRIX_SNIPPETS_DIR;
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-assets-'));
   const postsRoot = join(temporaryRoot, 'posts');
   postPath = join(postsRoot, 'private.md');
@@ -64,14 +69,40 @@ beforeEach(async () => {
 
 afterEach(async () => {
   contentState.posts = [];
+  contentState.snippets = [];
+  contentState.plans = [];
   if (previousContentDir === undefined) delete process.env.HATRIX_CONTENT_DIR;
   else process.env.HATRIX_CONTENT_DIR = previousContentDir;
   if (previousAdminKey === undefined) delete process.env.HATRIX_ADMIN_KEY;
   else process.env.HATRIX_ADMIN_KEY = previousAdminKey;
+  if (previousSnippetsDir === undefined) delete process.env.HATRIX_SNIPPETS_DIR;
+  else process.env.HATRIX_SNIPPETS_DIR = previousSnippetsDir;
   await rm(temporaryRoot, { recursive: true, force: true });
 });
 
 describe('protected asset endpoint', () => {
+  it('publishes snippet body images only through encrypted opaque assets', async () => {
+    const snippetsRoot = join(temporaryRoot, 'snippets');
+    const snippetFile = join(snippetsRoot, 'private.md');
+    await mkdir(snippetsRoot, { recursive: true });
+    await writeFile(snippetFile, '# fixture', 'utf8');
+    await copyFile(fixtureImage, join(snippetsRoot, 'private-image.png'));
+    process.env.HATRIX_SNIPPETS_DIR = temporaryRoot;
+    contentState.snippets = [{
+      id: 'private', collection: 'snippets', filePath: snippetFile,
+      body: '![secret](./private-image.png)',
+      data: { title: 'Private snippet', date: new Date('2026-10-12') }
+    }] as CollectionEntry<'snippets'>[];
+
+    const [path] = await getStaticPaths();
+    const response = await GET({ props: path.props } as never);
+    const envelope = await response.json() as EncryptedEnvelope;
+    const key = await importContentKey(await deriveContentKeyBytes('test-admin'), ['decrypt']);
+
+    expect(path.params.id).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(await decryptEnvelope(envelope, key, `asset:${path.params.id}`))
+      .toEqual(new Uint8Array(await readFile(join(snippetsRoot, 'private-image.png'))));
+  });
   it('emits one opaque static route for each distinct locked image', async () => {
     contentState.posts = [
       fixturePost('locked'),

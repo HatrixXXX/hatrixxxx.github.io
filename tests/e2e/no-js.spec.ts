@@ -52,8 +52,8 @@ for (const route of ['/archives/', '/creation/']) {
     await expect(page.locator('main')).toBeVisible();
     await expect(page.locator('main')).not.toBeEmpty();
     if (route === '/creation/') {
-      await expect(page.locator('.book-nojs')).toBeVisible();
-      await expect(page.locator('.book-nojs')).toContainText('FPGA-3DGS渲染');
+      await expect(page.locator('.showcase-nojs')).toBeVisible();
+      await expect(page.locator('.showcase-nojs')).toContainText('FPGA-3DGS 渲染');
     }
   });
 }

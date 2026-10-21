@@ -13,9 +13,9 @@ import {
 const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${CONTENT_SECURITY_POLICY}"><meta name="referrer" content="${REFERRER_POLICY}"></head>`;
 
 it('tracks the current content and local link inventories', async () => {
-  expect(EXPECTED_LOCAL_LINKS).toBe(1713);
+  expect(EXPECTED_LOCAL_LINKS).toBe(1733);
   expect(await readFile('scripts/check-built-site.ts', 'utf8')).toContain(
-    'expectedPostCount: fixtureMode ? 2 : 15'
+    'expectedPostCount: fixtureMode ? 2 : 13'
   );
 });
 
@@ -391,6 +391,7 @@ it('aggregates missing post output errors without throwing', async () => {
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
   await writeSiteFile(root, '.private-content/posts/example.md', '---\nlegacySlug: absent\n---\n');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
   await writeSiteFile(root, 'dist/index.html');
   await writeSiteFile(root, 'dist/404.html');
   await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
@@ -417,8 +418,9 @@ it('requires a generated route for every source post', async () => {
   await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
   await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
 
-  for (let index = 0; index < 15; index += 1) {
+  for (let index = 0; index < 13; index += 1) {
     const slug = `published-${index}`;
     await writeSiteFile(
       root,
@@ -431,14 +433,35 @@ it('requires a generated route for every source post', async () => {
 
   expect(result.errors).toEqual([]);
 
-  await unlink(join(root, 'dist/posts/published-14/index.html'));
+  await unlink(join(root, 'dist/posts/published-12/index.html'));
 
   const missingRouteResult = await inspectProjectBuiltSite(root);
 
   expect(missingRouteResult.errors).toEqual(expect.arrayContaining([
-    expect.stringContaining('Expected 15 generated post routes, found 14.'),
-    expect.stringContaining('/posts/published-14/')
+    expect.stringContaining('Expected 13 generated post routes, found 12.'),
+    expect.stringContaining('/posts/published-12/')
   ]));
+});
+
+it('requires plan routes only for Markdown files loaded from the plans root', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
+  await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, '.private-content/posts/.gitkeep');
+  await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/visible.md', '---\ntitle: Visible\n---\n');
+  await writeSiteFile(root, '.private-plans/plans/research/source.md', 'Supporting research');
+  await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}</html>`);
+  await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);
+  await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
+  await writeSiteFile(root, 'dist/rss.xml', '<rss/>');
+  await writeSiteFile(root, 'dist/search-index.json', '[]');
+  await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
+  await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
+
+  const result = await inspectProjectBuiltSite(root, { expectedPostCount: 0 });
+
+  expect(result.errors.filter((error) => error.startsWith('Missing expected plan route:')))
+    .toEqual(['Missing expected plan route: /plans/visible/']);
 });
 
 it('checks the fixed link count only while snippets are empty', async () => {
@@ -446,6 +469,7 @@ it('checks the fixed link count only while snippets are empty', async () => {
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
   await writeSiteFile(root, '.private-content/posts/.gitkeep');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
+  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
   await writeSiteFile(root, 'dist/posts/.gitkeep');
   await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}<body><a href="/404.html">404</a></body></html>`);
   await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);

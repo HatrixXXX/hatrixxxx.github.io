@@ -5,13 +5,13 @@ import sharp from 'sharp';
 import { SOFTWARE_TOOLS } from '../../src/data/software-tools';
 
 const listedNames = [
-  'VS Code', 'Git', 'CLion', 'Pycharm', 'Anaconda', 'SolidWorks', 'Blender',
+  'VS Code', 'Git', 'CC Switch', 'CLion', 'Pycharm', 'Anaconda', 'SolidWorks', 'Blender',
   'Bamboo Studio', 'Altium Designer', 'Kicad', 'CubeMX', 'Keil', 'Ozone',
   'Vivado', 'Quartus', 'Matlab', 'Multisim', 'MobaXterm', 'VMware',
   'Acrobat DC', 'Adobe Illustrator', 'Adobe Media Encoder',
   'Adobe Photoshop', 'Adobe Premiere Pro', 'Everything', 'Honeyview',
   'Potplayer', 'Typora', 'Zotero', 'PicGo', 'Q-dir', '7-zip', 'Geek',
-  'Snipaste', 'Bandicam', 'DiskGenius', 'Spacesniffer', 'CrystalDiskMark',
+  'Snipaste', 'Bandicam', 'DiskGenius', 'Spacesniffer', 'CPU-Z',
   'ContextMenuManager'
 ];
 
@@ -29,26 +29,43 @@ describe('software tool cabinet data', () => {
       expect(tool.description.trim().length).toBeGreaterThan(0);
       expect(tool.purpose.trim().length).toBeGreaterThan(0);
       expect(new URL(tool.href).protocol).toBe('https:');
-      expect(tool.icon).toMatch(/^\/assets\/tool-icons\/[a-z0-9-]+\.png$/);
+      expect(tool.icon).toMatch(/^\/assets\/tool-icons\/[a-z0-9-]+\.(?:png|svg|ico)$/);
     }
     expect(new Set(SOFTWARE_TOOLS.map((tool) => tool.icon)).size).toBe(SOFTWARE_TOOLS.length);
   });
 
-  it('keeps only listed icons on 128px transparent canvases', async () => {
+  it('keeps listed icons at their available source resolution', async () => {
     const iconDirectory = join(process.cwd(), 'public', 'assets', 'tool-icons');
     const expectedFiles = SOFTWARE_TOOLS.map((tool) => tool.icon.split('/').at(-1)).sort();
     const actualFiles = readdirSync(iconDirectory).filter((file) => /\.(?:png|svg|ico)$/.test(file)).sort();
     expect(actualFiles).toEqual(expectedFiles);
     const sourceNames = readFileSync(join(iconDirectory, 'SOURCES.txt'), 'utf8')
-      .match(/^[a-z0-9-]+\.png <- /gm)?.map((line) => line.slice(0, -4)).sort();
+      .match(/^[a-z0-9-]+\.(?:png|svg|ico) <- /gm)?.map((line) => line.slice(0, -4)).sort();
     expect(sourceNames).toEqual(expectedFiles);
 
+    const sourceLimited = new Set(['solidworks.png', 'q-dir.png']);
+    const reconstructed = new Set(['vivado.png', 'mobaxterm.png', 'spacesniffer.png', '7zip.svg']);
     for (const file of actualFiles) {
-      const icon = sharp(join(iconDirectory, file));
-      const metadata = await icon.metadata();
-      expect([metadata.width, metadata.height, metadata.channels]).toEqual([128, 128, 4]);
-      const { data } = await icon.raw().toBuffer({ resolveWithObject: true });
-      expect(data[3]).toBe(0);
+      const path = join(iconDirectory, file);
+      let width: number | undefined;
+      let height: number | undefined;
+      if (file.endsWith('.ico')) {
+        const bytes = readFileSync(path);
+        const count = bytes.readUInt16LE(4);
+        width = Math.max(...Array.from({ length: count }, (_, index) => bytes[6 + index * 16] || 256));
+        height = Math.max(...Array.from({ length: count }, (_, index) => bytes[7 + index * 16] || 256));
+      } else {
+        const metadata = await sharp(path).metadata();
+        width = metadata.width;
+        height = metadata.height;
+      }
+      const minimum = sourceLimited.has(file) ? 128 : file === 'bambu-studio.png' ? 192 : 256;
+      expect(width, file).toBeGreaterThanOrEqual(minimum);
+      expect(height, file).toBeGreaterThanOrEqual(minimum);
+      if (reconstructed.has(file)) {
+        expect([width, height], file).toEqual([512, 512]);
+        expect((await sharp(path).metadata()).hasAlpha, file).toBe(true);
+      }
     }
   });
 });

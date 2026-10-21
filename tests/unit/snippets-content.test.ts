@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { snippetRoot } from '../../src/lib/snippet-root';
 import { snippetSchema } from '../../src/lib/snippet-schema';
-import { snippetIdFromFile, snippetPath, sortSnippets } from '../../src/lib/snippets';
+import { getAdjacentSnippets, snippetIdFromFile, snippetPath, sortSnippets } from '../../src/lib/snippets';
 
 const fixture = {
   title: '一篇随笔',
@@ -17,7 +17,7 @@ describe('snippets content', () => {
     const config = readFileSync('src/content.config.ts', 'utf8');
     const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8');
     expect(config).toContain("base: pathToFileURL(snippetRoot('snippets')).href");
-    expect(config).toContain('export const collections = { posts, snippets, projects };');
+    expect(config).toContain('export const collections = { posts, snippets, plans, projects };');
     expect(workflow).toContain('HATRIX_SNIPPETS_DIR: tests/fixtures/private-snippets');
     expect(workflow).toContain('HATRIX_SNIPPETS_DIR: .private-snippets');
     expect(workflow).toContain('repository: HatrixXXX/hatrix-snippets');
@@ -64,5 +64,16 @@ describe('snippets content', () => {
     expect(snippetPath('older')).toBe('/snippets/older/');
     expect(snippetIdFromFile('My Note.md')).toBe('my-note');
     expect(snippetIdFromFile('我的随笔：秋天.md')).toBe('我的随笔秋天');
+  });
+
+  it('finds previous and next snippets in the timeline order', () => {
+    const older = { id: 'older', data: { date: new Date('2024-01-01') } };
+    const middle = { id: 'middle', data: { date: new Date('2025-01-01') } };
+    const newer = { id: 'newer', data: { date: new Date('2026-01-01') } };
+    const ordered = sortSnippets([older, newer, middle]);
+    expect(getAdjacentSnippets(ordered, 'middle')).toEqual({ previous: newer, next: older });
+    expect(getAdjacentSnippets(ordered, 'newer')).toEqual({ previous: undefined, next: middle });
+    expect(getAdjacentSnippets(ordered, 'older')).toEqual({ previous: middle, next: undefined });
+    expect(getAdjacentSnippets(ordered, 'missing')).toEqual({});
   });
 });

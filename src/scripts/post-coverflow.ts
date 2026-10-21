@@ -1,23 +1,27 @@
 ﻿// Coverflow carousel for post list
-// - Active card faces forward (rotateX 0), neighbours fold above and below
+// - Cards stay aligned with the straight guide rails as they move vertically
 // - Mouse wheel over the rail scrolls through cards with spring damping
 // - First card starts active; last card can be active with lower whitespace
 
+import { animate } from 'animejs';
+
 const RAIL_SELECTOR = '[data-post-coverflow]';
-const INDEX_KEY = 'blog-coverflow-index';
-const FROM_POST_KEY = 'blog-coverflow-from-post';
+const COVERFLOWS = {
+  blog: { listPath: '/blogs/', detailPath: '/posts/', indexKey: 'blog-coverflow-index', fromDetailKey: 'blog-coverflow-from-post' },
+  plan: { listPath: '/plans/', detailPath: '/plans/', indexKey: 'plan-coverflow-index', fromDetailKey: 'plan-coverflow-from-detail' }
+} as const;
+
+function coverflowFor(rail: HTMLElement) {
+  return rail.dataset.coverflowKind === 'plan' ? COVERFLOWS.plan : COVERFLOWS.blog;
+}
 
 // Spring constants
-const SPRING_STIFFNESS = 260;   // how snappy the spring is
-const SPRING_DAMPING   = 28;    // critical damping avoids overshoot
+const SPRING_STIFFNESS = 260;
+const SPRING_DAMPING   = 28;
 const SETTLE_EPS       = 0.005; // index units below which we consider settled
 
 // Coverflow visual parameters
-const SIDE_ROTATE_STEP_DEG = 22;
-const MAX_ROTATE_DEG = 80;
-const SIDE_TRANSLATE_Z = -70;   // px per depth layer
-const MIN_SIDE_SCALE = 0.72;
-const CARD_GAP_FACTOR  = 0.95;  // fraction of card height used as step offset
+const CARD_GAP_FACTOR  = 1.2;   // card height plus a wider visible gap
 
 interface CoverflowState {
   current: number;
@@ -27,6 +31,8 @@ interface CoverflowState {
   lastTime: number | null;
   wheelAccum: number;
   reducedMotion: boolean;
+  dockedCard: HTMLElement | null;
+  dockPulse: ReturnType<typeof animate> | null;
 }
 
 const railStates = new WeakMap<HTMLElement, CoverflowState>();
@@ -46,12 +52,39 @@ function stateFor(rail: HTMLElement): CoverflowState {
       raf: null,
       lastTime: null,
       wheelAccum: 0,
-      reducedMotion: reducedMotionMq.matches
+      reducedMotion: reducedMotionMq.matches,
+      dockedCard: null,
+      dockPulse: null
     };
     railStates.set(rail, s);
   }
   s.reducedMotion = reducedMotionMq.matches;
   return s;
+}
+
+function clearDockPulse(state: CoverflowState): void {
+  state.dockPulse?.cancel();
+  state.dockPulse = null;
+  state.dockedCard?.style.removeProperty('--dock-light');
+}
+
+function updateDock(rail: HTMLElement, card: HTMLElement): void {
+  const state = stateFor(rail);
+  if (state.dockedCard === card) return;
+  clearDockPulse(state);
+  state.dockedCard = card;
+  if (state.reducedMotion || document.hidden) return;
+
+  card.style.setProperty('--dock-light', '1');
+  state.dockPulse = animate(card, {
+    '--dock-light': 0,
+    duration: 460,
+    ease: 'outCubic',
+    onComplete: () => {
+      card.style.removeProperty('--dock-light');
+      state.dockPulse = null;
+    }
+  });
 }
 
 function applyTransforms(rail: HTMLElement, currentIndex: number): void {
@@ -68,17 +101,11 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
     const card = cards[i];
     const offset = i - currentIndex;
     const absOffset = Math.abs(offset);
-    const sign = offset >= 0 ? 1 : -1;
 
-    const rotateX = -sign * Math.min(absOffset * SIDE_ROTATE_STEP_DEG, MAX_ROTATE_DEG);
-    const translateZ = SIDE_TRANSLATE_Z * Math.min(absOffset, 4);
     const translateY = offset * step + edgeShift;
-    const scaleFactor = Math.max(MIN_SIDE_SCALE, 1 - absOffset * 0.08);
-    const opacity = absOffset <= 1
-      ? 1 - absOffset * 0.28
-      : Math.min(0.98, 0.72 + (absOffset - 1) * 0.1);
+    const opacity = Math.max(0.18, 0.62 ** absOffset);
 
-    card.style.transform = `translateY(${translateY.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) rotateX(${rotateX.toFixed(2)}deg) scale(${scaleFactor.toFixed(4)})`;
+    card.style.transform = `translateY(${translateY.toFixed(2)}px)`;
     card.style.opacity = String(opacity.toFixed(3));
     card.style.zIndex = String(Math.round(100 - absOffset * 10));
     const centerProximity = Number(Math.max(0, 1 - absOffset).toFixed(3));
@@ -90,6 +117,8 @@ function applyTransforms(rail: HTMLElement, currentIndex: number): void {
     const tabIndex = absOffset > 1.5 ? -1 : 0;
     if (titleLink && titleLink.tabIndex !== tabIndex) titleLink.tabIndex = tabIndex;
   }
+  const active = cards[Math.max(0, Math.min(cardCount - 1, Math.round(currentIndex)))];
+  if (active) updateDock(rail, active);
 }
 
 function cancelRaf(state: CoverflowState): void {
@@ -177,21 +206,19 @@ document.addEventListener('astro:before-preparation', (e) => {
   const fromPath = event.from.pathname;
   const toPath   = event.to.pathname;
 
-  const isBlogList = (p: string) => p === '/blogs/';
-
-  if (isBlogList(fromPath) && toPath.startsWith('/posts/')) {
-    // Leaving the blog list → entering a post: persist the current index.
-    const rail = document.querySelector<HTMLElement>(RAIL_SELECTOR);
-    if (rail) ssSet(INDEX_KEY, String(stateFor(rail).target));
-    ssSet(FROM_POST_KEY, '1');
-  } else if (isBlogList(toPath)) {
-    if (fromPath.startsWith('/posts/')) {
-      // Returning from a post → restore the saved index.
-      ssSet(FROM_POST_KEY, '1');
-    } else {
-      // Arriving from nav, home, or any other origin → reset to card 0.
-      ssDel(INDEX_KEY);
-      ssDel(FROM_POST_KEY);
+  for (const [kind, flow] of Object.entries(COVERFLOWS)) {
+    const isDetail = (path: string) => path.startsWith(flow.detailPath) && path !== flow.listPath;
+    if (fromPath === flow.listPath && isDetail(toPath)) {
+      const rail = document.querySelector<HTMLElement>(`${RAIL_SELECTOR}[data-coverflow-kind="${kind}"]`);
+      if (rail) ssSet(flow.indexKey, String(stateFor(rail).target));
+      ssSet(flow.fromDetailKey, '1');
+    } else if (toPath === flow.listPath) {
+      if (isDetail(fromPath)) {
+        ssSet(flow.fromDetailKey, '1');
+      } else {
+        ssDel(flow.indexKey);
+        ssDel(flow.fromDetailKey);
+      }
     }
   }
 });
@@ -285,21 +312,24 @@ document.addEventListener('touchcancel', () => { touchSwipe = null; });
 function initRail(rail: HTMLElement): void {
   const state = stateFor(rail);
   const cards = getCards(rail);
+  const flow = coverflowFor(rail);
 
-  const fromPost = ssGet(FROM_POST_KEY) === '1';
-  const rawIndex = ssGet(INDEX_KEY);
+  const fromPost = ssGet(flow.fromDetailKey) === '1';
+  const rawIndex = ssGet(flow.indexKey);
   const parsedIndex = rawIndex !== null ? parseInt(rawIndex, 10) : NaN;
   const startIndex = (fromPost && Number.isFinite(parsedIndex) && parsedIndex >= 0)
     ? Math.min(parsedIndex, Math.max(0, cards.length - 1))
     : 0;
 
   // Consume the flag so a subsequent non-post navigation resets to card 0.
-  ssDel(FROM_POST_KEY);
+  ssDel(flow.fromDetailKey);
 
   state.current = startIndex;
   state.target  = startIndex;
   state.velocity = 0;
   state.wheelAccum = 0;
+  clearDockPulse(state);
+  state.dockedCard = cards[startIndex] ?? null;
   applyTransforms(rail, startIndex);
 }
 
@@ -307,8 +337,36 @@ function initAllRails(): void {
   document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach(initRail);
 }
 
-document.addEventListener('astro:page-load', initAllRails);
-initAllRails();
+function syncPageMotion(): void {
+  document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
+    rail.toggleAttribute('data-page-hidden', document.hidden);
+  });
+}
+
+function initializeCoverflows(): void {
+  initAllRails();
+  syncPageMotion();
+}
+
+document.addEventListener('astro:page-load', initializeCoverflows);
+document.addEventListener('hatrix:protected-content-ready', initializeCoverflows);
+document.addEventListener('astro:before-swap', () => {
+  document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
+    const state = railStates.get(rail);
+    if (!state) return;
+    cancelRaf(state);
+    clearDockPulse(state);
+  });
+});
+document.addEventListener('visibilitychange', () => {
+  syncPageMotion();
+  if (!document.hidden) return;
+  document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
+    const state = railStates.get(rail);
+    if (state) clearDockPulse(state);
+  });
+});
+initializeCoverflows();
 
 window.addEventListener('resize', () => {
   document.querySelectorAll<HTMLElement>(RAIL_SELECTOR).forEach((rail) => {
@@ -323,6 +381,7 @@ reducedMotionMq.addEventListener('change', () => {
     s.reducedMotion = reducedMotionMq.matches;
     if (reducedMotionMq.matches) {
       cancelRaf(s);
+      clearDockPulse(s);
       s.current = s.target;
       applyTransforms(rail, s.current);
     }

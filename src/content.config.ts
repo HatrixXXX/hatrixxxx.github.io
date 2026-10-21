@@ -8,6 +8,7 @@ import { postSchema } from './lib/post-schema';
 import { snippetRoot } from './lib/snippet-root';
 import { snippetSchema } from './lib/snippet-schema';
 import { snippetIdFromFile } from './lib/snippets';
+import { planRoot } from './lib/plan-root';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(contentRoot('posts')).href }),
@@ -21,6 +22,19 @@ const snippets = defineCollection({
     generateId: ({ entry }) => snippetIdFromFile(entry)
   }),
   schema: snippetSchema
+});
+
+const plans = defineCollection({
+  loader: glob({
+    pattern: '*.md',
+    base: pathToFileURL(planRoot('plans')).href,
+    generateId: ({ entry }) => entry.replace(/\.md$/i, '')
+  }),
+  schema: z.object({
+    title: z.string().trim().min(1),
+    summary: z.string().trim().min(1).max(100),
+    pubDate: z.coerce.date()
+  })
 });
 
 const projects = defineCollection({
@@ -38,7 +52,9 @@ const projects = defineCollection({
       alt: z.string().min(1),
       caption: z.string().optional()
     })).default([]),
-    cover: z.string().optional(),
+    cover: z.string().startsWith('/assets/project-images/').optional(),
+    coverAlt: z.string().min(1).optional(),
+    tags: z.array(z.string().min(1)).default([]),
     tech: z.array(z.string()).default([]),
     links: z
       .array(
@@ -50,7 +66,10 @@ const projects = defineCollection({
       .default([]),
     featured: z.boolean().default(false),
     order: z.number().int().default(0)
+  }).refine((project) => !project.cover || Boolean(project.coverAlt), {
+    path: ['coverAlt'],
+    message: 'project coverAlt is required when cover is set'
   })
 });
 
-export const collections = { posts, snippets, projects };
+export const collections = { posts, snippets, plans, projects };

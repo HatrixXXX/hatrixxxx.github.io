@@ -2,6 +2,34 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { initializeMusicPlayer } from '../../src/scripts/music-player';
 
+const motion = vi.hoisted(() => ({ animateCalls: 0, timelineCalls: 0, cancellations: 0 }));
+vi.mock('animejs', () => ({
+  animate: (target: { level: number }, options: { level: number; duration: number; onUpdate: () => void; onComplete: () => void }) => {
+    motion.animateCalls += 1;
+    const start = target.level;
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed = Math.min(options.duration, elapsed + 20);
+      target.level = start + (options.level - start) * elapsed / options.duration;
+      options.onUpdate();
+      if (elapsed === options.duration) {
+        clearInterval(timer);
+        options.onComplete();
+      }
+    }, 20);
+    return { cancel: () => { motion.cancellations += 1; clearInterval(timer); } };
+  },
+  createTimeline: () => {
+    motion.timelineCalls += 1;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    return {
+      add() { return this; },
+      call(callback: () => void, at: number) { timers.push(setTimeout(callback, at)); return this; },
+      cancel() { motion.cancellations += 1; timers.forEach(clearTimeout); },
+    };
+  },
+}));
+
 class PlayerElement extends EventTarget {
   style: Record<string, string> = {};
   dataset: Record<string, string> = {};
@@ -41,6 +69,9 @@ function playerFixture(pathname: string) {
 
 describe('music player', () => {
   beforeEach(() => {
+    motion.animateCalls = 0;
+    motion.timelineCalls = 0;
+    motion.cancellations = 0;
     vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => undefined });
     vi.stubGlobal('Audio', vi.fn());
   });
@@ -78,6 +109,75 @@ describe('music player', () => {
     const { root } = playerFixture('/about/');
     expect(initializeMusicPlayer([], root)).toBeUndefined();
     expect(Audio).not.toHaveBeenCalled();
+  });
+
+  it('prefetches the selected song after playback starts', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      preload = '';
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, record } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    expect(playerAudio.preload).toBe('metadata');
+    record.dispatchEvent(new Event('click'));
+    vi.advanceTimersByTime(350);
+    expect(playerAudio.preload).toBe('auto');
+  });
+
+  it('shows buffering during a playback gap and restores the track when audio resumes', () => {
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record, track } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    void playerAudio.play();
+    playerAudio.dispatchEvent(new Event('waiting'));
+    expect(player.dataset.playbackState).toBe('buffering');
+    expect(record.attributes.get('aria-pressed')).toBe('true');
+    expect(track.textContent).toBe('正在缓冲 · One-Artist');
+
+    playerAudio.dispatchEvent(new Event('playing'));
+    expect(player.dataset.playbackState).toBe('playing');
+    expect(track.textContent).toBe('One-Artist');
+  });
+
+  it('clears a stale load failure when audio starts playing again', () => {
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, track } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    playerAudio.dispatchEvent(new Event('error'));
+    expect(track.textContent).toBe('音频无法加载');
+
+    playerAudio.dispatchEvent(new Event('playing'));
+    expect(player.dataset.playbackState).toBe('playing');
+    expect(track.textContent).toBe('One-Artist');
   });
 
   it('starts with the arm lifted, toggles on a single record click, and shows one track label', () => {
@@ -170,6 +270,143 @@ describe('music player', () => {
     vi.advanceTimersByTime(400);
     expect(playerAudio.paused).toBe(false);
     expect(player.dataset.playbackState).toBe('playing');
+    expect(motion.animateCalls).toBe(1);
+    expect(motion.cancellations).toBeGreaterThan(0);
+  });
+
+  it('finishes a pending pause fade when the document becomes hidden', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
+    vi.advanceTimersByTime(140);
+    expect(playerAudio.paused).toBe(false);
+    Object.defineProperty(root, 'hidden', { value: true });
+    root.dispatchEvent(new Event('visibilitychange'));
+
+    expect(playerAudio.paused).toBe(true);
+    expect(playerAudio.volume).toBe(0);
+    expect(player.dataset.playbackState).toBe('paused');
+    vi.advanceTimersByTime(600);
+    expect(playerAudio.paused).toBe(true);
+  });
+
+  it.each([0, 440])('finishes a record swap at %ims when the document becomes hidden', (elapsed) => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      playCalls = 0;
+      load() {}
+      play() { this.playCalls += 1; this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record, track } = playerFixture('/');
+    const playerAudio = initializeMusicPlayer([
+      { id: 'a', title: 'A', artist: 'Artist', src: '/a.mp3' },
+      { id: 'b', title: 'B', artist: 'Artist', src: '/b.mp3' },
+    ], root)! as unknown as TestAudio;
+
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 2 }));
+    expect(record.disabled).toBe(true);
+    vi.advanceTimersByTime(elapsed);
+    Object.defineProperty(root, 'hidden', { value: true });
+    root.dispatchEvent(new Event('visibilitychange'));
+
+    expect(track.textContent).toBe('B-Artist');
+    expect(playerAudio.src).toBe('/b.mp3');
+    expect(playerAudio.paused).toBe(false);
+    expect(playerAudio.playCalls).toBe(1);
+    expect(record.disabled).toBe(false);
+    expect(player.dataset.recordSwap).toBeUndefined();
+    vi.advanceTimersByTime(800);
+    expect(playerAudio.playCalls).toBe(1);
+  });
+
+  it('completes an active swap when reduced motion is enabled', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      playCalls = 0;
+      load() {}
+      play() { this.playCalls += 1; this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record, track } = playerFixture('/');
+    const assembly = new PlayerElement();
+    player.controls.set('[data-player-record-assembly]', assembly);
+    const reduced = Object.assign(new EventTarget(), { matches: false });
+    Object.assign(root.defaultView!, { matchMedia: () => reduced });
+    const playerAudio = initializeMusicPlayer([
+      { id: 'a', title: 'A', artist: 'Artist', src: '/a.mp3' },
+      { id: 'b', title: 'B', artist: 'Artist', src: '/b.mp3' },
+    ], root)! as unknown as TestAudio;
+
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 2 }));
+    vi.advanceTimersByTime(220);
+    assembly.style.transform = 'translateX(-20%)';
+    assembly.style.opacity = '0.4';
+    expect(record.disabled).toBe(true);
+    reduced.matches = true;
+    reduced.dispatchEvent(new Event('change'));
+
+    expect(track.textContent).toBe('B-Artist');
+    expect(playerAudio.src).toBe('/b.mp3');
+    expect(playerAudio.playCalls).toBe(1);
+    expect(record.disabled).toBe(false);
+    expect(player.dataset.recordSwap).toBeUndefined();
+    expect(assembly.style.transform).toBe('');
+    expect(assembly.style.opacity).toBe('');
+    vi.advanceTimersByTime(800);
+    expect(playerAudio.playCalls).toBe(1);
+  });
+
+  it('finishes a pending pause fade when reduced motion is enabled', () => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record } = playerFixture('/');
+    const reduced = Object.assign(new EventTarget(), { matches: false });
+    Object.assign(root.defaultView!, { matchMedia: () => reduced });
+    const playerAudio = initializeMusicPlayer([{ id: 'one', title: 'One', artist: 'Artist', src: '/one.mp3' }], root)!;
+
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
+    vi.advanceTimersByTime(140);
+    expect(playerAudio.paused).toBe(false);
+    reduced.matches = true;
+    reduced.dispatchEvent(new Event('change'));
+
+    expect(playerAudio.paused).toBe(true);
+    expect(playerAudio.volume).toBe(0);
+    expect(player.dataset.playbackState).toBe('paused');
   });
 
   it('double clicking skips the pending toggle and draws each remaining track before reshuffling', () => {
@@ -367,6 +604,33 @@ describe('music player', () => {
     expect(player.dataset.displayMode).toBe('dock');
     expect(player.style.left).toBe('');
     expect(Audio).not.toHaveBeenCalled();
+  });
+
+  it('restarts playback progress on cached-page reentry but keeps it during site navigation', async () => {
+    class TestAudio extends EventTarget {
+      volume = 0.7;
+      currentTime = 0;
+      paused = true;
+      src = '';
+      load() {}
+      pause() { this.paused = true; }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, location } = playerFixture('/');
+    vi.stubGlobal('document', root);
+    vi.stubGlobal('window', root.defaultView);
+    vi.resetModules();
+    await import('../../src/scripts/music-player');
+    const playerAudio = vi.mocked(Audio).mock.results[0]!.value as TestAudio;
+    expect(playerAudio.currentTime).toBe(0);
+
+    playerAudio.currentTime = 42;
+    location.pathname = '/about/';
+    root.dispatchEvent(new Event('astro:after-swap'));
+    expect(playerAudio.currentTime).toBe(42);
+
+    root.defaultView!.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+    expect(playerAudio.currentTime).toBe(0);
   });
 
   it('retains the same Audio instance and track position across home and dock navigation', () => {

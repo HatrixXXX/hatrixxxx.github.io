@@ -1,3 +1,5 @@
+import { createAnimatable } from 'animejs';
+
 let stopTimeline: (() => void) | undefined;
 const scrollKey = 'hatrix:snippets:scroll';
 const returnKey = 'hatrix:snippets:return';
@@ -27,11 +29,8 @@ function initSnippetsTimeline() {
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   const controller = new AbortController();
   const { signal } = controller;
-  let frame = 0;
   let transitionFrame = 0;
   let restoreFrame = 0;
-  let lastFrame = 0;
-  let renderedDepth = 0;
 
   const scrollDepth = () => {
     const atPageEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
@@ -39,6 +38,9 @@ function initSnippetsTimeline() {
       ? body.offsetHeight
       : Math.max(0, Math.min(body.offsetHeight, window.innerHeight * 0.76 - body.getBoundingClientRect().top));
   };
+
+  const flow = { depth: scrollDepth() };
+  let flowMotion: ReturnType<typeof createAnimatable> | null = null;
 
   const paint = (depth: number) => {
     const height = body.offsetHeight;
@@ -61,38 +63,24 @@ function initSnippetsTimeline() {
     });
   };
 
-  const tick = (now: number) => {
-    const target = scrollDepth();
-    const elapsed = lastFrame ? Math.min(now - lastFrame, 64) : 16;
-    lastFrame = now;
-    renderedDepth += (target - renderedDepth) * (1 - Math.exp(-elapsed / 90));
-    if (Math.abs(target - renderedDepth) < 0.4) renderedDepth = target;
-    paint(renderedDepth);
-    if (renderedDepth !== target) {
-      frame = window.requestAnimationFrame(tick);
-    } else {
-      frame = 0;
-      lastFrame = 0;
-    }
-  };
-
   const schedule = () => {
-    if (motionPreference.matches || frame) return;
-    frame = window.requestAnimationFrame(tick);
+    if (motionPreference.matches || document.hidden) return;
+    flowMotion?.depth(scrollDepth());
   };
 
   const onMotionChange = () => {
-    if (frame) window.cancelAnimationFrame(frame);
     if (transitionFrame) window.cancelAnimationFrame(transitionFrame);
-    frame = 0;
     transitionFrame = 0;
-    lastFrame = 0;
+    flowMotion?.revert();
+    flowMotion = null;
     body.dataset.transitions = 'off';
     body.dataset.motion = motionPreference.matches ? 'reduced' : 'active';
     entries.forEach((entry) => { delete entry.dataset.connectFlash; });
-    renderedDepth = scrollDepth();
-    paint(renderedDepth);
+    flow.depth = scrollDepth();
+    paint(flow.depth);
     if (!motionPreference.matches) {
+      flowMotion = createAnimatable(flow, { depth: { duration: 180, ease: 'outCubic' } });
+      flowMotion.animations.depth.onRender = () => paint(flow.depth);
       transitionFrame = window.requestAnimationFrame(() => {
         transitionFrame = 0;
         if (!signal.aborted) body.dataset.transitions = 'on';
@@ -131,12 +119,13 @@ function initSnippetsTimeline() {
 
   stopTimeline = () => {
     controller.abort();
-    if (frame) window.cancelAnimationFrame(frame);
+    flowMotion?.revert();
     if (transitionFrame) window.cancelAnimationFrame(transitionFrame);
     if (restoreFrame) window.cancelAnimationFrame(restoreFrame);
   };
 }
 
 document.addEventListener('astro:page-load', initSnippetsTimeline);
+document.addEventListener('hatrix:protected-content-ready', initSnippetsTimeline);
 document.addEventListener('astro:before-swap', () => stopTimeline?.());
 initSnippetsTimeline();

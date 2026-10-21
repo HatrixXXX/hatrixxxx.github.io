@@ -12,28 +12,16 @@ import SocialIcon from '@/components/SocialIcon.astro';
   <p>{SITE.tagline}</p>
   <nav aria-label="作者链接">
     {SITE.socials.map((social) => (
-      social.url === null ? (
-        <span
-          aria-label={social.label}
-          aria-disabled="true"
-          data-social-id={social.id}
-          data-social-pending={social.id}
-          style={`--social-color: ${social.color}`}
-        >
-          <SocialIcon id={social.id} />
-        </span>
-      ) : (
-        <a
-          href={social.url}
-          aria-label={social.label}
-          data-social-id={social.id}
-          target={social.url.startsWith('http') ? '_blank' : undefined}
-          rel={social.url.startsWith('http') ? 'me noreferrer' : undefined}
-          style={`--social-color: ${social.color}`}
-        >
-          <SocialIcon id={social.id} />
-        </a>
-      )
+      <a
+        href={social.url}
+        aria-label={social.label}
+        data-social-id={social.id}
+        target={social.url.startsWith('http') ? '_blank' : undefined}
+        rel={social.url.startsWith('http') ? 'me noreferrer' : undefined}
+        style={`--social-color: ${social.color}`}
+      >
+        <SocialIcon id={social.id} />
+      </a>
     ))}
   </nav>
 </section>
@@ -174,8 +162,7 @@ import SocialIcon from '@/components/SocialIcon.astro';
     margin-top: 1.25rem;
   }
 
-  nav > a,
-  nav > span {
+  nav > a {
     position: relative;
     display: grid;
     width: 44px;
@@ -206,23 +193,6 @@ import SocialIcon from '@/components/SocialIcon.astro';
     background: var(--color-inset);
     transform: translateY(1px) scale(.96);
     transition-duration: 100ms;
-  }
-
-  nav > span {
-    color: var(--social-color, var(--color-muted));
-    opacity: 0.65;
-  }
-
-  [data-social-id='qqmusic'] {
-    --qqmusic-cutout: var(--color-inset);
-  }
-
-  a[data-social-id='qqmusic']:hover {
-    --qqmusic-cutout: var(--color-surface-raised);
-  }
-
-  a[data-social-id='qqmusic']:active {
-    --qqmusic-cutout: var(--color-inset);
   }
 
   @media (prefers-reduced-motion: reduce) {

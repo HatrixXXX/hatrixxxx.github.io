@@ -25,9 +25,11 @@ interface Props {
   title: string;
   description?: string;
   image?: string;
+  preloadImage?: boolean;
   bodyClass?: string;
   canonicalPath?: string;
   noindex?: boolean;
+  locked?: boolean;
   pageKind?: 'default' | 'home';
   showFooter?: boolean;
   showPageLoader?: boolean;
@@ -42,9 +44,11 @@ const {
   title,
   description = SITE.description,
   image = '/assets/home/cover.webp',
+  preloadImage = true,
   bodyClass,
   canonicalPath,
   noindex = false,
+  locked = false,
   pageKind = 'default',
   showFooter = false,
   showPageLoader = true,
@@ -67,7 +71,7 @@ const isAboutPage = Astro.url.pathname === '/about' || Astro.url.pathname.starts
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, SITE.url);
 const socialImage = new URL(image, SITE.url);
-const pageLocked = isConfiguredLockedPage(Astro.url.pathname);
+const pageLocked = locked || isConfiguredLockedPage(Astro.url.pathname);
 const excludeFromIndex = pageLocked || noindex;
 const showSakanaCharacters = isAboutPage;
 ---
@@ -86,12 +90,6 @@ const showSakanaCharacters = isAboutPage;
         const root = document.documentElement;
         if (root.dataset.pageLoader === 'disabled') return;
         if (root.dataset.pageKind !== 'home') root.dataset.pageBackground = 'loading';
-        let visited = false;
-        try {
-          const paths = JSON.parse(sessionStorage.getItem('hatrix-visited-pages') ?? '[]');
-          visited = Array.isArray(paths) && paths.includes(location.pathname);
-        } catch { /* Treat unreadable storage as a cold visit. */ }
-        if (visited) return;
         root.dataset.initialPageLoaderStartedAt = String(Date.now());
         root.dataset.initialPageLoader = 'visible';
         if (root.dataset.pageKind === 'home') return;
@@ -129,7 +127,7 @@ const showSakanaCharacters = isAboutPage;
     <link rel="preload" href={ibmPlexMono400Url} as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href={ibmPlexMono700Url} as="font" type="font/woff2" crossorigin="anonymous" />
     {!isHome && <link rel="preload" href={pageBackgroundSrc} as="image" fetchpriority="high" />}
-    {Astro.url.pathname === '/blogs/' && (
+    {(Astro.url.pathname === '/blogs/' || Astro.url.pathname === '/plans/') && (
       <>
         <link rel="preload" href="/assets/blog-cards/desktop-frame.webp" as="image" media="(min-width: 721px)" />
         <link rel="preload" href="/assets/blog-cards/mobile-frame.webp" as="image" media="(max-width: 720px)" />
@@ -137,7 +135,7 @@ const showSakanaCharacters = isAboutPage;
         <link rel="preload" href="/assets/blog-cards/locking-clamp.webp" as="image" media="(min-width: 721px)" />
       </>
     )}
-    {image !== '/assets/home/cover.webp' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
+    {preloadImage && image !== '/assets/home/cover.webp' && <link rel="preload" href={image} as="image" fetchpriority="high" />}
   </head>
   <body class={bodyClass} style={pageBgStyle}>
     {showPageLoader && <PageLoader />}
@@ -171,6 +169,12 @@ const showSakanaCharacters = isAboutPage;
       import '@/scripts/site-stats';
       import '@/scripts/page-loader';
       import '@/scripts/document-title';
+
+      const loadPlanCoverflow = () => {
+        if (location.pathname === '/plans/') void import('@/scripts/post-coverflow');
+      };
+      document.addEventListener('astro:page-load', loadPlanCoverflow);
+      loadPlanCoverflow();
     </script>
     {showSakanaCharacters && (
       <script>
