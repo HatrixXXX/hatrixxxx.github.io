@@ -83,6 +83,18 @@ export default defineConfig({
       },
       {
         protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@102d16687d19b8ba0b77fe930830465245d78294/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@a34cd33600165dd0b2b40e041434f85c54aaed07/img/**'
+      },
+      {
+        protocol: 'https',
         hostname: 'raw.githubusercontent.com',
         pathname:
           '/HatrixXXX/Hatrix-s-Blog-Image/85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
@@ -92,6 +104,18 @@ export default defineConfig({
         hostname: 'raw.githubusercontent.com',
         pathname:
           '/HatrixXXX/Hatrix-s-Blog-Image/b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/102d16687d19b8ba0b77fe930830465245d78294/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/a34cd33600165dd0b2b40e041434f85c54aaed07/img/**'
       }
     ]
   },

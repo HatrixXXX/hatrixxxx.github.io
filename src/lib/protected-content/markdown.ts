@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { createMarkdownProcessor, type RemarkPlugin } from '@astrojs/markdown-remark';
 import type { CollectionEntry } from 'astro:content';
 import { siteMarkdownConfig } from '../../config/markdown';
+import { isApprovedRemoteImageUrl } from '../safe-url';
 import { snippetRoot } from '../snippet-root';
 import { sanctuaryRoot } from '../sanctuary-root';
 import { base64url, utf8 } from './encoding';
@@ -93,7 +94,7 @@ async function sourceContext(post: ProtectedEntry): Promise<{ postPath: string; 
 
 function imagePathFromReference(reference: string, postId: string): string {
   if (URL_SCHEME.test(reference) || reference.startsWith('//')) {
-    throw protectedContentError(postId, '包含远程或 data 图片；请改为内容目录内的相对图片。');
+    throw protectedContentError(postId, '包含未批准的远程或 data 图片；请使用批准的固定提交图床 URL 或内容目录内的相对图片。');
   }
   if (isAbsolute(reference) || reference.startsWith('/') || reference.startsWith('\\')) {
     throw protectedContentError(postId, '包含绝对图片路径；请改为内容目录内的相对图片。');
@@ -175,7 +176,7 @@ function protectedImages(context: ProtectedImageContext): RemarkPlugin {
       if (node.type === 'html' && node.value && RAW_HTML_IMAGE.test(node.value)) {
         throw protectedContentError(
           context.postId,
-          '包含原始 HTML 图片；请改用 Markdown 相对图片语法。'
+          '包含原始 HTML 图片；请改用 Markdown 图片语法。'
         );
       }
       if (node.type === 'imageReference' && node.identifier) {
@@ -194,6 +195,11 @@ function protectedImages(context: ProtectedImageContext): RemarkPlugin {
     for (const image of images) {
       if (!image.url) {
         throw protectedContentError(context.postId, '包含空的正文图片路径。');
+      }
+      try {
+        if (isApprovedRemoteImageUrl(new URL(image.url))) continue;
+      } catch {
+        // Relative references continue through the protected asset pipeline.
       }
       const asset = await protectImage(image.url, context);
       image.url = TRANSPARENT_PIXEL;

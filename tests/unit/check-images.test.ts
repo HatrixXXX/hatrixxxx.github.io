@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolve } from 'node:path';
 import { checkImages, collectImageSources, coverFailuresFor, extractImageUrls } from '../../scripts/check-images';
 import { blogRoot } from '../../src/lib/blog-root';
+import { sanctuaryRoot } from '../../src/lib/sanctuary-root';
 import remarkImageStatus from '../../src/plugins/remark-image-status';
 
 const IMAGE_REPOSITORY = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image';
@@ -9,7 +10,9 @@ const IMAGE_REPOSITORY_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
 const IMMUTABLE_IMAGE_PREFIX = `${IMAGE_REPOSITORY}@${IMAGE_REPOSITORY_REF}/`;
 const PINNED_IMAGE_PREFIXES = [
   IMMUTABLE_IMAGE_PREFIX,
-  `${IMAGE_REPOSITORY}@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/`
+  `${IMAGE_REPOSITORY}@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/`,
+  `${IMAGE_REPOSITORY}@102d16687d19b8ba0b77fe930830465245d78294/`,
+  `${IMAGE_REPOSITORY}@a34cd33600165dd0b2b40e041434f85c54aaed07/`
 ];
 const USES_PUBLIC_FIXTURES = blogRoot() === resolve('tests/fixtures/private-blogs');
 
@@ -28,6 +31,16 @@ describe('remote image checking', () => {
 
     expect(blogImageUrls).toHaveLength(166);
     expect(unpinned).toHaveLength(0);
+  });
+
+  it('pins the sanctuary image inventory to immutable repository commits', async () => {
+    const sources = await collectImageSources(sanctuaryRoot('sanctuary'));
+    const unpinned = sources.urls.filter(
+      (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(`${prefix}img/`))
+    );
+
+    expect(unpinned).toHaveLength(0);
+    for (const cover of sources.coverUrls) expect(sources.urls).toContain(cover);
   });
 
   it('deduplicates jsDelivr Markdown and HTML image URLs', () => {

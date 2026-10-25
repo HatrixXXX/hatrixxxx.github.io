@@ -46,7 +46,7 @@ pnpm test:e2e
 
 公开仓库不跟踪博客文章、随笔或秘境的 Markdown。通过校验的内容都会生成页面；具体内容数和页面数以私有仓库及当前构建结果为准。
 
-私有仓库的目标远端是 `HatrixXXX/hatrix-blogs`。下面是约定结构示例，`assets/` 按需创建：
+私有仓库的目标远端是 `HatrixXXX/hatrix-blogs`。下面是约定结构示例；文章图片默认存放在公开图床：
 
 ```text
 .private-blogs/
@@ -54,9 +54,7 @@ pnpm test:e2e
 │  └─ workflows/
 │     └─ notify-site.yml
 └─ posts/
-   ├─ example.md
-   └─ assets/
-      └─ private-image.png
+   └─ example.md
 ```
 
 ## 首次接入私有仓库
@@ -94,9 +92,9 @@ HATRIX_ADMIN_KEY=<至少八字符的本机值>
 git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 ```
 
-在 `.private-snippets/snippets/` 中新建 Markdown 文件。文件名会转为 URL slug，作为 `/snippets/<slug>/` 的路径；frontmatter 必填 `title` 和仅含日期的 `date`（如 `2026-10-12`），可选 `description` 和 `cover`。封面图放在公开站点的 `public/` 内，`cover` 写站点根路径，例如 `/assets/images/snippets/wallpaper.webp`。远程图片地址不能直接作为封面。
+在 `.private-snippets/snippets/` 中新建 Markdown 文件。文件名会转为 URL slug，作为 `/snippets/<slug>/` 的路径；frontmatter 必填 `title` 和仅含日期的 `date`（如 `2026-10-12`），可选 `description` 和 `cover`。封面默认上传现有公开图床，`cover` 使用下方“图片策略”批准的固定提交 URL；也兼容公开站点 `public/` 内素材的站点根路径。未填写 `cover` 时使用统一默认封面。
 
-随笔总览和每篇详情使用现有 `HATRIX_ADMIN_KEY` 解锁。标题、摘要、日期、正文和 Markdown 相对图片进入加密产物；正文图片应保存在 `.private-snippets/snippets/` 内。随笔 URL 和放在 `public/` 下的封面仍可公开访问，封面不要放需保密的图片。
+随笔总览和每篇详情使用现有 `HATRIX_ADMIN_KEY` 解锁，标题、摘要、日期和正文进入加密产物。正文默认引用批准的固定提交图床图片，引用在解锁后才挂载，但图片文件本身公开，不受页面锁保护。旧内容目录内的 Markdown 相对图片仍可随正文加密。随笔 URL 和封面也公开可访问。
 
 内容提交并推送到随笔仓库的 `master` 后，`notify-site.yml` 会发送 `snippets-updated` 和完整提交 SHA，触发公开站点构建部署；该仓库需配置 `HATRIX_SITE_DISPATCH_TOKEN`。公开站点的 `master` 推送和手动运行也会读取随笔仓库的最新提交。生产工作流使用只读 deploy key 和站点仓库 Secret `HATRIX_SNIPPETS_DEPLOY_KEY` 读取随笔，pull request 则使用空的测试目录。
 
@@ -108,7 +106,7 @@ git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 git clone https://github.com/HatrixXXX/hatrix-sanctuary.git .private-sanctuary
 ```
 
-在 `.private-sanctuary/sanctuary/` 中维护 Markdown 文件，文件名决定 `/sanctuary/<文件名>/` 的地址。frontmatter 必填 `title`、不超过 100 字的 `summary` 和 `pubDate`，可选 `cover`。封面放在公开站点的 `public/assets/sanctuary-covers/`，`cover` 填写 `/assets/sanctuary-covers/<文件名>.webp`；未填写时使用默认封面。封面可公开访问，不要用需保密的图片。秘境总览和详情仍通过现有管理员 key 解锁，正文图片保留在私有内容目录内并使用相对路径。
+在 `.private-sanctuary/sanctuary/` 中维护 Markdown 文件，文件名决定 `/sanctuary/<文件名>/` 的地址。frontmatter 必填 `title`、不超过 100 字的 `summary` 和 `pubDate`，可选 `cover`。封面默认使用下方“图片策略”批准的固定提交图床 URL，也兼容 `/assets/` 路径；未填写时使用统一默认封面。秘境总览和详情仍通过现有管理员 key 解锁，文本进入加密产物。正文默认引用批准的公开图床图片，引用在解锁后才挂载，图片文件本身仍公开；旧内容目录内的 Markdown 相对图片保留随正文加密的兼容能力。
 
 ## 站点导航
 
@@ -151,7 +149,7 @@ legacySlug: 示例文章
 
 `summary` 必填，不超过 100 字，博客文章卡片直接显示它。随笔属于另一个集合，不使用这条博客文章规则。正文更新后检查摘要是否仍准确；只有主题、主要结论、覆盖范围或关键内容明显变化时才重写。`updatedDate` 和 `cover` 可省略。未填写 `cover` 时，文章列表和社交元信息使用默认封面。数学公式与 Mermaid 图表由文章内容自动触发，不需要额外的 frontmatter 开关。
 
-博客文章的元信息、正文、封面和正文图片在站点上全部公开，源码仍保存在独立私有 GitHub 仓库中。博客不再提供 `locked` 开关，旧字段会被忽略。正文中的远程图片继续遵守下方图床固定提交和 inventory 规则；文章目录内的相对图片由 Astro 正常处理。
+博客文章的元信息、正文、封面和正文图片在站点上全部公开，源码仍保存在独立私有 GitHub 仓库中。博客不再提供 `locked` 开关，旧字段会被忽略。封面与正文图片默认上传现有公开图床，使用下方批准的固定提交 URL；文章目录内的相对图片仍由 Astro 正常处理。
 
 文章改完后，在私有仓库提交；用户要求推送时，再推送私有仓库。不需要为文章改动提交公开仓库：
 
@@ -217,7 +215,11 @@ export const playlist: readonly Track[] = [
 
 ## 图片策略
 
-文章中的 jsDelivr 图片 URL 按当前 inventory 去重检查。允许的图床仓库不可变提交为 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606` 和 `b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`。新增文章引用同一图床时也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
+博客、随笔和秘境的封面与正文图片默认上传公开仓库 `HatrixXXX/Hatrix-s-Blog-Image`，使用批准的固定提交 URL。图片公开可访问，随笔和秘境的页面锁只保护文本及解锁后挂载的图片引用，不保护图床文件。上传完成并替换引用后，可删除对应本地原文件；不要改动首页人物、背景等其他已选素材。
+
+`check:images` 对三个内容集合的封面、正文远程图片和统一默认封面做 inventory 去重检查。允许的图床不可变提交为 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`、`b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`、`102d16687d19b8ba0b77fe930830465245d78294` 和 `a34cd33600165dd0b2b40e041434f85c54aaed07`。新增引用也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
+
+统一默认封面由 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER` 提供，地址为 `https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a34cd33600165dd0b2b40e041434f85c54aaed07/img/article-covers/default-cover.webp`，不再保留本地默认封面文件。当前秘境封面也使用批准的图床地址，图片内容和视觉样式不变。
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
@@ -227,9 +229,9 @@ export const playlist: readonly Track[] = [
 
 ## 随笔、秘境与资讯的加锁
 
-随笔、秘境和资讯沿用管理员 key 加锁；博客文章不参与加密。加锁发生在 Astro 服务端渲染期间，不是构建完成后的 HTML 替换。`ProtectedContent.astro` 读取 `HATRIX_ADMIN_KEY`，用公开的固定盐和 Argon2id 派生 AES-256-GCM key，然后直接加密渲染后的 slot。正文图片由 `/protected-content/assets/<id>.bin` 静态端点分别加密。实现没有随机 DEK 或 key envelope；页面、资源和 verifier 都直接使用同一个派生 key，并各自使用随机 IV 和不同 AAD。
+随笔、秘境和资讯沿用管理员 key 加锁；博客文章不参与加密。加锁发生在 Astro 服务端渲染期间，不是构建完成后的 HTML 替换。`ProtectedContent.astro` 读取 `HATRIX_ADMIN_KEY`，用公开的固定盐和 Argon2id 派生 AES-256-GCM key，然后直接加密渲染后的 slot。批准的图床 URL 随正文一起加密，解锁后按公开地址加载图片；旧内容目录内的 Markdown 相对图片仍由 `/protected-content/assets/<id>.bin` 静态端点分别加密。实现没有随机 DEK 或 key envelope；页面、加密资源和 verifier 都直接使用同一个派生 key，并各自使用随机 IV 和不同 AAD。
 
-这些页面在解锁前只输出公共外壳、KDF 参数和密文。正确解锁后，页面 HTML 在内存中挂载，图片解密为 Blob URL。原始 key 不会保存；浏览器在 IndexedDB 中保存不可导出的 AES `CryptoKey`，session 模式用 `sessionStorage` 引用，勾选“7 天免解锁”后用带到期时间的 `localStorage` 引用。凭据只对同一浏览器资料有效。
+这些页面在解锁前只输出公共外壳、KDF 参数和密文。正确解锁后，页面 HTML 在内存中挂载，公开图床图片按原 URL 加载，加密的相对图片解密为 Blob URL。受保护正文只允许批准的固定提交图床 URL 或内容目录内的 Markdown 相对图片；未批准的远程地址、data URL、站点根绝对路径、越界路径和原始 HTML `<img>` 仍会被拒绝。原始 key 不会保存；浏览器在 IndexedDB 中保存不可导出的 AES `CryptoKey`，session 模式用 `sessionStorage` 引用，勾选“7 天免解锁”后用带到期时间的 `localStorage` 引用。凭据只对同一浏览器资料有效。
 
 key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、自动填写 key 不受站点控制。
 

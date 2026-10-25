@@ -10,6 +10,8 @@ import {
 
 const keyBytes = new Uint8Array(32).fill(7);
 const fixtureImage = resolve('tests/fixtures/protected-content/private-image.png');
+const PUBLIC_IMAGE_URL =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/public-body-image.png';
 let temporaryRoot: string;
 let protectedRoot: string;
 let entryPath: string;
@@ -112,6 +114,36 @@ describe('protected Markdown', () => {
   });
 
   it.each([
+    ['inline', `![public alt](${PUBLIC_IMAGE_URL})`],
+    ['full reference', `![public alt][PiC]\n\n[pIc]: ${PUBLIC_IMAGE_URL}`],
+    ['collapsed reference', `![public alt][]\n\n[PUBLIC ALT]: ${PUBLIC_IMAGE_URL}`],
+    ['shortcut reference', `![public alt]\n\n[PUBLIC ALT]: ${PUBLIC_IMAGE_URL}`]
+  ])('renders an approved public %s image without an encrypted asset', async (_kind, body) => {
+    await rm(join(protectedRoot, 'nested', 'private-image.png'));
+
+    const result = await renderProtectedMarkdown(fixtureSanctuary(body), keyBytes);
+
+    expect(result.html).toContain(`src="${PUBLIC_IMAGE_URL}"`);
+    expect(result.html).toContain('alt="public alt"');
+    expect(result.html).not.toContain('data-protected-src');
+    expect(result.assets).toEqual([]);
+  });
+
+  it('keeps local images encrypted alongside approved public images', async () => {
+    const post = fixtureSanctuary(`![public](${PUBLIC_IMAGE_URL})\n\n![private](./private-image.png)`);
+
+    const result = await renderProtectedMarkdown(post, keyBytes);
+    const assets = await collectProtectedAssets([post], keyBytes);
+
+    expect(result.html).toContain(`src="${PUBLIC_IMAGE_URL}"`);
+    expect(result.html.match(/data-protected-src=/g)).toHaveLength(1);
+    expect(result.assets).toHaveLength(1);
+    expect(assets).toHaveLength(1);
+    expect(assets[0].sourcePath).toBe(join(protectedRoot, 'nested', 'private-image.png'));
+    expect(result.html).not.toContain('private-image.png');
+  });
+
+  it.each([
     '![secret alt][PiC]\n\n[pIc]: ./private-image.png "secret title"',
     '![secret alt][]\n\n[SECRET ALT]: ./private-image.png "secret title"',
     '![secret alt]\n\n[SECRET ALT]: ./private-image.png "secret title"'
@@ -129,8 +161,17 @@ describe('protected Markdown', () => {
 
   it.each([
     'https://example.com/private.png',
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/private.png',
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@0000000000000000000000000000000000000000/img/private.png',
+    'https://cdn.jsdelivr.net.evil.example/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/private.png',
+    'data:image/png;base64,AAAA',
+    '//cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/private.png',
     '/assets/private.png'
-  ])('rejects reference images outside the protected relative asset pipeline: %s', async (url) => {
+  ])('rejects images outside approved public URLs and protected relative assets: %s', async (url) => {
+    await expect(renderProtectedMarkdown(
+      fixtureSanctuary(`![secret](${url})`),
+      keyBytes
+    )).rejects.toThrow(/加锁文章/);
     await expect(renderProtectedMarkdown(
       fixtureSanctuary(`![secret][PiC]\n\n[pIc]: ${url}`),
       keyBytes
@@ -184,9 +225,9 @@ describe('protected Markdown', () => {
     }
   });
 
-  it('rejects raw HTML images because they cannot be safely rewritten', async () => {
+  it.each(['./private-image.png', PUBLIC_IMAGE_URL])('rejects raw HTML images even when their source is allowed: %s', async (url) => {
     await expect(
-      renderProtectedMarkdown(fixtureSanctuary('<img src="./private-image.png" alt="secret">'), keyBytes)
+      renderProtectedMarkdown(fixtureSanctuary(`<img src="${url}" alt="secret">`), keyBytes)
     ).rejects.toThrow(/加锁文章/);
   });
 

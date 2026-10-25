@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { snippetRoot } from '../../src/lib/snippet-root';
 import { snippetSchema } from '../../src/lib/snippet-schema';
+import { IMMUTABLE_IMAGE_PREFIX } from '../../src/lib/safe-url';
 import { getAdjacentSnippets, snippetIdFromFile, snippetPath, sortSnippets } from '../../src/lib/snippets';
 
 const fixture = {
@@ -49,10 +50,19 @@ describe('snippets content', () => {
     expect(snippetSchema.safeParse({ ...fixture, locked: true }).success).toBe(false);
   });
 
-  it('accepts only site-local cover paths', () => {
+  it('accepts approved immutable image-host covers', () => {
+    expect(snippetSchema.safeParse({
+      ...fixture, cover: `${IMMUTABLE_IMAGE_PREFIX}example.webp`
+    }).success).toBe(true);
+  });
+
+  it('rejects unsafe local cover paths and unapproved remote covers', () => {
     for (const cover of ['https://example.com/x.webp', '//example.com/x.webp', 'javascript:x', '/x.webp?token=1', '/x.webp#part', '../x.webp']) {
       expect(snippetSchema.safeParse({ ...fixture, cover }).success, cover).toBe(false);
     }
+    expect(snippetSchema.safeParse({
+      ...fixture, cover: IMMUTABLE_IMAGE_PREFIX.replace(/@[a-f0-9]+\//, '@master/') + 'example.webp'
+    }).success).toBe(false);
   });
 
   it('sorts newest first without changing the source array and builds detail paths', () => {

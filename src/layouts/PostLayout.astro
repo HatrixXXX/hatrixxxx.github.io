@@ -14,6 +14,7 @@ import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
 import { postPath } from '@/lib/urls';
 import { latestPostLimit } from '@/lib/post-layout';
 import { SITE } from '@/config/site';
+import { DEFAULT_ARTICLE_COVER } from '@/config/article-images';
 import '../styles/post-comments-frame.css';
 
 interface Heading {
@@ -38,7 +39,7 @@ const stats = buildSiteStats(posts);
 <BaseLayout
   title={post.data.title}
   description={SITE.description}
-  image={post.data.cover}
+  image={post.data.cover || DEFAULT_ARTICLE_COVER}
   preloadImage={false}
   showFooter={true}
   canonicalPath={canonicalPath}

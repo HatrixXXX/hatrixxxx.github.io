@@ -7,6 +7,8 @@ import { utf8 } from '../../src/lib/protected-content/encoding';
 import { inspectProtectedOutput } from '../../scripts/check-protected-output';
 
 const PRIVATE_BODY = 'distinctive-private-body-marker-for-output-audit';
+const PUBLIC_IMAGE_URL =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/public-body-image.png';
 const PRIVATE_ASSET = new Uint8Array([
   137, 80, 78, 71, 13, 10, 26, 10, 71, 91, 173, 240, 14, 89, 201, 34,
   163, 61, 119, 8, 214, 49, 179, 76, 201, 16, 82, 108, 233, 7, 166, 219
@@ -172,6 +174,58 @@ describe('protected output audit', () => {
 
     expect(result.errors).toContain('asset-index.json: original protected resource name');
     expect(result.errors.join('\n')).not.toContain('private-image.png');
+  });
+
+  it.each([
+    ['inline', `![public](${PUBLIC_IMAGE_URL})`],
+    ['full reference', `![public][PiC]\n\n[pIc]: ${PUBLIC_IMAGE_URL}`],
+    ['collapsed reference', `![public][]\n\n[PUBLIC]: ${PUBLIC_IMAGE_URL}`],
+    ['shortcut reference', `![public]\n\n[PUBLIC]: ${PUBLIC_IMAGE_URL}`]
+  ])('accepts an approved public %s image without reading a local original or treating its URL as secret', async (_kind, markdown) => {
+    await writeFixture(`${PRIVATE_BODY}\n\n${markdown}`);
+    await rm(join(sanctuaryRootPath, 'private-image.png'));
+    await writeFile(join(distRoot, 'public-image-index.json'), JSON.stringify({
+      url: PUBLIC_IMAGE_URL,
+      filename: 'public-body-image.png'
+    }), 'utf8');
+
+    await expect(inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath)).resolves.toEqual({ errors: [] });
+  });
+
+  it('still detects local image bytes and filenames alongside approved public images', async () => {
+    await writeFixture(`![public](${PUBLIC_IMAGE_URL})\n\n![private](./private-image.png)`);
+    await writeFile(join(distRoot, 'assets', 'leaked.bin'), PRIVATE_ASSET);
+    await writeFile(join(distRoot, 'asset-index.json'), JSON.stringify({ source: 'private-image.png' }), 'utf8');
+
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
+
+    expect(result.errors).toEqual([
+      'asset-index.json: original protected resource name',
+      'assets/leaked.bin: original protected resource bytes'
+    ]);
+  });
+
+  it('rejects raw HTML images even when the public source is approved', async () => {
+    await writeFixture(`<img src="${PUBLIC_IMAGE_URL}" alt="public">`);
+
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
+
+    expect(result.errors).toEqual(['sanctuary/private-entry.md: locked Markdown contains a raw HTML image']);
+  });
+
+  it.each([
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image/img/private.png',
+    'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@0000000000000000000000000000000000000000/img/private.png',
+    'https://cdn.jsdelivr.net.evil.example/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/private.png',
+    'data:image/png;base64,AAAA',
+    '//cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/private.png'
+  ])('rejects an unapproved public image reference without echoing it: %s', async (url) => {
+    await writeFixture(`![private][asset]\n\n[asset]: ${url}`);
+
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
+
+    expect(result.errors).toContain('sanctuary/private-entry.md: locked Markdown contains a remote body image');
+    expect(result.errors.join('\n')).not.toContain(url);
   });
 
   it.each([

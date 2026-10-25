@@ -3,6 +3,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 import { fileURLToPath } from 'node:url';
 import { createMarkdownProcessor, type RemarkPlugin } from '@astrojs/markdown-remark';
 import matter from 'gray-matter';
+import { isApprovedRemoteImageUrl } from '../src/lib/safe-url';
 import { snippetRoot } from '../src/lib/snippet-root';
 import { sanctuaryRoot } from '../src/lib/sanctuary-root';
 
@@ -19,6 +20,7 @@ interface ProtectedSource {
 const MIN_BODY_SNIPPET_LENGTH = 24;
 const MARKDOWN_IMAGE = /!\[[^\]]*\]\(\s*(?:<([^>\r\n]+)>|([^\s)]+))(?:\s+[^)]*)?\)/g;
 const HTML_IMAGE = /<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi;
+const RAW_HTML_IMAGE = /<img(?:\s|\/?>)/i;
 const REMOTE_REFERENCE = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
 const MARKUP_TAG = /<[A-Za-z][^>]*>/g;
 const MARKUP_ATTRIBUTE = /(?:^|\s)([A-Za-z_:][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`)\s*\}|([^\s"'=<>`]+))/g;
@@ -144,11 +146,13 @@ interface MarkdownReferenceNode {
   type: string;
   identifier?: string;
   url?: string;
+  value?: string;
   children?: MarkdownReferenceNode[];
 }
 
-async function imageReferences(content: string): Promise<string[]> {
+async function imageReferences(content: string): Promise<{ references: string[]; hasRawHtmlImage: boolean }> {
   const references: string[] = [];
+  let hasRawHtmlImage = false;
   for (const match of content.matchAll(MARKDOWN_IMAGE)) references.push(match[1] ?? match[2]);
   for (const match of content.matchAll(HTML_IMAGE)) references.push(match[1]);
 
@@ -156,6 +160,7 @@ async function imageReferences(content: string): Promise<string[]> {
     const nodes: MarkdownReferenceNode[] = [];
     const collect = (node: MarkdownReferenceNode): void => {
       nodes.push(node);
+      if (node.type === 'html' && RAW_HTML_IMAGE.test(node.value ?? '')) hasRawHtmlImage = true;
       node.children?.forEach(collect);
     };
     collect(tree as MarkdownReferenceNode);
@@ -178,7 +183,7 @@ async function imageReferences(content: string): Promise<string[]> {
     remarkPlugins: [collectReferenceImages]
   });
   await processor.render(content);
-  return references;
+  return { references, hasRawHtmlImage };
 }
 
 async function protectedSources(snippetsRoot: string, sanctuaryRootPath: string, errors: Set<string>): Promise<ProtectedSource[]> {
@@ -194,10 +199,20 @@ async function protectedSources(snippetsRoot: string, sanctuaryRootPath: string,
     for (const sourceFile of sourceFiles) {
       const parsed = matter(await readFile(sourceFile, 'utf8'));
       const sourceName = `${kind}/${outputPath(root, sourceFile)}`;
-      const references = await imageReferences(parsed.content);
+      const { references, hasRawHtmlImage } = await imageReferences(parsed.content);
+      if (hasRawHtmlImage) errors.add(`${sourceName}: locked Markdown contains a raw HTML image`);
+      let protectedBody = parsed.content;
       const resources: Array<{ name: string; bytes: Buffer }> = [];
       for (const reference of references) {
         if (REMOTE_REFERENCE.test(reference)) {
+          try {
+            if (isApprovedRemoteImageUrl(new URL(reference))) {
+              protectedBody = protectedBody.replaceAll(reference, '');
+              continue;
+            }
+          } catch {
+            // Malformed remote references are rejected below.
+          }
           errors.add(`${sourceName}: locked Markdown contains a remote body image`);
           continue;
         }
@@ -223,7 +238,7 @@ async function protectedSources(snippetsRoot: string, sanctuaryRootPath: string,
       }
 
       sources.push({
-        bodySnippets: bodySnippets(parsed.content),
+        bodySnippets: bodySnippets(protectedBody),
         metadataValues: kind === 'snippets'
           ? [parsed.data.title, parsed.data.description].filter((value): value is string => typeof value === 'string')
           : [],

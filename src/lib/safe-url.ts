@@ -3,10 +3,16 @@ export const IMMUTABLE_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
 const NEW_IMMUTABLE_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/';
+const SANCTUARY_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@102d16687d19b8ba0b77fe930830465245d78294/img/';
+const ARTICLE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a34cd33600165dd0b2b40e041434f85c54aaed07/img/';
 
 const IMMUTABLE_IMAGE_BASES = [
   new URL(IMMUTABLE_IMAGE_PREFIX),
-  new URL(NEW_IMMUTABLE_IMAGE_PREFIX)
+  new URL(NEW_IMMUTABLE_IMAGE_PREFIX),
+  new URL(SANCTUARY_IMAGE_PREFIX),
+  new URL(ARTICLE_IMAGE_PREFIX)
 ];
 const DANGEROUS_DATA_MEDIA_TYPES = new Set([
   'text/html',

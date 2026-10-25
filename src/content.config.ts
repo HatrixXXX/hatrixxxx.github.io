@@ -9,6 +9,7 @@ import { snippetRoot } from './lib/snippet-root';
 import { snippetSchema } from './lib/snippet-schema';
 import { snippetIdFromFile } from './lib/snippets';
 import { sanctuaryRoot } from './lib/sanctuary-root';
+import { sanctuarySchema } from './lib/sanctuary-schema';
 import { protectedGlob } from './lib/protected-glob';
 
 const posts = defineCollection({
@@ -31,12 +32,7 @@ const sanctuary = defineCollection({
     base: pathToFileURL(sanctuaryRoot('sanctuary')).href,
     generateId: ({ entry }) => entry.replace(/\.md$/i, '')
   }),
-  schema: z.object({
-    title: z.string().trim().min(1),
-    summary: z.string().trim().min(1).max(100),
-    pubDate: z.coerce.date(),
-    cover: z.string().startsWith('/assets/').optional()
-  })
+  schema: sanctuarySchema
 });
 
 const projects = defineCollection({

@@ -6,6 +6,7 @@ import ProtectedContent from '@/components/ProtectedContent.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { PostEntry } from '@/lib/content';
 import { postSchema } from '@/lib/post-schema';
+import { DEFAULT_ARTICLE_COVER } from '@/config/article-images';
 
 interface Props {
   slug: string;
@@ -35,7 +36,7 @@ const legacyPost = {
     title: '旧字段公开文章标题',
     summary: '旧字段公开文章摘要',
     pubDate: new Date('2026-09-03'),
-    cover: '/assets/blog-cards/default-cover.webp',
+    cover: DEFAULT_ARTICLE_COVER,
     locked: true,
     legacySlug: 'locked-index-fixture'
   })

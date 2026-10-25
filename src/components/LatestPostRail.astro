@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import { DEFAULT_ARTICLE_COVER } from '@/config/article-images';
 import type { PostEntry } from '@/lib/content';
 import { postPath } from '@/lib/urls';
 
@@ -12,7 +13,7 @@ const latest = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDa
   <h2>最新文章</h2>
   <div class="latest-list">
     {latest.map((post) => <a class="latest-item" href={postPath(post.data.legacySlug)}>
-      <Image src={post.data.cover || '/assets/blog-cards/default-cover.webp'} alt="" width={176} height={112} quality={75} loading="lazy" decoding="async" />
+      <Image src={post.data.cover || DEFAULT_ARTICLE_COVER} alt="" width={176} height={112} quality={75} loading="lazy" decoding="async" />
       <span>{post.data.title}</span>
     </a>)}
   </div>

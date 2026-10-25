@@ -1,10 +1,15 @@
 import { z } from 'astro/zod';
+import { isApprovedRemoteImageUrl } from './safe-url';
 
-const siteCover = z.string().min(1).refine((path) =>
-  /^\/(?!\/)[^\s?#\\"'()<>%]+$/.test(path) &&
-  !path.split('/').some((segment) => segment === '.' || segment === '..'),
-  { message: 'snippet cover must be a site-local path' }
-);
+const snippetCover = z.string().min(1).refine((value) => {
+  if (/^\/(?!\/)[^\s?#\\"'()<>%]+$/.test(value) &&
+    !value.split('/').some((segment) => segment === '.' || segment === '..')) return true;
+  try {
+    return isApprovedRemoteImageUrl(new URL(value));
+  } catch {
+    return false;
+  }
+}, { message: 'snippet cover must use a site-local path or an approved immutable image repository URL' });
 
 export const snippetSchema = z.strictObject({
   title: z.string().min(1),
@@ -14,5 +19,5 @@ export const snippetSchema = z.strictObject({
     { message: 'snippet date must be a calendar date without time or timezone' }
   ),
   description: z.string().min(1).optional(),
-  cover: siteCover.optional()
+  cover: snippetCover.optional()
 });

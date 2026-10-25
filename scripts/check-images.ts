@@ -3,6 +3,9 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { blogRoot } from '../src/lib/blog-root';
+import { sanctuaryRoot } from '../src/lib/sanctuary-root';
+import { snippetRoot } from '../src/lib/snippet-root';
+import { DEFAULT_ARTICLE_COVER } from '../src/config/article-images';
 
 const DEFAULT_CONCURRENCY = 12;
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -174,7 +177,13 @@ export function coverFailuresFor(result: ImageCheckResult, coverUrls: ReadonlySe
 
 async function main(): Promise<void> {
   const root = process.cwd();
-  const { urls, coverUrls } = await collectImageSources(blogRoot('posts'));
+  const sources = await Promise.all([
+    collectImageSources(blogRoot('posts')),
+    collectImageSources(snippetRoot('snippets')),
+    collectImageSources(sanctuaryRoot('sanctuary'))
+  ]);
+  const urls = [...new Set([DEFAULT_ARTICLE_COVER, ...sources.flatMap((source) => source.urls)])];
+  const coverUrls = new Set([DEFAULT_ARTICLE_COVER, ...sources.flatMap((source) => [...source.coverUrls])]);
   const result = await checkImages(urls, DEFAULT_CONCURRENCY);
   const coverFailures = await writeReport(resolve(root, 'reports/image-check.json'), urls.length, result, coverUrls);
 

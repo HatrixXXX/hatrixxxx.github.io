@@ -1,5 +1,6 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { DEFAULT_ARTICLE_COVER } from '@/config/article-images';
 import BackButton from '@/components/BackButton.astro';
 import BackToTop from '@/components/BackToTop.astro';
 import EmptyState from '@/components/EmptyState.astro';
@@ -37,7 +38,7 @@ const formatDate = (date: Date) =>
                 <div class="snippet-reveal">
                 <a class="snippet-card" href={snippetPath(entry.id)} aria-label={`${entry.data.title}，${formatDate(entry.data.date)}`}>
                   <span class="snippet-card-art" aria-hidden="true">
-                    <img src={entry.data.cover || '/assets/blog-cards/default-cover.webp'} alt="" loading="lazy" decoding="async" />
+                    <img src={entry.data.cover || DEFAULT_ARTICLE_COVER} alt="" loading="lazy" decoding="async" />
                   </span>
                   <span class="snippet-card-content">
                     <time datetime={entry.data.date.toISOString()}>{formatDate(entry.data.date)}</time>
