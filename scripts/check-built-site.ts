@@ -574,7 +574,7 @@ export async function inspectProjectBuiltSite(
   options: ProjectBuiltSiteCheckOptions = {}
 ): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
-  const expectedPostCount = options.expectedPostCount ?? 13;
+  const expectedPostCount = options.expectedPostCount ?? 14;
   const sourceBlogsRoot = resolve(projectRoot, options.sourceBlogsRoot ?? '.private-blogs');
   const postsDirectory = resolve(sourceBlogsRoot, 'posts');
   const sourceSnippetsRoot = resolve(projectRoot, options.sourceSnippetsRoot ?? '.private-snippets');
@@ -648,7 +648,7 @@ async function main(): Promise<void> {
   const fixtureMode = process.argv.includes('--fixtures');
   const result = await inspectProjectBuiltSite(process.cwd(), {
     expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
-    expectedPostCount: fixtureMode ? 2 : 13,
+    expectedPostCount: fixtureMode ? 2 : 14,
     sourceBlogsRoot: blogRoot(),
     sourceSnippetsRoot: snippetRoot(),
     sourceSanctuaryRoot: sanctuaryRoot()

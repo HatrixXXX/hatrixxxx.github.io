@@ -103,15 +103,13 @@ export function excerptForMatch(paragraphs: string[], query: string, maxLength =
 
 export function toSearchDocument(post: PostEntry): SearchDocument {
   const metadata = markdownToPlainText(post.data.title);
-  const paragraphs = post.data.locked
-    ? []
-    : [markdownToPlainText(post.data.summary ?? ''), ...markdownToParagraphs((post as PostEntry & { body?: string }).body ?? '')].filter(Boolean);
+  const paragraphs = [markdownToPlainText(post.data.summary ?? ''), ...markdownToParagraphs((post as PostEntry & { body?: string }).body ?? '')].filter(Boolean);
 
   return {
     id: post.id,
     url: postPath(post.data.legacySlug),
     title: post.data.title,
-    locked: post.data.locked,
+    locked: false,
     text: [metadata, ...paragraphs].filter(Boolean).join(' '),
     paragraphs
   };

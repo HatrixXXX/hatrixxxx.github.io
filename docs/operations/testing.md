@@ -4,9 +4,9 @@
 
 ## 验证范围
 
-- 纯文档、测试说明或不影响页面的配置修改，只做与文件格式、链接和规则一致性有关的检查。
-- 小型内容和样式修改运行相关单元测试、类型检查；影响浏览器渲染或交互时再启动本地 HTTP 预览。
-- 安全边界、构建发布、跨页面公共逻辑或轻量检查不足时扩大验证范围。提前说明是进度通知，不表示等待批准。
+- 日常本地修改只完成修改，不自动运行测试、类型检查、构建、图片与安全检查、浏览器预览或其他验收。
+- 用户明确要求推送时，统一执行下文的推送门禁，并按改动选择必要的类型检查、浏览器和专项验证。
+- 推送前涉及安全边界、构建发布或跨页面公共逻辑时，选择能覆盖风险的检查范围。提前说明是进度通知，不表示等待批准。
 - 不自动安装浏览器，也不默认运行全量 E2E 或视觉回归。用户明确要求，或风险确有需要时再运行。
 
 本地预览统一使用：
@@ -16,7 +16,7 @@ corepack pnpm astro dev --background --host 127.0.0.1 --port 4321
 corepack pnpm astro dev status
 ```
 
-复用已经运行的 `4321` 服务，不重复启动。只有影响页面的改动才需要通过 HTTP 请求确认；纯文档或测试文件修改不启动预览。
+推送前需要预览，或用户明确要求本地预览时，先请求 `http://127.0.0.1:4321/`，确认是否已有本项目服务；有则复用，无则启动并再次以 HTTP 响应确认。`status` 仅作辅助，不使用其他端口，不重复启动。纯文档或测试文件修改不启动预览。
 
 ## 常用命令
 
@@ -41,13 +41,15 @@ corepack pnpm test:e2e
 1. `corepack pnpm test:run`
 2. `corepack pnpm build && corepack pnpm check:site`
 
-不要依赖 CI 发现本地可复现的失败。没有推送请求时，根据改动风险运行最小充分验证，不因为完成普通本地任务而自动扩大到推送门禁。
+不要依赖 CI 发现本地可复现的失败。没有推送请求时不自动运行验收，相关检查积累到推送前统一执行。
 
 ## 生产依赖审计
 
 `pnpm-workspace.yaml` 只忽略 `GHSA-ch52-4w7c-c8xp`。该公告影响共享 HTTP 缓存，当前没有修复版本；本站只在 Astro 静态构建阶段引入相关包，Pages 产物不运行共享缓存服务。
 
 Astro 解析到修复版 `http-cache-semantics` 后删除此项豁免。不得使用 `--ignore-unfixable`、降低审计等级或增加无关 GHSA。
+
+若本机镜像 registry 不提供 audit 端点，使用一次性命令 `corepack pnpm audit --prod --audit-level high --registry=https://registry.npmjs.org` 访问官方接口，不修改全局 registry。
 
 ## 远程图片审计
 
@@ -74,13 +76,15 @@ Astro 解析到修复版 `http-cache-semantics` 后删除此项豁免。不得�
 
 ## 相关代码与 fixture
 
-- 新增或修改动态路由后运行 `corepack pnpm check`，确认 `getStaticPaths`、frontmatter 变量和模板引用没有类型错误。
+- 推送涉及新增或修改动态路由时，运行 `corepack pnpm check`，确认 `getStaticPaths`、frontmatter 变量和模板引用没有类型错误。
 - 修改 `src/config/navigation.ts` 的路径或标签时，同步检查 `tests/unit/navigation-config.test.ts`。
 - 修改 `src/scripts/music-player.ts` 的逻辑或 DOM 结构，或修改 `src/components/MusicPlayer.astro` 的 data 属性时，同步检查 `tests/unit/music-player.test.ts` 的 fixture 与断言。
 - 脚本新增 `player.style`、`panel.style` 等 DOM 属性访问时，测试 fixture 的模拟对象也要提供对应属性。
 - `source-contains` 断言必须与源码字符串一致；不要为了让断言通过而保留已经失真的实现文本。
 
 `tests/unit/` 中部分测试会故意构造违规 Markdown。日志出现“包含原始 HTML 图片”或 `forbidden raw HTML tag`，并指向 `/tmp/` 或 `/E:/post.md` 时，属于拒绝行为测试的预期输出。
+
+秘境公开测试目录包含一张真实 PNG，构建会验证它没有被 Astro 复制进 `dist/_astro/`。保护加载器必须保留原始正文，同时阻止原生 Markdown 模块和图片资产登记；内联与引用式图片都通过加密渲染器及泄漏审计。
 
 ## 站点统计
 

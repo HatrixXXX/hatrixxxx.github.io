@@ -4,8 +4,6 @@ import { pathToFileURL } from 'node:url';
 import { createMarkdownProcessor, type RemarkPlugin } from '@astrojs/markdown-remark';
 import type { CollectionEntry } from 'astro:content';
 import { siteMarkdownConfig } from '../../config/markdown';
-import { blogRoot } from '../blog-root';
-import type { PostEntry } from '../content';
 import { snippetRoot } from '../snippet-root';
 import { sanctuaryRoot } from '../sanctuary-root';
 import { base64url, utf8 } from './encoding';
@@ -20,7 +18,9 @@ export interface ProtectedAsset {
 
 interface MarkdownNode {
   type: string;
+  identifier?: string;
   url?: string;
+  title?: string | null;
   value?: string;
   data?: { hProperties?: Record<string, unknown> };
   children?: MarkdownNode[];
@@ -30,12 +30,12 @@ interface ProtectedImageContext {
   postId: string;
   postPath: string;
   contentRoot: string;
-  collection: 'posts' | 'snippets' | 'sanctuary';
+  collection: 'snippets' | 'sanctuary';
   key: CryptoKey;
   assets: Map<string, ProtectedAsset>;
 }
 
-type ProtectedEntry = PostEntry | CollectionEntry<'snippets'> | CollectionEntry<'sanctuary'>;
+type ProtectedEntry = CollectionEntry<'snippets'> | CollectionEntry<'sanctuary'>;
 
 const TRANSPARENT_PIXEL =
   'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -79,8 +79,7 @@ async function sourceContext(post: ProtectedEntry): Promise<{ postPath: string; 
 
   try {
     const canonicalRoot = await realpath(
-      post.collection === 'snippets' ? snippetRoot('snippets') :
-      post.collection === 'sanctuary' ? sanctuaryRoot('sanctuary') : blogRoot('posts')
+      post.collection === 'snippets' ? snippetRoot('snippets') : sanctuaryRoot('sanctuary')
     );
     if (pathIsWithin(canonicalRoot, postPath)) {
       return { postPath, contentRoot: canonicalRoot };
@@ -161,6 +160,16 @@ async function protectImage(reference: string, context: ProtectedImageContext): 
 
 function protectedImages(context: ProtectedImageContext): RemarkPlugin {
   return () => async (tree: MarkdownNode) => {
+    const definitions = new Map<string, MarkdownNode>();
+    const collectDefinitions = (node: MarkdownNode): void => {
+      if (node.type === 'definition' && node.identifier) {
+        const identifier = node.identifier.toUpperCase();
+        if (!definitions.has(identifier)) definitions.set(identifier, node);
+      }
+      for (const child of node.children ?? []) collectDefinitions(child);
+    };
+    collectDefinitions(tree);
+
     const images: MarkdownNode[] = [];
     const visit = (node: MarkdownNode): void => {
       if (node.type === 'html' && node.value && RAW_HTML_IMAGE.test(node.value)) {
@@ -168,6 +177,14 @@ function protectedImages(context: ProtectedImageContext): RemarkPlugin {
           context.postId,
           '包含原始 HTML 图片；请改用 Markdown 相对图片语法。'
         );
+      }
+      if (node.type === 'imageReference' && node.identifier) {
+        const definition = definitions.get(node.identifier.toUpperCase());
+        if (definition) {
+          node.type = 'image';
+          node.url = definition.url;
+          node.title = definition.title;
+        }
       }
       if (node.type === 'image') images.push(node);
       for (const child of node.children ?? []) visit(child);
@@ -225,7 +242,6 @@ export async function collectProtectedAssets(
   const assets = new Map<string, ProtectedAsset>();
 
   for (const post of posts) {
-    if (post.collection === 'posts' && !post.data.locked) continue;
     for (const asset of (await renderProtectedMarkdown(post, keyBytes)).assets) {
       const existing = assets.get(asset.id);
       if (existing && (existing.sourcePath !== asset.sourcePath || existing.mediaType !== asset.mediaType)) {

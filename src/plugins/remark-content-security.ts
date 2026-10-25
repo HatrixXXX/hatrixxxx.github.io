@@ -31,6 +31,7 @@ const SAFE_INLINE_STYLE = /^\s*zoom\s*:\s*[1-9]\d*%\s*;?\s*$/;
 
 type ContentNode = {
   type?: string;
+  identifier?: string;
   url?: string;
   value?: string;
   children?: unknown[];
@@ -97,14 +98,30 @@ function validateHtml(value: string, file: FileLike): void {
   visitHtmlNodes(parseFragment(value, { scriptingEnabled: false }).childNodes, file);
 }
 
-function visit(node: ContentNode, file: FileLike): void {
+function collectDefinitions(node: ContentNode, definitions: Map<string, ContentNode>): void {
+  if (node.type === 'definition' && node.identifier) {
+    const identifier = node.identifier.toUpperCase();
+    if (!definitions.has(identifier)) definitions.set(identifier, node);
+  }
+  for (const child of node.children ?? []) collectDefinitions(child as ContentNode, definitions);
+}
+
+function visit(node: ContentNode, file: FileLike, definitions: Map<string, ContentNode>): void {
   if ((node.type === 'link' || node.type === 'image') && node.url) {
     validateUrl(node.url, file, node.type === 'image');
   }
+  if ((node.type === 'linkReference' || node.type === 'imageReference') && node.identifier) {
+    const definition = definitions.get(node.identifier.toUpperCase());
+    if (definition?.url) validateUrl(definition.url, file, node.type === 'imageReference');
+  }
   if (node.type === 'html' && node.value) validateHtml(node.value, file);
-  for (const child of node.children ?? []) visit(child as ContentNode, file);
+  for (const child of node.children ?? []) visit(child as ContentNode, file, definitions);
 }
 
 export default function remarkContentSecurity() {
-  return (tree: ContentNode, file: FileLike = {}) => visit(tree, file);
+  return (tree: ContentNode, file: FileLike = {}) => {
+    const definitions = new Map<string, ContentNode>();
+    collectDefinitions(tree, definitions);
+    visit(tree, file, definitions);
+  };
 }

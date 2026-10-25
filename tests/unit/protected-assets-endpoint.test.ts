@@ -2,7 +2,6 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promi
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PostEntry } from '../../src/lib/content';
 import type { CollectionEntry } from 'astro:content';
 import {
   decryptEnvelope,
@@ -12,13 +11,15 @@ import {
 } from '../../src/lib/protected-content/crypto';
 import { base64 } from '../../src/lib/protected-content/encoding';
 
-const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], sanctuary: [] as CollectionEntry<'sanctuary'>[] }));
+const contentState = vi.hoisted(() => ({ snippets: [] as CollectionEntry<'snippets'>[], sanctuary: [] as CollectionEntry<'sanctuary'>[], requestedCollections: [] as string[] }));
 
 vi.mock('astro:content', () => ({
-  getCollection: async (collection: string, filter?: (post: PostEntry) => unknown) =>
-    collection === 'snippets' ? contentState.snippets :
-    collection === 'sanctuary' ? contentState.sanctuary.filter((sanctuary) => !filter || filter(sanctuary as never)) :
-    filter ? contentState.posts.filter(filter) : contentState.posts
+  getCollection: async (collection: string, filter?: (entry: CollectionEntry<'sanctuary'>) => unknown) => {
+    contentState.requestedCollections.push(collection);
+    if (collection === 'snippets') return contentState.snippets;
+    if (collection === 'sanctuary') return contentState.sanctuary.filter((entry) => !filter || filter(entry));
+    throw new Error(`Unexpected protected collection: ${collection}`);
+  }
 }));
 
 vi.mock('astro:env/server', () => ({
@@ -29,54 +30,52 @@ import { GET, getStaticPaths } from '../../src/pages/protected-content/assets/[i
 
 const fixtureImage = resolve('tests/fixtures/protected-content/private-image.png');
 let temporaryRoot: string;
-let postPath: string;
+let entryPath: string;
 let imagePath: string;
-let previousContentDir: string | undefined;
 let previousAdminKey: string | undefined;
 let previousSnippetsDir: string | undefined;
+let previousSanctuaryDir: string | undefined;
 
-function fixturePost(id: string, locked = true): PostEntry {
+function fixtureSanctuary(id: string): CollectionEntry<'sanctuary'> {
   return {
     id,
-    collection: 'posts',
+    collection: 'sanctuary',
     body: '![secret](./private-image.png)',
-    filePath: postPath,
+    filePath: entryPath,
     data: {
       title: id,
-      description: 'Public description',
+      summary: 'Public summary',
       pubDate: new Date('2026-09-03'),
       cover: '/cover.svg',
-      locked,
-      legacySlug: id
     }
-  } as PostEntry;
+  } as CollectionEntry<'sanctuary'>;
 }
 
 beforeEach(async () => {
-  previousContentDir = process.env.HATRIX_BLOGS_DIR;
   previousAdminKey = process.env.HATRIX_ADMIN_KEY;
   previousSnippetsDir = process.env.HATRIX_SNIPPETS_DIR;
+  previousSanctuaryDir = process.env.HATRIX_SANCTUARY_DIR;
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-assets-'));
-  const postsRoot = join(temporaryRoot, 'posts');
-  postPath = join(postsRoot, 'private.md');
-  imagePath = join(postsRoot, 'private-image.png');
-  process.env.HATRIX_BLOGS_DIR = temporaryRoot;
+  const protectedRoot = join(temporaryRoot, 'sanctuary');
+  entryPath = join(protectedRoot, 'private.md');
+  imagePath = join(protectedRoot, 'private-image.png');
+  process.env.HATRIX_SANCTUARY_DIR = temporaryRoot;
   process.env.HATRIX_ADMIN_KEY = 'test-admin';
-  await mkdir(postsRoot, { recursive: true });
+  await mkdir(protectedRoot, { recursive: true });
   await copyFile(fixtureImage, imagePath);
-  await writeFile(postPath, '# fixture', 'utf8');
+  await writeFile(entryPath, '# fixture', 'utf8');
 });
 
 afterEach(async () => {
-  contentState.posts = [];
   contentState.snippets = [];
   contentState.sanctuary = [];
-  if (previousContentDir === undefined) delete process.env.HATRIX_BLOGS_DIR;
-  else process.env.HATRIX_BLOGS_DIR = previousContentDir;
+  contentState.requestedCollections = [];
   if (previousAdminKey === undefined) delete process.env.HATRIX_ADMIN_KEY;
   else process.env.HATRIX_ADMIN_KEY = previousAdminKey;
   if (previousSnippetsDir === undefined) delete process.env.HATRIX_SNIPPETS_DIR;
   else process.env.HATRIX_SNIPPETS_DIR = previousSnippetsDir;
+  if (previousSanctuaryDir === undefined) delete process.env.HATRIX_SANCTUARY_DIR;
+  else process.env.HATRIX_SANCTUARY_DIR = previousSanctuaryDir;
   await rm(temporaryRoot, { recursive: true, force: true });
 });
 
@@ -103,22 +102,22 @@ describe('protected asset endpoint', () => {
     expect(await decryptEnvelope(envelope, key, `asset:${path.params.id}`))
       .toEqual(new Uint8Array(await readFile(join(snippetsRoot, 'private-image.png'))));
   });
-  it('emits one opaque static route for each distinct locked image', async () => {
-    contentState.posts = [
-      fixturePost('locked'),
-      fixturePost('duplicate'),
-      fixturePost('public', false)
+  it('emits one opaque static route for each distinct protected sanctuary image', async () => {
+    contentState.sanctuary = [
+      fixtureSanctuary('locked'),
+      fixtureSanctuary('duplicate')
     ];
 
     const paths = await getStaticPaths();
 
     expect(paths).toHaveLength(1);
+    expect(contentState.requestedCollections).toEqual(['snippets', 'sanctuary']);
     expect(paths[0].params.id).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(JSON.stringify(paths[0].params)).not.toContain('private-image.png');
   });
 
   it('returns an AES-GCM envelope that decrypts only with the asset AAD', async () => {
-    contentState.posts = [fixturePost('locked')];
+    contentState.sanctuary = [fixtureSanctuary('private')];
     const [path] = await getStaticPaths();
     const response = await GET({ props: path.props } as never);
     const responseText = await response.text();
@@ -138,7 +137,7 @@ describe('protected asset endpoint', () => {
   });
 
   it('emits a new decryptable URL when an image is replaced at the same path', async () => {
-    contentState.posts = [fixturePost('locked')];
+    contentState.sanctuary = [fixtureSanctuary('private')];
     const [firstPath] = await getStaticPaths();
     const firstResponse = await GET({ props: firstPath.props } as never);
     const firstEnvelope = await firstResponse.json() as EncryptedEnvelope;

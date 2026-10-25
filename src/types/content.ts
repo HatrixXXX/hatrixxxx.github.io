@@ -3,7 +3,6 @@ export interface PostData {
   pubDate: Date;
   updatedDate?: Date;
   cover?: string;
-  locked: boolean;
   legacySlug: string;
 }
 

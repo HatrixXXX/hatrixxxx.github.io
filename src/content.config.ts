@@ -9,6 +9,7 @@ import { snippetRoot } from './lib/snippet-root';
 import { snippetSchema } from './lib/snippet-schema';
 import { snippetIdFromFile } from './lib/snippets';
 import { sanctuaryRoot } from './lib/sanctuary-root';
+import { protectedGlob } from './lib/protected-glob';
 
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(blogRoot('posts')).href }),
@@ -16,7 +17,7 @@ const posts = defineCollection({
 });
 
 const snippets = defineCollection({
-  loader: glob({
+  loader: protectedGlob({
     pattern: '*.md',
     base: pathToFileURL(snippetRoot('snippets')).href,
     generateId: ({ entry }) => snippetIdFromFile(entry)
@@ -25,7 +26,7 @@ const snippets = defineCollection({
 });
 
 const sanctuary = defineCollection({
-  loader: glob({
+  loader: protectedGlob({
     pattern: '*.md',
     base: pathToFileURL(sanctuaryRoot('sanctuary')).href,
     generateId: ({ entry }) => entry.replace(/\.md$/i, '')

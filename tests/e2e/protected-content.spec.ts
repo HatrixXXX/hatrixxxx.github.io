@@ -597,6 +597,28 @@ test('logout clears both modes, revokes assets, and re-locks the current page', 
   expect(await page.evaluate((url) => fetch(url!).then(() => true, () => false), blobUrl)).toBe(false);
 });
 
+test('blog bodies are public without credentials or JavaScript', async ({ browser, baseURL, request }) => {
+  if (!baseURL) throw new Error('Playwright baseURL is required');
+  const documents = await (await request.get('/search-index.json')).json() as Array<{
+    url: string;
+    paragraphs: string[];
+  }>;
+  const post = documents.find(({ url, paragraphs }) => url.startsWith('/posts/') && paragraphs.length > 1);
+  if (!post) throw new Error('A public blog article with body text is required');
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto(post.url);
+    await expect(page.locator('.post-grid .prose')).toBeVisible();
+    await expect(page.locator('.post-grid .prose')).toContainText(/\S/);
+    await expect(page.locator('[data-protected-gate]')).toHaveCount(0);
+    await expect(page.locator('[data-unlock-form]')).toHaveCount(0);
+    await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
 test('without JavaScript the response contains only the gate and ciphertext', async ({ browser, baseURL }) => {
   if (!baseURL) throw new Error('Playwright baseURL is required');
   const context = await (browser as Browser).newContext({

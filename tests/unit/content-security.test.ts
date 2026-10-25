@@ -65,6 +65,39 @@ describe('published content security', () => {
     expect(transform([{ type: 'link', url: 'javascript:alert(1)' }])).toThrow(/unsafe URL/i);
   });
 
+  it('rejects unapproved images through case-insensitive trailing reference definitions', async () => {
+    await expect(renderMarkdown(
+      '![secret][PiC]\n\n[pIc]: https://evil.example/tracker.png'
+    )).rejects.toThrow(/unapproved remote image/i);
+  });
+
+  it.each([
+    '[open][DaNgEr]\n\n[danger]: javascript:alert(1)',
+    '[open][]\n\n[OPEN]: javascript:alert(1)',
+    '[open]\n\n[OPEN]: javascript:alert(1)'
+  ])('rejects unsafe reference link destinations through Astro markdown: %s', async (body) => {
+    await expect(renderMarkdown(body)).rejects.toThrow(/unsafe URL/i);
+  });
+
+  it('uses the first reference definition and permits pinned image URLs', () => {
+    expect(transform([
+      { type: 'imageReference', identifier: 'PiC', alt: 'diagram' },
+      { type: 'definition', identifier: 'pic', url: PINNED_IMAGE },
+      { type: 'definition', identifier: 'PIC', url: 'https://evil.example/tracker.png' }
+    ])).not.toThrow();
+  });
+
+  it('preserves unresolved image and link references', () => {
+    const children = [
+      { type: 'imageReference', identifier: 'missing-image', alt: 'diagram' },
+      { type: 'linkReference', identifier: 'missing-link', children: [{ type: 'text', value: 'open' }] }
+    ];
+    const original = structuredClone(children);
+
+    expect(transform(children)).not.toThrow();
+    expect(children).toEqual(original);
+  });
+
   it.each([
     '<a href="&#x6a;avascript:alert(1)">open</a>',
     '<a href="java\tscript:alert(1)">open</a>',

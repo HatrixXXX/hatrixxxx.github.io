@@ -24,7 +24,6 @@ const post = (id: string, date: string) => ({
     title: id,
     pubDate: new Date(date),
     cover: '/x.svg',
-    locked: false,
     legacySlug: id
   }
 }) as PostEntry;
@@ -87,13 +86,13 @@ describe('content utilities', () => {
     expect(document.text.endsWith('a'.repeat(2501))).toBe(true);
   });
 
-  it('keeps locked post body text out of the search document', () => {
+  it('indexes the full blog body even when a legacy locked field is present', () => {
     const source = {
       ...post('locked-post', '2026-02-03'),
-      body: 'distinctive-private-body-marker',
+      body: 'public-legacy-body-marker',
       data: {
         ...post('locked-post', '2026-02-03').data,
-        title: 'Public locked title',
+        title: 'Public legacy title',
         locked: true
       }
     } as PostEntry & { body: string };
@@ -101,10 +100,10 @@ describe('content utilities', () => {
     expect(search.toSearchDocument(source)).toEqual({
       id: 'locked-post',
       url: '/posts/locked-post/',
-      title: 'Public locked title',
-      locked: true,
-      text: 'Public locked title',
-      paragraphs: []
+      title: 'Public legacy title',
+      locked: false,
+      text: 'Public legacy title public-legacy-body-marker',
+      paragraphs: ['public-legacy-body-marker']
     });
   });
 

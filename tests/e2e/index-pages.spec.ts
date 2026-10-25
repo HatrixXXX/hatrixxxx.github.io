@@ -48,7 +48,7 @@ test('/about/gear/ is no longer generated', async ({ request }) => {
 
 test('content index pages reflect migrated data', async ({ page, request }) => {
   await page.goto('/archives/');
-  await expect(page.locator('[data-archive-total]')).toHaveText('15');
+  await expect(page.locator('[data-archive-total]')).toHaveText('14');
 
   for (const route of ['/categories/', '/tags/']) {
     expect((await request.get(route)).status()).toBe(404);
@@ -62,13 +62,13 @@ test('content index pages reflect migrated data', async ({ page, request }) => {
   await expect(page.locator('main').getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', /HatrixXXX/);
 
   const rss = await (await request.get('/rss.xml')).text();
-  expect((rss.match(/<item>/g) ?? []).length).toBe(15);
+  expect((rss.match(/<item>/g) ?? []).length).toBe(14);
   expect(rss).not.toContain('<content:encoded');
 
   const searchResponse = await request.get('/search-index.json');
   expect(searchResponse.headers()['content-type']).toMatch(/^application\/json/);
   const search = await searchResponse.json();
-  expect(search.filter((document: { url: string }) => document.url.startsWith('/posts/'))).toHaveLength(15);
+  expect(search.filter((document: { url: string }) => document.url.startsWith('/posts/'))).toHaveLength(14);
   for (const document of search) {
     expect(document).not.toHaveProperty('category');
     expect(document).not.toHaveProperty('tags');
@@ -91,25 +91,25 @@ test('ordinary index pages omit contextual sidebars and keep the docked player',
   }
 });
 
-test('locked public surfaces expose only public metadata and an accessible lock marker', async ({ page }) => {
+test('blog cards and links stay public after legacy locked metadata is removed', async ({ page }) => {
   await page.goto('/__tests__/locked-index/');
 
   const cardLink = page.locator('[data-post-card] h2 a');
-  await expect(cardLink).toHaveAttribute('data-locked-link', '');
-  await expect(cardLink.getByRole('img', { name: '加锁内容' })).toBeVisible();
+  await expect(cardLink).not.toHaveAttribute('data-locked-link', '');
+  await expect(cardLink.getByRole('img', { name: '加锁内容' })).toHaveCount(0);
 
   for (const surface of ['footer', 'archive', 'adjacent']) {
-    const fixture = page.locator(`[data-lock-surface="${surface}"]`);
-    const lockedLink = fixture.locator('[data-fixture-state="locked"]');
+    const fixture = page.locator(`[data-post-link-surface="${surface}"]`);
+    const legacyLink = fixture.locator('[data-fixture-state="legacy"]');
     const publicLink = fixture.locator('[data-fixture-state="public"]');
-    await expect(lockedLink).toHaveAttribute('data-locked-link', '');
-    await expect(lockedLink.getByRole('img', { name: '加锁内容' })).toBeVisible();
+    await expect(legacyLink).not.toHaveAttribute('data-locked-link', '');
+    await expect(legacyLink.getByRole('img', { name: '加锁内容' })).toHaveCount(0);
     await expect(publicLink).not.toHaveAttribute('data-locked-link', '');
     await expect(publicLink.getByRole('img', { name: '加锁内容' })).toHaveCount(0);
     if (surface === 'adjacent') {
-      await expect(lockedLink.locator(':scope > span')).toHaveText('上一篇');
-      await expect(lockedLink.locator('strong')).toContainText('公开的加锁文章标题');
-      await expect(lockedLink.locator('strong').getByRole('img', { name: '加锁内容' })).toBeVisible();
+      await expect(legacyLink.locator(':scope > span')).toHaveText('上一篇');
+      await expect(legacyLink.locator('strong')).toContainText('旧字段公开文章标题');
+      await expect(legacyLink.locator('strong').getByRole('img', { name: '加锁内容' })).toHaveCount(0);
       await expect(publicLink.locator(':scope > span')).toHaveText('上一篇');
       await expect(publicLink.locator('strong').getByRole('img', { name: '加锁内容' })).toHaveCount(0);
     }
@@ -118,23 +118,23 @@ test('locked public surfaces expose only public metadata and an accessible lock 
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
 });
 
-test('locked posts are excluded from public search results', async ({ page }) => {
+test('documents explicitly marked protected are excluded from public search results', async ({ page }) => {
   await page.route('**/search-index.json', async (route) => {
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([{
-        id: 'locked-search-fixture',
-        url: '/posts/locked-search-fixture/',
-        title: 'Public locked title',
-        description: 'Public locked summary',
+        id: 'protected-search-fixture',
+        url: '/sanctuary/protected-search-fixture/',
+        title: 'Protected fixture title',
+        description: 'Protected fixture summary',
         locked: true,
-        text: 'Public locked title Public locked summary'
+        text: 'Protected fixture title Protected fixture summary'
       }])
     });
   });
   await page.goto('/', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: '搜索' }).click();
-  await page.getByRole('searchbox', { name: '搜索全站' }).fill('Public locked title');
+  await page.getByRole('searchbox', { name: '搜索全站' }).fill('Protected fixture title');
 
   await expect(page.locator('[data-search-result]')).toHaveCount(0);
   await expect(page.locator('[data-search-status]')).toHaveText('没有找到相关内容');

@@ -118,7 +118,7 @@ git clone https://github.com/HatrixXXX/hatrix-sanctuary.git .private-sanctuary
 
 非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、秘境、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮位于顶栏右侧，管理员退出图标紧邻其左侧，不影响导航居中。`/blogs/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱按 `src/data/software-tools.ts` 的清单顺序显示软件卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、统一透明背景的本地图标、用途短语和“软件”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 将 Twikoo 留言区放入 `public/assets/guestbook/terminal-frame.png` 的透明开口；页面固定在视口内，仅屏幕区域可以滚动，滚动条隐藏。
 
-站内搜索支持普通文章的标题和正文。结果会显示命中片段并高亮关键词；点击后文章页会滚动到对应段落，段落背景短暂突出后渐变恢复。加锁文章不会进入公开搜索索引。
+站内搜索收录全部博客文章的标题和正文。结果会显示命中片段并高亮关键词；点击后文章页会滚动到对应段落，段落背景短暂突出后渐变恢复。随笔、秘境和资讯不进入公开搜索索引。
 
 首页采用参考图的两侧透视卡片排布，中央展示透明角色立绘，位于背景之上、入口面板之下。`1920×1080` 画布按有效 CSS 视口等比缩放；超宽屏将左右两组移向屏幕边缘，组内排布保持不变，竖屏保留上下空白。`src/pages/index.astro` 用 `leftPanels` 定义左侧四角，用 `rightPanels` 定义右侧平面内矩形；右侧全部卡片共用父层的一次 `matrix3d` 投影，主要行列间隔为 12 个设计像素。首页没有滚动条，也不渲染普通导航栏、页脚或 Sakana。
 
@@ -145,25 +145,13 @@ summary: 介绍示例文章的主要内容。
 pubDate: 2026-09-02
 updatedDate: 2026-09-03
 cover: https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png
-locked: false
 legacySlug: 示例文章
 ---
 ```
 
-`summary` 必填，不超过 100 字，博客文章卡片直接显示它。随笔属于另一个集合，不使用这条博客文章规则。正文更新后检查摘要是否仍准确；只有主题、主要结论、覆盖范围或关键内容明显变化时才重写。`updatedDate` 和 `cover` 可省略，`locked` 省略时按 `false` 处理。未填写 `cover` 时，文章列表和社交元信息使用默认封面。数学公式与 Mermaid 图表由文章内容自动触发，不需要额外的 frontmatter 开关。
+`summary` 必填，不超过 100 字，博客文章卡片直接显示它。随笔属于另一个集合，不使用这条博客文章规则。正文更新后检查摘要是否仍准确；只有主题、主要结论、覆盖范围或关键内容明显变化时才重写。`updatedDate` 和 `cover` 可省略。未填写 `cover` 时，文章列表和社交元信息使用默认封面。数学公式与 Mermaid 图表由文章内容自动触发，不需要额外的 frontmatter 开关。
 
-| `locked` | 结果 |
-| --- | --- |
-| `false` | 发布公开正文 |
-| `true` | 发布公开元数据、封面和解锁外壳，正文与正文图片加密 |
-
-加锁文章的标题、摘要、日期、阅读时间、URL 和 `cover` 都是公开信息。封面可以继续使用带不可变 commit 的 jsDelivr URL。加锁正文图片必须保存在 `.private-blogs/posts/` 内，并用 Markdown 相对路径引用，例如：
-
-```markdown
-![示意图](./assets/private-image.png)
-```
-
-加锁正文不能使用远程图片、data URL、站点根绝对路径或原始 HTML `<img>`；这些写法会让构建失败。公开文章的远程正文图片继续遵守下方的图床固定提交和 inventory 规则。
+博客文章的元信息、正文、封面和正文图片在站点上全部公开，源码仍保存在独立私有 GitHub 仓库中。博客不再提供 `locked` 开关，旧字段会被忽略。正文中的远程图片继续遵守下方图床固定提交和 inventory 规则；文章目录内的相对图片由 Astro 正常处理。
 
 文章改完后，在私有仓库提交；用户要求推送时，再推送私有仓库。不需要为文章改动提交公开仓库：
 
@@ -237,11 +225,11 @@ export const playlist: readonly Track[] = [
 
 文章列表的 `cover` 由 Astro 的图片管线和 Sharp 生成 WebP、`srcset` 与尺寸信息。正文远程图片通过预检后仍使用 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
 
-## 加锁内容
+## 随笔、秘境与资讯的加锁
 
-加锁发生在 Astro 服务端渲染期间，不是构建完成后的 HTML 替换。`ProtectedContent.astro` 读取 `HATRIX_ADMIN_KEY`，用公开的固定盐和 Argon2id 派生 AES-256-GCM key，然后直接加密渲染后的 slot。正文图片由 `/protected-content/assets/<id>.bin` 静态端点分别加密。实现没有随机 DEK 或 key envelope；页面、资源和 verifier 都直接使用同一个派生 key，并各自使用随机 IV 和不同 AAD。
+随笔、秘境和资讯沿用管理员 key 加锁；博客文章不参与加密。加锁发生在 Astro 服务端渲染期间，不是构建完成后的 HTML 替换。`ProtectedContent.astro` 读取 `HATRIX_ADMIN_KEY`，用公开的固定盐和 Argon2id 派生 AES-256-GCM key，然后直接加密渲染后的 slot。正文图片由 `/protected-content/assets/<id>.bin` 静态端点分别加密。实现没有随机 DEK 或 key envelope；页面、资源和 verifier 都直接使用同一个派生 key，并各自使用随机 IV 和不同 AAD。
 
-浏览器只拿到公开 metadata、解锁外壳、KDF 参数和密文。正确解锁后，页面 HTML 在内存中挂载，图片解密为 Blob URL。原始 key 不会保存；浏览器在 IndexedDB 中保存不可导出的 AES `CryptoKey`，session 模式用 `sessionStorage` 引用，勾选“7 天免解锁”后用带到期时间的 `localStorage` 引用。凭据只对同一浏览器资料有效。
+这些页面在解锁前只输出公共外壳、KDF 参数和密文。正确解锁后，页面 HTML 在内存中挂载，图片解密为 Blob URL。原始 key 不会保存；浏览器在 IndexedDB 中保存不可导出的 AES `CryptoKey`，session 模式用 `sessionStorage` 引用，勾选“7 天免解锁”后用带到期时间的 `localStorage` 引用。凭据只对同一浏览器资料有效。
 
 key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、自动填写 key 不受站点控制。
 
@@ -267,7 +255,7 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:site` | 文章、随笔和秘境路由、CNAME、站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，以及 Windows 视觉基线 |
 
-Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
+Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。日常修改不自动运行验收，明确要求推送时统一执行门禁及必要的专项验证；完整 E2E 与视觉回归仅在用户明确要求或推送涉及的界面风险确有需要时运行。
 
 浏览器套件覆盖博客路径、文章数量、普通页页脚、Coverflow、实验场三维场景、About 装饰层和视觉基线。
 随笔为空时，`check:site` 使用代码中的固定链接基线；有随笔时逐条检查站内链接，不锁总数。新增或删除页面、导航项后的机械更新流程见 `docs/operations/testing.md`，不要在 README 中复制当前总数。
@@ -331,7 +319,7 @@ Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留�
 
 ## 实验场与后续 3D 页面
 
-实验场的场景结构、样式和交互集中在 `src/lab.html`，内嵌 Three.js 0.180.0 与 MIT 许可。`src/pages/playground/index.astro` 提取其中的样式与正文，放入全站 `BaseLayout`，不再使用专用 endpoint 或 middleware。页面主体只有居中的三维场景，播放器在左侧折叠显示。站内跳转时双瓣转场等场景首帧完成后退场；直接打开页面时显示首次加载环。模型、表面纹理和原创屏幕画面由程序生成，`docs/design-references/color-saturation-reference.png` 仅用于构图和色彩核对。旧贝塞尔鼠标轨迹代码与功能已移除。
+实验场的场景结构、样式和交互集中在 `src/lab.html`，内嵌 Three.js 0.180.0 与 MIT 许可。`src/pages/playground/index.astro` 提取其中的样式与正文，放入全站 `BaseLayout`，不再使用专用 endpoint 或 middleware。页面主体只有居中的三维场景，播放器在左侧折叠显示。站内跳转时双瓣转场等场景首帧完成后退场；直接打开页面时显示首次加载环。模型、表面纹理和原创屏幕画面由程序生成，构图和色彩规则见 `DESIGN.md`。旧贝塞尔鼠标轨迹代码与功能已移除。
 
 实验场的 3D 引擎仅随 `/playground/` 加载。Three.js、Babylon.js 等 3D 依赖不能进入公共布局或普通页面的首屏脚本；其他新增 3D 功能放在独立客户端岛中，并在组件进入视口或用户操作后延迟加载。
 
@@ -345,4 +333,4 @@ Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留�
 
 ### 共构城视觉方向（2026-10-13）
 
-现行主题以[共构城世界观](docs/design-references/共构城-世界观与主题设计指南.md)为准：立体城区中的机甲作业、边缘 AI 硬件加速与共享 AI-Infra 共同支撑人和 AI 的协作。全站颜色、字体、图标、图片外框和交互反馈沿用首页及 v5 立绘的浅色装甲、石墨、灰紫和铜色关系。主导航栏目页不显示 Hero 主标题或副标题栏；归档、旧分页和 404 保留紧凑 Hero。正文采用 17px / 1.85 排版。完整规则见 [DESIGN.md](DESIGN.md)。
+现行主题采用共构城设定：立体城区中的机甲作业、边缘 AI 硬件加速与共享 AI-Infra 共同支撑人和 AI 的协作。全站颜色、字体、图标、图片外框和交互反馈沿用首页及 v5 立绘的浅色装甲、石墨、灰紫和铜色关系。主导航栏目页不显示 Hero 主标题或副标题栏；归档、旧分页和 404 保留紧凑 Hero。正文采用 17px / 1.85 排版。完整规则见 [DESIGN.md](DESIGN.md)。

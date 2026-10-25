@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { PostEntry } from '../../src/lib/content';
 import type { CollectionEntry } from 'astro:content';
 import {
   decryptEnvelope,
@@ -12,12 +11,17 @@ import { encryptProtectedPageHtml } from '../../src/lib/protected-content/page';
 import { PROTECTED_VERIFIER_AAD } from '../../src/config/protected-content';
 import { sanctuaryPath } from '../../src/lib/sanctuary';
 
-const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], sanctuary: [] as CollectionEntry<'sanctuary'>[] }));
+const contentState = vi.hoisted(() => ({ snippets: [] as CollectionEntry<'snippets'>[], sanctuary: [] as CollectionEntry<'sanctuary'>[], requestedCollections: [] as string[] }));
 const configState = vi.hoisted(() => ({ lockedPagePaths: [] as string[] }));
 const previousAdminKey = process.env.HATRIX_ADMIN_KEY;
 
 vi.mock('astro:content', () => ({
-  getCollection: async (collection: string) => collection === 'snippets' ? contentState.snippets : collection === 'sanctuary' ? contentState.sanctuary : contentState.posts
+  getCollection: async (collection: string) => {
+    contentState.requestedCollections.push(collection);
+    if (collection === 'snippets') return contentState.snippets;
+    if (collection === 'sanctuary') return contentState.sanctuary;
+    throw new Error(`Unexpected protected collection: ${collection}`);
+  }
 }));
 
 vi.mock('astro:env/server', () => ({
@@ -35,49 +39,27 @@ import {
 } from '../../src/pages/protected-content/manifest.json';
 
 afterEach(() => {
-  contentState.posts = [];
   contentState.snippets = [];
   contentState.sanctuary = [];
+  contentState.requestedCollections = [];
   configState.lockedPagePaths.splice(0);
   if (previousAdminKey === undefined) delete process.env.HATRIX_ADMIN_KEY;
   else process.env.HATRIX_ADMIN_KEY = previousAdminKey;
 });
-
-function fixturePost(
-  legacySlug: string,
-  { locked = true }: { locked?: boolean } = {}
-): PostEntry {
-  return {
-    id: legacySlug,
-    collection: 'posts',
-    data: {
-      title: legacySlug,
-      description: 'Public description',
-      pubDate: new Date('2026-09-03'),
-      cover: '/cover.svg',
-      locked,
-      legacySlug
-    }
-  } as PostEntry;
-}
 
 describe('protected page routes', () => {
   it('uses the fixed verifier protocol AAD', () => {
     expect(PROTECTED_VERIFIER_AAD).toBe('verifier:1');
   });
 
-  it('returns normalized unique configured pages and locked post paths', () => {
-    configState.lockedPagePaths.splice(0, Infinity, '/about', '/about/', '/posts/private');
-    const posts = [
-      fixturePost('private'),
-      fixturePost('nested/path/'),
-      fixturePost('public', { locked: false })
-    ];
+  it('returns normalized unique configured pages and protected collection paths', () => {
+    configState.lockedPagePaths.splice(0, Infinity, '/snippets', '/snippets/', '/sanctuary');
+    const snippets = [{ id: 'private' }, { id: 'private' }] as CollectionEntry<'snippets'>[];
 
-    expect(publicProtectedRoutes(posts, [])).toEqual([
-      '/about/',
-      '/posts/nested/path/',
-      '/posts/private/'
+    expect(publicProtectedRoutes(snippets, [])).toEqual([
+      '/sanctuary/',
+      '/snippets/',
+      '/snippets/private/'
     ]);
   });
 
@@ -108,13 +90,13 @@ describe('protected page routes', () => {
 
   it('publishes an inert manifest without requiring a key when no route is protected', async () => {
     configState.lockedPagePaths.splice(0);
-    contentState.posts = [fixturePost('public', { locked: false })];
     delete process.env.HATRIX_ADMIN_KEY;
 
     const response = await GET({} as never);
     const manifest = await response.json();
 
     expect(manifest).toMatchObject({ routes: [], verifier: null });
+    expect(contentState.requestedCollections).toEqual(['snippets', 'sanctuary']);
     expect(Object.keys(manifest).sort()).toEqual(
       ['argon2', 'rememberForMs', 'routes', 'salt', 'verifier', 'version'].sort()
     );
@@ -129,7 +111,7 @@ describe('protected rendering source contracts', () => {
       '</div>'
     ].join('');
     const keyBytes = await deriveContentKeyBytes('test-admin');
-    const envelope = await encryptProtectedPageHtml(renderedSlot, '/posts/private', keyBytes);
+    const envelope = await encryptProtectedPageHtml(renderedSlot, '/snippets/private', keyBytes);
     const emittedHtml = [
       '<section data-protected-gate>',
       `<script data-protected-envelope>${JSON.stringify(envelope)}</script>`,
@@ -143,7 +125,7 @@ describe('protected rendering source contracts', () => {
 
     const key = await importContentKey(keyBytes, ['decrypt']);
     const decrypted = utf8Decode(
-      await decryptEnvelope(envelope, key, 'page:/posts/private/')
+      await decryptEnvelope(envelope, key, 'page:/snippets/private/')
     );
     expect(decrypted).toBe(renderedSlot);
   });
@@ -181,16 +163,16 @@ describe('protected rendering source contracts', () => {
     expect(bootstrap).toContain("document.addEventListener('astro:page-load'");
   });
 
-  it('locks configured ordinary pages at BaseLayout and only the post grid at PostLayout', () => {
+  it('locks configured ordinary pages while keeping the complete blog layout public', () => {
     const baseLayout = readFileSync('src/layouts/BaseLayout.astro', 'utf8');
     const postLayout = readFileSync('src/layouts/PostLayout.astro', 'utf8');
-    const gateStart = postLayout.indexOf('<ProtectedContent');
 
     expect(baseLayout).toContain('isConfiguredLockedPage(Astro.url.pathname)');
     expect(baseLayout).toContain('<ProtectedContent');
-    expect(postLayout.indexOf('<header class="post-hero" data-hero>')).toBeLessThan(gateStart);
-    expect(postLayout.indexOf('<div class="post-grid container">')).toBeGreaterThan(gateStart);
-    expect(postLayout).toContain('locked={post.data.locked}');
+    expect(postLayout).toContain('<div class="post-grid container">');
+    expect(postLayout).not.toContain('ProtectedContent');
+    expect(postLayout).not.toContain('post.data.locked');
+    expect(postLayout).not.toContain('noindex=');
   });
 
   it('keeps adjacent link label styles across the PostLink component boundary', () => {
@@ -201,13 +183,13 @@ describe('protected rendering source contracts', () => {
     expect(postLayout).toContain('.adjacent-posts :global(a:hover > strong)');
   });
 
-  it('uses protected Markdown only for locked post bodies', () => {
+  it('renders every blog body natively without an administrator key', () => {
     const route = readFileSync('src/pages/posts/[slug].astro', 'utf8');
 
-    expect(route).toContain('renderProtectedMarkdown');
-    expect(route).toContain('post.data.locked');
+    expect(route).toContain('await render(post)');
     expect(route).toContain('<Content />');
-    expect(route).toMatch(/set:html=\{protectedHtml\}/);
-    expect(route).toMatch(/post\.data\.locked\s*\?\s*undefined\s*:\s*await render\(post\)/);
+    expect(route).not.toContain('post.data.locked');
+    expect(route).not.toContain('renderProtectedMarkdown');
+    expect(route).not.toContain('adminKeyFromEnvironment');
   });
 });

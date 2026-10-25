@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { encryptEnvelope, importContentKey } from '../../src/lib/protected-content/crypto';
 import { utf8 } from '../../src/lib/protected-content/encoding';
 import { inspectProtectedOutput } from '../../scripts/check-protected-output';
@@ -13,30 +13,27 @@ const PRIVATE_ASSET = new Uint8Array([
 ]);
 
 let temporaryRoot: string;
-let contentRoot: string;
 let distRoot: string;
 let snippetsRoot: string;
 let sanctuaryRootPath: string;
-const previousSanctuaryDir = process.env.HATRIX_SANCTUARY_DIR;
 
 async function writeFixture(markdownBody = `${PRIVATE_BODY}\n\n![private](./private-image.png)`): Promise<void> {
-  await mkdir(join(contentRoot, 'posts'), { recursive: true });
-  await mkdir(join(distRoot, 'posts', 'locked-post'), { recursive: true });
+  await mkdir(join(distRoot, 'sanctuary', 'private-entry'), { recursive: true });
   await mkdir(join(distRoot, 'assets'), { recursive: true });
   await mkdir(join(distRoot, 'protected-content', 'assets'), { recursive: true });
   await writeFile(
-    join(contentRoot, 'posts', 'locked-post.md'),
-    `---\ntitle: Public title\ndescription: Public description\npubDate: 2026-09-03\ncover: /cover.svg\nlocked: true\nlegacySlug: locked-post\n---\n${markdownBody}`,
+    join(sanctuaryRootPath, 'private-entry.md'),
+    `---\ntitle: Sanctuary title\nsummary: Sanctuary summary\npubDate: 2026-09-03\n---\n${markdownBody}`,
     'utf8'
   );
-  await writeFile(join(contentRoot, 'posts', 'private-image.png'), PRIVATE_ASSET);
+  await writeFile(join(sanctuaryRootPath, 'private-image.png'), PRIVATE_ASSET);
   await writeFile(
     join(distRoot, 'protected-content', 'manifest.json'),
-    JSON.stringify({ routes: ['/posts/locked-post/'] }),
+    JSON.stringify({ routes: ['/sanctuary/private-entry/'] }),
     'utf8'
   );
   await writeFile(
-    join(distRoot, 'posts', 'locked-post', 'index.html'),
+    join(distRoot, 'sanctuary', 'private-entry', 'index.html'),
     '<meta name="robots" content="noindex, nofollow"><div data-protected-envelope></div>',
     'utf8'
   );
@@ -45,11 +42,9 @@ async function writeFixture(markdownBody = `${PRIVATE_BODY}\n\n![private](./priv
 
 beforeEach(async () => {
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-output-'));
-  contentRoot = join(temporaryRoot, 'content');
   distRoot = join(temporaryRoot, 'dist');
   snippetsRoot = join(temporaryRoot, 'snippets');
   sanctuaryRootPath = join(temporaryRoot, 'sanctuary');
-  process.env.HATRIX_SANCTUARY_DIR = temporaryRoot;
   await mkdir(snippetsRoot, { recursive: true });
   await mkdir(sanctuaryRootPath, { recursive: true });
   await mkdir(join(distRoot, 'protected-content'), { recursive: true });
@@ -57,8 +52,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(temporaryRoot, { recursive: true, force: true });
-  if (previousSanctuaryDir === undefined) delete process.env.HATRIX_SANCTUARY_DIR;
-  else process.env.HATRIX_SANCTUARY_DIR = previousSanctuaryDir;
+  vi.unstubAllEnvs();
 });
 
 describe('protected output audit', () => {
@@ -68,7 +62,7 @@ describe('protected output audit', () => {
     await writeFile(join(sanctuaryRootPath, '选购清单.md'), sanctuaryBody, 'utf8');
     await writeFile(join(distRoot, 'leaked-sanctuary.html'), `<p>${sanctuaryBody}</p>`, 'utf8');
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot, snippetsRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('leaked-sanctuary.html: protected Markdown body plaintext');
   });
@@ -79,7 +73,7 @@ describe('protected output audit', () => {
     await writeFile(join(distRoot, 'snippets.html'),
       '<h1>Quiet private note</h1><p>A private paragraph that must stay encrypted.</p>', 'utf8');
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot, snippetsRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('snippets.html: protected snippet metadata plaintext');
     expect(result.errors).toContain('snippets.html: protected Markdown body plaintext');
@@ -88,12 +82,13 @@ describe('protected output audit', () => {
 
   it('detects an original snippet image copied into public output', async () => {
     await writeFixture();
+    const snippetAsset = Buffer.from('distinctive-private-snippet-image-for-output-audit');
     await writeFile(join(snippetsRoot, 'private.md'),
       '---\ntitle: Private image note\ndate: 2026-10-12\n---\n![private](./private-image.png)', 'utf8');
-    await writeFile(join(snippetsRoot, 'private-image.png'), PRIVATE_ASSET);
-    await writeFile(join(distRoot, 'assets', 'leaked.bin'), PRIVATE_ASSET);
+    await writeFile(join(snippetsRoot, 'private-image.png'), snippetAsset);
+    await writeFile(join(distRoot, 'assets', 'leaked.bin'), snippetAsset);
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot, snippetsRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('assets/leaked.bin: original protected resource bytes');
   });
@@ -101,7 +96,7 @@ describe('protected output audit', () => {
     await writeFixture();
     await writeFile(join(distRoot, 'leaked.html'), `<p>${PRIVATE_BODY}</p>`, 'utf8');
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('leaked.html: protected Markdown body plaintext');
     expect(result.errors.join('\n')).not.toContain(PRIVATE_BODY);
@@ -113,7 +108,7 @@ describe('protected output audit', () => {
       Buffer.from([0, 255, 0]), Buffer.from(PRIVATE_BODY), Buffer.from([255, 0])
     ]));
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('assets/leaked-text.bin: protected Markdown body plaintext');
   });
@@ -123,7 +118,7 @@ describe('protected output audit', () => {
     await writeFixture(privatePhrase);
     await writeFile(join(distRoot, 'leaked-punctuation.html'), `<p>${privatePhrase}</p>`, 'utf8');
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('leaked-punctuation.html: protected Markdown body plaintext');
   });
@@ -141,13 +136,13 @@ describe('protected output audit', () => {
       'utf8'
     );
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('leaked-attribute.html: protected Markdown body plaintext');
     expect(result.errors.join('\n')).not.toContain(privateAttribute);
   });
 
-  it('ignores public metadata and common structural attribute values', async () => {
+  it('ignores unrelated public shell text and common structural attribute values', async () => {
     await writeFixture(
       '<Aside title="Public description" className="long-common-structural-component-class">short</Aside>'
     );
@@ -157,14 +152,14 @@ describe('protected output audit', () => {
       'utf8'
     );
 
-    await expect(inspectProtectedOutput(contentRoot, distRoot)).resolves.toEqual({ errors: [] });
+    await expect(inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath)).resolves.toEqual({ errors: [] });
   });
 
   it('reports original protected resource bytes without echoing them', async () => {
     await writeFixture();
     await writeFile(join(distRoot, 'assets', 'leaked.bin'), PRIVATE_ASSET);
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('assets/leaked.bin: original protected resource bytes');
   });
@@ -173,39 +168,69 @@ describe('protected output audit', () => {
     await writeFixture();
     await writeFile(join(distRoot, 'asset-index.json'), JSON.stringify({ source: 'private-image.png' }), 'utf8');
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toContain('asset-index.json: original protected resource name');
     expect(result.errors.join('\n')).not.toContain('private-image.png');
+  });
+
+  it.each([
+    ['full', '![private][asset]\n\n[asset]: ./private-image.png'],
+    ['collapsed', '![asset][]\n\n[asset]: ./private-image.png'],
+    ['shortcut', '![asset]\n\n[asset]: ./private-image.png'],
+    ['case-insensitive', '![private][AsSeT]\n\n[asset]: ./private-image.png'],
+    ['normalized whitespace', '![private][private  asset]\n\n[PRIVATE asset]: ./private-image.png']
+  ])('detects original bytes and filenames from %s image references with later definitions', async (_kind, markdown) => {
+    await writeFixture(markdown);
+    await writeFile(join(distRoot, 'assets', 'referenced-leak.bin'), PRIVATE_ASSET);
+    await writeFile(join(distRoot, 'reference-index.json'), JSON.stringify({ source: 'private-image.png' }), 'utf8');
+
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
+
+    expect(result.errors).toEqual(expect.arrayContaining([
+      'assets/referenced-leak.bin: original protected resource bytes',
+      'reference-index.json: original protected resource name'
+    ]));
+    expect(result.errors.join('\n')).not.toContain('private-image.png');
+  });
+
+  it('rejects remote images supplied by reference definitions without echoing the URL', async () => {
+    const remoteUrl = 'https://private.example.test/referenced-secret-image.png';
+    await writeFixture(`![private][asset]\n\n[asset]: ${remoteUrl}`);
+
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
+
+    expect(result.errors).toContain('sanctuary/private-entry.md: locked Markdown contains a remote body image');
+    expect(result.errors.join('\n')).not.toContain(remoteUrl);
   });
 
   it('rejects remote images in a locked Markdown body without echoing the URL', async () => {
     const remoteUrl = 'https://private.example.test/distinctive-secret-image.png';
     await writeFixture(`Private paragraph long enough for scanning.\n\n![private](${remoteUrl})`);
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
-    expect(result.errors).toContain('posts/locked-post.md: locked Markdown contains a remote body image');
+    expect(result.errors).toContain('sanctuary/private-entry.md: locked Markdown contains a remote body image');
     expect(result.errors.join('\n')).not.toContain(remoteUrl);
   });
 
   it('reports protected routes in sitemap or without noindex metadata', async () => {
     await writeFixture();
     await writeFile(
-      join(distRoot, 'posts', 'locked-post', 'index.html'),
+      join(distRoot, 'sanctuary', 'private-entry', 'index.html'),
       '<div data-protected-envelope></div>',
       'utf8'
     );
     await writeFile(
       join(distRoot, 'sitemap-0.xml'),
-      '<urlset><url><loc>https://hatrix.site/posts/locked-post/</loc></url></urlset>',
+      '<urlset><url><loc>https://hatrix.site/sanctuary/private-entry/</loc></url></urlset>',
       'utf8'
     );
 
-    const result = await inspectProtectedOutput(contentRoot, distRoot);
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
 
     expect(result.errors).toEqual(expect.arrayContaining([
-      'posts/locked-post/index.html: protected route is missing noindex, nofollow',
+      'sanctuary/private-entry/index.html: protected route is missing noindex, nofollow',
       'sitemap-0.xml: protected route is present in sitemap'
     ]));
   });
@@ -214,11 +239,11 @@ describe('protected output audit', () => {
     await writeFixture();
     const key = await importContentKey(new Uint8Array(32).fill(9), ['encrypt']);
     const [pageEnvelope, assetEnvelope] = await Promise.all([
-      encryptEnvelope(utf8(PRIVATE_BODY), key, 'page:/posts/locked-post/'),
+      encryptEnvelope(utf8(PRIVATE_BODY), key, 'page:/sanctuary/private-entry/'),
       encryptEnvelope(PRIVATE_ASSET, key, 'asset:test')
     ]);
     await writeFile(
-      join(distRoot, 'posts', 'locked-post', 'index.html'),
+      join(distRoot, 'sanctuary', 'private-entry', 'index.html'),
       `<meta name="robots" content="noindex, nofollow"><script data-protected-envelope>${JSON.stringify(pageEnvelope)}</script>`,
       'utf8'
     );
@@ -228,6 +253,47 @@ describe('protected output audit', () => {
       'utf8'
     );
 
-    await expect(inspectProtectedOutput(contentRoot, distRoot)).resolves.toEqual({ errors: [] });
+    await expect(inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath)).resolves.toEqual({ errors: [] });
+  });
+
+  it('accepts published blog bodies and original images even with legacy locked metadata', async () => {
+    await writeFixture();
+    const blogsRoot = join(temporaryRoot, 'blogs');
+    const publicBody = 'distinctive-public-blog-body-that-is-now-readable-by-everyone';
+    const publicAsset = Buffer.from('distinctive-public-blog-image-that-does-not-need-encryption');
+    vi.stubEnv('HATRIX_BLOGS_DIR', blogsRoot);
+    vi.stubEnv('HATRIX_SNIPPETS_DIR', temporaryRoot);
+    vi.stubEnv('HATRIX_SANCTUARY_DIR', temporaryRoot);
+    await mkdir(join(blogsRoot, 'posts'), { recursive: true });
+    await mkdir(join(distRoot, 'posts', 'public-post'), { recursive: true });
+    await writeFile(join(blogsRoot, 'posts', 'public-post.md'),
+      `---\ntitle: Public blog title\nsummary: Public blog summary\nlocked: true\nlegacySlug: public-post\n---\n${publicBody}\n\n![public](./public-blog-image.png)`, 'utf8');
+    await writeFile(join(blogsRoot, 'posts', 'public-blog-image.png'), publicAsset);
+    await writeFile(join(distRoot, 'assets', 'public-blog-image.png'), publicAsset);
+    await writeFile(join(distRoot, 'posts', 'public-post', 'index.html'),
+      `<h1>Public blog title</h1><p>${publicBody}</p><img src="/assets/public-blog-image.png" alt="public">`, 'utf8');
+    await writeFile(join(distRoot, 'search.json'), JSON.stringify([{ title: 'Public blog title', body: publicBody }]), 'utf8');
+    await writeFile(join(distRoot, 'sitemap-0.xml'),
+      '<urlset><url><loc>https://hatrix.site/posts/public-post/</loc></url></urlset>', 'utf8');
+
+    await expect(inspectProtectedOutput(distRoot)).resolves.toEqual({ errors: [] });
+  });
+
+  it('rejects protected snippet metadata and body in the search index', async () => {
+    await writeFixture();
+    const privateTitle = 'Private searchable note';
+    const privateBody = 'Private search text must remain encrypted in every generated index.';
+    await writeFile(join(snippetsRoot, 'search-note.md'),
+      `---\ntitle: ${privateTitle}\ndate: 2026-10-12\n---\n${privateBody}`, 'utf8');
+    await writeFile(join(distRoot, 'search.json'), JSON.stringify([{ title: privateTitle, body: privateBody }]), 'utf8');
+
+    const result = await inspectProtectedOutput(distRoot, snippetsRoot, sanctuaryRootPath);
+
+    expect(result.errors).toEqual(expect.arrayContaining([
+      'search.json: protected snippet metadata plaintext',
+      'search.json: protected Markdown body plaintext'
+    ]));
+    expect(result.errors.join('\n')).not.toContain(privateTitle);
+    expect(result.errors.join('\n')).not.toContain(privateBody);
   });
 });

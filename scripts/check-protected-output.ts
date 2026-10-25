@@ -1,8 +1,8 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createMarkdownProcessor, type RemarkPlugin } from '@astrojs/markdown-remark';
 import matter from 'gray-matter';
-import { blogRoot } from '../src/lib/blog-root';
 import { snippetRoot } from '../src/lib/snippet-root';
 import { sanctuaryRoot } from '../src/lib/sanctuary-root';
 
@@ -113,18 +113,16 @@ function containsAny(matchers: LiteralMatchers, value: string): boolean {
   return false;
 }
 
-function bodySnippets(content: string, publicMetadata: string): string[] {
+function bodySnippets(content: string): string[] {
   const withoutImages = content.replace(MARKDOWN_IMAGE, ' ').replace(HTML_IMAGE, ' ');
-  const publicText = plainText(publicMetadata);
   const normalizedBody = plainText(withoutImages);
   const snippets = withoutImages
     .split(/\r?\n+/)
     .map(plainText)
-    .filter((snippet) => snippet.length >= MIN_BODY_SNIPPET_LENGTH)
-    .filter((snippet) => !publicText.includes(snippet));
+    .filter((snippet) => snippet.length >= MIN_BODY_SNIPPET_LENGTH);
   for (let offset = 0; offset < normalizedBody.length; offset += 32) {
     const snippet = normalizedBody.slice(offset, offset + 64).trim();
-    if (snippet.length >= MIN_BODY_SNIPPET_LENGTH && !publicText.includes(snippet)) {
+    if (snippet.length >= MIN_BODY_SNIPPET_LENGTH) {
       snippets.push(snippet);
     }
   }
@@ -134,7 +132,7 @@ function bodySnippets(content: string, publicMetadata: string): string[] {
       const value = decodeEntities(
         attributeMatch.slice(2).find((candidate) => candidate !== undefined) ?? ''
       ).replace(/\s+/g, ' ').trim();
-      if (value.length >= MIN_BODY_SNIPPET_LENGTH && !publicText.includes(value)) {
+      if (value.length >= MIN_BODY_SNIPPET_LENGTH) {
         snippets.push(value);
       }
     }
@@ -142,17 +140,50 @@ function bodySnippets(content: string, publicMetadata: string): string[] {
   return [...new Set(snippets)];
 }
 
-function imageReferences(content: string): string[] {
+interface MarkdownReferenceNode {
+  type: string;
+  identifier?: string;
+  url?: string;
+  children?: MarkdownReferenceNode[];
+}
+
+async function imageReferences(content: string): Promise<string[]> {
   const references: string[] = [];
   for (const match of content.matchAll(MARKDOWN_IMAGE)) references.push(match[1] ?? match[2]);
   for (const match of content.matchAll(HTML_IMAGE)) references.push(match[1]);
+
+  const collectReferenceImages: RemarkPlugin = () => (tree) => {
+    const nodes: MarkdownReferenceNode[] = [];
+    const collect = (node: MarkdownReferenceNode): void => {
+      nodes.push(node);
+      node.children?.forEach(collect);
+    };
+    collect(tree as MarkdownReferenceNode);
+
+    const definitions = new Map<string, string>();
+    for (const node of nodes) {
+      if (node.type !== 'definition' || node.identifier === undefined || node.url === undefined) continue;
+      const identifier = node.identifier.toUpperCase();
+      if (!definitions.has(identifier)) definitions.set(identifier, node.url);
+    }
+    for (const node of nodes) {
+      if (node.type !== 'imageReference' || node.identifier === undefined) continue;
+      const url = definitions.get(node.identifier.toUpperCase());
+      if (url !== undefined) references.push(url);
+    }
+  };
+  const processor = await createMarkdownProcessor({
+    syntaxHighlight: false,
+    smartypants: false,
+    remarkPlugins: [collectReferenceImages]
+  });
+  await processor.render(content);
   return references;
 }
 
-async function protectedSources(contentRoot: string, snippetsRoot: string, sanctuaryRootPath: string, errors: Set<string>): Promise<ProtectedSource[]> {
-  const postsRoot = resolve(contentRoot, 'posts');
+async function protectedSources(snippetsRoot: string, sanctuaryRootPath: string, errors: Set<string>): Promise<ProtectedSource[]> {
   const sources: ProtectedSource[] = [];
-  for (const [root, kind] of [[postsRoot, 'posts'], [resolve(snippetsRoot), 'snippets'], [resolve(sanctuaryRootPath), 'sanctuary']] as const) {
+  for (const [root, kind] of [[resolve(snippetsRoot), 'snippets'], [resolve(sanctuaryRootPath), 'sanctuary']] as const) {
     let sourceFiles: string[];
     try {
       sourceFiles = (await filesIn(root)).filter((file) => /\.mdx?$/i.test(file));
@@ -162,10 +193,8 @@ async function protectedSources(contentRoot: string, snippetsRoot: string, sanct
     }
     for (const sourceFile of sourceFiles) {
       const parsed = matter(await readFile(sourceFile, 'utf8'));
-      if (kind === 'posts' && parsed.data.locked !== true) continue;
-
       const sourceName = `${kind}/${outputPath(root, sourceFile)}`;
-      const references = imageReferences(parsed.content);
+      const references = await imageReferences(parsed.content);
       const resources: Array<{ name: string; bytes: Buffer }> = [];
       for (const reference of references) {
         if (REMOTE_REFERENCE.test(reference)) {
@@ -194,7 +223,7 @@ async function protectedSources(contentRoot: string, snippetsRoot: string, sanct
       }
 
       sources.push({
-        bodySnippets: bodySnippets(parsed.content, kind === 'posts' ? JSON.stringify(parsed.data) : ''),
+        bodySnippets: bodySnippets(parsed.content),
         metadataValues: kind === 'snippets'
           ? [parsed.data.title, parsed.data.description].filter((value): value is string => typeof value === 'string')
           : [],
@@ -235,15 +264,13 @@ function hasNoindex(html: string): boolean {
 }
 
 export async function inspectProtectedOutput(
-  contentRoot: string,
   distRoot: string,
   snippetsRoot = snippetRoot('snippets'),
   sanctuaryRootPath = sanctuaryRoot('sanctuary')
 ): Promise<ProtectedOutputCheckResult> {
-  const resolvedContentRoot = resolve(contentRoot);
   const resolvedDistRoot = resolve(distRoot);
   const errors = new Set<string>();
-  const sources = await protectedSources(resolvedContentRoot, snippetsRoot, sanctuaryRootPath, errors);
+  const sources = await protectedSources(snippetsRoot, sanctuaryRootPath, errors);
   const metadataMatchers = literalMatchers(sources.flatMap((source) => source.metadataValues));
   const bodyMatchers = literalMatchers(sources.flatMap((source) => source.bodySnippets));
   const resources = sources.flatMap((source) => source.resources);
@@ -318,9 +345,8 @@ export async function inspectProtectedOutput(
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args[0] === '--') args.shift();
-  const sourceRoot = resolve(args[0] ?? blogRoot());
-  const distRoot = resolve(args[1] ?? 'dist');
-  const result = await inspectProtectedOutput(sourceRoot, distRoot);
+  const distRoot = resolve(args[0] ?? 'dist');
+  const result = await inspectProtectedOutput(distRoot);
   if (result.errors.length === 0) {
     console.log('Protected output audit passed.');
     return;

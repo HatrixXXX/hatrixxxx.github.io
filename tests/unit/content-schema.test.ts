@@ -21,13 +21,13 @@ describe('content contracts', () => {
     const root = blogRoot('posts');
     const files = (await readdir(root)).filter((file) => /\.mdx?$/.test(file));
     const usesPublicFixtures = root === resolve('tests/fixtures/private-blogs/posts');
-    let lockedPosts = 0;
 
-    expect(files).toHaveLength(usesPublicFixtures ? 2 : 13);
+    expect(files).toHaveLength(usesPublicFixtures ? 2 : 14);
     for (const file of files) {
       const { data } = matter(await readFile(join(root, file), 'utf8'));
-      expect(postSchema.safeParse(data).success, file).toBe(true);
-      if (data.locked === true) lockedPosts += 1;
+      const parsed = postSchema.safeParse(data);
+      expect(parsed.success, file).toBe(true);
+      if (parsed.success) expect(parsed.data, file).not.toHaveProperty('locked');
       expect(data, file).not.toHaveProperty('type');
       expect(data, file).not.toHaveProperty('series');
       expect(data, file).not.toHaveProperty('seriesOrder');
@@ -37,8 +37,6 @@ describe('content contracts', () => {
       expect(data, file).not.toHaveProperty('categories');
       expect(data, file).not.toHaveProperty('tags');
     }
-
-    expect(lockedPosts).toBe(usesPublicFixtures ? 1 : 0);
   });
 
   it('keeps the configured playlist entries valid', () => {
@@ -64,18 +62,15 @@ describe('content contracts', () => {
     expect(config).not.toContain('./src/content/posts');
   });
 
-  it('defaults omitted locked metadata to public and rejects non-boolean values', () => {
-    const publicPost = postSchema.safeParse(postFixture);
+  it.each([undefined, true, false])('ignores removed legacy locked metadata: %s', (locked) => {
+    const publicPost = postSchema.safeParse({ ...postFixture, locked });
     expect(publicPost.success).toBe(true);
     if (publicPost.success) {
       expect(publicPost.data).toEqual({
         ...postFixture,
-        pubDate: new Date(postFixture.pubDate),
-        locked: false
+        pubDate: new Date(postFixture.pubDate)
       });
     }
-
-    expect(postSchema.safeParse({ ...postFixture, locked: 'true' }).success).toBe(false);
   });
 
   it('requires a nonempty summary of at most 100 characters', () => {

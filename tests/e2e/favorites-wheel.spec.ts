@@ -29,7 +29,10 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: '
 
     expect(motion.busy).toBe(false);
     expect(motion.final).toBe(3);
-    expect(motion.samples.some(({ progress }) => progress > 1.2 && progress < 1.8)).toBe(true);
+    const intermediateProgress = motion.samples
+      .filter(({ progress }) => Math.abs(progress - Math.round(progress)) > .1)
+      .map(({ progress }) => progress.toFixed(4));
+    expect(new Set(intermediateProgress).size).toBeGreaterThanOrEqual(2);
     expect(motion.samples.every(({ angles }) => Math.abs(angles[0] - angles[1]) < .02)).toBe(true);
     expect(motion.samples.filter(({ progress }) => Math.abs(progress - Math.round(progress)) > .1).every(({ progress, angles }) => {
       const expected = 44 * .6 * Math.PI / 180 * Math.abs(Math.sin(Math.PI * progress));

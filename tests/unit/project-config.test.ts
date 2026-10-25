@@ -156,13 +156,13 @@ describe('Astro project tooling', () => {
 
     expect(readme).toContain('`.private-blogs/posts/`：已发布文章');
     expect(readme).toContain('`.private-blogs/` 是独立的私有 Git 仓库');
-    expect(readme).toContain('公开仓库不跟踪任何已发布文章或随笔的 Markdown');
+    expect(readme).toContain('公开仓库不跟踪博客文章、随笔或秘境的 Markdown');
     expect(readme).toContain('在 `.private-blogs/posts/` 新建 Markdown 或 MDX 文件');
     expect(readme).not.toContain('`src/content/posts/`：已发布文章');
     expect(readme).not.toContain('在 `src/content/posts/` 新建');
 
     expect(agents).toContain('`.private-blogs/posts/` 是已发布博客文章的唯一正文来源');
-    expect(agents).toContain('也是独立私有仓库');
+    expect(agents).toContain('位于独立私有仓库 `HatrixXXX/hatrix-blogs`');
     expect(agents).toContain('公开仓库不跟踪文章 Markdown');
     expect(agents).not.toContain('`src/content/posts/`');
   });
@@ -306,13 +306,17 @@ describe('Astro project tooling', () => {
     expect(concurrency).toContain('cancel-in-progress: true');
   });
 
-  it('defaults the protected output audit to the private blogs root', () => {
+  it('audits only snippets and sanctuary sources against the default dist output', () => {
     const script = readFileSync('scripts/check-protected-output.ts', 'utf8');
 
-    expect(script).toContain("import { blogRoot } from '../src/lib/blog-root';");
-    expect(script).toContain('const sourceRoot = resolve(args[0] ?? blogRoot());');
-    expect(script).toContain('inspectProtectedOutput(sourceRoot, distRoot)');
-    expect(script).not.toContain("process.env.HATRIX_BLOGS_DIR ?? 'src/content'");
+    expect(script).toContain("import { snippetRoot } from '../src/lib/snippet-root';");
+    expect(script).toContain("import { sanctuaryRoot } from '../src/lib/sanctuary-root';");
+    expect(script).toContain("snippetsRoot = snippetRoot('snippets')");
+    expect(script).toContain("sanctuaryRootPath = sanctuaryRoot('sanctuary')");
+    expect(script).toContain("const distRoot = resolve(args[0] ?? 'dist');");
+    expect(script).toContain('inspectProtectedOutput(distRoot)');
+    expect(script).not.toContain('blogRoot');
+    expect(script).not.toContain('HATRIX_BLOGS_DIR');
   });
 
   it('checks out an exact private blogs commit for every production deployment', () => {

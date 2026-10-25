@@ -2,7 +2,6 @@ import { copyFile, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promis
 import { join, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { PostEntry } from '../../src/lib/content';
 import type { CollectionEntry } from 'astro:content';
 import {
   collectProtectedAssets,
@@ -12,51 +11,41 @@ import {
 const keyBytes = new Uint8Array(32).fill(7);
 const fixtureImage = resolve('tests/fixtures/protected-content/private-image.png');
 let temporaryRoot: string;
-let postsRoot: string;
-let postPath: string;
-let previousContentDir: string | undefined;
+let protectedRoot: string;
+let entryPath: string;
 let previousSnippetsDir: string | undefined;
 let previousSanctuaryDir: string | undefined;
 
-function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntry {
+function fixtureSanctuary(body: string, overrides: Partial<CollectionEntry<'sanctuary'>> = {}): CollectionEntry<'sanctuary'> {
   return {
-    id: 'locked-post',
-    collection: 'posts',
+    id: 'private-sanctuary',
+    collection: 'sanctuary',
     body,
-    filePath: postPath,
+    filePath: entryPath,
     data: {
-      title: 'Locked post',
-      description: 'Public description',
+      title: 'Private sanctuary',
+      summary: 'Public summary',
       pubDate: new Date('2026-09-03'),
       cover: '/cover.svg',
-      locked: true,
-      legacySlug: 'locked-post'
     },
     ...overrides
-  } as PostEntry;
+  } as CollectionEntry<'sanctuary'>;
 }
 
 beforeEach(async () => {
-  previousContentDir = process.env.HATRIX_BLOGS_DIR;
   previousSnippetsDir = process.env.HATRIX_SNIPPETS_DIR;
   previousSanctuaryDir = process.env.HATRIX_SANCTUARY_DIR;
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-markdown-'));
-  postsRoot = join(temporaryRoot, 'posts');
-  postPath = join(postsRoot, 'nested', 'private.md');
-  process.env.HATRIX_BLOGS_DIR = temporaryRoot;
+  protectedRoot = join(temporaryRoot, 'sanctuary');
+  entryPath = join(protectedRoot, 'nested', 'private.md');
   process.env.HATRIX_SNIPPETS_DIR = temporaryRoot;
   process.env.HATRIX_SANCTUARY_DIR = temporaryRoot;
-  await mkdir(join(postsRoot, 'nested'), { recursive: true });
-  await copyFile(fixtureImage, join(postsRoot, 'nested', 'private-image.png'));
-  await writeFile(postPath, '# fixture', 'utf8');
+  await mkdir(join(protectedRoot, 'nested'), { recursive: true });
+  await copyFile(fixtureImage, join(protectedRoot, 'nested', 'private-image.png'));
+  await writeFile(entryPath, '# fixture', 'utf8');
 });
 
 afterEach(async () => {
-  if (previousContentDir === undefined) {
-    delete process.env.HATRIX_BLOGS_DIR;
-  } else {
-    process.env.HATRIX_BLOGS_DIR = previousContentDir;
-  }
   if (previousSnippetsDir === undefined) delete process.env.HATRIX_SNIPPETS_DIR;
   else process.env.HATRIX_SNIPPETS_DIR = previousSnippetsDir;
   if (previousSanctuaryDir === undefined) delete process.env.HATRIX_SANCTUARY_DIR;
@@ -102,7 +91,7 @@ describe('protected Markdown', () => {
   });
   it('replaces a local image with an opaque encrypted asset reference', async () => {
     const result = await renderProtectedMarkdown(
-      fixturePost('Private marker.\n\n![secret alt](./private-image.png "secret title")'),
+      fixtureSanctuary('Private marker.\n\n![secret alt](./private-image.png "secret title")'),
       keyBytes
     );
 
@@ -114,7 +103,7 @@ describe('protected Markdown', () => {
     expect(result.assets).toHaveLength(1);
     expect(result.assets[0]).toEqual({
       id: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
-      sourcePath: join(postsRoot, 'nested', 'private-image.png'),
+      sourcePath: join(protectedRoot, 'nested', 'private-image.png'),
       mediaType: 'image/png',
       aad: `asset:${result.assets[0].id}`,
       url: `/protected-content/assets/${result.assets[0].id}.bin`
@@ -122,10 +111,43 @@ describe('protected Markdown', () => {
     expect(result.assets[0].id).not.toContain('private-image');
   });
 
+  it.each([
+    '![secret alt][PiC]\n\n[pIc]: ./private-image.png "secret title"',
+    '![secret alt][]\n\n[SECRET ALT]: ./private-image.png "secret title"',
+    '![secret alt]\n\n[SECRET ALT]: ./private-image.png "secret title"'
+  ])('protects reference images with case-insensitive trailing definitions: %s', async (body) => {
+    const result = await renderProtectedMarkdown(fixtureSanctuary(body), keyBytes);
+
+    expect(result.assets).toHaveLength(1);
+    expect(result.assets[0].sourcePath).toBe(join(protectedRoot, 'nested', 'private-image.png'));
+    expect(result.html).toContain(`data-protected-src="${result.assets[0].url}"`);
+    expect(result.html).toContain('data-protected-type="image/png"');
+    expect(result.html).toContain('alt="secret alt"');
+    expect(result.html).toContain('title="secret title"');
+    expect(result.html).not.toContain('private-image.png');
+  });
+
+  it.each([
+    'https://example.com/private.png',
+    '/assets/private.png'
+  ])('rejects reference images outside the protected relative asset pipeline: %s', async (url) => {
+    await expect(renderProtectedMarkdown(
+      fixtureSanctuary(`![secret][PiC]\n\n[pIc]: ${url}`),
+      keyBytes
+    )).rejects.toThrow(/加锁文章/);
+  });
+
+  it('keeps unresolved image references as text', async () => {
+    const result = await renderProtectedMarkdown(fixtureSanctuary('![missing][not-defined]'), keyBytes);
+
+    expect(result.assets).toEqual([]);
+    expect(result.html).toContain('![missing][not-defined]');
+  });
+
   it('uses the content key for IDs and deduplicates repeated image references', async () => {
     const body = '![first](./private-image.png)\n\n![second](./private-image.png)';
-    const first = await renderProtectedMarkdown(fixturePost(body), keyBytes);
-    const otherKey = await renderProtectedMarkdown(fixturePost(body), new Uint8Array(32).fill(8));
+    const first = await renderProtectedMarkdown(fixtureSanctuary(body), keyBytes);
+    const otherKey = await renderProtectedMarkdown(fixtureSanctuary(body), new Uint8Array(32).fill(8));
 
     expect(first.assets).toHaveLength(1);
     expect(otherKey.assets).toHaveLength(1);
@@ -135,9 +157,9 @@ describe('protected Markdown', () => {
 
   it('changes the opaque asset ID and URL when bytes change at the same path', async () => {
     const body = '![secret](./private-image.png)';
-    const first = await renderProtectedMarkdown(fixturePost(body), keyBytes);
-    await writeFile(join(postsRoot, 'nested', 'private-image.png'), new Uint8Array([1, 2, 3, 4]));
-    const replacement = await renderProtectedMarkdown(fixturePost(body), keyBytes);
+    const first = await renderProtectedMarkdown(fixtureSanctuary(body), keyBytes);
+    await writeFile(join(protectedRoot, 'nested', 'private-image.png'), new Uint8Array([1, 2, 3, 4]));
+    const replacement = await renderProtectedMarkdown(fixtureSanctuary(body), keyBytes);
 
     expect(first.assets[0].id).not.toBe(replacement.assets[0].id);
     expect(first.assets[0].url).not.toBe(replacement.assets[0].url);
@@ -153,7 +175,7 @@ describe('protected Markdown', () => {
     await writeFile(join(temporaryRoot, 'outside.png'), 'outside', 'utf8');
 
     try {
-      await renderProtectedMarkdown(fixturePost(`${privateText}\n\n${image}`), keyBytes);
+      await renderProtectedMarkdown(fixtureSanctuary(`${privateText}\n\n${image}`), keyBytes);
       throw new Error('expected protected Markdown rendering to reject the image');
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
@@ -164,7 +186,7 @@ describe('protected Markdown', () => {
 
   it('rejects raw HTML images because they cannot be safely rewritten', async () => {
     await expect(
-      renderProtectedMarkdown(fixturePost('<img src="./private-image.png" alt="secret">'), keyBytes)
+      renderProtectedMarkdown(fixtureSanctuary('<img src="./private-image.png" alt="secret">'), keyBytes)
     ).rejects.toThrow(/加锁文章/);
   });
 
@@ -172,38 +194,38 @@ describe('protected Markdown', () => {
     const outsideDirectory = join(temporaryRoot, 'outside');
     await mkdir(outsideDirectory);
     await copyFile(fixtureImage, join(outsideDirectory, 'private-image.png'));
-    await symlink(outsideDirectory, join(postsRoot, 'nested', 'linked'), 'junction');
+    await symlink(outsideDirectory, join(protectedRoot, 'nested', 'linked'), 'junction');
 
     await expect(
-      renderProtectedMarkdown(fixturePost('![secret](./linked/private-image.png)'), keyBytes)
+      renderProtectedMarkdown(fixtureSanctuary('![secret](./linked/private-image.png)'), keyBytes)
     ).rejects.toThrow(/加锁文章/);
   });
 
-  it('accepts only the default private blogs root when HATRIX_BLOGS_DIR is unset', async () => {
+  it('accepts only the default private sanctuary root when HATRIX_SANCTUARY_DIR is unset', async () => {
     const previousWorkingDirectory = process.cwd();
-    const privatePosts = join(temporaryRoot, '.private-blogs', 'posts');
-    const publicPosts = join(temporaryRoot, 'src', 'content', 'posts');
-    const privatePostPath = join(privatePosts, 'private.md');
-    const publicPostPath = join(publicPosts, 'public.md');
-    delete process.env.HATRIX_BLOGS_DIR;
-    await mkdir(privatePosts, { recursive: true });
-    await mkdir(publicPosts, { recursive: true });
-    await copyFile(fixtureImage, join(privatePosts, 'private-image.png'));
-    await copyFile(fixtureImage, join(publicPosts, 'private-image.png'));
-    await writeFile(privatePostPath, '# private fixture', 'utf8');
-    await writeFile(publicPostPath, '# public fixture', 'utf8');
+    const privateEntries = join(temporaryRoot, '.private-sanctuary', 'sanctuary');
+    const publicEntries = join(temporaryRoot, 'src', 'content', 'sanctuary');
+    const privateEntryPath = join(privateEntries, 'private.md');
+    const publicEntryPath = join(publicEntries, 'public.md');
+    delete process.env.HATRIX_SANCTUARY_DIR;
+    await mkdir(privateEntries, { recursive: true });
+    await mkdir(publicEntries, { recursive: true });
+    await copyFile(fixtureImage, join(privateEntries, 'private-image.png'));
+    await copyFile(fixtureImage, join(publicEntries, 'private-image.png'));
+    await writeFile(privateEntryPath, '# private fixture', 'utf8');
+    await writeFile(publicEntryPath, '# public fixture', 'utf8');
 
     try {
       process.chdir(temporaryRoot);
       await expect(
         renderProtectedMarkdown(
-          fixturePost('![private](./private-image.png)', { filePath: privatePostPath }),
+          fixtureSanctuary('![private](./private-image.png)', { filePath: privateEntryPath }),
           keyBytes
         )
-      ).resolves.toMatchObject({ assets: [{ sourcePath: join(privatePosts, 'private-image.png') }] });
+      ).resolves.toMatchObject({ assets: [{ sourcePath: join(privateEntries, 'private-image.png') }] });
       await expect(
         renderProtectedMarkdown(
-          fixturePost('![public](./private-image.png)', { filePath: publicPostPath }),
+          fixtureSanctuary('![public](./private-image.png)', { filePath: publicEntryPath }),
           keyBytes
         )
       ).rejects.toThrow(/加锁文章/);
@@ -214,7 +236,7 @@ describe('protected Markdown', () => {
 
   it('keeps the existing math and Shiki Markdown behavior', async () => {
     const result = await renderProtectedMarkdown(
-      fixturePost('$x^2$\n\n```ts\nconst value = 1;\n```'),
+      fixtureSanctuary('$x^2$\n\n```ts\nconst value = 1;\n```'),
       keyBytes
     );
 
@@ -222,20 +244,16 @@ describe('protected Markdown', () => {
     expect(result.html).toContain('github-dark');
   });
 
-  it('collects assets only from locked posts and deduplicates them', async () => {
+  it('deduplicates shared images across protected sanctuary entries', async () => {
     const body = '![secret](./private-image.png)';
-    const locked = fixturePost(body);
-    const duplicate = fixturePost(body, { id: 'locked-duplicate' });
-    const publicPost = fixturePost(body, {
-      id: 'public-post',
-      data: { ...locked.data, locked: false }
-    });
+    const locked = fixtureSanctuary(body);
+    const duplicate = fixtureSanctuary(body, { id: 'locked-duplicate' });
     const assets = await collectProtectedAssets(
-      [locked, duplicate, publicPost],
+      [locked, duplicate],
       keyBytes
     );
 
     expect(assets).toHaveLength(1);
-    expect(relative(postsRoot, assets[0].sourcePath)).toBe(join('nested', 'private-image.png'));
+    expect(relative(protectedRoot, assets[0].sourcePath)).toBe(join('nested', 'private-image.png'));
   });
 });

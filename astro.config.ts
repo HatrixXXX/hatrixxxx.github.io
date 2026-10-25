@@ -1,13 +1,10 @@
 import { defineConfig } from 'astro/config';
 import type { AstroIntegration } from 'astro';
 import sitemap from '@astrojs/sitemap';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import matter from 'gray-matter';
 import { siteMarkdownConfig } from './src/config/markdown';
 import { LOCKED_PAGE_PATHS, normalizeRoutePath } from './src/config/protected-content';
-import { blogRoot } from './src/lib/blog-root';
-import { postPath } from './src/lib/urls';
 import { snippetRoot } from './src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from './src/lib/snippets';
 import { sanctuaryRoot } from './src/lib/sanctuary-root';
@@ -22,21 +19,12 @@ function markdownFiles(directory: string): string[] {
 }
 
 function sitemapExcludedRoutes(): Set<string> {
-  const postsRoot = blogRoot('posts');
   const legacyRedirectPaths = [
     '/blog/', '/blog/all/', '/projects/', '/about/bookmarks/',
     '/about/software/', '/about/friends/', '/lab/'
   ];
   const routes = new Set([...LOCKED_PAGE_PATHS, ...legacyRedirectPaths].map(normalizeRoutePath));
 
-  if (existsSync(postsRoot)) {
-    for (const file of markdownFiles(postsRoot)) {
-      const { data } = matter(readFileSync(file, 'utf8'));
-      if (data.locked === true && typeof data.legacySlug === 'string') {
-        routes.add(normalizeRoutePath(postPath(data.legacySlug)));
-      }
-    }
-  }
   const snippetsRoot = snippetRoot('snippets');
   if (existsSync(snippetsRoot)) {
     for (const file of markdownFiles(snippetsRoot)) {

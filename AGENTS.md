@@ -72,8 +72,10 @@ corepack pnpm test:e2e
 - 保留已发布文章的 `/posts/<legacySlug>/` 路径；用户确认删除的《杂货铺》及 `/posts/杂货铺/` 为例外。Twikoo 以 pathname 区分评论；原 GitHub Discussions 留言不迁移、不删除。
 - 完成博客正文修改后，必须在 `.private-blogs` 独立仓库提交。完成随笔修改后，必须在 `.private-snippets` 独立仓库提交。用户要求推送时，同时推送任务涉及的私有仓库提交；不留下未提交的内容修改。
 - 文章正文属于用户内容，除非任务明确要求，不改写正文。schema 调整保持旧 URL。只修改摘要时不改 `updatedDate`。
-- 每篇博客文章的公开 `summary` 不超过 100 字并准确概括正文；加锁文章摘要不得泄露受保护信息。正文主题、主要结论或覆盖范围明显变化时同步更新摘要，错别字和不影响主旨的小改不触发。
-- 所有通过校验的文章都生成页面；`locked` 省略时为 `false`。`locked: true` 只公开 metadata、Hero 和封面，正文与正文图片必须输出密文。加锁正文图片只能使用文章目录内的 Markdown 相对路径；禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`。
+- 每篇博客文章的公开 `summary` 不超过 100 字并准确概括正文。正文主题、主要结论或覆盖范围明显变化时同步更新摘要，错别字和不影响主旨的小改不触发。
+- 所有通过校验的博客文章都生成公开页面，正文、正文图片、搜索、RSS 和站点地图不提供博客加锁开关。博客源码仓库仍保持私有。
+- 随笔、秘境和资讯继续使用管理员 key 加锁；随笔与秘境正文图片只使用内容目录内的 Markdown 相对路径，禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`，正文和原图必须输出密文。
+- 随笔和秘境集合使用 `src/lib/protected-glob.ts` 保留源正文，禁止 Astro 为受保护正文登记原生渲染模块或图片导入；图片由专用加密渲染器处理，不能替换为普通 `glob` 或仅设置 `deferRender`。
 - 为随笔拟新标题时，使用隐晦、荒诞且带有当代年轻人“发疯”语感的表达；避免直接对应正文的事件、人物、地点、技术关键词或结论，让人单看标题无法推断正文大致写了什么。
 - 随笔封面放在公开站点 `public/` 下，frontmatter 的 `cover` 使用站点根路径。
 - 首页入口使用 `/blogs/`、`/creation/`、`/about/`、`/snippets/`、`/favorites/`、`/toolbox/`、`/sanctuary/`、`/digest/`、`/playground/`、`/friends/`、`/guestbook/`。关于子页保留 `/about/<section>/`，文章详情保留 `/posts/<legacySlug>/`。

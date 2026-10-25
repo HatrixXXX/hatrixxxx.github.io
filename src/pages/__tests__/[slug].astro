@@ -5,6 +5,7 @@ import PostLink from '@/components/PostLink.astro';
 import ProtectedContent from '@/components/ProtectedContent.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { PostEntry } from '@/lib/content';
+import { postSchema } from '@/lib/post-schema';
 
 interface Props {
   slug: string;
@@ -25,43 +26,42 @@ export function getStaticPaths() {
 
 const { slug, label } = Astro.props;
 const route = `/__tests__/${slug}/`;
-const lockedIndex = slug === 'locked-index';
-const lockedPost = {
+const publicIndex = slug === 'locked-index';
+const legacyPost = {
   id: 'locked-index-fixture',
   collection: 'posts',
-  body: 'distinctive-private-body-marker',
-  data: {
-    title: '公开的加锁文章标题',
-    summary: '公开的加锁文章摘要',
+  body: 'public-blog-body-marker',
+  data: postSchema.parse({
+    title: '旧字段公开文章标题',
+    summary: '旧字段公开文章摘要',
     pubDate: new Date('2026-09-03'),
     cover: '/assets/blog-cards/default-cover.webp',
     locked: true,
     legacySlug: 'locked-index-fixture'
-  }
+  })
 } as PostEntry;
 const publicPost = {
-  ...lockedPost,
+  ...legacyPost,
   id: 'public-index-fixture',
   data: {
-    ...lockedPost.data,
+    ...legacyPost.data,
     title: '公开文章标题',
-    locked: false,
     legacySlug: 'public-index-fixture'
   }
 } as PostEntry;
 ---
 
-<BaseLayout title={`加锁测试${label}`} canonicalPath={route} noindex={lockedIndex}>
+<BaseLayout title={publicIndex ? '公开博客索引测试' : `加锁测试${label}`} canonicalPath={route} noindex={publicIndex}>
   {
-    lockedIndex ? (
+    publicIndex ? (
       <main class="container">
-        <PostCard post={lockedPost} />
+        <PostCard post={legacyPost} />
         {['footer', 'archive', 'adjacent'].map((surface) => (
-          <section data-lock-surface={surface}>
+          <section data-post-link-surface={surface}>
             <PostLink
-              post={lockedPost}
+              post={legacyPost}
               direction={surface === 'adjacent' ? '上一篇' : undefined}
-              data-fixture-state="locked"
+              data-fixture-state="legacy"
             />
             <PostLink
               post={publicPost}
