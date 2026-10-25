@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolve } from 'node:path';
 import { checkImages, collectImageSources, coverFailuresFor, extractImageUrls } from '../../scripts/check-images';
-import { contentRoot } from '../../src/lib/content-root';
+import { blogRoot } from '../../src/lib/blog-root';
 import remarkImageStatus from '../../src/plugins/remark-image-status';
 
 const IMAGE_REPOSITORY = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image';
@@ -11,7 +11,7 @@ const PINNED_IMAGE_PREFIXES = [
   IMMUTABLE_IMAGE_PREFIX,
   `${IMAGE_REPOSITORY}@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/`
 ];
-const USES_PUBLIC_FIXTURES = contentRoot() === resolve('tests/fixtures/private-content');
+const USES_PUBLIC_FIXTURES = blogRoot() === resolve('tests/fixtures/private-blogs');
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -20,7 +20,7 @@ afterEach(() => {
 
 describe('remote image checking', () => {
   it.skipIf(USES_PUBLIC_FIXTURES)('pins the complete published image inventory to immutable repository commits', async () => {
-    const sources = await collectImageSources(contentRoot('posts'));
+    const sources = await collectImageSources(blogRoot('posts'));
     const blogImageUrls = sources.urls.filter((url) => url.startsWith(IMAGE_REPOSITORY));
     const unpinned = blogImageUrls.filter(
       (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(prefix))

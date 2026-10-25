@@ -8,7 +8,7 @@ import {
   isLockedPage,
   normalizeRoutePath
 } from '../../src/config/protected-content';
-import { contentRoot } from '../../src/lib/content-root';
+import { blogRoot } from '../../src/lib/blog-root';
 
 describe('protected content config', () => {
   it('uses the agreed password and KDF floors', () => {
@@ -31,8 +31,8 @@ describe('protected content config', () => {
     expect(isLockedPage('/about/research/', ['/about'])).toBe(false);
   });
 
-  it('protects plans and digest while leaving neighboring navigation pages public', () => {
-    expect(isConfiguredLockedPage('/plans/')).toBe(true);
+  it('protects sanctuary and digest while leaving neighboring navigation pages public', () => {
+    expect(isConfiguredLockedPage('/sanctuary/')).toBe(true);
     expect(isConfiguredLockedPage('/digest/')).toBe(true);
     expect(isConfiguredLockedPage('/favorites/')).toBe(false);
     expect(isConfiguredLockedPage('/toolbox/')).toBe(false);
@@ -42,23 +42,23 @@ describe('protected content config', () => {
     expect(PROTECTED_VERIFIER_AAD).toBe('verifier:1');
   });
 
-  it('resolves private content from the default or configured root', () => {
-    const previousRoot = process.env.HATRIX_CONTENT_DIR;
+  it('resolves private blogs from the default or configured root', () => {
+    const previousRoot = process.env.HATRIX_BLOGS_DIR;
 
     try {
-      delete process.env.HATRIX_CONTENT_DIR;
-      expect(contentRoot('posts')).toBe(resolve('.private-content', 'posts'));
+      delete process.env.HATRIX_BLOGS_DIR;
+      expect(blogRoot('posts')).toBe(resolve('.private-blogs', 'posts'));
 
-      process.env.HATRIX_CONTENT_DIR = 'tests/fixtures/private-content';
-      expect(contentRoot('posts')).toBe(resolve('tests/fixtures/private-content', 'posts'));
+      process.env.HATRIX_BLOGS_DIR = 'tests/fixtures/private-blogs';
+      expect(blogRoot('posts')).toBe(resolve('tests/fixtures/private-blogs', 'posts'));
 
-      process.env.HATRIX_CONTENT_DIR = '';
-      expect(() => contentRoot()).toThrow();
+      process.env.HATRIX_BLOGS_DIR = '';
+      expect(() => blogRoot()).toThrow();
     } finally {
       if (previousRoot === undefined) {
-        delete process.env.HATRIX_CONTENT_DIR;
+        delete process.env.HATRIX_BLOGS_DIR;
       } else {
-        process.env.HATRIX_CONTENT_DIR = previousRoot;
+        process.env.HATRIX_BLOGS_DIR = previousRoot;
       }
     }
   });

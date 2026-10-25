@@ -389,9 +389,9 @@ it('reports when the local link inventory is one below the expected count', asyn
 it('aggregates missing post output errors without throwing', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
-  await writeSiteFile(root, '.private-content/posts/example.md', '---\nlegacySlug: absent\n---\n');
+  await writeSiteFile(root, '.private-blogs/posts/example.md', '---\nlegacySlug: absent\n---\n');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
-  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
+  await writeSiteFile(root, '.private-sanctuary/sanctuary/.gitkeep');
   await writeSiteFile(root, 'dist/index.html');
   await writeSiteFile(root, 'dist/404.html');
   await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
@@ -418,13 +418,13 @@ it('requires a generated route for every source post', async () => {
   await writeSiteFile(root, 'dist/sitemap-0.xml', '<urlset/>');
   await writeSiteFile(root, 'dist/third-party-notices.txt', 'Sakana notice');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
-  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
+  await writeSiteFile(root, '.private-sanctuary/sanctuary/.gitkeep');
 
   for (let index = 0; index < 13; index += 1) {
     const slug = `published-${index}`;
     await writeSiteFile(
       root,
-      `.private-content/posts/${slug}.md`,
+      `.private-blogs/posts/${slug}.md`,
       `---\nlegacySlug: ${slug}\n---\n`
     );
     await writeSiteFile(root, `dist/posts/${slug}/index.html`, `<html>${secureHead}</html>`);
@@ -443,13 +443,13 @@ it('requires a generated route for every source post', async () => {
   ]));
 });
 
-it('requires plan routes only for Markdown files loaded from the plans root', async () => {
+it('requires sanctuary routes only for Markdown files loaded from the sanctuary root', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
-  await writeSiteFile(root, '.private-content/posts/.gitkeep');
+  await writeSiteFile(root, '.private-blogs/posts/.gitkeep');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
-  await writeSiteFile(root, '.private-plans/plans/visible.md', '---\ntitle: Visible\n---\n');
-  await writeSiteFile(root, '.private-plans/plans/research/source.md', 'Supporting research');
+  await writeSiteFile(root, '.private-sanctuary/sanctuary/visible.md', '---\ntitle: Visible\n---\n');
+  await writeSiteFile(root, '.private-sanctuary/sanctuary/research/source.md', 'Supporting research');
   await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}</html>`);
   await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);
   await writeSiteFile(root, 'dist/CNAME', 'hatrix.site\n');
@@ -460,16 +460,16 @@ it('requires plan routes only for Markdown files loaded from the plans root', as
 
   const result = await inspectProjectBuiltSite(root, { expectedPostCount: 0 });
 
-  expect(result.errors.filter((error) => error.startsWith('Missing expected plan route:')))
-    .toEqual(['Missing expected plan route: /plans/visible/']);
+  expect(result.errors.filter((error) => error.startsWith('Missing expected sanctuary route:')))
+    .toEqual(['Missing expected sanctuary route: /sanctuary/visible/']);
 });
 
 it('checks the fixed link count only while snippets are empty', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hatrix-project-'));
   await writeSiteFile(root, 'public/CNAME', 'hatrix.site\n');
-  await writeSiteFile(root, '.private-content/posts/.gitkeep');
+  await writeSiteFile(root, '.private-blogs/posts/.gitkeep');
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
-  await writeSiteFile(root, '.private-plans/plans/.gitkeep');
+  await writeSiteFile(root, '.private-sanctuary/sanctuary/.gitkeep');
   await writeSiteFile(root, 'dist/posts/.gitkeep');
   await writeSiteFile(root, 'dist/index.html', `<html>${secureHead}<body><a href="/404.html">404</a></body></html>`);
   await writeSiteFile(root, 'dist/404.html', `<html>${secureHead}</html>`);

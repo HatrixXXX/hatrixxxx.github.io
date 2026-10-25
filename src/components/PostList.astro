@@ -3,22 +3,22 @@ import type { CollectionEntry } from 'astro:content';
 import PostCard from '@/components/PostCard.astro';
 import type { PostEntry } from '@/lib/content';
 
-type Props = { posts: PostEntry[]; plans?: never } | { plans: CollectionEntry<'plans'>[]; posts?: never };
+type Props = { posts: PostEntry[]; sanctuary?: never } | { sanctuary: CollectionEntry<'sanctuary'>[]; posts?: never };
 
-const { posts, plans } = Astro.props;
+const { posts, sanctuary } = Astro.props;
 ---
 
 <div
   class="coverflow-shell"
-  aria-label={plans ? '计划文章列表' : '文章列表'}
+  aria-label={sanctuary ? '秘境文章列表' : '文章列表'}
   aria-describedby="post-list-instructions"
   tabindex="0"
   data-post-coverflow
-  data-coverflow-kind={plans ? 'plan' : 'blog'}
+  data-coverflow-kind={sanctuary ? 'sanctuary' : 'blog'}
 >
   <div class="coverflow-scene">
     {posts?.map((post, index) => <PostCard post={post} index={index} total={posts.length} />)}
-    {plans?.map((plan, index) => <PostCard plan={plan} index={index} total={plans.length} />)}
+    {sanctuary?.map((entry, index) => <PostCard sanctuary={entry} index={index} total={sanctuary.length} />)}
     <div class="coverflow-rails" aria-hidden="true">
       <img class="coverflow-rail coverflow-rail--left" src="/assets/blog-cards/guide-rail.webp" alt="" width="167" height="2160" loading="eager" decoding="async" />
       <img class="coverflow-rail coverflow-rail--right" src="/assets/blog-cards/guide-rail.webp" alt="" width="167" height="2160" loading="eager" decoding="async" />

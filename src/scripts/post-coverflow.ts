@@ -8,11 +8,11 @@ import { animate } from 'animejs';
 const RAIL_SELECTOR = '[data-post-coverflow]';
 const COVERFLOWS = {
   blog: { listPath: '/blogs/', detailPath: '/posts/', indexKey: 'blog-coverflow-index', fromDetailKey: 'blog-coverflow-from-post' },
-  plan: { listPath: '/plans/', detailPath: '/plans/', indexKey: 'plan-coverflow-index', fromDetailKey: 'plan-coverflow-from-detail' }
+  sanctuary: { listPath: '/sanctuary/', detailPath: '/sanctuary/', indexKey: 'sanctuary-coverflow-index', fromDetailKey: 'sanctuary-coverflow-from-detail' }
 } as const;
 
 function coverflowFor(rail: HTMLElement) {
-  return rail.dataset.coverflowKind === 'plan' ? COVERFLOWS.plan : COVERFLOWS.blog;
+  return rail.dataset.coverflowKind === 'sanctuary' ? COVERFLOWS.sanctuary : COVERFLOWS.blog;
 }
 
 // Spring constants

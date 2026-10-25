@@ -1,7 +1,7 @@
 ---
 import { REFERENCE_ICON_PATHS } from '@/data/home-reference-icon-paths';
 
-type IconName = 'search' | 'home' | 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'plans' | 'digest' | 'lab' | 'friends' | 'guestbook';
+type IconName = 'search' | 'home' | 'blog' | 'projects' | 'about' | 'snippets' | 'bookmark' | 'software' | 'sanctuary' | 'digest' | 'lab' | 'friends' | 'guestbook';
 interface Props { name: IconName }
 const { name } = Astro.props;
 
@@ -37,6 +37,11 @@ const symbols = {
     fill: 'M48 6l5-5 10 10-5 5-10-10ZM30 29h8l-8 5v-5Z',
     lines: 'M14 37h12M37 50h12M46 18l8-8'
   },
+  sanctuary: {
+    body: 'M25 3h14l2 5 6 3 5-1 7 12-3 5v10l3 5-7 12-5-1-6 3-2 5H25l-2-5-6-3-5 1-7-12 3-5V27l-3-5 7-12 5 1 6-3 2-5ZM25.8 6.5H38.2L39.9 10.9 45.2 13.5 49.6 12.6 55.8 23.2 53.1 27.6V36.4L55.8 40.8 49.6 51.4 45.2 50.5 39.9 53.1 38.2 57.5H25.8L24.1 53.1 18.8 50.5 14.4 51.4 8.2 40.8 10.9 36.4V27.6L8.2 23.2 14.4 12.6 18.8 13.5 24.1 10.9ZM31.3 4.1h1.4v1.4h-1.4V4.1ZM31.3 58.5h1.4v1.4h-1.4v-1.4ZM8.8 31.3h1.4v1.4H8.8v-1.4ZM53.8 31.3h1.4v1.4h-1.4v-1.4ZM32 18 42 30 32 46 22 30 32 18Zm0 6-5 6 5 9 5-9-5-6Z',
+    fill: 'M32 24 37 30 32 39V24ZM15 13l4-2 3 4-4 3-3-5ZM45 46l4-3 3 5-4 2-3-4ZM10 43a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM54 15a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z',
+    lines: 'M60.8 14C64 19.1 53.8 31.4 37.8 41.3C21.9 51.3 6.4 55.2 3.2 50C0 44.9 10.2 32.6 26.2 22.7C42.1 12.7 57.6 8.8 60.8 14ZM32 16a16 16 0 0 1 11.3 4.7M48 32a16 16 0 0 1-4.7 11.3M32 48a16 16 0 0 1-11.3-4.7M16 32a16 16 0 0 1 4.7-11.3M22 30h20M32 18v6M32 39v7M18 23l-3-2M46 41l3 2M23 46l-2 3M41 18l2-3'
+  },
   digest: {
     body: 'M30 5h22l6 6v48H6V19l5-5h19V5Zm5 5v44h18V12l-2-2H35ZM11 20v34h19V20H11Z',
     fill: 'M15 38h11v4H15v-4Zm0 9h11v4H15v-4Zm24-20h10v4H39v-4Zm0 11h10v4H39v-4Zm0 9h10v4H39v-4Z',
@@ -60,7 +65,6 @@ const symbols = {
 };
 
 const softwareDetailPath = REFERENCE_ICON_PATHS.software[2].slice(REFERENCE_ICON_PATHS.software[2].indexOf('M421.807'));
-const [planClockPath, planUpperLinePath, planLowerLinePath] = REFERENCE_ICON_PATHS.plans[1].split(/(?=M\d)/);
 ---
 
 {name === 'search' && <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="21" cy="21" r="12" /><path d="m30 30 11 11" /></svg>}
@@ -72,21 +76,8 @@ const [planClockPath, planUpperLinePath, planLowerLinePath] = REFERENCE_ICON_PAT
   <path d={REFERENCE_ICON_PATHS.software[3]} fill="currentColor" />
   <circle cx="821" cy="836" r="50" fill="none" stroke="currentColor" stroke-width="27" />
 </svg>}
-{name === 'plans' && <svg viewBox="0 0 1024 1024" aria-hidden="true">
-  <defs>
-    <mask id="home-plans-binder-holes" maskUnits="userSpaceOnUse">
-      <path d="M0 0h1024v1024H0z" fill="white" />
-      <rect x="110" y="320" width="85" height="66" rx="20" fill="black" />
-      <rect x="110" y="604" width="85" height="66" rx="20" fill="black" />
-    </mask>
-  </defs>
-  <path d={REFERENCE_ICON_PATHS.plans[0]} fill="currentColor" mask="url(#home-plans-binder-holes)" />
-  <path d={planClockPath} fill="currentColor" opacity=".55" />
-  <path d={planUpperLinePath} fill="currentColor" opacity=".55" />
-  <path d={planLowerLinePath} fill="currentColor" />
-</svg>}
-{name !== 'search' && name !== 'software' && name !== 'plans' && <svg viewBox="0 0 64 64" aria-hidden="true">
+{name !== 'search' && name !== 'software' && <svg viewBox="0 0 64 64" aria-hidden="true">
   <path d={symbols[name].body} fill="currentColor" fill-rule="evenodd" />
   <path d={symbols[name].fill} fill="currentColor" opacity=".55" />
-  <path d={symbols[name].lines} fill="none" stroke="currentColor" stroke-width={name === 'about' ? 3.2 : 2.4} stroke-linecap="square" stroke-linejoin="miter" />
+  <path d={symbols[name].lines} fill="none" stroke="currentColor" stroke-width={name === 'sanctuary' ? 1.4 : name === 'about' ? 3.2 : 2.4} stroke-linecap="square" stroke-linejoin="miter" />
 </svg>}

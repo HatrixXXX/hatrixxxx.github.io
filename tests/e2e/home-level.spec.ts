@@ -40,8 +40,8 @@ test('returning home recalculates the level using the current Beijing date', asy
   await page.clock.install({ time: new Date('2026-07-28T15:00:00Z') });
   await page.goto('/');
   await expect(page.locator('[data-level-number]')).toHaveText('23');
-  await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
-  await expect(page).toHaveURL('/plans/');
+  await page.locator('[data-home-stage]').getByRole('link', { name: '秘境', exact: true }).click();
+  await expect(page).toHaveURL('/sanctuary/');
   await page.clock.setSystemTime(new Date('2026-09-25T00:00:00Z'));
   await page.locator('[data-back-button]').click();
   await expect(page).toHaveURL('/');
@@ -58,7 +58,7 @@ test('without JavaScript the level stays unknown and navigation remains availabl
   await page.goto(test.info().project.use.baseURL!);
   await expect(page.locator('[data-level-number]')).toHaveText('—');
   await expect(page.locator('.level-fallback')).toBeVisible();
-  await page.getByRole('link', { name: '计划', exact: true }).click();
-  await expect(page).toHaveURL(/\/plans\/$/);
+  await page.getByRole('link', { name: '秘境', exact: true }).click();
+  await expect(page).toHaveURL(/\/sanctuary\/$/);
   await context.close();
 });

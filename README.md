@@ -36,19 +36,20 @@ pnpm test:e2e
 
 ## 内容目录
 
-- `.private-content/posts/`：已发布文章。`.private-content/` 是独立的私有 Git 仓库，整个目录由公开仓库忽略
+- `.private-blogs/posts/`：已发布文章。`.private-blogs/` 是独立的私有 Git 仓库，整个目录由公开仓库忽略
 - `.private-snippets/snippets/`：随笔 Markdown。`.private-snippets/` 是另一个私有 Git 仓库，由公开仓库忽略
+- `.private-sanctuary/sanctuary/`：秘境 Markdown。`.private-sanctuary/` 是独立的私有 Git 仓库，由公开仓库忽略
 - `src/content/projects/`：作品集合；填写规则见[新增作品](#新增作品)
 - `src/data/playlist.ts`：音乐列表
 - `public/assets/`：网站图片、图标、纹理、光标和音频；首页原图与人物分块源图也在此目录
 - `public/`：CNAME、manifest 和第三方告知等站点根文件
 
-公开仓库不跟踪任何已发布文章或随笔的 Markdown。文章和随笔通过校验后都会生成页面；具体内容数和页面数以私有仓库及当前构建结果为准。
+公开仓库不跟踪博客文章、随笔或秘境的 Markdown。通过校验的内容都会生成页面；具体内容数和页面数以私有仓库及当前构建结果为准。
 
-私有仓库的目标远端是 `HatrixXXX/hatrix-content`。下面是约定结构示例，`assets/` 按需创建：
+私有仓库的目标远端是 `HatrixXXX/hatrix-blogs`。下面是约定结构示例，`assets/` 按需创建：
 
 ```text
-.private-content/
+.private-blogs/
 ├─ .github/
 │  └─ workflows/
 │     └─ notify-site.yml
@@ -60,13 +61,13 @@ pnpm test:e2e
 
 ## 首次接入私有仓库
 
-如果沿用迁移阶段生成的本地 `.private-content/`，它已经是独立 Git 仓库。迁移过程不会创建 GitHub 仓库；现有 `origin` 也可能仍指向临时 worktree。先在 GitHub 创建私有仓库 `HatrixXXX/hatrix-content`，再检查并修正 remote：
+博客私有仓库为 `HatrixXXX/hatrix-blogs`。已有本地 `.private-blogs/` 时，检查并按需修正远端地址：
 
 ```powershell
-git -C .private-content remote -v
+git -C .private-blogs remote -v
 # 没有 origin 时使用 remote add；已有临时 origin 时使用 remote set-url
-git -C .private-content remote set-url origin git@github.com:HatrixXXX/hatrix-content.git
-git -C .private-content push -u origin master
+git -C .private-blogs remote set-url origin git@github.com:HatrixXXX/hatrix-blogs.git
+git -C .private-blogs push -u origin master
 ```
 
 如果 `remote -v` 没有任何输出，把上面的 `remote set-url` 改成 `remote add`。确认内容已经推到 GitHub 后，才能删除保存迁移仓库的旧 worktree。
@@ -74,7 +75,7 @@ git -C .private-content push -u origin master
 新电脑克隆公开站点后，改为把私有仓库检出到被忽略的目录：
 
 ```powershell
-git clone git@github.com:HatrixXXX/hatrix-content.git .private-content
+git clone git@github.com:HatrixXXX/hatrix-blogs.git .private-blogs
 ```
 
 在公开站点工作区根目录手动创建 `.env.local`：
@@ -99,19 +100,29 @@ git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 
 内容提交并推送到随笔仓库的 `master` 后，`notify-site.yml` 会发送 `snippets-updated` 和完整提交 SHA，触发公开站点构建部署；该仓库需配置 `HATRIX_SITE_DISPATCH_TOKEN`。公开站点的 `master` 推送和手动运行也会读取随笔仓库的最新提交。生产工作流使用只读 deploy key 和站点仓库 Secret `HATRIX_SNIPPETS_DEPLOY_KEY` 读取随笔，pull request 则使用空的测试目录。
 
+## 秘境内容
+
+秘境保存在私有仓库 `HatrixXXX/hatrix-sanctuary`，本机目录为 `.private-sanctuary/`：
+
+```powershell
+git clone https://github.com/HatrixXXX/hatrix-sanctuary.git .private-sanctuary
+```
+
+在 `.private-sanctuary/sanctuary/` 中维护 Markdown 文件，文件名决定 `/sanctuary/<文件名>/` 的地址。frontmatter 必填 `title`、不超过 100 字的 `summary` 和 `pubDate`，可选 `cover`。封面放在公开站点的 `public/assets/sanctuary-covers/`，`cover` 填写 `/assets/sanctuary-covers/<文件名>.webp`；未填写时使用默认封面。封面可公开访问，不要用需保密的图片。秘境总览和详情仍通过现有管理员 key 解锁，正文图片保留在私有内容目录内并使用相对路径。
+
 ## 站点导航
 
-首页卡片对应根级路径：博客文章 `/blogs/`、作品橱窗 `/creation/`、关于我 `/about/`、随笔 `/snippets/`、收藏夹 `/favorites/`、工具箱 `/toolbox/`、计划 `/plans/`、资讯 `/digest/`、实验场 `/playground/`、友链 `/friends/`、留言板 `/guestbook/`。旧入口保留跳转。
+首页卡片对应根级路径：博客文章 `/blogs/`、作品橱窗 `/creation/`、关于我 `/about/`、随笔 `/snippets/`、收藏夹 `/favorites/`、工具箱 `/toolbox/`、秘境 `/sanctuary/`、资讯 `/digest/`、实验场 `/playground/`、友链 `/friends/`、留言板 `/guestbook/`。旧入口保留跳转。
 
 博客文章详情返回 `/blogs/`。从随笔总览进入详情后，左上返回按钮回到总览的原滚动位置；直接打开详情时返回总览顶部。其余页面返回首页。
 
-非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮位于顶栏右侧，管理员退出图标紧邻其左侧，不影响导航居中。`/blogs/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱按 `src/data/software-tools.ts` 的清单顺序显示软件卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、统一透明背景的本地图标、用途短语和“软件”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 将 Twikoo 留言区放入 `public/assets/guestbook/terminal-frame.png` 的透明开口；页面固定在视口内，仅屏幕区域可以滚动，滚动条隐藏。
+非首页主导航在顶部按视口居中，依次为首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、秘境、资讯、友链、留言板、实验场；宽度小于 `1200px` 时改用同顺序的折叠菜单。搜索按钮位于顶栏右侧，管理员退出图标紧邻其左侧，不影响导航居中。`/blogs/` 直接显示全部文章，`/blog/all/` 保留为兼容重定向。`/snippets/` 按日期展示随笔，没有随笔时显示空状态。工具箱按 `src/data/software-tools.ts` 的清单顺序显示软件卡片，桌面端每行 9 张，窄屏依次调整为 8、6、3 列。卡片显示软件名、统一透明背景的本地图标、用途短语和“软件”标记；悬停或键盘聚焦时在卡片上方显示完整介绍。`/guestbook/` 将 Twikoo 留言区放入 `public/assets/guestbook/terminal-frame.png` 的透明开口；页面固定在视口内，仅屏幕区域可以滚动，滚动条隐藏。
 
 站内搜索支持普通文章的标题和正文。结果会显示命中片段并高亮关键词；点击后文章页会滚动到对应段落，段落背景短暂突出后渐变恢复。加锁文章不会进入公开搜索索引。
 
 首页采用参考图的两侧透视卡片排布，中央展示透明角色立绘，位于背景之上、入口面板之下。`1920×1080` 画布按有效 CSS 视口等比缩放；超宽屏将左右两组移向屏幕边缘，组内排布保持不变，竖屏保留上下空白。`src/pages/index.astro` 用 `leftPanels` 定义左侧四角，用 `rightPanels` 定义右侧平面内矩形；右侧全部卡片共用父层的一次 `matrix3d` 投影，主要行列间隔为 12 个设计像素。首页没有滚动条，也不渲染普通导航栏、页脚或 Sakana。
 
-左上以小图标提供站内搜索，中左保留等级圆环和 Hatrix 名称。左下的金句、播放器、友链、留言板与实验场共用仿射平面：金句与下排、三张小卡片彼此间隔 8 个设计像素，三张小卡片叠起后与高 289px 的播放器对齐。金句语料位于 `src/data/home-quotes.ts`，每 6 秒按随机轮次切换；长句自动缩小字号并保持单行，减少动态效果时取消切换动画。右上辉光管时钟每秒显示本地时间。博客卡片进入 `/blogs/`；随笔占分组左侧整高，右侧“效率提升”标题下方并排收藏夹和工具箱。右侧底部是计划和资讯，左下实验场仍进入 `/playground/`；计划和资讯暂为空状态；实验场在全站导航、搜索、返回按钮和内页背景下展示三维电子工作台。当前布局细节见 `DESIGN.md`，历史方案见[首页设计记录](docs/superpowers/specs/2026-09-25-home-dashboard-design.md)。
+左上以小图标提供站内搜索，中左保留等级圆环和 Hatrix 名称。左下的金句、播放器、友链、留言板与实验场共用仿射平面：金句与下排、三张小卡片彼此间隔 8 个设计像素，三张小卡片叠起后与高 289px 的播放器对齐。金句语料位于 `src/data/home-quotes.ts`，每 6 秒按随机轮次切换；长句自动缩小字号并保持单行，减少动态效果时取消切换动画。右上辉光管时钟每秒显示本地时间。博客卡片进入 `/blogs/`；随笔占分组左侧整高，右侧“效率提升”标题下方并排收藏夹和工具箱。右侧底部是秘境和资讯，左下实验场仍进入 `/playground/`；秘境从私有仓库读取文章，资讯暂为空状态；实验场在全站导航、搜索、返回按钮和内页背景下展示三维电子工作台。当前布局细节见 `DESIGN.md`，历史方案见[首页设计记录](docs/superpowers/specs/2026-09-25-home-dashboard-design.md)。
 
 直接打开或刷新任意页面时，splash 覆盖到首屏图片、背景和字体加载结束；首页还等待人物分块与播放器布局。播放器布局另有 8 秒降级；人物图片实际加载失败时，不显示残缺立绘。
 
@@ -125,7 +136,7 @@ git clone https://github.com/HatrixXXX/hatrix-snippets.git .private-snippets
 
 ## 新增文章
 
-在 `.private-content/posts/` 新建 Markdown 或 MDX 文件。文件名只写标题，不加日期前缀；它不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
+在 `.private-blogs/posts/` 新建 Markdown 或 MDX 文件。文件名只写标题，不加日期前缀；它不决定公开地址，路由由 `legacySlug` 生成。完整 frontmatter 如下：
 
 ```yaml
 ---
@@ -146,7 +157,7 @@ legacySlug: 示例文章
 | `false` | 发布公开正文 |
 | `true` | 发布公开元数据、封面和解锁外壳，正文与正文图片加密 |
 
-加锁文章的标题、摘要、日期、阅读时间、URL 和 `cover` 都是公开信息。封面可以继续使用带不可变 commit 的 jsDelivr URL。加锁正文图片必须保存在 `.private-content/posts/` 内，并用 Markdown 相对路径引用，例如：
+加锁文章的标题、摘要、日期、阅读时间、URL 和 `cover` 都是公开信息。封面可以继续使用带不可变 commit 的 jsDelivr URL。加锁正文图片必须保存在 `.private-blogs/posts/` 内，并用 Markdown 相对路径引用，例如：
 
 ```markdown
 ![示意图](./assets/private-image.png)
@@ -157,12 +168,12 @@ legacySlug: 示例文章
 文章改完后，在私有仓库提交；用户要求推送时，再推送私有仓库。不需要为文章改动提交公开仓库：
 
 ```powershell
-git -C .private-content status
-git -C .private-content add posts
-git -C .private-content commit -m "content: update posts"
+git -C .private-blogs status
+git -C .private-blogs add posts
+git -C .private-blogs commit -m "content: update posts"
 ```
 
-要提交并推送博客、随笔、计划三个私有仓库的所有文件改动，可双击项目根目录的 `push-posts.cmd`。它会先检查三个仓库，再提交各仓库全部未提交改动，并推送有新提交的仓库；窗口会停留以便查看结果，需要本机安装 Git。脚本不运行本地测试或构建；存在合并冲突或本地分支与 `origin/master` 分叉时，会在推送前停止。计划仓库首次推送无需 `origin/master`。各私有仓库推送后由 GitHub Actions 通知站点构建部署。
+要提交并推送博客、随笔、秘境三个私有仓库的所有文件改动，可双击项目根目录的 `push-posts.cmd`。它会先检查三个仓库，再提交各仓库全部未提交改动，并推送有新提交的仓库；窗口会停留以便查看结果，需要本机安装 Git。脚本不运行本地测试或构建；存在合并冲突或本地分支与 `origin/master` 分叉时，会在推送前停止。秘境仓库首次推送无需 `origin/master`。各私有仓库推送后由 GitHub Actions 通知站点构建部署。
 
 要从远端更新这三个私有仓库，可双击项目根目录的 `pull-posts.cmd`。脚本逐个获取 `origin/master` 并仅作快进更新；有未提交或未跟踪文件、分支不符或提交分叉的仓库会跳过并显示原因，其余仓库继续处理。它不会自动暂存、覆盖本地文件、创建合并提交或推送，窗口会停留以便查看结果。
 
@@ -253,7 +264,7 @@ key 输入框使用 `autocomplete="off"`，但浏览器或扩展是否保存、�
 | `pnpm check:images` | 远程图片 inventory、固定 commit 与可访问性 |
 | `pnpm build` | 图片预检、静态构建与加锁内容泄漏审计 |
 | `pnpm check:protected` | 现有 `dist/` 的加锁正文、资源、索引和 sitemap 泄漏审计 |
-| `pnpm check:site` | 文章、随笔和计划路由、CNAME、站内链接和发布体积 |
+| `pnpm check:site` | 文章、随笔和秘境路由、CNAME、站内链接和发布体积 |
 | `pnpm test:e2e` | Chromium 的桌面、平板和手机检查，以及 Windows 视觉基线 |
 
 Pages workflow 不运行视觉套件，避免 Linux 渲染差异改写 Windows 基线。小型改动只运行相关测试和本地预览；完整 E2E 与视觉回归仅在用户明确要求或大范围界面改动确有需要时运行。
@@ -279,12 +290,12 @@ Pages workflow 的 Action 必须固定到完整 commit SHA，checkout 不保留�
 
 `.github/workflows/pages-deploy.yml` 支持六种入口：
 
-- 文章私有仓库 `master` push：`notify-site.yml` 发送 `content-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的文章提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
+- 文章私有仓库 `master` push：`notify-site.yml` 发送 `blogs-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的文章提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
 - 随笔私有仓库 `master` push：`notify-site.yml` 发送 `snippets-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的随笔提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
-- 计划私有仓库 `master` push：`notify-site.yml` 发送 `plans-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的计划提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
+- 秘境私有仓库 `master` push：`notify-site.yml` 发送 `sanctuary-updated` 和完整 `github.sha`。公开 workflow 校验 SHA，检出这个精确的秘境提交，并核对实际 `git rev-parse HEAD` 后构建和部署。
 - 公开仓库 `master` push：检出私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
 - 手动运行公开 workflow：同样读取私有仓库默认分支当时的 HEAD，记录实际完整 SHA，再构建和部署。
-- 公开仓库 pull request：只使用 `tests/fixtures/private-content`、`tests/fixtures/private-snippets`、`tests/fixtures/private-plans` 和测试 key 运行单元测试、Astro check、build 与 fixture 模式的 `check:site`，不读取生产 Secret、正式私有仓库，也不部署。
+- 公开仓库 pull request：只使用 `tests/fixtures/private-blogs`、`tests/fixtures/private-snippets`、`tests/fixtures/private-sanctuary` 和测试 key 运行单元测试、Astro check、build 与 fixture 模式的 `check:site`，不读取生产 Secret、正式私有仓库，也不部署。
 
 生产构建或检查失败时，deploy job 不会运行，线上仍保留上一个 Pages 版本。自定义域名写在 `public/CNAME`，Astro 构建后必须原样出现在 `dist/CNAME`。
 
@@ -295,16 +306,18 @@ GitHub 需要以下 Secret，值不得写进仓库：
 | Secret | 仓库 | 最小用途和权限 |
 | --- | --- | --- |
 | `HATRIX_ADMIN_KEY` | `HatrixXXX/hatrixxxx.github.io` | 构建加密使用；不是 token，至少 8 个字符 |
-| `HATRIX_CONTENT_TOKEN` | `HatrixXXX/hatrixxxx.github.io` | fine-grained token，只授权 `HatrixXXX/hatrix-content` 的 Contents read |
+| `HATRIX_CONTENT_TOKEN` | `HatrixXXX/hatrixxxx.github.io` | fine-grained token，只授权 `HatrixXXX/hatrix-blogs` 的 Contents read |
 | `HATRIX_SNIPPETS_DEPLOY_KEY` | `HatrixXXX/hatrixxxx.github.io` | 随笔私有仓库的只读 deploy key 私钥，用于构建时检出随笔 |
-| `HATRIX_PLANS_DEPLOY_KEY` | `HatrixXXX/hatrixxxx.github.io` | 计划私有仓库的只读 deploy key 私钥，用于构建时检出计划 |
-| `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-content` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
+| `HATRIX_PLANS_DEPLOY_KEY` | `HatrixXXX/hatrixxxx.github.io` | 秘境私有仓库的只读 deploy key 私钥，用于构建时检出秘境 |
+| `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-blogs` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
 | `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-snippets` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
-| `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-plans` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
+| `HATRIX_SITE_DISPATCH_TOKEN` | `HatrixXXX/hatrix-sanctuary` | fine-grained token，只授权公开站点仓库的 Contents read/write，用于创建 `repository_dispatch` |
 
 Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留言板共用 `src/components/TwikooComments.astro`，样式在 `src/styles/twikoo.css`。访客只需填写昵称，同一浏览器会记住上次填写的昵称；邮箱和网址不显示。评论数据保存在独立的 Cloudflare Worker 和 D1，部署、检查与回退见 `docs/operations/twikoo.md`。原 GitHub Discussions 留言保留在 GitHub，不迁移。
 
-不要恢复根目录 `CNAME`，也不要提交 `.env.local`、`.private-content/`、`.private-snippets/`、`.private-plans/`、`dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
+内容目录变量使用 `HATRIX_BLOGS_DIR` 和 `HATRIX_SANCTUARY_DIR`。为继续使用已配置的凭据，GitHub Secret 名称保留 `HATRIX_CONTENT_TOKEN` 和 `HATRIX_PLANS_DEPLOY_KEY`，分别用于博客仓库和秘境仓库；仓库改名无需重新配置其值。
+
+不要恢复根目录 `CNAME`，也不要提交 `.env.local`、`.private-blogs/`、`.private-snippets/`、`.private-sanctuary/`、`dist/`、`.astro/`、`reports/` 或 Playwright 运行产物。
 
 ## 构建失败排查
 
@@ -313,7 +326,7 @@ Twikoo 前端脚本固定为 2.0.13，按需加载并校验 SRI；文章和留�
 - `pnpm check:images` 检查 jsDelivr inventory 和远程地址，把结果写入 `reports/image-check.json`。如果视觉差异只发生在含远程图片的文章，先看报告。网络恢复后重跑 `pnpm check:images`，清理根目录 `.astro/` 和 `node_modules/.astro/data-store.json`，执行 `pnpm exec astro sync`，再运行构建或视觉测试。不要用 inventory 或视觉基线更新掩盖远程图片失败。
 - `pnpm check:protected` 检查现有 `dist/` 是否含加锁正文片段、原图片字节、原文件名、错误的索引规则或 sitemap URL。加锁正文使用远程图片、绝对路径或越界相对路径时，Astro 渲染会先失败。修正文或加密边界；不要放宽审计、替换期望密文，或把泄漏输出当成新基线。
 
-生产构建还可能因 `.private-content/posts/`、`.private-snippets/snippets/` 或 `.private-plans/plans/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token、随笔或计划只读 deploy key 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。
+生产构建还可能因 `.private-blogs/posts/`、`.private-snippets/snippets/` 或 `.private-sanctuary/sanctuary/` 缺失、`HATRIX_ADMIN_KEY` 未配置或不足 8 个字符、schema 错误、私有 token、随笔或秘境只读 deploy key 权限不足而停止。排查 Secret 时只确认名称、所在仓库和授权范围，不要打印值。
 
 
 ## 实验场与后续 3D 页面

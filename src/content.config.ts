@@ -3,15 +3,15 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { isHttpsUrl } from './lib/safe-url';
-import { contentRoot } from './lib/content-root';
+import { blogRoot } from './lib/blog-root';
 import { postSchema } from './lib/post-schema';
 import { snippetRoot } from './lib/snippet-root';
 import { snippetSchema } from './lib/snippet-schema';
 import { snippetIdFromFile } from './lib/snippets';
-import { planRoot } from './lib/plan-root';
+import { sanctuaryRoot } from './lib/sanctuary-root';
 
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(contentRoot('posts')).href }),
+  loader: glob({ pattern: '**/*.{md,mdx}', base: pathToFileURL(blogRoot('posts')).href }),
   schema: postSchema
 });
 
@@ -24,16 +24,17 @@ const snippets = defineCollection({
   schema: snippetSchema
 });
 
-const plans = defineCollection({
+const sanctuary = defineCollection({
   loader: glob({
     pattern: '*.md',
-    base: pathToFileURL(planRoot('plans')).href,
+    base: pathToFileURL(sanctuaryRoot('sanctuary')).href,
     generateId: ({ entry }) => entry.replace(/\.md$/i, '')
   }),
   schema: z.object({
     title: z.string().trim().min(1),
     summary: z.string().trim().min(1).max(100),
-    pubDate: z.coerce.date()
+    pubDate: z.coerce.date(),
+    cover: z.string().startsWith('/assets/').optional()
   })
 });
 
@@ -72,4 +73,4 @@ const projects = defineCollection({
   })
 });
 
-export const collections = { posts, snippets, plans, projects };
+export const collections = { posts, snippets, sanctuary, projects };

@@ -16,8 +16,8 @@ let temporaryRoot: string;
 let contentRoot: string;
 let distRoot: string;
 let snippetsRoot: string;
-let plansRoot: string;
-const previousPlansDir = process.env.HATRIX_PLANS_DIR;
+let sanctuaryRootPath: string;
+const previousSanctuaryDir = process.env.HATRIX_SANCTUARY_DIR;
 
 async function writeFixture(markdownBody = `${PRIVATE_BODY}\n\n![private](./private-image.png)`): Promise<void> {
   await mkdir(join(contentRoot, 'posts'), { recursive: true });
@@ -48,29 +48,29 @@ beforeEach(async () => {
   contentRoot = join(temporaryRoot, 'content');
   distRoot = join(temporaryRoot, 'dist');
   snippetsRoot = join(temporaryRoot, 'snippets');
-  plansRoot = join(temporaryRoot, 'plans');
-  process.env.HATRIX_PLANS_DIR = temporaryRoot;
+  sanctuaryRootPath = join(temporaryRoot, 'sanctuary');
+  process.env.HATRIX_SANCTUARY_DIR = temporaryRoot;
   await mkdir(snippetsRoot, { recursive: true });
-  await mkdir(plansRoot, { recursive: true });
+  await mkdir(sanctuaryRootPath, { recursive: true });
   await mkdir(join(distRoot, 'protected-content'), { recursive: true });
 });
 
 afterEach(async () => {
   await rm(temporaryRoot, { recursive: true, force: true });
-  if (previousPlansDir === undefined) delete process.env.HATRIX_PLANS_DIR;
-  else process.env.HATRIX_PLANS_DIR = previousPlansDir;
+  if (previousSanctuaryDir === undefined) delete process.env.HATRIX_SANCTUARY_DIR;
+  else process.env.HATRIX_SANCTUARY_DIR = previousSanctuaryDir;
 });
 
 describe('protected output audit', () => {
-  it('detects private plan body text in generated output', async () => {
+  it('detects private sanctuary body text in generated output', async () => {
     await writeFixture();
-    const planBody = 'private-plan-body-marker-that-must-stay-encrypted';
-    await writeFile(join(plansRoot, '选购清单.md'), planBody, 'utf8');
-    await writeFile(join(distRoot, 'leaked-plan.html'), `<p>${planBody}</p>`, 'utf8');
+    const sanctuaryBody = 'private-sanctuary-body-marker-that-must-stay-encrypted';
+    await writeFile(join(sanctuaryRootPath, '选购清单.md'), sanctuaryBody, 'utf8');
+    await writeFile(join(distRoot, 'leaked-sanctuary.html'), `<p>${sanctuaryBody}</p>`, 'utf8');
 
     const result = await inspectProtectedOutput(contentRoot, distRoot, snippetsRoot);
 
-    expect(result.errors).toContain('leaked-plan.html: protected Markdown body plaintext');
+    expect(result.errors).toContain('leaked-sanctuary.html: protected Markdown body plaintext');
   });
   it('reports leaked snippet metadata and body without echoing either', async () => {
     await writeFixture();

@@ -18,7 +18,7 @@ test('primary navigation pages omit title and subtitle banners while article pag
     '/favorites/',
     '/toolbox/',
     '/snippets/',
-    '/plans/',
+    '/sanctuary/',
     '/digest/',
     '/playground/',
     '/friends/',

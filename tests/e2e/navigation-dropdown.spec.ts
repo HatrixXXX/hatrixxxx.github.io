@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '关于我', '随笔', '收藏夹', '工具箱', '计划', '资讯', '友链', '留言板', '实验场'];
+const EXPECTED_PRIMARY_LINKS = ['首页', '博客文章', '作品橱窗', '关于我', '随笔', '收藏夹', '工具箱', '秘境', '资讯', '友链', '留言板', '实验场'];
 const DESKTOP_WIDTHS = [1200, 1440, 1920, 2560];
 
 const contrastRatio = (foreground: string, background: string) => {

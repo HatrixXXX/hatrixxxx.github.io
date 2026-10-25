@@ -5,9 +5,9 @@ node_modules
 # Astro output and cache
 dist/
 .astro/
-.private-content/
+.private-blogs/
 .private-snippets/
-.private-plans/
+.private-sanctuary/
 .env.local
 
 # Test and audit output

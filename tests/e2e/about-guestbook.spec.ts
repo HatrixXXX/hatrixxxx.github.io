@@ -27,7 +27,7 @@ const expectedSocials = [
 const compactContentSurfaces = [
   { path: '/about/', selector: '.about-main > article' },
   { path: '/toolbox/', selector: '[data-tool-deck]' },
-  { path: '/plans/', selector: '.empty-state' },
+  { path: '/sanctuary/', selector: '.empty-state' },
   { path: '/digest/', selector: '.empty-state' }
 ] as const;
 

@@ -1,0 +1,51 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BackButton from '@/components/BackButton.astro';
+import BackToTop from '@/components/BackToTop.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { sanctuaryPath } from '@/lib/sanctuary';
+import { deriveContentKeyBytes } from '@/lib/protected-content/crypto';
+import { renderProtectedMarkdown } from '@/lib/protected-content/markdown';
+import { adminKeyFromEnvironment } from '@/lib/protected-content/server';
+
+interface Props { sanctuary: CollectionEntry<'sanctuary'> }
+
+export const getStaticPaths = (async () => {
+  const sanctuary = await getCollection('sanctuary');
+  return sanctuary.map((sanctuary: CollectionEntry<'sanctuary'>) => ({ params: { slug: sanctuary.id }, props: { sanctuary } }));
+}) satisfies GetStaticPaths;
+
+const { sanctuary } = Astro.props;
+const protectedHtml = sanctuary.body?.trim()
+  ? (await renderProtectedMarkdown(
+      sanctuary,
+      await deriveContentKeyBytes(adminKeyFromEnvironment())
+    )).html
+  : undefined;
+---
+
+<BaseLayout title="秘境" description="加锁秘境文章" canonicalPath={sanctuaryPath(sanctuary.id)} noindex={true} locked={true} bodyClass="sanctuary-entry-page plain-page">
+  <BackButton href="/sanctuary/" label="返回秘境总览" belowHeader={true} />
+  <main class="sanctuary-entry-main container">
+    <article data-post>
+      <header class="sanctuary-entry-header"><h1>{sanctuary.data.title}</h1></header>
+      <div class="prose">
+        {protectedHtml !== undefined ? <Fragment set:html={protectedHtml} /> : <p>正文待补充。</p>}
+      </div>
+    </article>
+  </main>
+  <BackToTop />
+  <BackToTop direction="bottom" />
+</BaseLayout>
+
+<script>
+  import '@/scripts/back-to-top';
+</script>
+
+<style>
+  .sanctuary-entry-main { width: min(100% - 2rem, 940px); padding-block: clamp(6rem, 11vw, 9rem) 5rem; }
+  .sanctuary-entry-header { margin-bottom: clamp(2.5rem, 6vw, 4rem); padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-copper); }
+  .sanctuary-entry-header h1 { margin: 0; color: var(--color-heading); font-size: clamp(2rem, 5vw, 3.75rem); line-height: 1.2; }
+  @media (max-width: 768px) { .sanctuary-entry-main { padding-top: 7rem; } }
+</style>

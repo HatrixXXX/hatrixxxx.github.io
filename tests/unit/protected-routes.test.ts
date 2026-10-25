@@ -10,14 +10,14 @@ import {
 import { utf8Decode } from '../../src/lib/protected-content/encoding';
 import { encryptProtectedPageHtml } from '../../src/lib/protected-content/page';
 import { PROTECTED_VERIFIER_AAD } from '../../src/config/protected-content';
-import { planPath } from '../../src/lib/plans';
+import { sanctuaryPath } from '../../src/lib/sanctuary';
 
-const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], plans: [] as CollectionEntry<'plans'>[] }));
+const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], sanctuary: [] as CollectionEntry<'sanctuary'>[] }));
 const configState = vi.hoisted(() => ({ lockedPagePaths: [] as string[] }));
 const previousAdminKey = process.env.HATRIX_ADMIN_KEY;
 
 vi.mock('astro:content', () => ({
-  getCollection: async (collection: string) => collection === 'snippets' ? contentState.snippets : collection === 'plans' ? contentState.plans : contentState.posts
+  getCollection: async (collection: string) => collection === 'snippets' ? contentState.snippets : collection === 'sanctuary' ? contentState.sanctuary : contentState.posts
 }));
 
 vi.mock('astro:env/server', () => ({
@@ -37,7 +37,7 @@ import {
 afterEach(() => {
   contentState.posts = [];
   contentState.snippets = [];
-  contentState.plans = [];
+  contentState.sanctuary = [];
   configState.lockedPagePaths.splice(0);
   if (previousAdminKey === undefined) delete process.env.HATRIX_ADMIN_KEY;
   else process.env.HATRIX_ADMIN_KEY = previousAdminKey;
@@ -92,18 +92,18 @@ describe('protected page routes', () => {
     expect(manifest.routes).toEqual(['/snippets/', '/snippets/another-note/', '/snippets/quiet-note/']);
   });
 
-  it('registers empty and populated plans as protected article routes', async () => {
-    configState.lockedPagePaths.push('/plans/');
-    contentState.plans = [
+  it('registers empty and populated sanctuary as protected article routes', async () => {
+    configState.lockedPagePaths.push('/sanctuary/');
+    contentState.sanctuary = [
       { id: '选购清单', body: '已有正文' },
       { id: '作息规律', body: '' }
-    ] as CollectionEntry<'plans'>[];
+    ] as CollectionEntry<'sanctuary'>[];
     process.env.HATRIX_ADMIN_KEY = 'test-admin';
 
     const response = await GET({} as never);
     const manifest = await response.json();
 
-    expect(manifest.routes).toEqual(['/plans/', planPath('作息规律'), planPath('选购清单')].sort());
+    expect(manifest.routes).toEqual(['/sanctuary/', sanctuaryPath('作息规律'), sanctuaryPath('选购清单')].sort());
   });
 
   it('publishes an inert manifest without requiring a key when no route is protected', async () => {

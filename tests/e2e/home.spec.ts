@@ -199,21 +199,21 @@ test('right-side cards share one perspective plane with aligned rows', async ({ 
     const box = (name: string) => panels.find((panel) => panel.dataset.homePanel === name)!;
     const projects = box('projects');
     const about = box('about');
-    const plans = box('plans');
+    const sanctuary = box('sanctuary');
     const digest = box('digest');
     return {
       projected: getComputedStyle(element).transform.startsWith('matrix3d('),
       flatChildren: panels.every((panel) => getComputedStyle(panel).transform === 'none'),
       names: panels.map((panel) => panel.dataset.homePanel),
       middleAligned: projects.offsetTop === about.offsetTop && projects.offsetHeight === about.offsetHeight,
-      bottomAligned: plans.offsetTop === digest.offsetTop && plans.offsetHeight === digest.offsetHeight,
+      bottomAligned: sanctuary.offsetTop === digest.offsetTop && sanctuary.offsetHeight === digest.offsetHeight,
       middleGap: about.offsetLeft - projects.offsetLeft - projects.offsetWidth,
-      bottomGap: digest.offsetLeft - plans.offsetLeft - plans.offsetWidth
+      bottomGap: digest.offsetLeft - sanctuary.offsetLeft - sanctuary.offsetWidth
     };
   });
   expect(geometry.projected).toBe(true);
   expect(geometry.flatChildren).toBe(true);
-  expect(geometry.names).toEqual(['clock', 'blog', 'projects', 'about', 'recommendations', 'plans', 'digest']);
+  expect(geometry.names).toEqual(['clock', 'blog', 'projects', 'about', 'recommendations', 'sanctuary', 'digest']);
   expect(geometry.middleAligned).toBe(true);
   expect(geometry.bottomAligned).toBe(true);
   for (const gap of [geometry.middleGap, geometry.bottomGap]) {
@@ -242,7 +242,7 @@ test('home recommendations use a full-height snippets card and the bottom row is
   expect(arrangement).toEqual({ fullHeight: true, headingToRight: true, bookmarkUnderHeading: true, pairedBottomRow: true });
   const auxiliary = page.locator('[data-home-auxiliary-slot]');
   await expect(auxiliary).toHaveCount(0);
-  for (const name of ['plans', 'digest']) {
+  for (const name of ['sanctuary', 'digest']) {
     const link = page.locator(`[data-home-panel="${name}"] > a`);
     await expect(link).toHaveCount(1);
     expect(await link.evaluate((element) => {
@@ -967,7 +967,7 @@ test('home links open their independent pages', async ({ page }) => {
     ['工具箱', '/toolbox/'],
     ['友链', '/friends/'],
     ['留言板', '/guestbook/'],
-    ['计划', '/plans/'],
+    ['秘境', '/sanctuary/'],
     ['资讯', '/digest/'],
     ['实验场', '/playground/']
   ];
@@ -988,8 +988,8 @@ test('returning home reinitializes quotes and the clock once', async ({ page }) 
   await page.goto('/');
   await page.locator('[data-music-player]').evaluate((player) => player.setAttribute('data-home-persist-probe', 'same-node'));
   for (let visit = 0; visit < 2; visit += 1) {
-    await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
-    await expect(page).toHaveURL('/plans/');
+    await page.locator('[data-home-stage]').getByRole('link', { name: '秘境', exact: true }).click();
+    await expect(page).toHaveURL('/sanctuary/');
     await expect(page.locator('[data-music-player]')).toHaveCount(1);
     await expect(page.locator('[data-music-player]')).toHaveAttribute('data-home-persist-probe', 'same-node');
     await expect(page.locator('[data-music-player]')).toHaveAttribute('data-display-mode', 'dock');
@@ -1038,8 +1038,8 @@ test('normal-motion return visits keep one automatic quote timer and one listene
   const probe = () => quoteProbe(page);
   const listenerCount = (await probe()).motionListeners;
   for (let visit = 0; visit < 2; visit += 1) {
-    await page.locator('[data-home-stage]').getByRole('link', { name: '计划', exact: true }).click();
-    await expect(page).toHaveURL('/plans/');
+    await page.locator('[data-home-stage]').getByRole('link', { name: '秘境', exact: true }).click();
+    await expect(page).toHaveURL('/sanctuary/');
     await page.clock.runFor(1_200);
     await expect(page.locator('#page-loader')).toBeHidden();
     expect((await probe()).timers).toBe(0);

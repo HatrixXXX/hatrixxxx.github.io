@@ -12,12 +12,12 @@ import {
 } from '../../src/lib/protected-content/crypto';
 import { base64 } from '../../src/lib/protected-content/encoding';
 
-const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], plans: [] as CollectionEntry<'plans'>[] }));
+const contentState = vi.hoisted(() => ({ posts: [] as PostEntry[], snippets: [] as CollectionEntry<'snippets'>[], sanctuary: [] as CollectionEntry<'sanctuary'>[] }));
 
 vi.mock('astro:content', () => ({
   getCollection: async (collection: string, filter?: (post: PostEntry) => unknown) =>
     collection === 'snippets' ? contentState.snippets :
-    collection === 'plans' ? contentState.plans.filter((plan) => !filter || filter(plan as never)) :
+    collection === 'sanctuary' ? contentState.sanctuary.filter((sanctuary) => !filter || filter(sanctuary as never)) :
     filter ? contentState.posts.filter(filter) : contentState.posts
 }));
 
@@ -53,14 +53,14 @@ function fixturePost(id: string, locked = true): PostEntry {
 }
 
 beforeEach(async () => {
-  previousContentDir = process.env.HATRIX_CONTENT_DIR;
+  previousContentDir = process.env.HATRIX_BLOGS_DIR;
   previousAdminKey = process.env.HATRIX_ADMIN_KEY;
   previousSnippetsDir = process.env.HATRIX_SNIPPETS_DIR;
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-assets-'));
   const postsRoot = join(temporaryRoot, 'posts');
   postPath = join(postsRoot, 'private.md');
   imagePath = join(postsRoot, 'private-image.png');
-  process.env.HATRIX_CONTENT_DIR = temporaryRoot;
+  process.env.HATRIX_BLOGS_DIR = temporaryRoot;
   process.env.HATRIX_ADMIN_KEY = 'test-admin';
   await mkdir(postsRoot, { recursive: true });
   await copyFile(fixtureImage, imagePath);
@@ -70,9 +70,9 @@ beforeEach(async () => {
 afterEach(async () => {
   contentState.posts = [];
   contentState.snippets = [];
-  contentState.plans = [];
-  if (previousContentDir === undefined) delete process.env.HATRIX_CONTENT_DIR;
-  else process.env.HATRIX_CONTENT_DIR = previousContentDir;
+  contentState.sanctuary = [];
+  if (previousContentDir === undefined) delete process.env.HATRIX_BLOGS_DIR;
+  else process.env.HATRIX_BLOGS_DIR = previousContentDir;
   if (previousAdminKey === undefined) delete process.env.HATRIX_ADMIN_KEY;
   else process.env.HATRIX_ADMIN_KEY = previousAdminKey;
   if (previousSnippetsDir === undefined) delete process.env.HATRIX_SNIPPETS_DIR;

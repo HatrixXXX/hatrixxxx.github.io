@@ -8,11 +8,11 @@ import {
 describe('navigation configuration', () => {
   it('defines the requested primary and secondary navigation labels', () => {
     expect(PRIMARY_NAV_ITEMS.map((item) => item.label)).toEqual([
-      '首页', '博客文章', '作品橱窗', '关于我', '随笔', '收藏夹', '工具箱', '计划', '资讯', '友链', '留言板', '实验场'
+      '首页', '博客文章', '作品橱窗', '关于我', '随笔', '收藏夹', '工具箱', '秘境', '资讯', '友链', '留言板', '实验场'
     ]);
     expect(PRIMARY_NAV_ITEMS.map((item) => item.href)).toEqual([
       '/', '/blogs/', '/creation/', '/about/', '/snippets/', '/favorites/', '/toolbox/',
-      '/plans/', '/digest/', '/friends/', '/guestbook/', '/playground/'
+      '/sanctuary/', '/digest/', '/friends/', '/guestbook/', '/playground/'
     ]);
     expect(PRIMARY_NAV_ITEMS.filter((item) => 'children' in item).map((item) => item.label))
       .toEqual([]);

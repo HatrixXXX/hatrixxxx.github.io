@@ -126,7 +126,7 @@ describe('Astro project tooling', () => {
     ]));
   });
 
-  it('keeps private content ignored and article sources out of the public tree', () => {
+  it('keeps private blogs ignored and article sources out of the public tree', () => {
     const entries = readFileSync('.gitignore', 'utf8')
       .split(/\r?\n/)
       .map((line) => line.trim());
@@ -134,9 +134,9 @@ describe('Astro project tooling', () => {
       ? readdirSync('src/content/posts').filter((file) => /\.mdx?$/.test(file))
       : [];
 
-    expect(entries).toContain('.private-content/');
+    expect(entries).toContain('.private-blogs/');
     expect(publicSources).toEqual([]);
-    expect(readdirSync('tests/fixtures/private-content/posts').sort()).toEqual([
+    expect(readdirSync('tests/fixtures/private-blogs/posts').sort()).toEqual([
       'locked.md',
       'public.md'
     ]);
@@ -154,14 +154,14 @@ describe('Astro project tooling', () => {
     const readme = readFileSync('README.md', 'utf8');
     const agents = readFileSync('AGENTS.md', 'utf8');
 
-    expect(readme).toContain('`.private-content/posts/`：已发布文章');
-    expect(readme).toContain('`.private-content/` 是独立的私有 Git 仓库');
+    expect(readme).toContain('`.private-blogs/posts/`：已发布文章');
+    expect(readme).toContain('`.private-blogs/` 是独立的私有 Git 仓库');
     expect(readme).toContain('公开仓库不跟踪任何已发布文章或随笔的 Markdown');
-    expect(readme).toContain('在 `.private-content/posts/` 新建 Markdown 或 MDX 文件');
+    expect(readme).toContain('在 `.private-blogs/posts/` 新建 Markdown 或 MDX 文件');
     expect(readme).not.toContain('`src/content/posts/`：已发布文章');
     expect(readme).not.toContain('在 `src/content/posts/` 新建');
 
-    expect(agents).toContain('`.private-content/posts/` 是已发布博客文章的唯一正文来源');
+    expect(agents).toContain('`.private-blogs/posts/` 是已发布博客文章的唯一正文来源');
     expect(agents).toContain('也是独立私有仓库');
     expect(agents).toContain('公开仓库不跟踪文章 Markdown');
     expect(agents).not.toContain('`src/content/posts/`');
@@ -284,7 +284,7 @@ describe('Astro project tooling', () => {
 
     expect(workflow).toContain('  pull_request:');
     expect(pullRequestJob).toContain("if: github.event_name == 'pull_request'");
-    expect(pullRequestJob).toContain('HATRIX_CONTENT_DIR: tests/fixtures/private-content');
+    expect(pullRequestJob).toContain('HATRIX_BLOGS_DIR: tests/fixtures/private-blogs');
     expect(pullRequestJob).toContain('HATRIX_ADMIN_KEY: test-admin');
     expect(pullRequestJob).toContain('run: corepack pnpm test:run');
     expect(pullRequestJob).toContain('run: corepack pnpm check');
@@ -293,7 +293,7 @@ describe('Astro project tooling', () => {
       'run: corepack pnpm exec tsx scripts/check-built-site.ts --fixtures'
     );
     expect(pullRequestJob).not.toContain('secrets.');
-    expect(pullRequestJob).not.toContain('.private-content');
+    expect(pullRequestJob).not.toContain('.private-blogs');
     expect(pullRequestJob).not.toContain('upload-pages-artifact');
     expect(pullRequestJob).not.toContain('deploy-pages');
   });
@@ -306,27 +306,27 @@ describe('Astro project tooling', () => {
     expect(concurrency).toContain('cancel-in-progress: true');
   });
 
-  it('defaults the protected output audit to the private content root', () => {
+  it('defaults the protected output audit to the private blogs root', () => {
     const script = readFileSync('scripts/check-protected-output.ts', 'utf8');
 
-    expect(script).toContain("import { contentRoot } from '../src/lib/content-root';");
-    expect(script).toContain('const sourceRoot = resolve(args[0] ?? contentRoot());');
+    expect(script).toContain("import { blogRoot } from '../src/lib/blog-root';");
+    expect(script).toContain('const sourceRoot = resolve(args[0] ?? blogRoot());');
     expect(script).toContain('inspectProtectedOutput(sourceRoot, distRoot)');
-    expect(script).not.toContain("process.env.HATRIX_CONTENT_DIR ?? 'src/content'");
+    expect(script).not.toContain("process.env.HATRIX_BLOGS_DIR ?? 'src/content'");
   });
 
-  it('checks out an exact private content commit for every production deployment', () => {
+  it('checks out an exact private blogs commit for every production deployment', () => {
     const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
     const productionJob = workflowJob(workflow, 'build-production');
     const deployJob = workflowJob(workflow, 'deploy');
-    const dispatchValidation = workflowStep(productionJob, 'Validate dispatched content SHA');
-    const dispatchCheckout = workflowStep(productionJob, 'Checkout dispatched private content');
-    const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private content');
-    const provenance = workflowStep(productionJob, 'Record private content SHA');
+    const dispatchValidation = workflowStep(productionJob, 'Validate dispatched blogs SHA');
+    const dispatchCheckout = workflowStep(productionJob, 'Checkout dispatched private blogs');
+    const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private blogs');
+    const provenance = workflowStep(productionJob, 'Record private blogs SHA');
 
     expect(workflow).toContain('  push:\n    branches: [master]');
     expect(workflow).toContain('  workflow_dispatch:');
-    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated, plans-updated]');
+    expect(workflow).toContain('  repository_dispatch:\n    types: [blogs-updated, snippets-updated, sanctuary-updated]');
     expect(productionJob).toContain("github.event_name == 'repository_dispatch'");
     expect(productionJob).toContain(
       "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'"
@@ -344,23 +344,23 @@ describe('Astro project tooling', () => {
     expect(productionJob).not.toContain('gh api');
     expect(productionJob).not.toContain('GH_TOKEN');
     expect(productionJob.match(/HATRIX_CONTENT_TOKEN/g)).toHaveLength(6);
-    expect(dispatchValidation).toContain("if: github.event.action == 'content-updated'");
-    expect(dispatchValidation).toContain('DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}');
-    expect(dispatchCheckout).toContain("if: github.event.action == 'content-updated'");
-    expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-content');
+    expect(dispatchValidation).toContain("if: github.event.action == 'blogs-updated'");
+    expect(dispatchValidation).toContain('DISPATCH_BLOGS_SHA: ${{ github.event.client_payload.blogs_sha }}');
+    expect(dispatchCheckout).toContain("if: github.event.action == 'blogs-updated'");
+    expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-blogs');
     expect(dispatchCheckout).toContain('token: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
-    expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.content_sha }}');
-    expect(dispatchCheckout).toContain('path: .private-content');
-    expect(defaultBranchCheckout).toContain("if: github.event.action != 'content-updated'");
-    expect(defaultBranchCheckout).toContain('repository: HatrixXXX/hatrix-content');
+    expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.blogs_sha }}');
+    expect(dispatchCheckout).toContain('path: .private-blogs');
+    expect(defaultBranchCheckout).toContain("if: github.event.action != 'blogs-updated'");
+    expect(defaultBranchCheckout).toContain('repository: HatrixXXX/hatrix-blogs');
     expect(defaultBranchCheckout).toContain('token: ${{ secrets.HATRIX_CONTENT_TOKEN }}');
-    expect(defaultBranchCheckout).toContain('path: .private-content');
+    expect(defaultBranchCheckout).toContain('path: .private-blogs');
     expect(defaultBranchCheckout).not.toContain('ref:');
-    expect(provenance).toContain('content_sha="$(git -C .private-content rev-parse HEAD)"');
-    expect(provenance).toContain('"$content_sha" != "$DISPATCH_CONTENT_SHA"');
-    expect(provenance).toContain('echo "sha=$content_sha" >> "$GITHUB_OUTPUT"');
+    expect(provenance).toContain('blogs_sha="$(git -C .private-blogs rev-parse HEAD)"');
+    expect(provenance).toContain('"$blogs_sha" != "$DISPATCH_BLOGS_SHA"');
+    expect(provenance).toContain('echo "sha=$blogs_sha" >> "$GITHUB_OUTPUT"');
     expect(productionJob).toContain('run: corepack pnpm check:site');
-    expect(productionJob).not.toContain('tests/fixtures/private-content');
+    expect(productionJob).not.toContain('tests/fixtures/private-blogs');
     expect(deployJob).toContain("github.event_name == 'repository_dispatch'");
     expect(deployJob).toContain(
       "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'"
@@ -379,7 +379,7 @@ describe('Astro project tooling', () => {
     const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private snippets');
     const provenance = workflowStep(productionJob, 'Record private snippets SHA');
 
-    expect(workflow).toContain('  repository_dispatch:\n    types: [content-updated, snippets-updated, plans-updated]');
+    expect(workflow).toContain('  repository_dispatch:\n    types: [blogs-updated, snippets-updated, sanctuary-updated]');
     expect(dispatchValidation).toContain("if: github.event.action == 'snippets-updated'");
     expect(dispatchValidation).toContain('DISPATCH_SNIPPETS_SHA: ${{ github.event.client_payload.snippets_sha }}');
     expect(dispatchValidation).toContain('^[0-9a-fA-F]{40}$');
@@ -395,24 +395,24 @@ describe('Astro project tooling', () => {
     expect(provenance).toContain('echo "sha=$snippets_sha" >> "$GITHUB_OUTPUT"');
   });
 
-  it('checks out and verifies the dispatched private plans commit', () => {
+  it('checks out and verifies the dispatched private sanctuary commit', () => {
     const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8').replaceAll('\r\n', '\n');
     const productionJob = workflowJob(workflow, 'build-production');
-    const dispatchValidation = workflowStep(productionJob, 'Validate dispatched plans SHA');
-    const dispatchCheckout = workflowStep(productionJob, 'Checkout dispatched private plans');
-    const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private plans');
-    const provenance = workflowStep(productionJob, 'Record private plans SHA');
+    const dispatchValidation = workflowStep(productionJob, 'Validate dispatched sanctuary SHA');
+    const dispatchCheckout = workflowStep(productionJob, 'Checkout dispatched private sanctuary');
+    const defaultBranchCheckout = workflowStep(productionJob, 'Checkout latest private sanctuary');
+    const provenance = workflowStep(productionJob, 'Record private sanctuary SHA');
 
-    expect(dispatchValidation).toContain("if: github.event.action == 'plans-updated'");
-    expect(dispatchValidation).toContain('DISPATCH_PLANS_SHA: ${{ github.event.client_payload.plans_sha }}');
+    expect(dispatchValidation).toContain("if: github.event.action == 'sanctuary-updated'");
+    expect(dispatchValidation).toContain('DISPATCH_SANCTUARY_SHA: ${{ github.event.client_payload.sanctuary_sha }}');
     expect(dispatchValidation).toContain('^[0-9a-fA-F]{40}$');
-    expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-plans');
+    expect(dispatchCheckout).toContain('repository: HatrixXXX/hatrix-sanctuary');
     expect(dispatchCheckout).toContain('ssh-key: ${{ secrets.HATRIX_PLANS_DEPLOY_KEY }}');
-    expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.plans_sha }}');
-    expect(defaultBranchCheckout).toContain("if: github.event.action != 'plans-updated'");
+    expect(dispatchCheckout).toContain('ref: ${{ github.event.client_payload.sanctuary_sha }}');
+    expect(defaultBranchCheckout).toContain("if: github.event.action != 'sanctuary-updated'");
     expect(defaultBranchCheckout).not.toContain('ref:');
-    expect(provenance).toContain('plans_sha="$(git -C .private-plans rev-parse HEAD)"');
-    expect(provenance).toContain('"$plans_sha" != "$DISPATCH_PLANS_SHA"');
+    expect(provenance).toContain('sanctuary_sha="$(git -C .private-sanctuary rev-parse HEAD)"');
+    expect(provenance).toContain('"$sanctuary_sha" != "$DISPATCH_SANCTUARY_SHA"');
   });
 
   it('never persists secret-bearing Astro state from a Pages build', () => {

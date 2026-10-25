@@ -9,9 +9,9 @@ exit /b %publish_exit_code%
 # POWERSHELL START
 $siteDir = Split-Path -Parent $env:PUBLISH_POSTS_FILE
 $collections = @(
-    @{ Label = '博客文章'; Repository = '.private-content'; Folder = 'posts' },
+    @{ Label = '博客文章'; Repository = '.private-blogs'; Folder = 'posts' },
     @{ Label = '随笔文章'; Repository = '.private-snippets'; Folder = 'snippets' },
-    @{ Label = '计划文章'; Repository = '.private-plans'; Folder = 'plans' }
+    @{ Label = '秘境文章'; Repository = '.private-sanctuary'; Folder = 'sanctuary' }
 )
 
 function Git([string]$directory, [string]$arguments, [bool]$capture = $false, [bool]$allowFailure = $false) {
@@ -56,7 +56,7 @@ try {
         $hasWorkingChanges = $entries.Count -gt 0
 
         $remoteHead = Git $directory 'rev-parse --verify refs/remotes/origin/master' $true $true
-        if ($null -eq $remoteHead -and $collection.Repository -ne '.private-plans') {
+        if ($null -eq $remoteHead -and $collection.Repository -ne '.private-sanctuary') {
             if (-not $hasWorkingChanges) { continue }
             throw "$($collection.Label)缺少 origin/master，请先手动处理仓库状态"
         }

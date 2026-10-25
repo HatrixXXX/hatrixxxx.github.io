@@ -6,12 +6,12 @@ import { basename, join } from 'node:path';
 import matter from 'gray-matter';
 import { siteMarkdownConfig } from './src/config/markdown';
 import { LOCKED_PAGE_PATHS, normalizeRoutePath } from './src/config/protected-content';
-import { contentRoot } from './src/lib/content-root';
+import { blogRoot } from './src/lib/blog-root';
 import { postPath } from './src/lib/urls';
 import { snippetRoot } from './src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from './src/lib/snippets';
-import { planRoot } from './src/lib/plan-root';
-import { planPath } from './src/lib/plans';
+import { sanctuaryRoot } from './src/lib/sanctuary-root';
+import { sanctuaryPath } from './src/lib/sanctuary';
 
 function markdownFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -22,7 +22,7 @@ function markdownFiles(directory: string): string[] {
 }
 
 function sitemapExcludedRoutes(): Set<string> {
-  const postsRoot = contentRoot('posts');
+  const postsRoot = blogRoot('posts');
   const legacyRedirectPaths = [
     '/blog/', '/blog/all/', '/projects/', '/about/bookmarks/',
     '/about/software/', '/about/friends/', '/lab/'
@@ -43,10 +43,10 @@ function sitemapExcludedRoutes(): Set<string> {
       routes.add(normalizeRoutePath(snippetPath(snippetIdFromFile(basename(file)))));
     }
   }
-  const plansRoot = planRoot('plans');
-  if (existsSync(plansRoot)) {
-    for (const file of markdownFiles(plansRoot)) {
-      routes.add(normalizeRoutePath(planPath(basename(file).replace(/\.md$/i, ''))));
+  const sanctuaryRootPath = sanctuaryRoot('sanctuary');
+  if (existsSync(sanctuaryRootPath)) {
+    for (const file of markdownFiles(sanctuaryRootPath)) {
+      routes.add(normalizeRoutePath(sanctuaryPath(basename(file).replace(/\.md$/i, ''))));
     }
   }
   return routes;

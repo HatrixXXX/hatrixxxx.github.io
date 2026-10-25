@@ -11,9 +11,9 @@ exit /b %pull_exit_code%
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $siteDir = Split-Path -Parent $env:PULL_PRIVATE_REPOS_FILE
 $repositories = @(
-    @{ Label = '博客文章'; Folder = '.private-content' },
+    @{ Label = '博客文章'; Folder = '.private-blogs' },
     @{ Label = '随笔文章'; Folder = '.private-snippets' },
-    @{ Label = '计划文章'; Folder = '.private-plans' }
+    @{ Label = '秘境文章'; Folder = '.private-sanctuary' }
 )
 
 $updated = 0

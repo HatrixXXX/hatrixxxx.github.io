@@ -17,7 +17,7 @@ describe('snippets content', () => {
     const config = readFileSync('src/content.config.ts', 'utf8');
     const workflow = readFileSync('.github/workflows/pages-deploy.yml', 'utf8');
     expect(config).toContain("base: pathToFileURL(snippetRoot('snippets')).href");
-    expect(config).toContain('export const collections = { posts, snippets, plans, projects };');
+    expect(config).toContain('export const collections = { posts, snippets, sanctuary, projects };');
     expect(workflow).toContain('HATRIX_SNIPPETS_DIR: tests/fixtures/private-snippets');
     expect(workflow).toContain('HATRIX_SNIPPETS_DIR: .private-snippets');
     expect(workflow).toContain('repository: HatrixXXX/hatrix-snippets');

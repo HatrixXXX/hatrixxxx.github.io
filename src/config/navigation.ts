@@ -16,7 +16,7 @@ export const HOME_LINKS = {
   snippets: { label: '随笔', href: '/snippets/' },
   bookmarks: { label: '收藏夹', href: '/favorites/' },
   software: { label: '工具箱', href: '/toolbox/' },
-  plans: { label: '计划', href: '/plans/' },
+  sanctuary: { label: '秘境', href: '/sanctuary/' },
   digest: { label: '资讯', href: '/digest/' },
   lab: { label: '实验场', href: '/playground/' }
 } as const;
@@ -29,7 +29,7 @@ export const PRIMARY_NAV_ITEMS = [
   { ...HOME_LINKS.snippets, icon: 'snippets' },
   { ...HOME_LINKS.bookmarks, icon: 'bookmark' },
   { ...HOME_LINKS.software, icon: 'software' },
-  { ...HOME_LINKS.plans, icon: 'plans' },
+  { ...HOME_LINKS.sanctuary, icon: 'sanctuary' },
   { ...HOME_LINKS.digest, icon: 'digest' },
   { ...HOME_LINKS.friends, icon: 'friends' },
   { ...HOME_LINKS.guestbook, icon: 'guestbook' },

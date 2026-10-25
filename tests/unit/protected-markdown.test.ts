@@ -16,7 +16,7 @@ let postsRoot: string;
 let postPath: string;
 let previousContentDir: string | undefined;
 let previousSnippetsDir: string | undefined;
-let previousPlansDir: string | undefined;
+let previousSanctuaryDir: string | undefined;
 
 function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntry {
   return {
@@ -37,15 +37,15 @@ function fixturePost(body: string, overrides: Partial<PostEntry> = {}): PostEntr
 }
 
 beforeEach(async () => {
-  previousContentDir = process.env.HATRIX_CONTENT_DIR;
+  previousContentDir = process.env.HATRIX_BLOGS_DIR;
   previousSnippetsDir = process.env.HATRIX_SNIPPETS_DIR;
-  previousPlansDir = process.env.HATRIX_PLANS_DIR;
+  previousSanctuaryDir = process.env.HATRIX_SANCTUARY_DIR;
   temporaryRoot = await mkdtemp(join(tmpdir(), 'hatrix-protected-markdown-'));
   postsRoot = join(temporaryRoot, 'posts');
   postPath = join(postsRoot, 'nested', 'private.md');
-  process.env.HATRIX_CONTENT_DIR = temporaryRoot;
+  process.env.HATRIX_BLOGS_DIR = temporaryRoot;
   process.env.HATRIX_SNIPPETS_DIR = temporaryRoot;
-  process.env.HATRIX_PLANS_DIR = temporaryRoot;
+  process.env.HATRIX_SANCTUARY_DIR = temporaryRoot;
   await mkdir(join(postsRoot, 'nested'), { recursive: true });
   await copyFile(fixtureImage, join(postsRoot, 'nested', 'private-image.png'));
   await writeFile(postPath, '# fixture', 'utf8');
@@ -53,30 +53,30 @@ beforeEach(async () => {
 
 afterEach(async () => {
   if (previousContentDir === undefined) {
-    delete process.env.HATRIX_CONTENT_DIR;
+    delete process.env.HATRIX_BLOGS_DIR;
   } else {
-    process.env.HATRIX_CONTENT_DIR = previousContentDir;
+    process.env.HATRIX_BLOGS_DIR = previousContentDir;
   }
   if (previousSnippetsDir === undefined) delete process.env.HATRIX_SNIPPETS_DIR;
   else process.env.HATRIX_SNIPPETS_DIR = previousSnippetsDir;
-  if (previousPlansDir === undefined) delete process.env.HATRIX_PLANS_DIR;
-  else process.env.HATRIX_PLANS_DIR = previousPlansDir;
+  if (previousSanctuaryDir === undefined) delete process.env.HATRIX_SANCTUARY_DIR;
+  else process.env.HATRIX_SANCTUARY_DIR = previousSanctuaryDir;
   await rm(temporaryRoot, { recursive: true, force: true });
 });
 
 describe('protected Markdown', () => {
-  it('keeps plan images inside the encrypted asset pipeline', async () => {
-    const plansRoot = join(temporaryRoot, 'plans');
-    const planFile = join(plansRoot, '选购清单.md');
-    await mkdir(plansRoot, { recursive: true });
-    await writeFile(planFile, '# fixture', 'utf8');
-    await copyFile(fixtureImage, join(plansRoot, 'private-image.png'));
-    const plan = {
-      id: '选购清单', collection: 'plans', filePath: planFile,
-      body: '![private plan image](./private-image.png)', data: {}
-    } as CollectionEntry<'plans'>;
+  it('keeps sanctuary images inside the encrypted asset pipeline', async () => {
+    const sanctuaryRootPath = join(temporaryRoot, 'sanctuary');
+    const sanctuaryFile = join(sanctuaryRootPath, '选购清单.md');
+    await mkdir(sanctuaryRootPath, { recursive: true });
+    await writeFile(sanctuaryFile, '# fixture', 'utf8');
+    await copyFile(fixtureImage, join(sanctuaryRootPath, 'private-image.png'));
+    const sanctuary = {
+      id: '选购清单', collection: 'sanctuary', filePath: sanctuaryFile,
+      body: '![private sanctuary image](./private-image.png)', data: {}
+    } as CollectionEntry<'sanctuary'>;
 
-    const result = await renderProtectedMarkdown(plan, keyBytes);
+    const result = await renderProtectedMarkdown(sanctuary, keyBytes);
 
     expect(result.html).toContain('data-protected-src="/protected-content/assets/');
     expect(result.html).not.toContain('private-image.png');
@@ -179,13 +179,13 @@ describe('protected Markdown', () => {
     ).rejects.toThrow(/加锁文章/);
   });
 
-  it('accepts only the default private content root when HATRIX_CONTENT_DIR is unset', async () => {
+  it('accepts only the default private blogs root when HATRIX_BLOGS_DIR is unset', async () => {
     const previousWorkingDirectory = process.cwd();
-    const privatePosts = join(temporaryRoot, '.private-content', 'posts');
+    const privatePosts = join(temporaryRoot, '.private-blogs', 'posts');
     const publicPosts = join(temporaryRoot, 'src', 'content', 'posts');
     const privatePostPath = join(privatePosts, 'private.md');
     const publicPostPath = join(publicPosts, 'public.md');
-    delete process.env.HATRIX_CONTENT_DIR;
+    delete process.env.HATRIX_BLOGS_DIR;
     await mkdir(privatePosts, { recursive: true });
     await mkdir(publicPosts, { recursive: true });
     await copyFile(fixtureImage, join(privatePosts, 'private-image.png'));

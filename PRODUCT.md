@@ -28,7 +28,7 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 - 文章不使用分类、标签、类型或系列元数据，博客页直接展示全部文章。
 - 主导航配置由 `src/config/navigation.ts` 维护，站点与社交信息由 `src/config/site.ts` 维护。
 - 加锁文章公开 metadata、Hero 和封面；正文与正文图片必须输出密文。密钥和私有正文不能进入公开源码、文档或构建日志。
-- 作品、歌单和计划允许为空。空状态如实说明，没有演示项目、虚构歌曲或补出的统计。实验场在全站导航、搜索、返回按钮和内页背景下展示可旋转、缩放与局部交互的三维电子工作台，主体没有其他界面元素，也不挂载播放器。站内跳转由双瓣转场覆盖到场景首帧；直接打开页面时使用首次加载动画。
+- 作品、歌单和秘境允许为空。空状态如实说明，没有演示项目、虚构歌曲或补出的统计。实验场在全站导航、搜索、返回按钮和内页背景下展示可旋转、缩放与局部交互的三维电子工作台，主体没有其他界面元素，也不挂载播放器。站内跳转由双瓣转场覆盖到场景首帧；直接打开页面时使用首次加载动画。
 - 音乐播放器全站只有一个实例，跨客户端导航保留 DOM 和 Audio。声音由读者主动开启。
 - 全站固定使用深色配色；搜索、评论和播放器保留各自已实现的行为。
 - 部署、推送和远端设置变更需要用户明确要求。日常实现完成后保留本地预览。
@@ -44,10 +44,10 @@ Hatrix 是 `https://hatrix.site` 的个人站点，用来保存技术实践、�
 ## Evidence on Hand
 
 - 项目边界、路由与协作规则：`AGENTS.md`。
-- 已发布文章：`.private-content/posts/`，位于独立私有仓库。这里只记录位置，不摘录私有正文或图片。
+- 已发布文章：`.private-blogs/posts/`，位于独立私有仓库。这里只记录位置，不摘录私有正文或图片。
 - 作品与歌单数据：`src/content/projects/`、`src/data/playlist.ts`。
 - 已选定素材：`public/assets/home/hatrix-character-v5.png`、`public/assets/home/cover.webp`、`public/assets/backgrounds/background.png`。
-- 世界设定参考：`docs/design-references/共构城-世界观与主题设计指南.md`。该文件只作设计参考，不进入网页运行时资源。
+- 世界设定、配色与组件规则：[DESIGN.md](DESIGN.md)。
 - 本轮实施依据：`docs/superpowers/specs/2026-09-25-liupin-visual-system-design.md` 与对应实现计划。
 
 ## Product Principles

@@ -3,7 +3,7 @@ import { ABOUT_SECTION_LINKS } from '../../src/config/navigation';
 
 for (const { route, href, label } of [
   ...[
-    '/about/', '/guestbook/', '/plans/', '/digest/', '/playground/', '/archives/', '/404.html',
+    '/about/', '/guestbook/', '/sanctuary/', '/digest/', '/playground/', '/archives/', '/404.html',
     ...ABOUT_SECTION_LINKS.map(({ href }) => href),
     ...Array.from({ length: 6 }, (_, index) => `/page/${index + 2}/`)
   ].map((route) => ({ route, href: '/', label: '返回主页' })),

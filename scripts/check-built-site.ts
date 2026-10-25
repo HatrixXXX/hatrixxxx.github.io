@@ -6,11 +6,11 @@ import { ident, parse as parseCss, walk as walkCss } from 'css-tree';
 import matter from 'gray-matter';
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import { CONTENT_SECURITY_POLICY, REFERRER_POLICY } from '../src/config/security';
-import { contentRoot } from '../src/lib/content-root';
-import { planRoot } from '../src/lib/plan-root';
+import { blogRoot } from '../src/lib/blog-root';
+import { sanctuaryRoot } from '../src/lib/sanctuary-root';
 import { snippetRoot } from '../src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from '../src/lib/snippets';
-import { planPath } from '../src/lib/plans';
+import { sanctuaryPath } from '../src/lib/sanctuary';
 import {
   dangerousBrowserUrlKind,
   isApprovedRemoteImageUrl,
@@ -56,9 +56,9 @@ export interface BuiltSiteCheckOptions {
 export interface ProjectBuiltSiteCheckOptions {
   expectedLocalLinks?: number;
   expectedPostCount?: number;
-  sourceContentRoot?: string;
+  sourceBlogsRoot?: string;
   sourceSnippetsRoot?: string;
-  sourcePlansRoot?: string;
+  sourceSanctuaryRoot?: string;
 }
 
 export interface BuiltSiteCheckResult {
@@ -575,12 +575,12 @@ export async function inspectProjectBuiltSite(
 ): Promise<BuiltSiteCheckResult> {
   const errors: string[] = [];
   const expectedPostCount = options.expectedPostCount ?? 13;
-  const sourceContentRoot = resolve(projectRoot, options.sourceContentRoot ?? '.private-content');
-  const postsDirectory = resolve(sourceContentRoot, 'posts');
+  const sourceBlogsRoot = resolve(projectRoot, options.sourceBlogsRoot ?? '.private-blogs');
+  const postsDirectory = resolve(sourceBlogsRoot, 'posts');
   const sourceSnippetsRoot = resolve(projectRoot, options.sourceSnippetsRoot ?? '.private-snippets');
   const snippetsDirectory = resolve(sourceSnippetsRoot, 'snippets');
-  const sourcePlansRoot = resolve(projectRoot, options.sourcePlansRoot ?? '.private-plans');
-  const plansDirectory = resolve(sourcePlansRoot, 'plans');
+  const sourceSanctuaryRoot = resolve(projectRoot, options.sourceSanctuaryRoot ?? '.private-sanctuary');
+  const sanctuaryDirectory = resolve(sourceSanctuaryRoot, 'sanctuary');
   const postFiles = await filesInOrEmpty(postsDirectory, errors, `Unable to read source posts directory: ${postsDirectory}`);
   const routes: string[] = [];
   for (const file of postFiles) {
@@ -628,12 +628,12 @@ export async function inspectProjectBuiltSite(
     }
   }
 
-  const planFiles = await filesInOrEmpty(plansDirectory, errors, `Unable to read source plans directory: ${plansDirectory}`);
-  for (const file of planFiles) {
-    const entry = relative(plansDirectory, file);
+  const sanctuaryFiles = await filesInOrEmpty(sanctuaryDirectory, errors, `Unable to read source sanctuary directory: ${sanctuaryDirectory}`);
+  for (const file of sanctuaryFiles) {
+    const entry = relative(sanctuaryDirectory, file);
     if (/[\\/]/.test(entry) || !/\.md$/i.test(entry)) continue;
-    const route = planPath(entry.replace(/\.md$/i, ''));
-    if (!(await resolvesToOutput(distPath, decodeURIComponent(route)))) errors.push(`Missing expected plan route: ${route}`);
+    const route = sanctuaryPath(entry.replace(/\.md$/i, ''));
+    if (!(await resolvesToOutput(distPath, decodeURIComponent(route)))) errors.push(`Missing expected sanctuary route: ${route}`);
   }
 
   const result = await inspectBuiltSite(distPath, routes, {
@@ -649,9 +649,9 @@ async function main(): Promise<void> {
   const result = await inspectProjectBuiltSite(process.cwd(), {
     expectedLocalLinks: fixtureMode ? undefined : EXPECTED_LOCAL_LINKS,
     expectedPostCount: fixtureMode ? 2 : 13,
-    sourceContentRoot: contentRoot(),
+    sourceBlogsRoot: blogRoot(),
     sourceSnippetsRoot: snippetRoot(),
-    sourcePlansRoot: planRoot()
+    sourceSanctuaryRoot: sanctuaryRoot()
   });
 
   console.log(`Checked ${result.checkedLinks} local links, ${result.outputBytes} output bytes.`);

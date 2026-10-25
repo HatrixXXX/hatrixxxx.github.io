@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 import { describe, expect, it } from 'vitest';
 import { SITE } from '../../src/config/site';
 import { playlist } from '../../src/data/playlist';
-import { contentRoot } from '../../src/lib/content-root';
+import { blogRoot } from '../../src/lib/blog-root';
 import { postSchema } from '../../src/lib/post-schema';
 
 const postFixture = {
@@ -18,9 +18,9 @@ const postFixture = {
 
 describe('content contracts', () => {
   it('keeps published frontmatter free of removed metadata', async () => {
-    const root = contentRoot('posts');
+    const root = blogRoot('posts');
     const files = (await readdir(root)).filter((file) => /\.mdx?$/.test(file));
-    const usesPublicFixtures = root === resolve('tests/fixtures/private-content/posts');
+    const usesPublicFixtures = root === resolve('tests/fixtures/private-blogs/posts');
     let lockedPosts = 0;
 
     expect(files).toHaveLength(usesPublicFixtures ? 2 : 13);
@@ -56,11 +56,11 @@ describe('content contracts', () => {
     expect(SITE.twikoo.envId).toBe('https://comments.hatrix.site');
   });
 
-  it('loads published posts from the private content root', async () => {
+  it('loads published posts from the private blogs root', async () => {
     const config = await readFile(join(process.cwd(), 'src/content.config.ts'), 'utf8');
     expect(config).toContain("import { pathToFileURL } from 'node:url';");
-    expect(config).toContain("import { contentRoot } from './lib/content-root';");
-    expect(config).toContain("base: pathToFileURL(contentRoot('posts')).href");
+    expect(config).toContain("import { blogRoot } from './lib/blog-root';");
+    expect(config).toContain("base: pathToFileURL(blogRoot('posts')).href");
     expect(config).not.toContain('./src/content/posts');
   });
 

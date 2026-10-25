@@ -6,7 +6,7 @@ export const PROTECTED_CONTENT = {
   argon2: { memorySizeKiB: 19_456, iterations: 2, parallelism: 1, hashLength: 32 }
 } as const;
 
-export const LOCKED_PAGE_PATHS: readonly string[] = ['/snippets/', '/plans/', '/digest/'];
+export const LOCKED_PAGE_PATHS: readonly string[] = ['/snippets/', '/sanctuary/', '/digest/'];
 export const PROTECTED_VERIFIER_AAD = 'verifier:1' as const;
 
 export function normalizeRoutePath(path: string): string {

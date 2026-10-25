@@ -4,10 +4,10 @@ import { pathToFileURL } from 'node:url';
 import { createMarkdownProcessor, type RemarkPlugin } from '@astrojs/markdown-remark';
 import type { CollectionEntry } from 'astro:content';
 import { siteMarkdownConfig } from '../../config/markdown';
-import { contentRoot } from '../content-root';
+import { blogRoot } from '../blog-root';
 import type { PostEntry } from '../content';
 import { snippetRoot } from '../snippet-root';
-import { planRoot } from '../plan-root';
+import { sanctuaryRoot } from '../sanctuary-root';
 import { base64url, utf8 } from './encoding';
 
 export interface ProtectedAsset {
@@ -30,12 +30,12 @@ interface ProtectedImageContext {
   postId: string;
   postPath: string;
   contentRoot: string;
-  collection: 'posts' | 'snippets' | 'plans';
+  collection: 'posts' | 'snippets' | 'sanctuary';
   key: CryptoKey;
   assets: Map<string, ProtectedAsset>;
 }
 
-type ProtectedEntry = PostEntry | CollectionEntry<'snippets'> | CollectionEntry<'plans'>;
+type ProtectedEntry = PostEntry | CollectionEntry<'snippets'> | CollectionEntry<'sanctuary'>;
 
 const TRANSPARENT_PIXEL =
   'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -80,7 +80,7 @@ async function sourceContext(post: ProtectedEntry): Promise<{ postPath: string; 
   try {
     const canonicalRoot = await realpath(
       post.collection === 'snippets' ? snippetRoot('snippets') :
-      post.collection === 'plans' ? planRoot('plans') : contentRoot('posts')
+      post.collection === 'sanctuary' ? sanctuaryRoot('sanctuary') : blogRoot('posts')
     );
     if (pathIsWithin(canonicalRoot, postPath)) {
       return { postPath, contentRoot: canonicalRoot };

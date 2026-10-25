@@ -2,9 +2,9 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
-import { contentRoot } from '../src/lib/content-root';
+import { blogRoot } from '../src/lib/blog-root';
 import { snippetRoot } from '../src/lib/snippet-root';
-import { planRoot } from '../src/lib/plan-root';
+import { sanctuaryRoot } from '../src/lib/sanctuary-root';
 
 export interface ProtectedOutputCheckResult {
   errors: string[];
@@ -149,10 +149,10 @@ function imageReferences(content: string): string[] {
   return references;
 }
 
-async function protectedSources(contentRoot: string, snippetsRoot: string, plansRoot: string, errors: Set<string>): Promise<ProtectedSource[]> {
+async function protectedSources(contentRoot: string, snippetsRoot: string, sanctuaryRootPath: string, errors: Set<string>): Promise<ProtectedSource[]> {
   const postsRoot = resolve(contentRoot, 'posts');
   const sources: ProtectedSource[] = [];
-  for (const [root, kind] of [[postsRoot, 'posts'], [resolve(snippetsRoot), 'snippets'], [resolve(plansRoot), 'plans']] as const) {
+  for (const [root, kind] of [[postsRoot, 'posts'], [resolve(snippetsRoot), 'snippets'], [resolve(sanctuaryRootPath), 'sanctuary']] as const) {
     let sourceFiles: string[];
     try {
       sourceFiles = (await filesIn(root)).filter((file) => /\.mdx?$/i.test(file));
@@ -238,12 +238,12 @@ export async function inspectProtectedOutput(
   contentRoot: string,
   distRoot: string,
   snippetsRoot = snippetRoot('snippets'),
-  plansRoot = planRoot('plans')
+  sanctuaryRootPath = sanctuaryRoot('sanctuary')
 ): Promise<ProtectedOutputCheckResult> {
   const resolvedContentRoot = resolve(contentRoot);
   const resolvedDistRoot = resolve(distRoot);
   const errors = new Set<string>();
-  const sources = await protectedSources(resolvedContentRoot, snippetsRoot, plansRoot, errors);
+  const sources = await protectedSources(resolvedContentRoot, snippetsRoot, sanctuaryRootPath, errors);
   const metadataMatchers = literalMatchers(sources.flatMap((source) => source.metadataValues));
   const bodyMatchers = literalMatchers(sources.flatMap((source) => source.bodySnippets));
   const resources = sources.flatMap((source) => source.resources);
@@ -318,7 +318,7 @@ export async function inspectProtectedOutput(
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args[0] === '--') args.shift();
-  const sourceRoot = resolve(args[0] ?? contentRoot());
+  const sourceRoot = resolve(args[0] ?? blogRoot());
   const distRoot = resolve(args[1] ?? 'dist');
   const result = await inspectProtectedOutput(sourceRoot, distRoot);
   if (result.errors.length === 0) {

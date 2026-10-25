@@ -22,11 +22,11 @@ export async function getStaticPaths() {
     ({ data }: PostEntry) => data.locked
   );
   const snippets = await getCollection('snippets');
-  const plans = await getCollection('plans', (entry: CollectionEntry<'plans'>) => Boolean(entry.body?.trim()));
-  if (posts.length === 0 && snippets.length === 0 && plans.length === 0) return [];
+  const sanctuary = await getCollection('sanctuary', (entry: CollectionEntry<'sanctuary'>) => Boolean(entry.body?.trim()));
+  if (posts.length === 0 && snippets.length === 0 && sanctuary.length === 0) return [];
 
   const keyBytes = await deriveContentKeyBytes(adminKeyFromEnvironment());
-  const assets = await collectProtectedAssets([...posts, ...snippets, ...plans], keyBytes);
+  const assets = await collectProtectedAssets([...posts, ...snippets, ...sanctuary], keyBytes);
   return assets.map((asset) => ({ params: { id: asset.id }, props: { asset, keyBytes } }));
 }
 

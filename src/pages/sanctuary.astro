@@ -3,22 +3,22 @@ import { getCollection } from 'astro:content';
 import PostList from '@/components/PostList.astro';
 import BackButton from '@/components/BackButton.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { sortPlans } from '@/lib/plans';
+import { sortSanctuary } from '@/lib/sanctuary';
 
-const plans = sortPlans(await getCollection('plans'));
+const sanctuary = sortSanctuary(await getCollection('sanctuary'));
 ---
 
-<BaseLayout title="计划" bodyClass="plans-page plain-page">
+<BaseLayout title="秘境" bodyClass="sanctuary-page plain-page">
   <BackButton href="/" label="返回主页" cornerAligned={true} />
   <main class="blog-main">
-    {plans.length > 0 ? <PostList plans={plans} /> : <p class="empty-state">暂无计划文章。</p>}
+    {sanctuary.length > 0 ? <PostList sanctuary={sanctuary} /> : <p class="empty-state">暂无秘境文章。</p>}
   </main>
 </BaseLayout>
 
 <style>
-  :global(body.plans-page) { --blog-header-height: 60px; }
-  :global(body.plans-page:has([data-protected-state='ready'])) { overflow: hidden; }
-  :global(body.plans-page [data-protected-mount] > main.blog-main) {
+  :global(body.sanctuary-page) { --blog-header-height: 60px; }
+  :global(body.sanctuary-page:has([data-protected-state='ready'])) { overflow: hidden; }
+  :global(body.sanctuary-page [data-protected-mount] > main.blog-main) {
     height: 100dvh;
     padding-top: var(--blog-header-height);
   }

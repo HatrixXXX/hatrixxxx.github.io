@@ -56,11 +56,12 @@ corepack pnpm test:e2e
 
 ## 目录与内容边界
 
-- `.private-content/posts/` 是已发布博客文章的唯一正文来源，也是独立私有仓库。公开仓库不跟踪文章 Markdown、加锁正文图片或其他私密资源。
+- `.private-blogs/posts/` 是已发布博客文章的唯一正文来源，位于独立私有仓库 `HatrixXXX/hatrix-blogs`。公开仓库不跟踪文章 Markdown、加锁正文图片或其他私密资源。
+- `.private-sanctuary/sanctuary/` 是秘境来源，位于独立私有仓库 `HatrixXXX/hatrix-sanctuary`。秘境总览和详情使用现有管理员 key 加锁，正文与相对图片进入加密产物。封面是公开素材，放在 `public/assets/sanctuary-covers/`，frontmatter 的 `cover` 使用站点根路径；未配置时使用默认封面。
 - `.private-snippets/snippets/` 是随笔来源，位于独立私有仓库 `HatrixXXX/hatrix-snippets`；公开仓库不跟踪随笔源文件。随笔总览和详情使用现有管理员 key 加锁，标题、摘要、正文和正文相对图片进入加密产物；URL 与 `public/` 封面仍公开。
 - `.env.local` 保存本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；禁止提交、分享或复制到内容仓库。
 - `src/content/projects/` 是作品集合，填写规则见 [README.md 的“新增作品”](README.md#新增作品)；作品状态只能是 `idea|active|done|archived`。
-- `src/data/playlist.ts` 允许为空；空歌单不创建 `Audio` 对象，也不填演示数据。计划为空同样合法。
+- `src/data/playlist.ts` 允许为空；空歌单不创建 `Audio` 对象，也不填演示数据。秘境为空同样合法。
 - `src/config/navigation.ts` 是主导航、关于子页和首页快捷链接的唯一来源；`src/config/site.ts` 保存域名、作者、社交链接、Twikoo 后端和站点验证信息。
 - `public/assets/` 是网站图片、图标、纹理、光标和音频的统一目录；`src/` 不存放运行时素材。首页分块源图与运行时资源只放在 `public/assets/home/` 对应目录。
 - `scripts/` 只放可复用的检查和构建脚本，不放一次性迁移脚本。`public/CNAME` 是自定义域名唯一来源。
@@ -69,18 +70,18 @@ corepack pnpm test:e2e
 
 - 网站保持纯静态输出。Twikoo Cloudflare Worker 和 D1 独立运行，不在站点构建中增加服务器、数据库、上传、下载中心或对象存储。
 - 保留已发布文章的 `/posts/<legacySlug>/` 路径；用户确认删除的《杂货铺》及 `/posts/杂货铺/` 为例外。Twikoo 以 pathname 区分评论；原 GitHub Discussions 留言不迁移、不删除。
-- 完成博客正文修改后，必须在 `.private-content` 独立仓库提交。完成随笔修改后，必须在 `.private-snippets` 独立仓库提交。用户要求推送时，同时推送任务涉及的私有仓库提交；不留下未提交的内容修改。
+- 完成博客正文修改后，必须在 `.private-blogs` 独立仓库提交。完成随笔修改后，必须在 `.private-snippets` 独立仓库提交。用户要求推送时，同时推送任务涉及的私有仓库提交；不留下未提交的内容修改。
 - 文章正文属于用户内容，除非任务明确要求，不改写正文。schema 调整保持旧 URL。只修改摘要时不改 `updatedDate`。
 - 每篇博客文章的公开 `summary` 不超过 100 字并准确概括正文；加锁文章摘要不得泄露受保护信息。正文主题、主要结论或覆盖范围明显变化时同步更新摘要，错别字和不影响主旨的小改不触发。
 - 所有通过校验的文章都生成页面；`locked` 省略时为 `false`。`locked: true` 只公开 metadata、Hero 和封面，正文与正文图片必须输出密文。加锁正文图片只能使用文章目录内的 Markdown 相对路径；禁止远程/data URL、站点根绝对路径、越界路径和原始 HTML `<img>`。
 - 为随笔拟新标题时，使用隐晦、荒诞且带有当代年轻人“发疯”语感的表达；避免直接对应正文的事件、人物、地点、技术关键词或结论，让人单看标题无法推断正文大致写了什么。
 - 随笔封面放在公开站点 `public/` 下，frontmatter 的 `cover` 使用站点根路径。
-- 首页入口使用 `/blogs/`、`/creation/`、`/about/`、`/snippets/`、`/favorites/`、`/toolbox/`、`/plans/`、`/digest/`、`/playground/`、`/friends/`、`/guestbook/`。关于子页保留 `/about/<section>/`，文章详情保留 `/posts/<legacySlug>/`。
+- 首页入口使用 `/blogs/`、`/creation/`、`/about/`、`/snippets/`、`/favorites/`、`/toolbox/`、`/sanctuary/`、`/digest/`、`/playground/`、`/friends/`、`/guestbook/`。关于子页保留 `/about/<section>/`，文章详情保留 `/posts/<legacySlug>/`。
 - 文章详情返回 `/blogs/`，随笔详情返回 `/snippets/`；从总览进入随笔时恢复离开位置，直接打开详情时返回总览顶部。普通内页、关于子页、归档、旧分页和 404 返回 `/`。
 
 ## 运行时与界面硬约束
 
-- 非首页主导航顺序固定为：首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、计划、资讯、友链、留言板、实验场；小于 `1200px` 时使用同顺序折叠菜单。博客不提供类型分类或二级菜单。
+- 非首页主导航顺序固定为：首页、博客文章、作品橱窗、关于我、随笔、收藏夹、工具箱、秘境、资讯、友链、留言板、实验场；小于 `1200px` 时使用同顺序折叠菜单。博客不提供类型分类或二级菜单。
 - 主导航栏目页不显示 Hero 主副标题栏；归档、旧分页和 404 可使用紧凑 Hero。文章详情以标题和元信息开头，不恢复题图横幅或波浪分隔。
 - 站内页面默认不能拖选文字；只有文章正文和输入、选择、可编辑控件允许选择。空白区域、链接、按钮和顶栏使用现有自定义光标，热点与尺寸规则以当前 CSS 和 `DESIGN.md` 为准。
 - 直接打开或刷新任意站点页面时使用 splash；站内链接和历史返回使用 Astro 客户端 transition。退场等待目标页资源或场景首帧就绪，超时只处理失败，不决定动画类型。
@@ -103,7 +104,7 @@ corepack pnpm test:e2e
 ## 禁止事项与远端操作
 
 - 不恢复 Ruby、旧主题目录、一次性迁移脚本或根目录 `CNAME`。
-- 不提交 `dist/`、`.astro/`、`reports/`、`test-results/`、Playwright trace、`.env.local`、`.private-content/`、`.private-snippets/` 或其中的私密内容。
+- 不提交 `dist/`、`.astro/`、`reports/`、`test-results/`、Playwright trace、`.env.local`、`.private-blogs/`、`.private-snippets/`、`.private-sanctuary/` 或其中的私密内容。
 - 未经用户明确要求，不推送、合并、部署或修改远端 Pages、Cloudflare 和其他生产设置。
 - 部署后只自动清理本次任务创建并明确拥有的临时 worktree，且它必须已经合并、工作区干净、提交已推送。其他 worktree 只报告状态，不停止进程或删除；未提交、未推送、用途不明或仍在开发的 worktree 不得删除。
 - 不复制参考站源码、文案、品牌或个人资产。

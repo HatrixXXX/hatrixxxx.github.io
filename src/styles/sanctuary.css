@@ -1,0 +1,138 @@
+body.sanctuary-page { overflow-x: hidden; }
+
+body.sanctuary-page main.sanctuary-main {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--header-height) + 1.5rem) 0 2rem !important;
+}
+
+.sanctuary-viewport {
+  --sanctuary-gap: clamp(8px, .96vw, 17.6px);
+  width: min(calc(90% - 2.4rem), 1680px);
+}
+
+.sanctuary-track {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: var(--sanctuary-gap);
+  justify-content: center;
+}
+
+.sanctuary-card {
+  --sanctuary-tone: var(--color-link);
+  position: relative;
+  flex: 0 0 calc((100% - 5 * var(--sanctuary-gap)) / 6);
+  min-width: 0;
+  aspect-ratio: 7 / 16;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--sanctuary-tone);
+  border-radius: 6px;
+  background: #0e131c;
+  color: var(--color-text);
+  text-decoration: none;
+  box-shadow: 0 8px 5px rgb(3 4 8 / 62%), 0 22px 38px rgb(3 4 8 / 42%);
+  transition: border-color 180ms ease, box-shadow 220ms var(--ease-out);
+}
+
+.sanctuary-card[data-sanctuary-icon='routine'] { --sanctuary-tone: #ff7777; }
+.sanctuary-card[data-sanctuary-icon='lighthouse'] { --sanctuary-tone: #ffad6f; }
+.sanctuary-card[data-sanctuary-icon='contacts'] { --sanctuary-tone: #ffe06a; }
+.sanctuary-card[data-sanctuary-icon='company'] { --sanctuary-tone: #62e3a4; }
+.sanctuary-card[data-sanctuary-icon='knowledge'] { --sanctuary-tone: #83bcff; }
+.sanctuary-card[data-sanctuary-icon='todo'] { --sanctuary-tone: #c9a0ff; }
+
+.sanctuary-card::before, .sanctuary-card::after { position: absolute; z-index: 3; pointer-events: none; content: ''; }
+.sanctuary-card::before {
+  inset: 5px;
+  border: 1px solid rgb(230 210 188 / 22%);
+  border-radius: 3px;
+  box-shadow: inset 0 2px 1px rgb(255 255 255 / 16%), inset 0 -7px 8px rgb(2 4 9 / 70%);
+}
+.sanctuary-card::after { top: 0; left: 14%; width: 58%; height: 2px; background: linear-gradient(90deg, transparent, var(--sanctuary-tone), transparent); }
+
+.sanctuary-card__image { position: absolute; inset: 0; overflow: hidden; background: var(--color-inset); }
+.sanctuary-card__image::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--sanctuary-tone) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, rgb(8 12 21 / 5%) 0%, rgb(8 12 21 / 12%) 30%, rgb(11 16 24 / 28%) 48%, rgb(13 18 27 / 50%) 64%, rgb(15 20 29 / 76%) 81%, #10151e 100%);
+  content: '';
+}
+.sanctuary-card__image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(.85) brightness(.78);
+  transition: filter 260ms ease, transform 420ms var(--ease-out);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.sanctuary-card__copy {
+  --sanctuary-title-size: clamp(1rem, 1.45vw, 1.8rem);
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  height: 34%;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  padding: clamp(.5rem, 1vw, 1rem);
+  background: transparent;
+}
+.sanctuary-card__icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  font-size: var(--sanctuary-title-size);
+}
+.sanctuary-card__icon span { display: block; width: 1em; height: 1em; background: var(--sanctuary-tone); -webkit-mask: var(--sanctuary-icon) center / contain no-repeat; mask: var(--sanctuary-icon) center / contain no-repeat; transform: scale(var(--icon-scale, 1)); }
+.sanctuary-card[data-sanctuary-icon='knowledge'] { --icon-scale: 1.16; }
+
+.sanctuary-card h2 { margin: 0; color: var(--sanctuary-tone); font-size: var(--sanctuary-title-size); font-weight: 700; line-height: 1.25; text-align: center; white-space: nowrap; text-shadow: 0 2px 8px rgb(0 0 0 / 75%); }
+.sanctuary-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -4px; border-color: var(--color-accent); box-shadow: 0 18px 38px rgb(3 4 8 / 55%); }
+
+.sanctuary-card__sheen {
+  position: absolute;
+  z-index: 2;
+  top: -20%;
+  bottom: -20%;
+  left: -80%;
+  width: 60%;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 15%), transparent);
+  transform: skewX(-19deg);
+  transition: left 500ms var(--ease-out), opacity 180ms ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sanctuary-card:hover { border-color: var(--sanctuary-tone); box-shadow: 0 12px 8px rgb(3 4 8 / 62%), 0 28px 44px rgb(3 4 8 / 50%); }
+  .sanctuary-card:hover .sanctuary-card__image img { filter: saturate(1) brightness(.9); transform: scale(1.035); }
+  .sanctuary-card:hover .sanctuary-card__sheen { left: 130%; opacity: .8; }
+}
+
+@media (max-width: 1100px) {
+  .sanctuary-card { flex-basis: calc((100% - 2 * var(--sanctuary-gap)) / 3); aspect-ratio: 5 / 8; }
+  .sanctuary-card__copy { --sanctuary-title-size: clamp(1rem, 2vw, 1.4rem); }
+}
+@media (max-width: 600px) {
+  .sanctuary-viewport { width: calc(80% - 1.6rem); }
+  .sanctuary-card { flex-basis: calc((100% - var(--sanctuary-gap)) / 2); aspect-ratio: 3 / 4; }
+  .sanctuary-card__copy { --sanctuary-title-size: clamp(.9rem, 3.4vw, 1.1rem); gap: .2rem; padding: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sanctuary-card, .sanctuary-card__image img, .sanctuary-card__sheen { transition: none; }
+}

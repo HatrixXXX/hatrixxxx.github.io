@@ -19,7 +19,7 @@ test('a reloaded inner page keeps the splash until its background is ready', asy
     await route.continue();
   });
 
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   await expect(page.locator('#page-loader')).toBeHidden();
 
   const reload = page.reload({ waitUntil: 'domcontentloaded' });
@@ -41,7 +41,7 @@ test('client navigation presents the showcase without loading a box lid', async 
   page.on('request', (request) => {
     if (/project-(atlas-cover|display-case-lid)/.test(request.url())) lidRequests.push(request.url());
   });
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.locator('a[href="/creation/"]').first().click();
   await expect(page).toHaveURL('/creation/');
@@ -52,7 +52,7 @@ test('client navigation presents the showcase without loading a box lid', async 
 });
 
 test('client navigation waits for the blog card frame to decode', async ({ page }) => {
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.evaluate(() => {
     const nativeDecode = HTMLImageElement.prototype.decode;
@@ -81,7 +81,7 @@ test('client navigation waits for the blog card frame to decode', async ({ page 
 });
 
 test('client navigation reveals the page when artwork decode never settles', async ({ page }) => {
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.evaluate(() => {
     const nativeDecode = HTMLImageElement.prototype.decode;
@@ -103,7 +103,7 @@ test('client navigation reveals the page when artwork decode never settles', asy
 });
 
 test('client navigation holds the guestbook shutter until comments finish mounting', async ({ page }) => {
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.evaluate(() => {
     const holder = window as unknown as { twikoo: { init: () => Promise<void> }; releaseComments: () => void };

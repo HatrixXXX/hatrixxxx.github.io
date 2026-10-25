@@ -145,7 +145,7 @@
 .home-stage .tile--digest { --tile-bg: #24313fed; --tile-hover: #32485bf5; --tile-accent: #70cff1; --tile-glyph: #8adaf1; }
 .home-stage .tile--projects .tile-glyph { right: 14px; width: 88px; height: 88px; }
 .home-stage .tile--about { --tile-bg: #35243fed; --tile-hover: #493057f5; --tile-accent: #d07aef; --tile-glyph: #c894d8; }
-.home-stage .tile--plans { --tile-bg: #2b2936ed; --tile-hover: #3e344af5; --tile-accent: #e8af65; }
+.home-stage .tile--sanctuary { --tile-bg: #2b2936ed; --tile-hover: #3e344af5; --tile-accent: #e8af65; }
 .home-stage .tile--lab-shortcut { --tile-bg: #1d4142ed; --tile-hover: #2c5656f5; --tile-accent: #57decc; --tile-glyph: #87e1d5; }
 
 .home-stage .tile--snippets,
@@ -206,7 +206,7 @@
 }
 
 .home-stage .tile--projects,
-.home-stage .tile--plans,
+.home-stage .tile--sanctuary,
 .home-stage .tile--lab-shortcut {
   --tile-texture-image: url('/assets/home-textures/treadplate1.png');
   --tile-texture-size: 212px 212px;

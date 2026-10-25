@@ -11,14 +11,14 @@ test('leaving favorites closes the shutter before the next page swaps in', async
   let navigationRequested!: () => void;
   const gate = new Promise<void>((resolve) => { releaseNavigation = resolve; });
   const requested = new Promise<void>((resolve) => { navigationRequested = resolve; });
-  await page.route('**/plans/', async (route) => {
+  await page.route('**/sanctuary/', async (route) => {
     navigationRequested();
     await gate;
     await route.continue();
   });
 
   try {
-    await page.locator('.desktop-nav a[href="/plans/"]').click();
+    await page.locator('.desktop-nav a[href="/sanctuary/"]').click();
     await requested;
     await expect(loader).toBeVisible();
     await expect(loader.locator('.pl-shutter-leaf')).toHaveCount(2);
@@ -27,12 +27,12 @@ test('leaving favorites closes the shutter before the next page swaps in', async
     releaseNavigation();
   }
 
-  await expect(page).toHaveURL('/plans/');
+  await expect(page).toHaveURL('/sanctuary/');
   await expect(loader).toBeHidden();
 });
 
 test('entering favorites shows the reel without requesting the removed model', async ({ page }) => {
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   const loader = page.locator('#page-loader');
   await expect(loader).toBeHidden();
   const modelRequests: string[] = [];
@@ -45,7 +45,7 @@ test('entering favorites shows the reel without requesting the removed model', a
 });
 
 test('a client navigation closes both shutter leaves before swapping pages, then opens them', async ({ page }, testInfo) => {
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   const loader = page.locator('#page-loader');
   await expect(loader).toBeHidden();
 
@@ -72,7 +72,7 @@ test('a client navigation closes both shutter leaves before swapping pages, then
       return left.left >= -1 && right.right <= innerWidth + 1;
     })).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('desktop-closed.png') });
-    await expect(page).toHaveURL('/plans/');
+    await expect(page).toHaveURL('/sanctuary/');
   } finally {
     releaseNavigation();
   }
@@ -124,7 +124,7 @@ test('the shutter visibly pulls apart after the destination becomes ready', asyn
 
 test('the shutter covers a tall mobile viewport through the menu navigation', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   const loader = page.locator('#page-loader');
   await expect(loader).toBeHidden();
 
@@ -156,7 +156,7 @@ test('the shutter covers a tall mobile viewport through the menu navigation', as
 
 test('reduced motion still covers navigation without a sliding animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/plans/');
+  await page.goto('/sanctuary/');
   const loader = page.locator('#page-loader');
   await expect(loader).toBeHidden();
 

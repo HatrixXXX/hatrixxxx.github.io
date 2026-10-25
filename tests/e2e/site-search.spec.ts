@@ -20,7 +20,7 @@ test('search index includes public pages and individual cards without locked con
   expect(documents.some((document) => document.title === 'CoNet 在线笔记' && document.url.startsWith('/creation/?project='))).toBe(true);
   expect(documents.some((document) => document.title === 'Polaris' || document.url === 'https://polaris.xn--6qq986b3xl/')).toBe(false);
   expect(documents.every((document) => document.url.startsWith('/'))).toBe(true);
-  expect(documents.some((document) => document.url === '/snippets/' || document.url === '/plans/' || document.url === '/digest/')).toBe(false);
+  expect(documents.some((document) => document.url === '/snippets/' || document.url === '/sanctuary/' || document.url === '/digest/')).toBe(false);
   expect(documents.some((document) => document.locked)).toBe(false);
 });
 

@@ -6,7 +6,7 @@ on:
   pull_request:
   workflow_dispatch:
   repository_dispatch:
-    types: [content-updated, snippets-updated, plans-updated]
+    types: [blogs-updated, snippets-updated, sanctuary-updated]
 
 permissions:
   contents: read
@@ -21,9 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HATRIX_CONTENT_DIR: tests/fixtures/private-content
+      HATRIX_BLOGS_DIR: tests/fixtures/private-blogs
       HATRIX_SNIPPETS_DIR: tests/fixtures/private-snippets
-      HATRIX_PLANS_DIR: tests/fixtures/private-plans
+      HATRIX_SANCTUARY_DIR: tests/fixtures/private-sanctuary
       HATRIX_ADMIN_KEY: test-admin
     steps:
       - name: Checkout
@@ -77,9 +77,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HATRIX_CONTENT_DIR: .private-content
+      HATRIX_BLOGS_DIR: .private-blogs
       HATRIX_SNIPPETS_DIR: .private-snippets
-      HATRIX_PLANS_DIR: .private-plans
+      HATRIX_SANCTUARY_DIR: .private-sanctuary
     steps:
       - name: Checkout site
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -116,35 +116,35 @@ jobs:
             exit 1
           fi
 
-      - name: Validate dispatched content SHA
-        if: github.event.action == 'content-updated'
+      - name: Validate dispatched blogs SHA
+        if: github.event.action == 'blogs-updated'
         shell: bash
         env:
-          DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}
+          DISPATCH_BLOGS_SHA: ${{ github.event.client_payload.blogs_sha }}
         run: |
-          if [[ ! "$DISPATCH_CONTENT_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "::error::Dispatched content SHA must be a 40-character hexadecimal commit."
+          if [[ ! "$DISPATCH_BLOGS_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Dispatched blogs SHA must be a 40-character hexadecimal commit."
             exit 1
           fi
 
-      - name: Checkout dispatched private content
-        if: github.event.action == 'content-updated'
+      - name: Checkout dispatched private blogs
+        if: github.event.action == 'blogs-updated'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: HatrixXXX/hatrix-content
+          repository: HatrixXXX/hatrix-blogs
           token: ${{ secrets.HATRIX_CONTENT_TOKEN }}
-          ref: ${{ github.event.client_payload.content_sha }}
-          path: .private-content
+          ref: ${{ github.event.client_payload.blogs_sha }}
+          path: .private-blogs
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Checkout latest private content
-        if: github.event.action != 'content-updated'
+      - name: Checkout latest private blogs
+        if: github.event.action != 'blogs-updated'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: HatrixXXX/hatrix-content
+          repository: HatrixXXX/hatrix-blogs
           token: ${{ secrets.HATRIX_CONTENT_TOKEN }}
-          path: .private-content
+          path: .private-blogs
           fetch-depth: 1
           persist-credentials: false
 
@@ -180,23 +180,23 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Record private content SHA
-        id: content
+      - name: Record private blogs SHA
+        id: blogs
         shell: bash
         env:
           DISPATCH_TYPE: ${{ github.event.action }}
-          DISPATCH_CONTENT_SHA: ${{ github.event.client_payload.content_sha }}
+          DISPATCH_BLOGS_SHA: ${{ github.event.client_payload.blogs_sha }}
         run: |
-          content_sha="$(git -C .private-content rev-parse HEAD)"
-          if [[ ! "$content_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "::error::Checked-out content SHA is not a 40-character hexadecimal commit."
+          blogs_sha="$(git -C .private-blogs rev-parse HEAD)"
+          if [[ ! "$blogs_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Checked-out blogs SHA is not a 40-character hexadecimal commit."
             exit 1
           fi
-          if [[ "$DISPATCH_TYPE" == "content-updated" && "$content_sha" != "$DISPATCH_CONTENT_SHA" ]]; then
-            echo "::error::Checked-out content SHA does not match the dispatch payload."
+          if [[ "$DISPATCH_TYPE" == "blogs-updated" && "$blogs_sha" != "$DISPATCH_BLOGS_SHA" ]]; then
+            echo "::error::Checked-out blogs SHA does not match the dispatch payload."
             exit 1
           fi
-          echo "sha=$content_sha" >> "$GITHUB_OUTPUT"
+          echo "sha=$blogs_sha" >> "$GITHUB_OUTPUT"
 
       - name: Record private snippets SHA
         id: snippets
@@ -216,55 +216,55 @@ jobs:
           fi
           echo "sha=$snippets_sha" >> "$GITHUB_OUTPUT"
 
-      - name: Validate dispatched plans SHA
-        if: github.event.action == 'plans-updated'
+      - name: Validate dispatched sanctuary SHA
+        if: github.event.action == 'sanctuary-updated'
         shell: bash
         env:
-          DISPATCH_PLANS_SHA: ${{ github.event.client_payload.plans_sha }}
+          DISPATCH_SANCTUARY_SHA: ${{ github.event.client_payload.sanctuary_sha }}
         run: |
-          if [[ ! "$DISPATCH_PLANS_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "::error::Dispatched plans SHA must be a 40-character hexadecimal commit."
+          if [[ ! "$DISPATCH_SANCTUARY_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Dispatched sanctuary SHA must be a 40-character hexadecimal commit."
             exit 1
           fi
 
-      - name: Checkout dispatched private plans
-        if: github.event.action == 'plans-updated'
+      - name: Checkout dispatched private sanctuary
+        if: github.event.action == 'sanctuary-updated'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: HatrixXXX/hatrix-plans
+          repository: HatrixXXX/hatrix-sanctuary
           ssh-key: ${{ secrets.HATRIX_PLANS_DEPLOY_KEY }}
-          ref: ${{ github.event.client_payload.plans_sha }}
-          path: .private-plans
+          ref: ${{ github.event.client_payload.sanctuary_sha }}
+          path: .private-sanctuary
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Checkout latest private plans
-        if: github.event.action != 'plans-updated'
+      - name: Checkout latest private sanctuary
+        if: github.event.action != 'sanctuary-updated'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: HatrixXXX/hatrix-plans
+          repository: HatrixXXX/hatrix-sanctuary
           ssh-key: ${{ secrets.HATRIX_PLANS_DEPLOY_KEY }}
-          path: .private-plans
+          path: .private-sanctuary
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Record private plans SHA
-        id: plans
+      - name: Record private sanctuary SHA
+        id: sanctuary
         shell: bash
         env:
           DISPATCH_TYPE: ${{ github.event.action }}
-          DISPATCH_PLANS_SHA: ${{ github.event.client_payload.plans_sha }}
+          DISPATCH_SANCTUARY_SHA: ${{ github.event.client_payload.sanctuary_sha }}
         run: |
-          plans_sha="$(git -C .private-plans rev-parse HEAD)"
-          if [[ ! "$plans_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "::error::Checked-out plans SHA must be a 40-character hexadecimal commit."
+          sanctuary_sha="$(git -C .private-sanctuary rev-parse HEAD)"
+          if [[ ! "$sanctuary_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Checked-out sanctuary SHA must be a 40-character hexadecimal commit."
             exit 1
           fi
-          if [[ "$DISPATCH_TYPE" == "plans-updated" && "$plans_sha" != "$DISPATCH_PLANS_SHA" ]]; then
-            echo "::error::Checked-out plans SHA does not match the dispatch payload."
+          if [[ "$DISPATCH_TYPE" == "sanctuary-updated" && "$sanctuary_sha" != "$DISPATCH_SANCTUARY_SHA" ]]; then
+            echo "::error::Checked-out sanctuary SHA does not match the dispatch payload."
             exit 1
           fi
-          echo "sha=$plans_sha" >> "$GITHUB_OUTPUT"
+          echo "sha=$sanctuary_sha" >> "$GITHUB_OUTPUT"
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6

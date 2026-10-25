@@ -1,4 +1,5 @@
-.favorites-page{display:grid;align-items:center;min-height:100dvh;padding:60px clamp(20px,5vw,72px) 80px}
+.favorites-page{min-height:100dvh;padding:0 clamp(20px,5vw,72px) 80px}
+.favorites-stage{display:grid;align-items:center;min-height:100dvh;padding-block:60px 80px}
 .favorites-console{position:relative;width:min(100%,1555.2px);margin:auto;color:var(--color-text)}
 .favorites-machine{position:relative;width:100%;aspect-ratio:1680/840;filter:drop-shadow(0 0 2px rgb(255 205 91 / 85%)) drop-shadow(0 0 16px rgb(255 161 35 / 48%)) drop-shadow(0 24px 24px rgb(4 5 12 / 48%))}
 /* The desktop shell has a transparent inner gap on the left; borrow the solid rail from its right side beneath the frame. */
@@ -82,8 +83,7 @@
 }
 @media(min-width:1900px) and (max-width:1999px) and (max-height:1200px) and (max-resolution:1.1dppx),
   (min-width:1200px) and (max-width:1599px) and (max-height:1200px) and (min-resolution:1.2dppx) and (max-resolution:1.6dppx){
-html:has(.favorites-page),body:has(.favorites-page){overflow:hidden}
-.favorites-page{height:100dvh;min-height:0;overflow:hidden}
+.favorites-stage{height:100dvh;min-height:0}
 .favorites-console{scale:.7}
 }
 @media(prefers-reduced-motion:reduce){
