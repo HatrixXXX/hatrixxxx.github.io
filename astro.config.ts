@@ -95,6 +95,12 @@ export default defineConfig({
       },
       {
         protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@ecfcb3dda864171cefb1378d825d72b8dfb888b1/img/**'
+      },
+      {
+        protocol: 'https',
         hostname: 'raw.githubusercontent.com',
         pathname:
           '/HatrixXXX/Hatrix-s-Blog-Image/85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
@@ -116,6 +122,12 @@ export default defineConfig({
         hostname: 'raw.githubusercontent.com',
         pathname:
           '/HatrixXXX/Hatrix-s-Blog-Image/a34cd33600165dd0b2b40e041434f85c54aaed07/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/ecfcb3dda864171cefb1378d825d72b8dfb888b1/img/**'
       }
     ]
   },
