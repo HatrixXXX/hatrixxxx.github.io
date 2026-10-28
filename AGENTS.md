@@ -94,7 +94,7 @@ corepack pnpm test:e2e
 ## 图片、构建与安全
 
 - 博客、随笔和秘境的封面与正文图片默认上传公开图床 `HatrixXXX/Hatrix-s-Blog-Image`，替换为批准的固定提交 URL 后可删除对应本地原文件。公开图片不受管理员 key 保护；统一默认封面由 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER` 提供，不保留本地副本。
-- Hatrix 图床 URL 必须固定到不可变 commit；当前允许 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`、`b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`、`102d16687d19b8ba0b77fe930830465245d78294`、`a34cd33600165dd0b2b40e041434f85c54aaed07` 和 `ecfcb3dda864171cefb1378d825d72b8dfb888b1`。增加 ref 时同步更新 `src/lib/safe-url.ts` 的批准前缀、`astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` pattern，以及 inventory 测试；不得放宽整个主机。文章列表题图走 Astro/Sharp，正文远程图片保留 CDN 地址并使用 lazy/async 属性。
+- Hatrix 图床 URL 必须固定到不可变 commit；当前允许 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`、`b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`、`102d16687d19b8ba0b77fe930830465245d78294`、`a34cd33600165dd0b2b40e041434f85c54aaed07`、`ecfcb3dda864171cefb1378d825d72b8dfb888b1` 和 `862364364b52dea2a7cbecbd05366384062a72a8`。增加 ref 时同步更新 `src/lib/safe-url.ts` 的批准前缀、`astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` pattern，以及 inventory 测试；不得放宽整个主机。文章列表题图走 Astro/Sharp，正文远程图片保留 CDN 地址并使用 lazy/async 属性。
 - `check:images` 检查博客、随笔、秘境的封面与正文远程图片，以及统一默认封面；`check:protected` 检查 `dist/` 受保护文本和本地相对图片原资源泄漏。失败时修复根因，不放宽检查、替换期望密文或直接更新密文基线。
 - 生产构建生成的 `.astro/` 可能包含私有正文、渲染 HTML 和源路径，不得缓存、上传或提交；生产 workflow 在上传产物前删除它。
 - 生产 CSP 与 Referrer Policy 的唯一来源是 `src/config/security.ts`。`hash-wasm` 的 Argon2 只允许 `'wasm-unsafe-eval'`，不得换成通用 `'unsafe-eval'`。新增第三方脚本、框架、远程图片或媒体来源时同步更新策略、构建测试和生产预览取证，不放宽 `default-src`。

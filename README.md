@@ -217,7 +217,7 @@ export const playlist: readonly Track[] = [
 
 博客、随笔和秘境的封面与正文图片默认上传公开仓库 `HatrixXXX/Hatrix-s-Blog-Image`，使用批准的固定提交 URL。图片公开可访问，随笔和秘境的页面锁只保护文本及解锁后挂载的图片引用，不保护图床文件。上传完成并替换引用后，可删除对应本地原文件；不要改动首页人物、背景等其他已选素材。
 
-`check:images` 对三个内容集合的封面、正文远程图片和统一默认封面做 inventory 去重检查。允许的图床不可变提交为 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`、`b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`、`102d16687d19b8ba0b77fe930830465245d78294`、`a34cd33600165dd0b2b40e041434f85c54aaed07` 和 `ecfcb3dda864171cefb1378d825d72b8dfb888b1`。新增引用也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `src/lib/safe-url.ts` 的批准前缀、`astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
+`check:images` 对三个内容集合的封面、正文远程图片和统一默认封面做 inventory 去重检查。允许的图床不可变提交为 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`、`b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`、`102d16687d19b8ba0b77fe930830465245d78294`、`a34cd33600165dd0b2b40e041434f85c54aaed07`、`ecfcb3dda864171cefb1378d825d72b8dfb888b1` 和 `862364364b52dea2a7cbecbd05366384062a72a8`。新增引用也必须使用带 `@<commit>` 的不可变 URL；增加 ref 时，要同时更新 `src/lib/safe-url.ts` 的批准前缀、`astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则，以及图片 inventory 测试。Astro 会逐跳校验远程图片重定向；jsDelivr 跳转到 GitHub Raw 时，目标仍须匹配已批准的 commit，不能放宽整个 GitHub Raw 主机。
 
 统一默认封面由 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER` 提供，地址为 `https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a34cd33600165dd0b2b40e041434f85c54aaed07/img/article-covers/default-cover.webp`，不再保留本地默认封面文件。当前秘境封面也使用批准的图床地址，图片内容和视觉样式不变。
 

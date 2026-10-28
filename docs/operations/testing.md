@@ -43,6 +43,10 @@ corepack pnpm test:e2e
 
 不要依赖 CI 发现本地可复现的失败。没有推送请求时不自动运行验收，相关检查积累到推送前统一执行。
 
+## 依赖版本兼容
+
+当前 `astro check` 不支持 TypeScript 7，`package.json` 和锁文件保持 TypeScript 6。`.github/dependabot.yml` 暂时忽略 TypeScript `>=7.0.0` 的升级；确认 Astro 类型检查工具支持后再移除此限制，不能通过跳过类型检查接收升级。
+
 ## 生产依赖审计
 
 `pnpm-workspace.yaml` 只忽略 `GHSA-ch52-4w7c-c8xp`。该公告影响共享 HTTP 缓存，当前没有修复版本；本站只在 Astro 静态构建阶段引入相关包，Pages 产物不运行共享缓存服务。

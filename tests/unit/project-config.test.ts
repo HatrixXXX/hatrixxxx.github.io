@@ -109,6 +109,12 @@ describe('Astro project tooling', () => {
       },
       {
         protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@862364364b52dea2a7cbecbd05366384062a72a8/img/**'
+      },
+      {
+        protocol: 'https',
         hostname: 'raw.githubusercontent.com',
         pathname:
           '/HatrixXXX/Hatrix-s-Blog-Image/85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
@@ -136,6 +142,12 @@ describe('Astro project tooling', () => {
         hostname: 'raw.githubusercontent.com',
         pathname:
           '/HatrixXXX/Hatrix-s-Blog-Image/ecfcb3dda864171cefb1378d825d72b8dfb888b1/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/862364364b52dea2a7cbecbd05366384062a72a8/img/**'
       }
     ]);
   });

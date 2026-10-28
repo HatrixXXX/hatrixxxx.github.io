@@ -3,6 +3,10 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     versioning-strategy: increase
+    ignore:
+      # Keep TypeScript on 6.x until astro check supports TypeScript 7.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
     groups:
       prod-deps:
         dependency-type: production
