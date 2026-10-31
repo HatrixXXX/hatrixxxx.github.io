@@ -204,7 +204,7 @@ const stats = buildSiteStats(posts);
     min-height: 124px;
     border: 1px solid var(--chassis-edge);
     border-radius: var(--radius-card);
-    padding: 1.2rem 1.35rem;
+    padding: 1.45rem 1.35rem 1.2rem;
     background: var(--surface-sheen), var(--color-surface);
     box-shadow: inset 0 0 0 4px var(--chassis-groove), inset 0 5px 12px rgb(0 0 0 / 18%), 0 10px 24px rgb(3 5 11 / 22%);
     transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
@@ -212,9 +212,8 @@ const stats = buildSiteStats(posts);
 
   .adjacent-posts :global(a::before) {
     content: '';
-    position: absolute;
-    top: 9px;
-    left: 1.35rem;
+    flex: none;
+    align-self: flex-start;
     width: 65%;
     height: 2px;
     background: linear-gradient(90deg, var(--color-copper), transparent);
@@ -240,8 +239,7 @@ const stats = buildSiteStats(posts);
   }
 
   .adjacent-posts :global(a:last-child::before) {
-    right: 1.35rem;
-    left: auto;
+    align-self: flex-end;
     background: linear-gradient(270deg, var(--color-copper), transparent);
     transform-origin: right;
   }
