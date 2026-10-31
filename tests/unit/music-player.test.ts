@@ -338,6 +338,54 @@ describe('music player', () => {
     expect(playerAudio.playCalls).toBe(1);
   });
 
+  it.each(['/', '/about/'])('keeps advancing ended tracks while %s stays in the background', (pathname) => {
+    vi.useFakeTimers();
+    class TestAudio extends EventTarget {
+      paused = true;
+      currentTime = 0;
+      volume = 0.7;
+      src = '';
+      load() {}
+      play() { this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve(); }
+      pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    }
+    vi.stubGlobal('Audio', vi.fn(function () { return new TestAudio(); }));
+    const { root, player, record, toggle, track } = playerFixture(pathname);
+    const playerAudio = initializeMusicPlayer([
+      { id: 'a', title: 'A', artist: 'Artist', src: '/a.mp3' },
+      { id: 'b', title: 'B', artist: 'Artist', src: '/b.mp3' },
+    ], root)!;
+    if (pathname !== '/') toggle.dispatchEvent(new Event('click'));
+    expect(player.dataset.uiState).toBe('expanded');
+    record.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
+    expect(playerAudio.paused).toBe(false);
+
+    Object.defineProperty(root, 'hidden', { value: true, writable: true });
+    root.dispatchEvent(new Event('visibilitychange'));
+    expect(playerAudio.paused).toBe(false);
+
+    for (const next of ['b', 'a', 'b', 'a']) {
+      Object.assign(playerAudio, { paused: true, currentTime: 120 });
+      playerAudio.dispatchEvent(new Event('ended'));
+
+      expect(playerAudio.src).toBe(`/${next}.mp3`);
+      expect(playerAudio.currentTime).toBe(0);
+      expect(playerAudio.paused).toBe(false);
+      expect(playerAudio.volume).toBe(0.7);
+      expect(player.dataset.playbackState).toBe('playing');
+      expect(track.textContent).toBe(`${next.toUpperCase()}-Artist`);
+      expect(record.disabled).toBe(false);
+      expect(record.attributes.get('aria-pressed')).toBe('true');
+      expect(player.dataset.recordSwap).toBeUndefined();
+    }
+
+    Object.assign(root, { hidden: false });
+    root.dispatchEvent(new Event('visibilitychange'));
+    vi.advanceTimersByTime(800);
+    expect(playerAudio.src).toBe('/a.mp3');
+    expect(playerAudio.paused).toBe(false);
+  });
+
   it('completes an active swap when reduced motion is enabled', () => {
     vi.useFakeTimers();
     class TestAudio extends EventTarget {

@@ -214,7 +214,8 @@ export function initializeMusicPlayer(
     player.dataset.playbackState = 'changing';
     record?.setAttribute('aria-pressed', 'false');
     record?.setAttribute('aria-label', '正在更换唱片');
-    if (player.dataset.uiState === 'collapsed' || reducedMotion?.matches) {
+    // Hidden documents pause animation timelines, so advance audio without a record swap.
+    if (root.hidden || player.dataset.uiState === 'collapsed' || reducedMotion?.matches) {
       load(nextIndex);
       swapInProgress = false;
       play();
