@@ -3,6 +3,27 @@ import { expect, test } from '@playwright/test';
 test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
 
 for (const viewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: 'phone', width: 390, height: 844 }]) {
+  test(`wheel over the reel moves only blades and wheel outside moves only the page on ${viewport.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto('/favorites/');
+    await page.waitForFunction(() => !document.documentElement.dataset.initialPageLoader);
+    const reel = page.locator('[data-favorites-reel]');
+    await expect(reel).toHaveAttribute('data-progress', '0.0000');
+
+    await reel.hover();
+    const pageStart = await page.evaluate(() => window.scrollY);
+    await page.mouse.wheel(0, 330);
+    await expect(reel).toHaveAttribute('data-progress', '3.0000');
+    await expect(reel).not.toHaveAttribute('aria-busy', 'true');
+    expect(await page.evaluate(() => window.scrollY)).toBe(pageStart);
+
+    await page.mouse.move(viewport.width - 24, viewport.height / 2);
+    await page.mouse.wheel(0, 330);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(pageStart);
+    await expect(reel).toHaveAttribute('data-progress', '3.0000');
+    await expect(reel).not.toHaveAttribute('aria-busy', 'true');
+  });
+
   test(`wheel distance moves several blades continuously, keeps both arrows aligned, and snaps to a blade on ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/favorites/');

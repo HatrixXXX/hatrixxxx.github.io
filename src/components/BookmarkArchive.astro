@@ -12,7 +12,7 @@ const first = bookmarks[0];
 <section class="favorites-console" data-favorites aria-label="收藏夹转轴">
   <div class="favorites-machine">
     <div class="favorites-machine__bezel">
-        <div class="favorites-reel" data-favorites-reel tabindex="0" role="group" aria-label="网址转轴，点击侧边叶片选择，点击中间叶片访问；也可用滚轮、拖拽或上下方向键选择">
+        <div class="favorites-reel" data-favorites-reel data-lenis-prevent-wheel tabindex="0" role="group" aria-label="网址转轴，点击侧边叶片选择，点击中间叶片访问；也可用滚轮、拖拽或上下方向键选择">
           <div class="favorites-reel__well" aria-hidden="true"></div>
           {bookmarks.map((bookmark, index) => (
             <button
