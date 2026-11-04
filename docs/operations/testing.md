@@ -43,6 +43,8 @@ corepack pnpm test:e2e
 
 不要依赖 CI 发现本地可复现的失败。没有推送请求时不自动运行验收，相关检查积累到推送前统一执行。
 
+新增或删除博客文章后，推送门禁还需核对 `tests/unit/content-schema.test.ts` 的文章数、`scripts/check-built-site.ts` 的默认和生产文章数，以及对应的 `tests/unit/check-built-site.test.ts`。增加图片时，同步 `tests/unit/check-images.test.ts` 的 inventory；新图床提交须按 README 的图片策略固定 URL 并更新精确白名单。站内链接总数按下文流程从本地构建结果核实，不能只改到单元测试通过就推送。
+
 ## 依赖版本兼容
 
 当前 `astro check` 不支持 TypeScript 7，`package.json` 和锁文件保持 TypeScript 6。`.github/dependabot.yml` 暂时忽略 TypeScript `>=7.0.0` 的升级；确认 Astro 类型检查工具支持后再移除此限制，不能通过跳过类型检查接收升级。

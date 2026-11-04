@@ -11,6 +11,10 @@ const HIGHLIGHTS_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@ecfcb3dda864171cefb1378d825d72b8dfb888b1/img/';
 const BANGUMI_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@862364364b52dea2a7cbecbd05366384062a72a8/img/';
+const TECHNICAL_ARTICLE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3/img/';
+const ROOFLINE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7/img/';
 
 const IMMUTABLE_IMAGE_BASES = [
   new URL(IMMUTABLE_IMAGE_PREFIX),
@@ -18,7 +22,9 @@ const IMMUTABLE_IMAGE_BASES = [
   new URL(SANCTUARY_IMAGE_PREFIX),
   new URL(ARTICLE_IMAGE_PREFIX),
   new URL(HIGHLIGHTS_IMAGE_PREFIX),
-  new URL(BANGUMI_IMAGE_PREFIX)
+  new URL(BANGUMI_IMAGE_PREFIX),
+  new URL(TECHNICAL_ARTICLE_IMAGE_PREFIX),
+  new URL(ROOFLINE_IMAGE_PREFIX)
 ];
 const DANGEROUS_DATA_MEDIA_TYPES = new Set([
   'text/html',
