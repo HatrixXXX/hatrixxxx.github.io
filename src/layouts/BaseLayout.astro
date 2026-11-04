@@ -65,7 +65,7 @@ const defaultFooterStats = {
 const footerStats = siteFooterStats ?? defaultFooterStats;
 
 const isHome = pageKind === 'home';
-const pageBackgroundSrc = '/assets/backgrounds/background.png';
+const pageBackgroundSrc = '/assets/backgrounds/background.webp';
 const pageBgStyle = !isHome ? `--page-bg-image: url("${pageBackgroundSrc}")` : undefined;
 const isAboutPage = Astro.url.pathname === '/about' || Astro.url.pathname.startsWith('/about/');
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;

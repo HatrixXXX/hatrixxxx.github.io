@@ -31,8 +31,8 @@ import { animate, createTimeline, cubicBezier, waapi } from 'animejs';
  *
  * 异常情况
  * --------
- * - 页面被导航到外部（RSS/锚点/下载）：visibilitychange + pageshow 检测到
- *   页面重新可见时若 pending 存在则立即 complete() 清理。
+ * - 切换标签页只让帷幕闭合动画立即到位，保留导航与资源等待。
+ * - 仅从 bfcache 恢复旧文档时清理遗留 pending；重新可见不代表导航中断。
  * - The 8s deadline covers the player layout only; background, character, and fonts
  *   wait for readiness or a real load error before the homepage is revealed.
  */
@@ -169,7 +169,8 @@ function showLoader(mode: State['mode'] = 'initial'): State | null {
 }
 
 function waitForShutterClose(s: State): Promise<void> {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    s.shutterMotion?.complete();
     s.shutterClosed = true;
     return Promise.resolve();
   }
@@ -512,7 +513,7 @@ function waitPageBackgroundDone(s: State, background: Promise<boolean>, minimumM
   });
 }
 
-/** 清理悬空的 pending（页面重新可见时调用） */
+/** 从 bfcache 恢复旧文档时清理已离开的导航。 */
 function drainPending(): void {
   if (pending) {
     const s = pending;
@@ -628,20 +629,14 @@ document.addEventListener('astro:page-load', () => {
   void waitForPortalArtwork();
 });
 
-// ── 防止 pending 泄漏：页面重新可见时清理 ───────────────────────────────────
+// ── 切换标签页时保留导航状态 ──────────────────────────────────────────────
 
-// 处理点击 RSS/外链/下载后 back 回来的情况：
-// before-preparation 触发了（pending 被设置），但 page-load 从未触发，
-// 页面重新可见时 pending 仍然悬空。
+// 切换标签页不会中断导航，不能借此清掉 pending 或提前露出旧页面。
+// 后台只让动画到位，导航仍由 page-load / abort / error 结算。
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    if (activeLoader?.mode === 'transition') {
-      if (activeLoader.finished) activeLoader.cleanup?.();
-      else activeLoader.shutterMotion?.complete();
-    }
-  } else {
-    drainPending();
-  }
+  if (!document.hidden || activeLoader?.mode !== 'transition') return;
+  if (activeLoader.finished) activeLoader.cleanup?.();
+  else activeLoader.shutterMotion?.complete();
 });
 const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
 motionPreference.addEventListener('change', () => {

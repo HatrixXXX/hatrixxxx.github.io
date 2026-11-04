@@ -223,9 +223,11 @@ export const playlist: readonly Track[] = [
 
 构建会检查这些地址，并把结果写到忽略提交的 `reports/image-check.json`：题图失败会终止构建，正文位图失败时会改用本地占位图并保留原地址。
 
-人物运行时资源为 `public/assets/home/character-parts/*.webp`，分块源 PNG 位于 `public/assets/home/character-parts-source/`；原始 v5 PNG 保留作合成和视觉核对基准。禁用 JavaScript 时显示同目录的静态 WebP 回退图；启用 JavaScript 时不请求该图。首页使用 `public/assets/home/cover.webp`，原图为同目录的 `cover.png`，以灰紫色调衔接人物；其他页面使用用户选定的 `public/assets/backgrounds/background.png`，独立维护。人物立绘未改。
+人物运行时资源为 `public/assets/home/character-parts/*.webp`，分块源 PNG 位于 `public/assets/home/character-parts-source/`；原始 v5 PNG 保留作合成和视觉核对基准。禁用 JavaScript 时显示同目录的静态 WebP 回退图；启用 JavaScript 时不请求该图。首页使用 `public/assets/home/cover.webp`，原图为同目录的 `cover.png`，以灰紫色调衔接人物；其他页面使用 `public/assets/backgrounds/background.webp`，用户选定的原图 `background.png` 保留在同目录，独立维护。人物立绘未改。
 
-文章列表的 `cover` 由 Astro 的图片管线和 Sharp 生成 WebP、`srcset` 与尺寸信息。正文远程图片通过预检后仍使用 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
+内页背景、`public/assets/blog-cards/` 下的桌面与手机外壳、导轨、锁扣，以及 `public/assets/transitions/mecha-shutter-v1.webp` 使用 Sharp 编码，参数为 `quality: 90`、`alphaQuality: 100`、`effort: 6` 和 `smartSubsample: true`。这些素材不缩放、不裁切，透明素材保留 alpha 通道。
+
+博客与秘境列表的 `cover` 由 Astro/Sharp 在构建时生成独立缩略图：普通位图使用质量 70 的 WebP，提供 320、480、640、768 像素宽度，默认图宽最多 768 像素。本地封面按需读取，缩略图缓存使用原图内容哈希。卡片在初始 HTML 中按位置排开；当前封面优先请求，前后各两张及浏览方向上的下一张提前加载、解码，其他封面保留懒加载。正文仍使用原图，远程图片通过预检后保留 CDN 地址，并输出 `loading="lazy"` 和 `decoding="async"`；GIF 和 SVG 不做有损转换。
 
 ## 随笔、秘境与资讯的加锁
 

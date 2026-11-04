@@ -180,7 +180,44 @@ test('reduced motion still covers navigation without a sliding animation', async
   await expect(loader).toBeHidden();
 });
 
-test('hiding during shutter closure settles the leaves before page swap', async ({ page }) => {
+test('returning to the tab keeps the shutter closed while the destination is still loading', async ({ page }) => {
+  await page.goto('/about/');
+  const loader = page.locator('#page-loader');
+  await expect(loader).toBeHidden();
+
+  let release!: () => void;
+  let requested!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const requestStarted = new Promise<void>((resolve) => { requested = resolve; });
+  await page.route('**/blogs/', async (route) => {
+    requested();
+    await gate;
+    await route.continue();
+  });
+
+  try {
+    await page.locator('.desktop-nav a[href="/blogs/"]').click();
+    await requestStarted;
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    expect(await loader.evaluate((element) =>
+      element.classList.contains('pl-visible') && !element.classList.contains('pl-done'))).toBe(true);
+    await expect(page).toHaveURL('/about/');
+  } finally {
+    release();
+    await page.evaluate(() => { Reflect.deleteProperty(document, 'hidden'); });
+  }
+
+  await expect(page).toHaveURL('/blogs/');
+  await expect(loader).toBeHidden();
+});
+
+test('hiding during shutter closure still completes navigation before the tab becomes visible', async ({ page }) => {
   await page.goto('/about/');
   await expect(page.locator('#page-loader')).toBeHidden();
   let release!: () => void;
@@ -206,14 +243,17 @@ test('hiding during shutter closure settles the leaves before page swap', async 
       const [left, right] = leaves.map((leaf) => leaf.getBoundingClientRect());
       return left.left >= -1 && right.right <= innerWidth + 1;
     })).toBe(true);
+    release();
+    await expect(page).toHaveURL('/blogs/');
+    await expect(loader).toBeHidden();
   } finally {
     release();
     await page.evaluate(() => {
-      Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+      Reflect.deleteProperty(document, 'hidden');
       document.dispatchEvent(new Event('visibilitychange'));
     });
   }
-  await page.waitForTimeout(750);
+  await expect(page).toHaveURL('/blogs/');
   await expect(loader).toBeHidden();
 });
 

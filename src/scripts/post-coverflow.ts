@@ -22,6 +22,7 @@ const SETTLE_EPS       = 0.005; // index units below which we consider settled
 
 // Coverflow visual parameters
 const CARD_GAP_FACTOR  = 1.2;   // card height plus a wider visible gap
+const COVER_PRELOAD_RADIUS = 2;
 
 interface CoverflowState {
   current: number;
@@ -36,10 +37,26 @@ interface CoverflowState {
 }
 
 const railStates = new WeakMap<HTMLElement, CoverflowState>();
+const coverDecodeStarted = new WeakSet<HTMLImageElement>();
 const reducedMotionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 function getCards(rail: HTMLElement): HTMLElement[] {
   return Array.from(rail.querySelectorAll<HTMLElement>('[data-post-card]'));
+}
+
+function preloadCovers(rail: HTMLElement, index: number, direction = 1): void {
+  const cards = getCards(rail);
+  const first = Math.max(0, index - COVER_PRELOAD_RADIUS - (direction < 0 ? 1 : 0));
+  const last = Math.min(cards.length - 1, index + COVER_PRELOAD_RADIUS + (direction > 0 ? 1 : 0));
+  for (let i = first; i <= last; i++) {
+    const image = cards[i].querySelector<HTMLImageElement>('[data-coverflow-thumbnail]');
+    if (!image) continue;
+    image.fetchPriority = i === index ? 'high' : Math.abs(i - index) <= 1 ? 'auto' : 'low';
+    image.loading = 'eager';
+    if (coverDecodeStarted.has(image)) continue;
+    coverDecodeStarted.add(image);
+    void image.decode().catch(() => { coverDecodeStarted.delete(image); });
+  }
 }
 
 function stateFor(rail: HTMLElement): CoverflowState {
@@ -178,7 +195,9 @@ function navigateTo(rail: HTMLElement, index: number): void {
   const cardCount = getCards(rail).length;
   const clamped = Math.max(0, Math.min(cardCount - 1, index));
   if (state.target === clamped) return;
+  const direction = Math.sign(clamped - state.target);
   state.target = clamped;
+  preloadCovers(rail, clamped, direction);
   scheduleFrame(rail);
 }
 
@@ -331,6 +350,7 @@ function initRail(rail: HTMLElement): void {
   clearDockPulse(state);
   state.dockedCard = cards[startIndex] ?? null;
   applyTransforms(rail, startIndex);
+  preloadCovers(rail, startIndex, startIndex === cards.length - 1 ? -1 : 1);
 }
 
 function initAllRails(): void {

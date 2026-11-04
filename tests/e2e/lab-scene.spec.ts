@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
+
 async function recordLabSplash(page: Page): Promise<void> {
   await page.addInitScript(() => {
     new MutationObserver(() => {
@@ -26,7 +28,7 @@ test('the lab keeps the site navigation around its inline WebGL scene', async ({
   await expect(page.locator('#page-loader')).toBeHidden();
   expect(await page.evaluate(() => sessionStorage.getItem('lab-splash-seen'))).toBe('true');
   expect(await page.locator('body').evaluate((body) => body.style.getPropertyValue('--page-bg-image')))
-    .toContain('/assets/backgrounds/background.png');
+    .toContain('/assets/backgrounds/background.webp');
   await expect(page.locator('html')).not.toHaveAttribute('data-initial-page-loader', 'visible');
   const size = await page.locator('canvas#scene').evaluate((canvas: HTMLCanvasElement) => ({
     width: canvas.width,

@@ -1,9 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 test.use(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {});
 
+async function openBlogIndex(page: Page): Promise<void> {
+  await page.goto('/blogs/', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-post-coverflow] [data-post-card]').first()).toHaveAttribute('data-active', 'true');
+}
+
 test('blog index lists every published post in date order', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
 
   const coverflow = page.locator('[data-post-coverflow]');
   const cards = coverflow.locator('article[data-post-card]');
@@ -24,10 +29,50 @@ test('blog index lists every published post in date order', async ({ page }) => 
   );
 });
 
+test('blog cards are already separated before client scripts run', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  try {
+    await page.goto('/blogs/', { waitUntil: 'domcontentloaded' });
+    const cards = page.locator('[data-post-coverflow] [data-post-card]');
+    await expect(cards.first()).toHaveCSS('position', 'absolute');
+    const first = await cards.nth(0).boundingBox();
+    const second = await cards.nth(1).boundingBox();
+    const distant = await cards.nth(10).boundingBox();
+    if (!first || !second || !distant) throw new Error('Missing server-rendered card bounds');
+    expect(second.y - first.y - first.height).toBeGreaterThan(45);
+    expect(distant.y).toBeGreaterThan(900);
+  } finally {
+    await context.close();
+  }
+});
+
+test('moving one card preloads a further cover before it enters the viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openBlogIndex(page);
+  await expect(page.locator('#page-loader')).toBeHidden();
+  const rail = page.locator('[data-post-coverflow]');
+  const cards = rail.locator('[data-post-card]');
+  const upcoming = cards.nth(4).locator('[data-coverflow-thumbnail]');
+  await expect(upcoming).toHaveAttribute('loading', 'lazy');
+
+  await rail.focus();
+  await page.keyboard.press('ArrowDown');
+
+  await expect(cards.nth(1)).toHaveAttribute('data-active', 'true');
+  await expect(upcoming).toHaveAttribute('loading', 'eager');
+  expect(await cards.nth(4).evaluate((card) => card.getBoundingClientRect().top)).toBeGreaterThan(900);
+  await expect.poll(() => upcoming.evaluate((image: HTMLImageElement) =>
+    image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect(cards.nth(1).locator('[data-coverflow-thumbnail]')).toHaveAttribute('fetchpriority', 'high');
+});
+
 test('coverflow presents horizontal cards on a vertical track with alternating covers', async ({ page }) => {
-  await page.goto('/blogs/');
+  await page.goto('/blogs/', { waitUntil: 'domcontentloaded' });
   const coverflow = page.locator('[data-post-coverflow]');
   const cards = coverflow.locator('[data-post-card]');
+  await expect(cards.first()).toHaveAttribute('data-active', 'true');
 
   const layout = await cards.evaluateAll((elements) =>
     elements.slice(0, 2).map((element) => ({
@@ -63,12 +108,24 @@ test('coverflow presents horizontal cards on a vertical track with alternating c
   await expect(cards.nth(0).locator('img')).toHaveCSS('object-fit', 'cover');
   await expect(cards.nth(0).locator('img')).not.toHaveAttribute('role', 'button');
   expect(await cards.nth(0).locator('img').getAttribute('srcset')).toContain('768w');
+  const thumbnails = await cards.locator('[data-coverflow-thumbnail]').evaluateAll((images) => images.map((image) => ({
+    width: Number(image.getAttribute('width')),
+    url: new URL(image.getAttribute('src')!, location.href).href,
+    origin: location.origin
+  })));
+  for (const thumbnail of thumbnails) {
+    expect(thumbnail.width).toBeLessThanOrEqual(768);
+    const url = new URL(thumbnail.url);
+    const format = url.searchParams.get('f') ?? url.pathname.split('.').pop();
+    expect(['webp', 'gif', 'svg']).toContain(format);
+    if (format === 'webp') expect(url.origin).toBe(thumbnail.origin);
+  }
   await expect(coverflow.locator('.coverflow-scene')).toHaveCSS('overflow', 'hidden');
 });
 
 test('visible card clamps stay on both guide rails during selection', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const coverflow = page.locator('[data-post-coverflow]');
   await coverflow.focus();
 
@@ -111,7 +168,7 @@ test('visible card clamps stay on both guide rails during selection', async ({ p
 test('phone cards retain visible clamps inside the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const coverflow = page.locator('[data-post-coverflow]');
   await coverflow.focus();
 
@@ -135,7 +192,7 @@ test('phone cards retain visible clamps inside the viewport', async ({ page }) =
 
 test('unselected cards recede through opacity without rotating', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const rail = page.locator('[data-post-coverflow]');
   await rail.focus();
   for (let index = 0; index < 3; index++) await page.keyboard.press('ArrowDown');
@@ -157,7 +214,7 @@ test('unselected cards recede through opacity without rotating', async ({ page }
 });
 
 test('selected card floats after settling but stays still with reduced motion', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const activeCard = page.locator('[data-post-card][data-active="true"]');
   await expect(activeCard).toHaveCSS('animation-name', /archive-active-breathe/);
 
@@ -181,7 +238,7 @@ test('active card fits below navigation on desktop and phone', async ({ page }) 
     { width: 390, height: 844 }
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto('/blogs/');
+    await openBlogIndex(page);
 
     const header = page.locator('[data-site-header]');
     const activeCard = page.locator('[data-post-card][data-active="true"]');
@@ -209,7 +266,7 @@ test('coverflow caps card dimensions on 2K and 4K displays', async ({ page }) =>
     { width: 3840, height: 2160 }
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto('/blogs/');
+    await openBlogIndex(page);
 
     const activeCard = page.locator('[data-post-card][data-active="true"]');
     const cardBox = await activeCard.boundingBox();
@@ -227,7 +284,7 @@ test('coverflow caps card dimensions on 2K and 4K displays', async ({ page }) =>
 });
 
 test('focused coverflow supports arrow-key navigation', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const coverflow = page.locator('[data-post-coverflow]');
   const firstTitle = await coverflow.locator('[data-post-card]').nth(0).locator('h2').textContent();
   const secondTitle = await coverflow.locator('[data-post-card]').nth(1).locator('h2').textContent();
@@ -246,8 +303,9 @@ test('focused coverflow supports arrow-key navigation', async ({ page }) => {
 
 test('mouse wheel advances the coverflow without scrolling the page', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/blogs/');
+  await page.goto('/blogs/', { waitUntil: 'domcontentloaded' });
   const coverflow = page.locator('[data-post-coverflow]');
+  await expect(coverflow.locator('[data-post-card]').first()).toHaveAttribute('data-active', 'true');
   const box = await coverflow.boundingBox();
   if (!box) throw new Error('Missing post coverflow bounds');
 
@@ -267,7 +325,7 @@ test('a vertical phone swipe advances one card', async ({ browser }) => {
   const page = await context.newPage();
   try {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/blogs/');
+    await openBlogIndex(page);
     await expect(page.locator('[data-post-card]').first()).toHaveAttribute('data-active', 'true');
     await page.evaluate(() => {
       const rail = document.querySelector<HTMLElement>('[data-post-coverflow]');
@@ -284,7 +342,7 @@ test('a vertical phone swipe advances one card', async ({ browser }) => {
 });
 
 test('clicking a side card selects it without opening the article', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const card = page.locator('[data-post-card]').nth(1);
   await card.dispatchEvent('click');
 
@@ -293,7 +351,7 @@ test('clicking a side card selects it without opening the article', async ({ pag
 });
 
 test('dock feedback follows the selected card and clears when retargeted', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const rail = page.locator('[data-post-coverflow]');
   const second = rail.locator('[data-post-card]').nth(1);
   const third = rail.locator('[data-post-card]').nth(2);
@@ -320,8 +378,8 @@ test('clicking the empty area of the active card opens its article', async ({ pa
     { width: 390, height: 844 }
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto('/blogs/');
-    await expect(page.locator('#page-loader')).not.toHaveClass(/pl-visible/);
+    await openBlogIndex(page);
+    await expect(page.locator('#page-loader')).toBeHidden();
     const card = page.locator('[data-post-card][data-active="true"]');
     const href = await card.locator('h2 a').getAttribute('href');
     const box = await card.boundingBox();
@@ -335,7 +393,7 @@ test('clicking the empty area of the active card opens its article', async ({ pa
 
 test('reduced motion switches coverflow cards without a lingering animation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const coverflow = page.locator('[data-post-coverflow]');
   const secondTitle = await coverflow.locator('[data-post-card]').nth(1).locator('h2').textContent();
   await coverflow.focus();
@@ -348,7 +406,7 @@ test('reduced motion switches coverflow cards without a lingering animation', as
 });
 
 test('post headings remain readable in the dark theme', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
 
   await expect(page.locator('article[data-post-card] h2').first()).toHaveCSS(
     'color',
@@ -357,7 +415,7 @@ test('post headings remain readable in the dark theme', async ({ page }) => {
 });
 
 test('only the selected card brightens on hover without changing title color', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   await expect(page.locator('#page-loader')).toBeHidden();
   const cards = page.locator('[data-post-card]');
   const activeCard = cards.nth(0);
@@ -380,7 +438,7 @@ test('only the selected card brightens on hover without changing title color', a
 });
 
 test('card shell and cover keep the site link cursor', async ({ page }) => {
-  await page.goto('/blogs/');
+  await openBlogIndex(page);
   const cursors = await page.locator('[data-post-card]').evaluateAll((cards) =>
     cards.slice(0, 2).flatMap((card) => [
       getComputedStyle(card).cursor,

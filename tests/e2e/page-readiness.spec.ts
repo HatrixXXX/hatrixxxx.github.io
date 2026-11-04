@@ -8,7 +8,7 @@ test('a reloaded inner page keeps the splash until its background is ready', asy
   let reloadRequested!: () => void;
   const gate = new Promise<void>((resolve) => { releaseReload = resolve; });
   const requested = new Promise<void>((resolve) => { reloadRequested = resolve; });
-  await page.route('**/assets/backgrounds/background.png', async (route) => {
+  await page.route('**/assets/backgrounds/background.webp', async (route) => {
     requestCount += 1;
     if (requestCount === 1) {
       await route.continue();
@@ -47,6 +47,8 @@ test('client navigation presents the showcase without loading a box lid', async 
   await expect(page).toHaveURL('/creation/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await expect(page.locator('[data-project-badge="0"]')).toBeVisible();
+  await expect(page.locator('[data-project-detail="0"]')).toBeHidden();
+  await page.locator('[data-project-badge="0"]').click();
   await expect(page.locator('[data-project-detail="0"]')).toBeVisible();
   expect(lidRequests).toEqual([]);
 });

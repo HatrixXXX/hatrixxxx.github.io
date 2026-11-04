@@ -1,9 +1,10 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, type LocalImageProps, type RemoteImageProps } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import readingTime from 'reading-time';
 import { DEFAULT_ARTICLE_COVER } from '@/config/article-images';
 import type { PostEntry } from '@/lib/content';
+import { coverThumbnailSource } from '@/lib/cover-thumbnail-source';
 import { sanctuaryPath } from '@/lib/sanctuary';
 import { postPath } from '@/lib/urls';
 
@@ -19,6 +20,9 @@ const summary = post?.data.summary ?? sanctuary!.data.summary;
 const pubDate = post?.data.pubDate ?? sanctuary!.data.pubDate;
 const body = post ? post.body : sanctuary!.body;
 const cover = post?.data.cover ?? sanctuary?.data.cover;
+const coverSrc = cover || DEFAULT_ARTICLE_COVER;
+const preservedCoverFormat = coverSrc.match(/\.(gif|svg)(?:[?#]|$)/i)?.[1].toLowerCase();
+const thumbnailSrc = await coverThumbnailSource(coverSrc);
 const isAboveFold = index < 2;
 const minutes = Math.max(1, Math.ceil(readingTime(body ?? '').minutes));
 const published = new Intl.DateTimeFormat('zh-CN', {
@@ -28,23 +32,27 @@ const published = new Intl.DateTimeFormat('zh-CN', {
 }).format(pubDate);
 const position = `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
 const coverProps = cover?.startsWith('/')
-  ? { width: 1600, height: 900 }
+  ? { width: 768, height: 432 }
   : { width: 768, height: 404 };
+const thumbnailProps = (typeof thumbnailSrc === 'string'
+  ? { src: thumbnailSrc, ...coverProps, alt: '' }
+  : { src: thumbnailSrc, ...coverProps, alt: '' }) satisfies LocalImageProps | RemoteImageProps;
+const initialOffset = index - (total > 1 ? 0.5 : 0);
 ---
 
-<article data-post-card class="post-card">
+<article data-post-card class="post-card" style={`--initial-card-offset: ${initialOffset}`}>
   <div class="post-card-media" aria-hidden="true">
     <Image
-      src={cover || DEFAULT_ARTICLE_COVER}
-      alt=""
-      {...coverProps}
+      {...thumbnailProps}
       layout="constrained"
       widths={[320, 480, 640, 768]}
       sizes="(max-width: 720px) 275px, (max-width: 1050px) 320px, 353px"
-      quality={75}
-      loading={isAboveFold ? "eager" : "lazy"}
-      decoding={isAboveFold ? "sync" : "async"}
+      format={preservedCoverFormat ?? 'webp'}
+      quality={preservedCoverFormat ? undefined : 70}
+      loading={index < 3 ? "eager" : "lazy"}
+      decoding="async"
       fetchpriority={isAboveFold ? "high" : "auto"}
+      data-coverflow-thumbnail
       data-decorative-motion
     />
   </div>

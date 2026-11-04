@@ -91,6 +91,7 @@ const { posts, sanctuary } = Astro.props;
     position: absolute;
     left: 50%;
     top: 50%;
+    transform: translateY(calc(var(--initial-card-offset, 0) * var(--card-h) * 1.2));
     transform-origin: center center;
     transform-style: flat;
     will-change: transform, opacity;

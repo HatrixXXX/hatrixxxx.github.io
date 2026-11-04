@@ -257,11 +257,11 @@ AI-Infra 的视觉线索对应具体部件：左侧平板诊断屏显示机体�
 
 ### Page transitions
 
-直接打开或刷新任意页面时显示原有圆环 splash，并等待首屏图片、背景和字体就绪；首页还要等待人物分块和播放器布局。同源页面的客户端跳转使用 `public/assets/transitions/mecha-shutter-v1.webp`：同一张图从中线分为左右两瓣，约 460ms 内从屏幕两侧闭合；目标页交换后，等待资源、场景首帧或加锁页的权限恢复终态，再让两瓣沿原路径展开。导航取消时遮罩收回。图片沿用最初生成的带轻微使用痕迹版本。手机上按视口裁切图片，保留中央接缝；减少动态效果时直接闭合和打开，不播放滑移动画。
+直接打开或刷新任意页面时显示原有圆环 splash，并等待首屏图片、背景和字体就绪；首页还要等待人物分块和播放器布局。同源页面的客户端跳转使用 `public/assets/transitions/mecha-shutter-v1.webp`：同一张图从中线分为左右两瓣，约 460ms 内从屏幕两侧闭合；目标页交换后，等待资源、场景首帧或加锁页的权限恢复终态，再让两瓣沿原路径展开。导航取消时遮罩收回。切换到后台时动画直接到位，页面请求和资源等待继续；切回标签页不清除仍在进行的导航。图片沿用最初生成的带轻微使用痕迹版本，以 WebP quality 90 重新编码，保留原尺寸。手机上按视口裁切图片，保留中央接缝；减少动态效果时直接闭合和打开，不播放滑移动画。
 
 ### Cards / Containers
 
-博客列表卡片使用透明 WebP 装甲外壳，文字和题图放在外壳的两个内窗中。宽度超过 720px 时，封面在左右两侧交错排列，图片区约为 1.9:1；窄屏使用独立的方形外壳，封面在上、文字在下，卡片宽度最多 360px。真实题图仍走 Astro/Sharp，并用 `object-fit: cover` 裁入窗口；纵向裁切锚点为 15%，让画面主体进一步下移。没有题图时使用 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER`。文字区使用嵌入装甲内窗的青绿色全息显示玻璃，主底色为 `#1e3637`，点缀线和信号光沿用首页随笔卡片；边缘只用内阴影和内侧亮线交代凹槽，不绘制独立悬浮卡片的外光晕。文字区显示文章序号、日期、标题、frontmatter `summary` 和阅读时间，内边距让这些信息与装甲内框保持间隔；窄屏隐藏摘要，保证标题不溢出。点击当前卡片进入文章，点击相邻卡片切换；滚轮、上下方向键与手机上下滑动同向。卡片沿直轨纵向滑动，不作透视旋转；相邻卡片之间留出更宽的间隔，离选中卡片越远透明度越低。切换沿用原有弹簧阻尼，选中卡片在停靠后持续轻微浮动；减少动态效果时直接切换到目标卡片并停止浮动。
+博客列表卡片使用透明 WebP 装甲外壳，文字和题图放在外壳的两个内窗中。宽度超过 720px 时，封面在左右两侧交错排列，图片区约为 1.9:1；窄屏使用独立的方形外壳，封面在上、文字在下，卡片宽度最多 360px。真实题图由 Astro/Sharp 在构建时生成独立缩略图，普通位图使用质量 70 的 WebP，宽度提供 320、480、640、768 像素，默认图宽最多 768 像素；本地封面按需读取，缩略图缓存使用原图内容哈希，正文保留原图。初始 HTML 按卡片索引设置位移，避免封面叠在首屏；当前封面优先请求，前后各两张及浏览方向上的下一张提前加载和解码，其他封面保留懒加载。题图用 `object-fit: cover` 裁入窗口；纵向裁切锚点为 15%，让画面主体进一步下移。没有题图时使用 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER`。文字区使用嵌入装甲内窗的青绿色全息显示玻璃，主底色为 `#1e3637`，点缀线和信号光沿用首页随笔卡片；边缘只用内阴影和内侧亮线交代凹槽，不绘制独立悬浮卡片的外光晕。文字区显示文章序号、日期、标题、frontmatter `summary` 和阅读时间，内边距让这些信息与装甲内框保持间隔；窄屏隐藏摘要，保证标题不溢出。点击当前卡片进入文章，点击相邻卡片切换；滚轮、上下方向键与手机上下滑动同向。卡片沿直轨纵向滑动，不作透视旋转；相邻卡片之间留出更宽的间隔，离选中卡片越远透明度越低。切换沿用原有弹簧阻尼，选中卡片在停靠后持续轻微浮动；减少动态效果时直接切换到目标卡片并停止浮动。
 
 随笔总览以时间线为中轴，按日期从新到旧排列。页面不显示顶部标题、副标题、分割线或篇数统计，顶部使用带向下浅碗口的金属箭头包住液柱光晕，底部以带向上浅碗口的对称符文接收液柱；手机以同一母图的中央裁切版对齐左侧轴线。桌面卡片在轴线两侧交替出现，手机上移到轴线右侧。背景使用普通内页的暗层，并以很小的亮度变化呼吸。金液随滚动前进或回退，内部高光和气泡沿金液流动；液体末端不另叠加独立亮段。液体到达节点前，节点、支路与卡片均隐藏；到达后由同一状态触发展开；回滚时按同一状态反向收回。中轴不设管道；主干和分支的金液厚度统一固定为 20px；节点中心点与主干、分支沿用相同的 1.2 秒闪烁周期，支路使用金属壳图片，呼吸光、节点展开和卡片遮片揭示仍由 CSS 与脚本控制；节点首次接通时，亮边和支路光流还会闪一次，回滚越过节点后才可再次触发。卡片揭示叠加短位移与透明度。鼠标移入与移出时，斜向镜面反光以约 0.5 秒扫过卡片内窗，装甲外框本身提亮，不绘制矩形金色描边；随笔卡片不触发全站磁性指针角框。卡片的透明前框分别适配桌面与手机；图片区限制在内窗，日期、标题和摘要保留至少 10px 的内窗边距，不放额外操作标记。进入详情再点左上返回按钮时，总览恢复离开时的滚动位置。减少动态效果时直接显示完整轴线与卡片，停止持续动效。封面默认使用批准的固定提交图床 URL，也兼容站内公开图片；没有封面时使用 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER` 预览；随笔源文件来自独立私有仓库；总览和详情需解锁后显示，URL 与公开封面仍可访问。上下符文只做等比缩放，宝珠保持圆形；顶部以用户选定的第一版碗口图为基础，将橙铜装饰改为蓝青色，装甲底色与底部符文主体一致，保留圆形金色宝珠，整体下移 20px，底部符文整体上移 20px。运行时 WebP 位于 `public/assets/snippets-timeline/`。
 
@@ -305,16 +305,16 @@ AI-Infra 的视觉线索对应具体部件：左侧平板诊断屏显示机体�
 | --- | --- | --- |
 | v5 立绘分块 | `public/assets/home/character-parts/*.webp`，坐标和尺寸见 `src/data/character-parts.ts` | 分块源 PNG 位于 `public/assets/home/character-parts-source/`；`public/assets/home/hatrix-character-v5.png` 是合成和视觉核对基准 |
 | 首页测试舱背景 | `public/assets/home/cover.webp` | v8 去吊灯版本，以低对比环境光和灰紫色调衔接人物；同目录 `cover.png` 为原图 |
-| 其他页面背景 | `public/assets/backgrounds/background.png` | 用户选定的独立内页背景；本次首页改图不修改它 |
+| 其他页面背景 | `public/assets/backgrounds/background.webp` | 用户选定的独立内页背景，以 WebP quality 90 编码，尺寸保持 1672×941；同目录 `background.png` 保留为原图 |
 | 加锁门禁素材 | `public/assets/protected-gate/*.webp` | 锁芯冠件、背板金属、密码槽、深色机械按钮与勾选框金属座均为本项目原创位图，经 Sharp 优化；文字和操作状态实时渲染，新版按钮源图和提示词见 `docs/design-references/protected-gate-button/` |
 | 作品橱窗机械平台与玻璃罐 | `public/assets/projects/project-cabinet-*.webp` | 平台后层、罐壳前层 |
 | 工具箱透视箱体、内衬与工具方块 | `public/assets/toolbox/case-shell-thin-landscape.webp`、`case-shell-thin-portrait.webp`、`case-halo-mask-landscape.png`、`case-halo-mask-portrait.png`；`foam-slots-10x4.glb`、`foam-slots-4x10.glb`；`insert-top-detail-v5.webp`、`insert-slot-detail-v5.webp`；`rounded-metal-cube.glb` | 横版与竖版箱体为短切角薄壁装甲壳，中央开口和外侧透明，箱壳图片位于 WebGL 上层；填满中孔的独立轮廓遮罩只在箱体最外缘生成暖黄色光晕，不在内框产生橙线。内衬模型本身是水平矩形板，桌面 10 列 × 4 行、手机 4 列 × 10 行，方槽沿两轴规整排列，四边留 `0.42` 个槽宽。生图提示记录垂直视角 35°、俯角 62°；按最终箱壳左右内壁校准后，WebGL 横版使用垂直视角 35°、俯角 77.115°，竖版使用 35°、74.46°，均零水平偏航，槽阵列外边与箱壳内壁斜率误差小于 0.005。内衬为无光材质，顶面深石墨灰、槽壁和槽底逐级加深，不受环境灯光与全局曝光影响；两张强模糊、去色并压缩对比度的低频细节贴图只提供轻微明暗质感，没有金属反光、bump、拉丝条纹或噪点。40 个工具各使用一个独立圆角金属方块与对应六面图标，按数据顺序逐槽放置；鼠标悬停或键盘聚焦时，命中的方块沿世界竖直轴从槽中抬起，初段仍由槽壁遮住表面以下的部分，离开后可中断并回落，减少动态效果时直接呈现抬起或归位状态，触控不保留悬停抬升。每个方块都有独立按钮，可打开对应名称的旋转预览，并自动使用全站磁力光标框。页面不提供内衬放大入口，桌面页面不滚动。运行时素材位于 `public/assets/toolbox/` |
 | 工具方块面材 | `public/assets/toolbox/rounded-metal-cube.glb`、`metal-face-v2.webp` | 六面共用与箱壳同色系的中灰银贵金属装甲框，并保留蓝紫底调、铜缝、下沉石墨图标内板、角部固定件与青/琥珀短灯；图标内板不加等距凸起细纹。贴图只补充底色、细拉丝和轻微使用痕迹，避免发白铝色与镜面铬感，金属反光由 PBR 材质与现场灯光呈现。图标仍实时叠加；运行时贴图位于 `public/assets/toolbox/` |
 | 作品玻璃罐内透明主体 | `public/assets/project-jar-specimens/*.webp` | 15 件竖版透明素材只用于罐内陈列，主体底端留在罐底金属座上方，玻璃罐前层覆盖主体；原项目照片仍用于详情轮播。运行时仅使用优化后的 WebP |
 | 原作品图鉴封面 | `public/assets/projects/project-atlas-cover-v1.webp` | 用户选定的原图保持不变，现行页面不加载它 |
-| 博客列表装甲外壳 | `public/assets/blog-cards/desktop-frame.webp`、`mobile-frame.webp` | 用户生成的桌面与手机卡片素材；题图窗和文字窗已挖空，按显示尺寸作为实时内容的前景透明 WebP |
+| 博客列表装甲外壳 | `public/assets/blog-cards/desktop-frame.webp`、`mobile-frame.webp` | 用户生成的桌面与手机卡片素材；题图窗和文字窗已挖空，按显示尺寸作为实时内容的前景透明 WebP；以 quality 90、alphaQuality 100 重新编码，保留原尺寸与透明通道 |
 | 博客、随笔与秘境的统一默认封面 | `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER` | 用户生成的原机械封面；图床资源为 `https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a34cd33600165dd0b2b40e041434f85c54aaed07/img/article-covers/default-cover.webp`，不保留本地副本，视觉内容不变 |
-| 博客资料匣导轨与锁扣 | `public/assets/blog-cards/guide-rail.webp`、`locking-clamp.webp` | 用户提供的图片经透明边缘裁切和 WebP 转换；导轨位于卡片后方，每张卡片两侧均有随卡移动的锁扣 |
+| 博客资料匣导轨与锁扣 | `public/assets/blog-cards/guide-rail.webp`、`locking-clamp.webp` | 用户提供的图片经透明边缘裁切和 WebP 转换；本次以 quality 90、alphaQuality 100 重新编码，未再次裁切或缩放；导轨位于卡片后方，每张卡片两侧均有随卡移动的锁扣 |
 | 首页本地纹理 | `public/assets/home-textures/*.svg` | 按 v5 立绘与 v6 工坊中的机柜、铜导线和状态灯元素绘制 |
 | 首页选用纹理 | `public/assets/home-textures/*.png`、`public/assets/home-textures/blue-metal-plate.jpg` | nublet 的防滑钢板和 Poly Haven 的蓝灰涂装钢板为 CC0；HorrorPen 的电路纹理为 CC BY 3.0。来源与许可见 `public/third-party-notices.txt` |
 | 站点默认分享图 | `public/assets/home/cover.webp` | 首页工坊背景用于默认社交分享图片；无题图博客卡片另用机械封面 |
