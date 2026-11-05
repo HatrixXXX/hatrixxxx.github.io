@@ -8,6 +8,8 @@ const PINNED_IMAGE =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/example.png';
 const NEW_PINNED_IMAGE =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/example.png';
+const DIGITAL_CIRCUIT_IMAGE =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@ad3ce28aaf48bb45f2b0c3564259bb39026d936f/img/1380455-20230207205445366-664080876.png';
 const BACKSLASH_REMOTE_IMAGE = String.raw`https:\\evil.example\\tracker.png`;
 const RELATIVE_BACKSLASH_REMOTE_IMAGE = String.raw`\\evil.example\tracker.png`;
 const ROOTED_BACKSLASH_REMOTE_IMAGE = String.raw`/\\evil.example\tracker.png`;
@@ -264,7 +266,9 @@ describe('published content security', () => {
       { type: 'image', url: PINNED_IMAGE },
       { type: 'html', value: `<img src="${PINNED_IMAGE}" alt="diagram">` },
       { type: 'image', url: NEW_PINNED_IMAGE },
-      { type: 'html', value: `<img src="${NEW_PINNED_IMAGE}" alt="new diagram">` }
+      { type: 'html', value: `<img src="${NEW_PINNED_IMAGE}" alt="new diagram">` },
+      { type: 'image', url: DIGITAL_CIRCUIT_IMAGE },
+      { type: 'html', value: `<img src="${DIGITAL_CIRCUIT_IMAGE}" alt="digital circuit" style="zoom: 67%;">` }
     ])).not.toThrow();
   });
 });
