@@ -5,7 +5,6 @@ set "PULL_PRIVATE_REPOS_FILE=%~f0"
 powershell.exe -NoProfile -Command "$s=[IO.File]::ReadAllText($env:PULL_PRIVATE_REPOS_FILE,[Text.Encoding]::UTF8); $mark='# POWERSHELL START'; $i=$s.LastIndexOf($mark); if($i -lt 0){throw 'Embedded script missing'}; Invoke-Expression $s.Substring($i+$mark.Length)"
 set "pull_exit_code=%ERRORLEVEL%"
 echo.
-pause
 exit /b %pull_exit_code%
 # POWERSHELL START
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)

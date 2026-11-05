@@ -5,9 +5,9 @@
 ## 验证范围
 
 - 日常本地修改只完成修改，不自动运行测试、类型检查、构建、图片与安全检查、浏览器预览或其他验收。
-- 用户明确要求推送时，统一执行下文的推送门禁，并按改动选择必要的类型检查、浏览器和专项验证。
-- 推送前涉及安全边界、构建发布或跨页面公共逻辑时，选择能覆盖风险的检查范围。提前说明是进度通知，不表示等待批准。
-- 不自动安装浏览器，也不默认运行全量 E2E 或视觉回归。用户明确要求，或风险确有需要时再运行。
+- 用户明确要求推送时，直接提交并推送，不在本地运行测试、验证或推送门禁；检查交由 GitHub Actions 执行。
+- 推送后持续跟踪对应提交的相关工作流。失败时读取日志并修复，必要时只运行与失败项直接相关的最小化本地检查；重推后跟踪新提交，直到相关工作流全部通过。
+- 除用户明确要求外，本地检查只用于修复 CI 失败。不自动安装浏览器，也不默认运行全量 E2E 或视觉回归。提前说明是进度通知，不表示等待批准。
 
 本地预览统一使用：
 
@@ -16,7 +16,7 @@ corepack pnpm astro dev --background --host 127.0.0.1 --port 4321
 corepack pnpm astro dev status
 ```
 
-推送前需要预览，或用户明确要求本地预览时，先请求 `http://127.0.0.1:4321/`，确认是否已有本项目服务；有则复用，无则启动并再次以 HTTP 响应确认。`status` 仅作辅助，不使用其他端口，不重复启动。纯文档或测试文件修改不启动预览。
+用户明确要求本地预览，或修复 CI 失败确需预览时，先请求 `http://127.0.0.1:4321/`，确认是否已有本项目服务；有则复用，无则启动并再次以 HTTP 响应确认。`status` 仅作辅助，不使用其他端口，不重复启动。纯文档或测试文件修改不启动预览。
 
 ## 常用命令
 
@@ -32,18 +32,18 @@ corepack pnpm test:e2e
 
 `build` 已包含图片预检和加锁内容泄漏审计。图片检查需要访问 jsDelivr；`build` 和 `check:images` 会启用 Node 24 的环境代理支持，本机提供标准 `HTTPS_PROXY` 即可。
 
-## 推送前检查
+## 推送与 CI 检查
 
 明确双击 `push-posts.cmd` 时，跳过本地测试与构建，直接提交并推送博客、随笔、秘境三个私有仓库的全部未提交改动及已有待推送提交；脚本会拒绝合并冲突或与远端分叉的本地提交。站点的 GitHub Actions 在推送后执行检查。此流程不推送公开仓库。
 
-除上述私有仓库快捷流程外，用户明确要求推送时，必须依次通过：
+公开仓库的 Pages workflow 在推送后运行生产依赖审计、单元测试、Astro 类型检查、构建和站点检查，再部署到 GitHub Pages。构建包含图片预检与加锁内容泄漏审计。CI 失败时，按失败项选择相应命令在本地定位，例如：
 
 1. `corepack pnpm test:run`
-2. `corepack pnpm build && corepack pnpm check:site`
+2. `corepack pnpm build`、`corepack pnpm check:site`
 
-不要依赖 CI 发现本地可复现的失败。没有推送请求时不自动运行验收，相关检查积累到推送前统一执行。
+这些命令不作为本地推送前门禁。修复后继续推送并监测新提交；缺少凭据、权限等外部阻塞时，报告当前状态和运行链接，不将未完成或未触发的工作流视为通过。
 
-新增或删除博客文章后，推送门禁还需核对 `tests/unit/content-schema.test.ts` 的文章数、`scripts/check-built-site.ts` 的默认和生产文章数，以及对应的 `tests/unit/check-built-site.test.ts`。增加图片时，同步 `tests/unit/check-images.test.ts` 的 inventory；新图床提交须按 README 的图片策略固定 URL 并更新精确白名单。站内链接总数按下文流程从本地构建结果核实，不能只改到单元测试通过就推送。
+新增或删除博客文章后，同步 `tests/unit/content-schema.test.ts` 的文章数、`scripts/check-built-site.ts` 的默认和生产文章数，以及对应的 `tests/unit/check-built-site.test.ts`。增加图片时，同步 `tests/unit/check-images.test.ts` 的 inventory；新图床提交须按 README 的图片策略固定 URL 并更新精确白名单。需要运行命令才能确定的计数和基线，在对应 CI 失败后按下文流程处理，不能只改到单元测试通过。
 
 ## 依赖版本兼容
 
@@ -71,7 +71,7 @@ Astro 解析到修复版 `http-cache-semantics` 后删除此项豁免。不得�
 
 计数脚本扫描所有构建 HTML 中的 `href=` 和 `src=`，过滤站外地址后累加。导航、页脚和公共组件会在每个页面重复计入，因此结构变化可能放大增量。
 
-只在明确发生了链接节点增删时更新基线。按以下机械流程执行，不需要再次向用户确认：
+只在明确发生了链接节点增删时更新基线。对应 CI 失败后，按以下机械流程执行，不需要再次向用户确认：
 
 1. 运行 `corepack pnpm build && corepack pnpm check:site`。
 2. 确认失败来自预期的结构变化，而不是缓存、私有内容数量或临时构建差异。
@@ -82,7 +82,7 @@ Astro 解析到修复版 `http-cache-semantics` 后删除此项豁免。不得�
 
 ## 相关代码与 fixture
 
-- 推送涉及新增或修改动态路由时，运行 `corepack pnpm check`，确认 `getStaticPaths`、frontmatter 变量和模板引用没有类型错误。
+- CI 类型检查失败且涉及新增或修改动态路由时，可运行 `corepack pnpm check` 定位 `getStaticPaths`、frontmatter 变量和模板引用的类型错误。
 - 修改 `src/config/navigation.ts` 的路径或标签时，同步检查 `tests/unit/navigation-config.test.ts`。
 - 修改 `src/scripts/music-player.ts` 的逻辑或 DOM 结构，或修改 `src/components/MusicPlayer.astro` 的 data 属性时，同步检查 `tests/unit/music-player.test.ts` 的 fixture 与断言。
 - 脚本新增 `player.style`、`panel.style` 等 DOM 属性访问时，测试 fixture 的模拟对象也要提供对应属性。

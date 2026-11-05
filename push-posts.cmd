@@ -4,7 +4,6 @@ set "PUBLISH_POSTS_FILE=%~f0"
 powershell.exe -NoProfile -Command "$s=[IO.File]::ReadAllText($env:PUBLISH_POSTS_FILE,[Text.Encoding]::UTF8); $mark='# POWERSHELL START'; $i=$s.LastIndexOf($mark); if($i -lt 0){throw 'Embedded script missing'}; Invoke-Expression $s.Substring($i+$mark.Length)"
 set "publish_exit_code=%ERRORLEVEL%"
 echo.
-pause
 exit /b %publish_exit_code%
 # POWERSHELL START
 $siteDir = Split-Path -Parent $env:PUBLISH_POSTS_FILE
