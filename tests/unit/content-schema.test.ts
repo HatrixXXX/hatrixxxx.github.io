@@ -40,7 +40,7 @@ describe('content contracts', () => {
   });
 
   it('keeps the configured playlist entries valid', () => {
-    expect(playlist).toHaveLength(20);
+    expect(playlist).toHaveLength(21);
     expect(new Set(playlist.map(({ id }) => id)).size).toBe(playlist.length);
     for (const track of playlist) {
       expect(track.title.trim()).not.toBe('');

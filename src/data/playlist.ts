@@ -122,5 +122,11 @@ export const playlist: readonly Track[] = [
     title: 'Slow Motion',
     artist: 'Marshmello & Jonas Brothers',
     src: audioSrc('[jcpoo.cn]Slow+Motion-Marshmello&Jonas+Brothers.mp3')
+  },
+  {
+    id: 'nothing-on-you',
+    title: 'Nothing On You (feat. Paulo Londra & Dave)',
+    artist: 'Ed Sheeran & Paulo Londra & Dave',
+    src: audioSrc('Nothing On You (feat. Paulo Londra & Dave)-Ed Sheeran&Paulo Londra&DAVE.mp3')
   }
 ];
