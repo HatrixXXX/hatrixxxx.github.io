@@ -15,7 +15,7 @@ const secureHead = `<head><meta http-equiv="Content-Security-Policy" content="${
 it('tracks the current content and local link inventories', async () => {
   expect(EXPECTED_LOCAL_LINKS).toBe(1733);
   expect(await readFile('scripts/check-built-site.ts', 'utf8')).toContain(
-    'expectedPostCount: fixtureMode ? 2 : 15'
+    'expectedPostCount: fixtureMode ? 2 : 18'
   );
 });
 
@@ -420,7 +420,7 @@ it('requires a generated route for every source post', async () => {
   await writeSiteFile(root, '.private-snippets/snippets/.gitkeep');
   await writeSiteFile(root, '.private-sanctuary/sanctuary/.gitkeep');
 
-  for (let index = 0; index < 15; index += 1) {
+  for (let index = 0; index < 18; index += 1) {
     const slug = `published-${index}`;
     await writeSiteFile(
       root,
@@ -438,7 +438,7 @@ it('requires a generated route for every source post', async () => {
   const missingRouteResult = await inspectProjectBuiltSite(root);
 
   expect(missingRouteResult.errors).toEqual(expect.arrayContaining([
-    expect.stringContaining('Expected 15 generated post routes, found 14.'),
+    expect.stringContaining('Expected 18 generated post routes, found 17.'),
     expect.stringContaining('/posts/published-12/')
   ]));
 });
