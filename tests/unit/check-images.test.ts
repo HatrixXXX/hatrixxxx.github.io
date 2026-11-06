@@ -18,7 +18,8 @@ const PINNED_IMAGE_PREFIXES = [
   `${IMAGE_REPOSITORY}@14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3/`,
   `${IMAGE_REPOSITORY}@f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7/`,
   `${IMAGE_REPOSITORY}@ad3ce28aaf48bb45f2b0c3564259bb39026d936f/`,
-  `${IMAGE_REPOSITORY}@340c74e3150add75e7a97976a595e042f78f005f/`
+  `${IMAGE_REPOSITORY}@340c74e3150add75e7a97976a595e042f78f005f/`,
+  `${IMAGE_REPOSITORY}@a7255199e50b515b4bd5524938b2e66f4dd02985/`
 ];
 const USES_PUBLIC_FIXTURES = blogRoot() === resolve('tests/fixtures/private-blogs');
 
@@ -35,7 +36,7 @@ describe('remote image checking', () => {
       (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(prefix))
     );
 
-    expect(blogImageUrls).toHaveLength(173);
+    expect(blogImageUrls).toHaveLength(175);
     expect(unpinned).toHaveLength(0);
   });
 
