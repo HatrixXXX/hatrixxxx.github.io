@@ -426,7 +426,7 @@ test('Twikoo runtime styles survive client navigation to guestbook and an articl
 });
 
 test('profile and article routes retain their contextual sidebar with one separate player dock', async ({ page }) => {
-  for (const path of ['/about/hobbies/', '/posts/Infra-线性代数/']) {
+  for (const path of ['/about/hobbies/', '/posts/线性代数/']) {
     await page.goto(path);
     const stack = path.startsWith('/posts/') ? page.locator('.post-sidebar') : page.locator('[data-sidebar-stack]');
     await expect(stack).toHaveCount(1);

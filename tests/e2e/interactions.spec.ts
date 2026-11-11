@@ -106,7 +106,7 @@ test('search results show a highlighted body excerpt and carry the query to the 
 });
 
 test('post pages locate and temporarily highlight the searched paragraph', async ({ page }) => {
-  await page.goto('/posts/计算机体系结构与 STM32/?q=矩阵');
+  await page.goto('/posts/体系结构方法学/?q=矩阵');
 
   const hit = page.locator('.prose [data-search-hit]');
   await expect(hit).toContainText('矩阵存储结构');
@@ -159,7 +159,7 @@ test('PhotoSwipe script is requested only when an article image is activated', a
     }
   });
 
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   expect(lightboxRequests).toEqual([]);
   await page.locator('article img').first().click();
   await expect(page.locator('.pswp')).toBeVisible();
@@ -167,7 +167,7 @@ test('PhotoSwipe script is requested only when an article image is activated', a
 });
 
 test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   const image = page.locator('article img').first();
   await image.focus();
   await expect(image).toBeFocused();
@@ -177,7 +177,7 @@ test('article images open PhotoSwipe from the keyboard', async ({ page }) => {
 
 test('article lightbox stays within 80 percent and closes when its image or backdrop is clicked', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   const image = page.locator('article[data-post] .prose img').first();
   const lightbox = page.locator('.pswp');
 
@@ -205,7 +205,7 @@ test('article lightbox stays within 80 percent and closes when its image or back
 });
 
 test('article body web links open a new tab while the article stays open', async ({ page, context }) => {
-  await page.goto('/posts/Infra-GEMM优化/');
+  await page.goto('/posts/GEMM优化/');
   const link = page.locator('article[data-post] .prose a[href^="https://"]').first();
   await expect(link).toHaveAttribute('target', '_blank');
   await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
@@ -218,7 +218,7 @@ test('article body web links open a new tab while the article stays open', async
 });
 
 test('article links inserted after protected content loads keep fragment jumps in the current tab', async ({ page }) => {
-  await page.goto('/posts/Infra-GEMM优化/');
+  await page.goto('/posts/GEMM优化/');
   await page.locator('article[data-post] .prose').evaluate((prose) => {
     const internal = document.createElement('a');
     internal.href = '/about/';

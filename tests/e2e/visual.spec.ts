@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 const routes = [
   '/',
   '/blogs/',
-  '/posts/Infra-线性代数/',
+  '/posts/线性代数/',
   '/archives/',
   '/creation/',
   '/404.html'
@@ -104,7 +104,7 @@ for (const path of routes) {
     if (path === '/') expect(metrics.visiblePostCards).toBe(0);
 
     // Route changes do not rename the existing visual baselines.
-    const snapshotPath = path === '/blogs/' ? '/blog/' : path === '/creation/' ? '/projects/' : path;
+    const snapshotPath = path === '/blogs/' ? '/blog/' : path === '/creation/' ? '/projects/' : path === '/posts/线性代数/' ? '/posts/Infra-线性代数/' : path;
     const snapshotName = path === '/' ? 'home.png' : `${snapshotPath.replaceAll('/', '_')}.png`;
     await expect(page).toHaveScreenshot(snapshotName, {
       fullPage: !path.startsWith('/posts/'),

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('inner pages share the brandless centered navigation', async ({ page }) => {
-  for (const path of ['/blogs/', '/creation/', '/about/', '/posts/Infra-线性代数/']) {
+  for (const path of ['/blogs/', '/creation/', '/about/', '/posts/线性代数/']) {
     await page.goto(path);
     await expect(page.locator('header[data-site-header] .brand')).toHaveCount(0);
     const controls = page.locator('[data-header-controls]');
@@ -55,7 +55,7 @@ test('only post pages render the compact legal footer', async ({ page }) => {
   await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
   await expect(page.locator('footer[data-site-footer]')).toHaveCount(0);
 
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   const footer = page.locator('footer[data-site-footer]');
   await expect(footer).toHaveCount(1);
   await expect(footer).toContainText(`© 2025–${new Date().getFullYear()} Hatrix`);

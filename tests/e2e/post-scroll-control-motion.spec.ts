@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.use({ channel: process.env.HATRIX_TEST_CHROME === '1' ? 'chrome' : undefined });
 
 test('post scroll control fades between scroll states without trapping focus', async ({ page }) => {
-  await page.goto('/posts/Infra-概率论/');
+  await page.goto('/posts/概率论与数理统计/');
   const top = page.getByRole('button', { name: '回到顶部', includeHidden: true });
 
   await expect(top).toBeHidden();

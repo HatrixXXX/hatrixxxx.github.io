@@ -22,7 +22,37 @@ const ARCHITECTURE_IMAGE_PREFIX =
 const HDL_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a7255199e50b515b4bd5524938b2e66f4dd02985/img/';
 
+const MEMORY_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@0f5ede863cbb8f2fad5eaf2c84bab90ef19140ed/img/';
+
+const COURSE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@e24163cebfe5e007f018f59c0599c0650ddf7fa9/img/';
+
+const ARCHITECTURE_COURSE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@4407a4d00112cc1f72c23da96a210de91efab3b0/img/';
+
+const UPDATED_ARTICLE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@cac3bf8760863aaedf7123c5ddb89a467ff50563/img/';
+
+const SUBTITLE_FREE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@ca57384431a84f631bed0b81ec3c650d41d236d9/img/';
+
+const DRAM_DIAGRAM_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a15a30bfcfce393c3d8becb3e30f5c522a5d4a39/img/';
+
+const COMPLETE_DRAM_DIAGRAM_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@bd11445cc9e2c936b541ddba344fdec5626af760/img/';
+
+const GPU_SM_DIAGRAM_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@e1af43b0b1a55b22abbd0e2b5ea4462f39ebbd5f/img/';
+
 const IMMUTABLE_IMAGE_BASES = [
+  new URL(GPU_SM_DIAGRAM_IMAGE_PREFIX),
+  new URL(COMPLETE_DRAM_DIAGRAM_IMAGE_PREFIX),
+  new URL(DRAM_DIAGRAM_IMAGE_PREFIX),
+  new URL(SUBTITLE_FREE_IMAGE_PREFIX),
+  new URL(UPDATED_ARTICLE_IMAGE_PREFIX),
+  new URL(ARCHITECTURE_COURSE_IMAGE_PREFIX),
   new URL(IMMUTABLE_IMAGE_PREFIX),
   new URL(NEW_IMMUTABLE_IMAGE_PREFIX),
   new URL(SANCTUARY_IMAGE_PREFIX),
@@ -33,7 +63,9 @@ const IMMUTABLE_IMAGE_BASES = [
   new URL(ROOFLINE_IMAGE_PREFIX),
   new URL(DIGITAL_CIRCUIT_IMAGE_PREFIX),
   new URL(ARCHITECTURE_IMAGE_PREFIX),
-  new URL(HDL_IMAGE_PREFIX)
+  new URL(HDL_IMAGE_PREFIX),
+  new URL(MEMORY_IMAGE_PREFIX),
+  new URL(COURSE_IMAGE_PREFIX)
 ];
 const DANGEROUS_DATA_MEDIA_TYPES = new Set([
   'text/html',

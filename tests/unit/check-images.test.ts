@@ -9,6 +9,12 @@ const IMAGE_REPOSITORY = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Im
 const IMAGE_REPOSITORY_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
 const IMMUTABLE_IMAGE_PREFIX = `${IMAGE_REPOSITORY}@${IMAGE_REPOSITORY_REF}/`;
 const PINNED_IMAGE_PREFIXES = [
+  `${IMAGE_REPOSITORY}@e1af43b0b1a55b22abbd0e2b5ea4462f39ebbd5f/`,
+  `${IMAGE_REPOSITORY}@bd11445cc9e2c936b541ddba344fdec5626af760/`,
+  `${IMAGE_REPOSITORY}@a15a30bfcfce393c3d8becb3e30f5c522a5d4a39/`,
+  `${IMAGE_REPOSITORY}@ca57384431a84f631bed0b81ec3c650d41d236d9/`,
+  `${IMAGE_REPOSITORY}@cac3bf8760863aaedf7123c5ddb89a467ff50563/`,
+  `${IMAGE_REPOSITORY}@4407a4d00112cc1f72c23da96a210de91efab3b0/`,
   IMMUTABLE_IMAGE_PREFIX,
   `${IMAGE_REPOSITORY}@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/`,
   `${IMAGE_REPOSITORY}@102d16687d19b8ba0b77fe930830465245d78294/`,
@@ -19,7 +25,9 @@ const PINNED_IMAGE_PREFIXES = [
   `${IMAGE_REPOSITORY}@f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7/`,
   `${IMAGE_REPOSITORY}@ad3ce28aaf48bb45f2b0c3564259bb39026d936f/`,
   `${IMAGE_REPOSITORY}@340c74e3150add75e7a97976a595e042f78f005f/`,
-  `${IMAGE_REPOSITORY}@a7255199e50b515b4bd5524938b2e66f4dd02985/`
+  `${IMAGE_REPOSITORY}@a7255199e50b515b4bd5524938b2e66f4dd02985/`,
+  `${IMAGE_REPOSITORY}@0f5ede863cbb8f2fad5eaf2c84bab90ef19140ed/`,
+  `${IMAGE_REPOSITORY}@e24163cebfe5e007f018f59c0599c0650ddf7fa9/`
 ];
 const USES_PUBLIC_FIXTURES = blogRoot() === resolve('tests/fixtures/private-blogs');
 
@@ -36,7 +44,7 @@ describe('remote image checking', () => {
       (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(prefix))
     );
 
-    expect(blogImageUrls).toHaveLength(175);
+    expect(blogImageUrls).toHaveLength(193);
     expect(unpinned).toHaveLength(0);
   });
 
