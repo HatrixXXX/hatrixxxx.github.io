@@ -22,7 +22,21 @@ const ARCHITECTURE_IMAGE_PREFIX =
 const HDL_IMAGE_PREFIX =
   'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a7255199e50b515b4bd5524938b2e66f4dd02985/img/';
 
+const MEMORY_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@0f5ede863cbb8f2fad5eaf2c84bab90ef19140ed/img/';
+
+const COURSE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@e24163cebfe5e007f018f59c0599c0650ddf7fa9/img/';
+
+const ARCHITECTURE_COURSE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@4407a4d00112cc1f72c23da96a210de91efab3b0/img/';
+
+const UPDATED_ARTICLE_IMAGE_PREFIX =
+  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@cac3bf8760863aaedf7123c5ddb89a467ff50563/img/';
+
 const IMMUTABLE_IMAGE_BASES = [
+  new URL(UPDATED_ARTICLE_IMAGE_PREFIX),
+  new URL(ARCHITECTURE_COURSE_IMAGE_PREFIX),
   new URL(IMMUTABLE_IMAGE_PREFIX),
   new URL(NEW_IMMUTABLE_IMAGE_PREFIX),
   new URL(SANCTUARY_IMAGE_PREFIX),
@@ -33,7 +47,9 @@ const IMMUTABLE_IMAGE_BASES = [
   new URL(ROOFLINE_IMAGE_PREFIX),
   new URL(DIGITAL_CIRCUIT_IMAGE_PREFIX),
   new URL(ARCHITECTURE_IMAGE_PREFIX),
-  new URL(HDL_IMAGE_PREFIX)
+  new URL(HDL_IMAGE_PREFIX),
+  new URL(MEMORY_IMAGE_PREFIX),
+  new URL(COURSE_IMAGE_PREFIX)
 ];
 const DANGEROUS_DATA_MEDIA_TYPES = new Set([
   'text/html',

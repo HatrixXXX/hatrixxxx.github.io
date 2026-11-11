@@ -73,6 +73,30 @@ export default defineConfig({
         protocol: 'https',
         hostname: 'cdn.jsdelivr.net',
         pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@cac3bf8760863aaedf7123c5ddb89a467ff50563/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/cac3bf8760863aaedf7123c5ddb89a467ff50563/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@4407a4d00112cc1f72c23da96a210de91efab3b0/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/4407a4d00112cc1f72c23da96a210de91efab3b0/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
           '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
       },
       {
@@ -134,6 +158,18 @@ export default defineConfig({
         hostname: 'cdn.jsdelivr.net',
         pathname:
           '/gh/HatrixXXX/Hatrix-s-Blog-Image@a7255199e50b515b4bd5524938b2e66f4dd02985/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@0f5ede863cbb8f2fad5eaf2c84bab90ef19140ed/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname:
+          '/gh/HatrixXXX/Hatrix-s-Blog-Image@e24163cebfe5e007f018f59c0599c0650ddf7fa9/img/**'
       },
       {
         protocol: 'https',
@@ -200,6 +236,18 @@ export default defineConfig({
         hostname: 'raw.githubusercontent.com',
         pathname:
           '/HatrixXXX/Hatrix-s-Blog-Image/a7255199e50b515b4bd5524938b2e66f4dd02985/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/0f5ede863cbb8f2fad5eaf2c84bab90ef19140ed/img/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname:
+          '/HatrixXXX/Hatrix-s-Blog-Image/e24163cebfe5e007f018f59c0599c0650ddf7fa9/img/**'
       }
     ]
   },
