@@ -19,7 +19,7 @@ async function legacySlugs(): Promise<string[]> {
 
 test('legacy post route renders enhanced article content', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
-  const response = await page.goto('/posts/Infra-线性代数/');
+  const response = await page.goto('/posts/线性代数/');
   expect(response?.status()).toBe(200);
   await expect(page.locator('article[data-post] h1')).toContainText('线性代数');
   await expect(page.locator('.katex').first()).toBeVisible();
@@ -31,7 +31,7 @@ test('legacy post route renders enhanced article content', async ({ page }) => {
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     'href',
-    new URL('/posts/Infra-线性代数/', 'https://hatrix.site').href
+    new URL('/posts/线性代数/', 'https://hatrix.site').href
   );
   const comments = page.locator('[data-twikoo-comments]');
   await expect(comments).toHaveAttribute('data-twikoo-path', await page.evaluate(() => location.pathname));
@@ -70,7 +70,7 @@ test('all legacy slugs resolve and the merged FPGA route stays available', async
 }) => {
   test.setTimeout(120_000);
   const slugs = await legacySlugs();
-  expect(slugs).toHaveLength(15);
+  expect(slugs).toHaveLength(16);
 
   const responses: Array<{ slug: string; response: APIResponse }> = [];
   for (let offset = 0; offset < slugs.length; offset += 4) {
@@ -119,7 +119,7 @@ test('Mermaid loader renders targets on astro page-load', async ({ page }) => {
 
 test('post layout has no mobile horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   const sizes = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
     client: document.documentElement.clientWidth
@@ -129,7 +129,7 @@ test('post layout has no mobile horizontal overflow', async ({ page }) => {
 
 test('post layout places the sidebar, article and TOC in responsive reading order', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const desktopStack = await page.locator('.post-sidebar').boundingBox();
   const desktopPost = await page.locator('.post-column').boundingBox();
@@ -161,7 +161,7 @@ test('post layout places the sidebar, article and TOC in responsive reading orde
 test('desktop post sidebar stays fixed when the full stack fits the viewport', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-概率论/');
+  await page.goto('/posts/概率论与数理统计/');
 
   const stack = page.locator('.post-sidebar');
   await expect(stack).toHaveAttribute('data-sidebar-fixed', 'true');
@@ -185,7 +185,7 @@ test('desktop post sidebar stays fixed when the full stack fits the viewport', a
 test('post back-to-top button appears after scrolling and returns to the page start', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-概率论/');
+  await page.goto('/posts/概率论与数理统计/');
 
   const backToTop = page.locator('[data-back-to-top]');
   const goToBottom = page.locator('[data-back-to-bottom]');
@@ -236,7 +236,7 @@ test('mobile post back button stays inside the fixed navigation', async ({ page 
     { width: 844, height: 390 }
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto('/posts/Infra-线性代数/');
+    await page.goto('/posts/线性代数/');
 
     const [headerBox, backButtonBox, titleBox] = await Promise.all([
       page.locator('[data-site-header]').boundingBox(),
@@ -253,7 +253,7 @@ test('mobile post back button stays inside the fixed navigation', async ({ page 
 
 test('table of contents keeps every heading visible on desktop and mobile', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const toc = page.locator('[data-toc-desktop]');
   const items = toc.locator('li[data-depth]');
@@ -298,7 +298,7 @@ test('table of contents updates after a heading jumps across the observer band',
     window.IntersectionObserver = SilentIntersectionObserver as unknown as typeof IntersectionObserver;
   });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const nestedLink = page.locator('[data-toc-desktop] li[data-depth="3"] a').first();
   const targetId = (await nestedLink.getAttribute('href'))?.slice(1);
@@ -324,14 +324,14 @@ test('table of contents updates after a heading jumps across the observer band',
 
 test('post sidebar retains the latest article allocation with a full table of contents', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1200 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   await expect(page.locator('[data-latest-posts] .latest-item')).toHaveCount(3);
 });
 
 test('short desktop viewports lay out the full sidebar without internal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const sidebar = page.locator('.post-sidebar');
   await expect(sidebar).not.toHaveAttribute('data-sidebar-fixed');
@@ -379,7 +379,7 @@ test('Twikoo mounts once per pathname after client navigation', async ({ page })
   });
   await page.route('https://comments.hatrix.site/**', (route) => route.abort());
 
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   const postComments = page.locator('[data-twikoo-comments]');
   const firstPath = await page.evaluate(() => location.pathname);
   await expect(postComments).toHaveAttribute('data-twikoo-path', firstPath);
@@ -407,7 +407,7 @@ test('Twikoo mounts once per pathname after client navigation', async ({ page })
 
 test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const desktopToc = page.locator('[data-toc-desktop]');
   const mobileToc = page.locator('details[data-toc-mobile]');
@@ -428,7 +428,7 @@ test('desktop TOC stays visible while mobile TOC remains collapsible', async ({ 
 
 test('Twikoo script failure leaves the article readable', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   await expect(page.locator('[data-twikoo-status]')).toContainText(/无法连接|无法加载|失败/);
   await expect(page.locator('article[data-post] .prose')).toBeVisible();
 });
@@ -439,7 +439,7 @@ test('Twikoo backend failure leaves the article readable', async ({ page }) => {
       init: async () => { throw new Error('mock backend failure'); }
     };
   });
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   await expect(page.locator('[data-twikoo-status]')).toContainText(/无法连接|无法加载|失败/);
   await expect(page.locator('article[data-post] .prose')).toBeVisible();
 });

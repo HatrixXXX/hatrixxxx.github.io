@@ -40,9 +40,9 @@ test('primary navigation pages omit title and subtitle banners while article pag
       await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
     }
 
-    await page.goto('/posts/Infra-线性代数/');
+    await page.goto('/posts/线性代数/');
     await expect(page.locator('[data-hero], .post-hero')).toHaveCount(0);
-    await expect(page.locator('.post-intro h1')).toHaveText('Infra-线性代数');
+    await expect(page.locator('.post-intro h1')).toHaveText('线性代数');
     await expect(page.locator('[data-wave-divider]')).toHaveCount(0);
   }
 });

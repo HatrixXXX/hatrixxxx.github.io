@@ -28,7 +28,7 @@ test('dragging selects article body text but not surrounding page text', async (
   await expect(page.locator('#page-loader')).toBeHidden();
   expect(await dragAcrossText(page, page.locator('.about-main h1'))).toBe('');
 
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   await expect(page.locator('#page-loader')).toBeHidden();
   expect(await dragAcrossText(page, page.locator('.post-intro h1'))).toBe('');
   expect(await dragAcrossText(page, page.locator('article[data-post] .prose p').first())).not.toBe('');

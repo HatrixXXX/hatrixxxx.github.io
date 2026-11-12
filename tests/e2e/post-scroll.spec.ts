@@ -4,7 +4,7 @@ test.use({ channel: process.env.HATRIX_TEST_CHROME === '1' ? 'chrome' : undefine
 
 test('scrolling upward inside article comments eases through intermediate positions', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const screen = page.locator('.post-comments-screen');
   await screen.locator('[data-twikoo-root]').evaluate((root) => {
@@ -36,7 +36,7 @@ test('scrolling upward inside article comments eases through intermediate positi
 
 test('upward wheel over comments at their top continues scrolling the article', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const screen = page.locator('.post-comments-screen');
   await screen.locator('[data-twikoo-root]').evaluate((root) => {
@@ -57,7 +57,7 @@ test('upward wheel over comments at their top continues scrolling the article', 
 
 test('one upward wheel near the comments top carries remaining motion into the article', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const screen = page.locator('.post-comments-screen');
   await screen.locator('[data-twikoo-root]').evaluate((root) => {
@@ -89,7 +89,7 @@ test('one upward wheel near the comments top carries remaining motion into the a
 
 test('comments that do not overflow never trap article scrolling', async ({ page }) => {
   await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
 
   const screen = page.locator('.post-comments-screen');
   await screen.scrollIntoViewIfNeeded();
@@ -113,7 +113,7 @@ test.describe('mobile article comments', () => {
 
   test('touch, keyboard, and reduced motion keep comments and article reachable', async ({ page }) => {
     await page.route('https://cdn.jsdelivr.net/npm/twikoo@2.0.13/dist/twikoo.min.js', (route) => route.abort());
-    await page.goto('/posts/Infra-线性代数/');
+    await page.goto('/posts/线性代数/');
 
     const screen = page.locator('.post-comments-screen');
     await screen.locator('[data-twikoo-root]').evaluate((root) => {

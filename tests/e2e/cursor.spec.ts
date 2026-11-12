@@ -118,7 +118,7 @@ test('magnetic frame covers links, cards, and other site controls', async ({ pag
   await sideCard.hover();
   await expect(page.locator('[data-magnetic-frame]')).toHaveAttribute('data-active', '');
 
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   await expect(page.locator('#page-loader')).toBeHidden();
   await page.locator('article img').first().hover();
   await expect(page.locator('[data-magnetic-frame]')).toHaveAttribute('data-active', '');

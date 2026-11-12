@@ -60,13 +60,13 @@ corepack pnpm test:e2e
 ## 目录与内容边界
 
 - `.private-blogs/posts/` 是已发布博客文章的唯一正文来源，位于独立私有仓库 `HatrixXXX/hatrix-blogs`。公开仓库不跟踪文章 Markdown、加锁正文图片或其他私密资源。
-- `.private-sanctuary/sanctuary/` 是秘境来源，位于独立私有仓库 `HatrixXXX/hatrix-sanctuary`。秘境总览和详情使用现有管理员 key 加锁，文本进入加密产物。封面默认用已批准的固定提交图床 URL，也兼容 `/assets/` 路径；未配置 `cover` 时使用统一默认封面。正文公开图片与旧相对图片的规则见下方“内容、路径与提交”。
+- `.private-sanctuary/sanctuary/` 是秘境来源，位于独立私有仓库 `HatrixXXX/hatrix-sanctuary`。秘境总览和详情使用现有管理员 key 加锁，文本进入加密产物。封面和正文图片遵守下方图床规则。未配置 `cover` 时使用统一默认封面。
 - `.private-snippets/snippets/` 是随笔来源，位于独立私有仓库 `HatrixXXX/hatrix-snippets`；公开仓库不跟踪随笔源文件。随笔总览和详情使用现有管理员 key 加锁，标题、摘要和正文进入加密产物；URL 与封面仍公开。
 - `.env.local` 保存本机 `HATRIX_ADMIN_KEY`，至少 8 个字符；禁止提交、分享或复制到内容仓库。
 - `src/content/projects/` 是作品集合，填写规则见 [README.md 的“新增作品”](README.md#新增作品)；作品状态只能是 `idea|active|done|archived`。
 - `src/data/playlist.ts` 允许为空；空歌单不创建 `Audio` 对象，也不填演示数据。秘境为空同样合法。
 - `src/config/navigation.ts` 是主导航、关于子页和首页快捷链接的唯一来源；`src/config/site.ts` 保存域名、作者、社交链接、Twikoo 后端和站点验证信息。
-- `public/assets/` 是本地网站图片、图标、纹理、光标和音频的统一目录；文章图片默认使用批准的公开图床。`src/` 不存放运行时素材。首页分块源图与运行时资源只放在 `public/assets/home/` 对应目录。
+- `public/assets/` 是站点界面图片、图标、纹理、光标和音频的统一目录。文章封面和正文图片一律引用图床。`src/` 不存放运行时素材。首页分块源图与运行时资源只放在 `public/assets/home/` 对应目录。
 - `scripts/` 只放可复用的检查和构建脚本，不放一次性迁移脚本。`public/CNAME` 是自定义域名唯一来源。
 
 ## 内容、路径与提交
@@ -77,10 +77,10 @@ corepack pnpm test:e2e
 - 文章正文属于用户内容，除非任务明确要求，不改写正文。schema 调整保持旧 URL。只修改摘要时不改 `updatedDate`。
 - 每篇博客文章的公开 `summary` 不超过 100 字并准确概括正文。正文主题、主要结论或覆盖范围明显变化时同步更新摘要，错别字和不影响主旨的小改不触发。
 - 所有通过校验的博客文章都生成公开页面，正文、正文图片、搜索、RSS 和站点地图不提供博客加锁开关。博客源码仓库仍保持私有。
-- 随笔、秘境和资讯继续使用管理员 key 加锁；随笔与秘境正文默认引用已批准的固定提交公开图床 URL，图片引用在解锁后才挂载，图片文件本身不受页面锁保护。旧内容目录内的 Markdown 相对图片仍兼容随正文加密；未批准的远程地址、data URL、站点根绝对路径、越界路径和原始 HTML `<img>` 仍禁止。
+- 随笔、秘境和资讯继续使用管理员 key 加锁。随笔与秘境正文的图床图片在解锁后挂载，图片文件本身不受页面锁保护。旧内容的 Markdown 相对图片仍由渲染器兼容读取和加密。新增或替换图片必须使用已批准的固定提交图床 URL。未批准的远程地址、data URL、站点根绝对路径、越界路径和原始 HTML `<img>` 仍禁止。
 - 随笔和秘境集合使用 `src/lib/protected-glob.ts` 保留源正文，禁止 Astro 为受保护正文登记原生渲染模块或图片导入；图片由专用受保护正文渲染器处理，不能替换为普通 `glob` 或仅设置 `deferRender`。
 - 为随笔拟新标题时，使用隐晦、荒诞且带有当代年轻人“发疯”语感的表达；避免直接对应正文的事件、人物、地点、技术关键词或结论，让人单看标题无法推断正文大致写了什么。
-- 随笔封面默认使用已批准的固定提交图床 URL，也兼容公开站点 `public/` 内素材的站点根路径；未配置时使用统一默认封面。
+- 随笔封面必须使用已批准的固定提交图床 URL。未配置时使用统一默认封面。
 - 首页入口使用 `/blogs/`、`/creation/`、`/about/`、`/snippets/`、`/favorites/`、`/toolbox/`、`/sanctuary/`、`/digest/`、`/playground/`、`/friends/`、`/guestbook/`。关于子页保留 `/about/<section>/`，文章详情保留 `/posts/<legacySlug>/`。
 - 文章详情返回 `/blogs/`，随笔详情返回 `/snippets/`；从总览进入随笔时恢复离开位置，直接打开详情时返回总览顶部。普通内页、关于子页、归档、旧分页和 404 返回 `/`。
 
@@ -96,8 +96,8 @@ corepack pnpm test:e2e
 
 ## 图片、构建与安全
 
-- 博客、随笔和秘境的封面与正文图片默认上传公开图床 `HatrixXXX/Hatrix-s-Blog-Image`，替换为批准的固定提交 URL 后可删除对应本地原文件。公开图片不受管理员 key 保护；统一默认封面由 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER` 提供，不保留本地副本。
-- Hatrix 图床 URL 必须固定到不可变 commit；当前允许 `85bc7b2b63bcf294f1079a98edf79ee1c9f41606`、`b4dd348363960f7d4b41f3cd95d9c6f00a02fe48`、`102d16687d19b8ba0b77fe930830465245d78294`、`a34cd33600165dd0b2b40e041434f85c54aaed07`、`ecfcb3dda864171cefb1378d825d72b8dfb888b1`、`862364364b52dea2a7cbecbd05366384062a72a8`、`14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3`、`f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7`、`ad3ce28aaf48bb45f2b0c3564259bb39026d936f`、`340c74e3150add75e7a97976a595e042f78f005f` 和 `a7255199e50b515b4bd5524938b2e66f4dd02985`。增加 ref 时同步更新 `src/lib/safe-url.ts` 的批准前缀、`astro.config.ts` 中 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` pattern，以及 inventory 测试；不得放宽整个主机。文章列表题图走 Astro/Sharp，正文远程图片保留 CDN 地址并使用 lazy/async 属性。
+- 所有博客、随笔和秘境文章的封面与正文图片都必须先上传到公开图床 `HatrixXXX/Hatrix-s-Blog-Image`，再引用已批准的固定提交 URL。文章禁止直接引用 `public/assets/`、内容目录内的相对路径或其他项目本地路径。替换已有本地图片时，同样先上传再改引用。公开图片不受管理员 key 保护。统一默认封面由 `src/config/article-images.ts` 的 `DEFAULT_ARTICLE_COVER` 提供，不保留本地副本。
+- Hatrix 图床 URL 必须固定到不可变 commit。新 ref 经批准后加到 `src/lib/safe-url.ts` 的 `APPROVED_IMAGE_REFS`。Astro 从同一清单生成 jsDelivr 与 GitHub Raw 的同仓库、同 commit、精确 `/img/**` 规则。图片检查读取当前内容，不维护生产图片总数。文章列表题图走 Astro/Sharp，正文远程图片保留 CDN 地址并使用 lazy/async 属性。
 - `check:images` 检查博客、随笔、秘境的封面与正文远程图片，以及统一默认封面；`check:protected` 检查 `dist/` 受保护文本和本地相对图片原资源泄漏。失败时修复根因，不放宽检查、替换期望密文或直接更新密文基线。
 - 生产构建生成的 `.astro/` 可能包含私有正文、渲染 HTML 和源路径，不得缓存、上传或提交；生产 workflow 在上传产物前删除它。
 - 生产 CSP 与 Referrer Policy 的唯一来源是 `src/config/security.ts`。`hash-wasm` 的 Argon2 只允许 `'wasm-unsafe-eval'`，不得换成通用 `'unsafe-eval'`。新增第三方脚本、框架、远程图片或媒体来源时同步更新策略、构建测试和生产预览取证，不放宽 `default-src`。

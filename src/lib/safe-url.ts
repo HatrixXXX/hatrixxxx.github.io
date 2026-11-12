@@ -1,40 +1,34 @@
 export const SITE_ORIGIN = 'https://hatrix.site';
-export const IMMUTABLE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/';
-const NEW_IMMUTABLE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/';
-const SANCTUARY_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@102d16687d19b8ba0b77fe930830465245d78294/img/';
-const ARTICLE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a34cd33600165dd0b2b40e041434f85c54aaed07/img/';
-const HIGHLIGHTS_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@ecfcb3dda864171cefb1378d825d72b8dfb888b1/img/';
-const BANGUMI_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@862364364b52dea2a7cbecbd05366384062a72a8/img/';
-const TECHNICAL_ARTICLE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3/img/';
-const ROOFLINE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7/img/';
-const DIGITAL_CIRCUIT_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@ad3ce28aaf48bb45f2b0c3564259bb39026d936f/img/';
-const ARCHITECTURE_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@340c74e3150add75e7a97976a595e042f78f005f/img/';
-const HDL_IMAGE_PREFIX =
-  'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@a7255199e50b515b4bd5524938b2e66f4dd02985/img/';
+export const IMAGE_REPOSITORY = 'HatrixXXX/Hatrix-s-Blog-Image';
+const DEFAULT_IMAGE_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
+export const APPROVED_IMAGE_REFS = [
+  'cb37da0a31aa4e0c05213f522ebb409d9c7592cd',
+  '0a16756c71f3e8a5cd14009cf78008891c0ef1f0',
+  '9d12b0f1f2dde739c60c32198580155fbee3d425',
+  'e1af43b0b1a55b22abbd0e2b5ea4462f39ebbd5f',
+  'bd11445cc9e2c936b541ddba344fdec5626af760',
+  'a15a30bfcfce393c3d8becb3e30f5c522a5d4a39',
+  'ca57384431a84f631bed0b81ec3c650d41d236d9',
+  'cac3bf8760863aaedf7123c5ddb89a467ff50563',
+  '4407a4d00112cc1f72c23da96a210de91efab3b0',
+  DEFAULT_IMAGE_REF,
+  'b4dd348363960f7d4b41f3cd95d9c6f00a02fe48',
+  '102d16687d19b8ba0b77fe930830465245d78294',
+  'a34cd33600165dd0b2b40e041434f85c54aaed07',
+  'ecfcb3dda864171cefb1378d825d72b8dfb888b1',
+  '862364364b52dea2a7cbecbd05366384062a72a8',
+  '14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3',
+  'f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7',
+  'ad3ce28aaf48bb45f2b0c3564259bb39026d936f',
+  '340c74e3150add75e7a97976a595e042f78f005f',
+  'a7255199e50b515b4bd5524938b2e66f4dd02985',
+  '0f5ede863cbb8f2fad5eaf2c84bab90ef19140ed',
+  'e24163cebfe5e007f018f59c0599c0650ddf7fa9'
+] as const;
 
-const IMMUTABLE_IMAGE_BASES = [
-  new URL(IMMUTABLE_IMAGE_PREFIX),
-  new URL(NEW_IMMUTABLE_IMAGE_PREFIX),
-  new URL(SANCTUARY_IMAGE_PREFIX),
-  new URL(ARTICLE_IMAGE_PREFIX),
-  new URL(HIGHLIGHTS_IMAGE_PREFIX),
-  new URL(BANGUMI_IMAGE_PREFIX),
-  new URL(TECHNICAL_ARTICLE_IMAGE_PREFIX),
-  new URL(ROOFLINE_IMAGE_PREFIX),
-  new URL(DIGITAL_CIRCUIT_IMAGE_PREFIX),
-  new URL(ARCHITECTURE_IMAGE_PREFIX),
-  new URL(HDL_IMAGE_PREFIX)
-];
+const imagePrefix = (ref: string) => `https://cdn.jsdelivr.net/gh/${IMAGE_REPOSITORY}@${ref}/img/`;
+export const IMMUTABLE_IMAGE_PREFIX = imagePrefix(DEFAULT_IMAGE_REF);
+const IMMUTABLE_IMAGE_BASES = APPROVED_IMAGE_REFS.map((ref) => new URL(imagePrefix(ref)));
 const DANGEROUS_DATA_MEDIA_TYPES = new Set([
   'text/html',
   'application/xhtml+xml',

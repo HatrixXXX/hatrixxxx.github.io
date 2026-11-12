@@ -67,7 +67,7 @@ test('about decorations remain inert when reduced motion is requested', async ({
 test('desktop and mobile navigation and table of contents match their viewport', async ({
   page
 }, testInfo) => {
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   const isMobile = testInfo.project.name === 'mobile-390';
   const hasCollapsedNavigation = testInfo.project.name !== 'desktop-1440';
 

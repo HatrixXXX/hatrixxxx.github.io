@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import astroConfig from '../../astro.config';
 import playwrightConfig from '../../playwright.config';
 import { siteMarkdownConfig } from '../../src/config/markdown';
+import { APPROVED_IMAGE_REFS, isApprovedRemoteImageUrl } from '../../src/lib/safe-url';
 import remarkContentSecurity from '../../src/plugins/remark-content-security';
 
 function workflowJob(workflow: string, name: string): string {
@@ -76,140 +77,27 @@ describe('Astro project tooling', () => {
   });
 
   it('allows pinned jsDelivr images and only their exact GitHub Raw redirects', () => {
-    expect(astroConfig.image?.remotePatterns).toEqual([
-      {
+    const patterns = astroConfig.image?.remotePatterns ?? [];
+    expect(astroConfig.image?.domains ?? []).toEqual([]);
+    expect(patterns).toHaveLength(APPROVED_IMAGE_REFS.length * 2);
+    expect(new Set(APPROVED_IMAGE_REFS).size).toBe(APPROVED_IMAGE_REFS.length);
+
+    for (const ref of APPROVED_IMAGE_REFS) {
+      expect(ref).toMatch(/^[0-9a-f]{40}$/);
+      expect(patterns).toContainEqual({
         protocol: 'https',
         hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@102d16687d19b8ba0b77fe930830465245d78294/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@a34cd33600165dd0b2b40e041434f85c54aaed07/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@ecfcb3dda864171cefb1378d825d72b8dfb888b1/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@862364364b52dea2a7cbecbd05366384062a72a8/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@ad3ce28aaf48bb45f2b0c3564259bb39026d936f/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@340c74e3150add75e7a97976a595e042f78f005f/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.jsdelivr.net',
-        pathname:
-          '/gh/HatrixXXX/Hatrix-s-Blog-Image@a7255199e50b515b4bd5524938b2e66f4dd02985/img/**'
-      },
-      {
+        pathname: `/gh/HatrixXXX/Hatrix-s-Blog-Image@${ref}/img/**`
+      });
+      expect(patterns).toContainEqual({
         protocol: 'https',
         hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/85bc7b2b63bcf294f1079a98edf79ee1c9f41606/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/102d16687d19b8ba0b77fe930830465245d78294/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/a34cd33600165dd0b2b40e041434f85c54aaed07/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/ecfcb3dda864171cefb1378d825d72b8dfb888b1/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/862364364b52dea2a7cbecbd05366384062a72a8/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/ad3ce28aaf48bb45f2b0c3564259bb39026d936f/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/340c74e3150add75e7a97976a595e042f78f005f/img/**'
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-        pathname:
-          '/HatrixXXX/Hatrix-s-Blog-Image/a7255199e50b515b4bd5524938b2e66f4dd02985/img/**'
-      }
-    ]);
+        pathname: `/HatrixXXX/Hatrix-s-Blog-Image/${ref}/img/**`
+      });
+      expect(isApprovedRemoteImageUrl(new URL(
+        `https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image@${ref}/img/cover.webp`
+      ))).toBe(true);
+    }
   });
 
   it('prebundles lazy browser dependencies before the dev server accepts requests', () => {

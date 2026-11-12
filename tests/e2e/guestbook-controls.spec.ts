@@ -85,7 +85,7 @@ test('opening settings hides and disables the three comment controls until close
 });
 
 test('article comment controls stay in place while refreshing', async ({ page }) => {
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
   const actions = page.locator('.tk-comments-actions');
   await actions.locator('[data-mock-action="refresh"]').click();
@@ -98,7 +98,7 @@ test('article comment controls stay in place while refreshing', async ({ page })
 });
 
 test('article settings hide comment controls and restore focus on close', async ({ page }) => {
-  await page.goto('/posts/Infra-线性代数/');
+  await page.goto('/posts/线性代数/');
   await expect(page.locator('[data-twikoo-comments]')).toHaveAttribute('data-twikoo-state', 'ready');
   const actions = page.locator('.tk-comments-actions');
   const settings = actions.locator('[data-mock-action="settings"]');
