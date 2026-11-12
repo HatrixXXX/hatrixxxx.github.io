@@ -1,35 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { resolve } from 'node:path';
 import { checkImages, collectImageSources, coverFailuresFor, extractImageUrls } from '../../scripts/check-images';
 import { blogRoot } from '../../src/lib/blog-root';
 import { sanctuaryRoot } from '../../src/lib/sanctuary-root';
+import { snippetRoot } from '../../src/lib/snippet-root';
+import { IMMUTABLE_IMAGE_PREFIX, isApprovedRemoteImageUrl } from '../../src/lib/safe-url';
+import { DEFAULT_ARTICLE_COVER } from '../../src/config/article-images';
 import remarkImageStatus from '../../src/plugins/remark-image-status';
-
-const IMAGE_REPOSITORY = 'https://cdn.jsdelivr.net/gh/HatrixXXX/Hatrix-s-Blog-Image';
-const IMAGE_REPOSITORY_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
-const IMMUTABLE_IMAGE_PREFIX = `${IMAGE_REPOSITORY}@${IMAGE_REPOSITORY_REF}/`;
-const PINNED_IMAGE_PREFIXES = [
-  `${IMAGE_REPOSITORY}@e1af43b0b1a55b22abbd0e2b5ea4462f39ebbd5f/`,
-  `${IMAGE_REPOSITORY}@bd11445cc9e2c936b541ddba344fdec5626af760/`,
-  `${IMAGE_REPOSITORY}@a15a30bfcfce393c3d8becb3e30f5c522a5d4a39/`,
-  `${IMAGE_REPOSITORY}@ca57384431a84f631bed0b81ec3c650d41d236d9/`,
-  `${IMAGE_REPOSITORY}@cac3bf8760863aaedf7123c5ddb89a467ff50563/`,
-  `${IMAGE_REPOSITORY}@4407a4d00112cc1f72c23da96a210de91efab3b0/`,
-  IMMUTABLE_IMAGE_PREFIX,
-  `${IMAGE_REPOSITORY}@b4dd348363960f7d4b41f3cd95d9c6f00a02fe48/`,
-  `${IMAGE_REPOSITORY}@102d16687d19b8ba0b77fe930830465245d78294/`,
-  `${IMAGE_REPOSITORY}@a34cd33600165dd0b2b40e041434f85c54aaed07/`,
-  `${IMAGE_REPOSITORY}@ecfcb3dda864171cefb1378d825d72b8dfb888b1/`,
-  `${IMAGE_REPOSITORY}@862364364b52dea2a7cbecbd05366384062a72a8/`,
-  `${IMAGE_REPOSITORY}@14fb8e3c7367606ca612ff86dba8dbcb2c6ffdf3/`,
-  `${IMAGE_REPOSITORY}@f8a3ab002fda4774f2bfe343a7d815aa71b3f8d7/`,
-  `${IMAGE_REPOSITORY}@ad3ce28aaf48bb45f2b0c3564259bb39026d936f/`,
-  `${IMAGE_REPOSITORY}@340c74e3150add75e7a97976a595e042f78f005f/`,
-  `${IMAGE_REPOSITORY}@a7255199e50b515b4bd5524938b2e66f4dd02985/`,
-  `${IMAGE_REPOSITORY}@0f5ede863cbb8f2fad5eaf2c84bab90ef19140ed/`,
-  `${IMAGE_REPOSITORY}@e24163cebfe5e007f018f59c0599c0650ddf7fa9/`
-];
-const USES_PUBLIC_FIXTURES = blogRoot() === resolve('tests/fixtures/private-blogs');
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -37,25 +13,21 @@ afterEach(() => {
 });
 
 describe('remote image checking', () => {
-  it.skipIf(USES_PUBLIC_FIXTURES)('pins the complete published image inventory to immutable repository commits', async () => {
-    const sources = await collectImageSources(blogRoot('posts'));
-    const blogImageUrls = sources.urls.filter((url) => url.startsWith(IMAGE_REPOSITORY));
-    const unpinned = blogImageUrls.filter(
-      (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(prefix))
-    );
+  it.each([
+    ['blogs', blogRoot('posts')],
+    ['snippets', snippetRoot('snippets')],
+    ['sanctuary', sanctuaryRoot('sanctuary')]
+  ])('requires approved immutable image URLs for %s', async (_collection, directory) => {
+    const { urls } = await collectImageSources(directory);
 
-    expect(blogImageUrls).toHaveLength(192);
-    expect(unpinned).toHaveLength(0);
+    expect(urls.filter((url) => !isApprovedRemoteImageUrl(new URL(url)))).toEqual([]);
   });
 
-  it('pins the sanctuary image inventory to immutable repository commits', async () => {
-    const sources = await collectImageSources(sanctuaryRoot('sanctuary'));
-    const unpinned = sources.urls.filter(
-      (url) => !PINNED_IMAGE_PREFIXES.some((prefix) => url.startsWith(`${prefix}img/`))
-    );
+  it('collects a shared cover once from the public fixtures', async () => {
+    const { urls, coverUrls } = await collectImageSources('tests/fixtures/private-blogs/posts');
 
-    expect(unpinned).toHaveLength(0);
-    for (const cover of sources.coverUrls) expect(sources.urls).toContain(cover);
+    expect(urls).toEqual([DEFAULT_ARTICLE_COVER]);
+    expect(coverUrls).toEqual(new Set([DEFAULT_ARTICLE_COVER]));
   });
 
   it('deduplicates jsDelivr Markdown and HTML image URLs', () => {
@@ -85,7 +57,7 @@ describe('remote image checking', () => {
   });
 
   it('marks an unavailable transformed cover as a build-blocking cover failure', async () => {
-    const transformedCover = `${IMMUTABLE_IMAGE_PREFIX}img/994.jpg!list1x.v2`;
+    const transformedCover = `${IMMUTABLE_IMAGE_PREFIX}994.jpg!list1x.v2`;
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })));
 
     const result = await checkImages([transformedCover], 12);
@@ -235,7 +207,7 @@ describe('remark image status', () => {
   });
 
   it('replaces the angle-bracket Markdown destination from the real post', () => {
-    const failedUrl = `${IMMUTABLE_IMAGE_PREFIX}img/servlet%20(1).png`;
+    const failedUrl = `${IMMUTABLE_IMAGE_PREFIX}servlet%20(1).png`;
     const tree = { type: 'root', children: [{ type: 'image', url: failedUrl, alt: '' }] };
 
     remarkImageStatus(new Set([failedUrl]))(tree);
@@ -276,7 +248,7 @@ describe('remark image status', () => {
   });
 
   it('normalizes a successful CMOS-style raw HTML image without dropping attributes', () => {
-    const imageUrl = `${IMMUTABLE_IMAGE_PREFIX}img/20250619232906716.png`;
+    const imageUrl = `${IMMUTABLE_IMAGE_PREFIX}20250619232906716.png`;
     const tree = {
       type: 'root',
       children: [{

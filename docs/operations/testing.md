@@ -43,7 +43,7 @@ corepack pnpm test:e2e
 
 这些命令不作为本地推送前门禁。修复后继续推送并监测新提交；缺少凭据、权限等外部阻塞时，报告当前状态和运行链接，不将未完成或未触发的工作流视为通过。
 
-新增或删除博客文章后，同步 `tests/unit/content-schema.test.ts` 的文章数、`scripts/check-built-site.ts` 的默认和生产文章数，以及对应的 `tests/unit/check-built-site.test.ts`。增加图片时，同步 `tests/unit/check-images.test.ts` 的 inventory；新图床提交须按 README 的图片策略固定 URL 并更新精确白名单。需要运行命令才能确定的计数和基线，在对应 CI 失败后按下文流程处理，不能只改到单元测试通过。
+新增或删除博客文章后，同步 `tests/unit/content-schema.test.ts` 的文章数、`scripts/check-built-site.ts` 的默认和生产文章数，以及对应的 `tests/unit/check-built-site.test.ts`。图片检查读取当前内容，换封面或增删图片无需更新测试。首次引用新的图床 commit 时，按 README 的图片策略更新白名单。需要运行命令才能确定的计数和基线，在对应 CI 失败后按下文流程处理，不能只改到单元测试通过。
 
 ## 依赖版本兼容
 
