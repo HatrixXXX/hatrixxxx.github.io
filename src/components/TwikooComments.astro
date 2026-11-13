@@ -5,9 +5,10 @@ import '@/styles/twikoo.css';
 interface Props {
   title?: string;
   variant?: 'default' | 'guestbook';
+  path?: string;
 }
 
-const { title = '评论', variant = 'default' } = Astro.props;
+const { title = '评论', variant = 'default', path = Astro.url.pathname } = Astro.props;
 ---
 
 <section
@@ -15,7 +16,7 @@ const { title = '评论', variant = 'default' } = Astro.props;
   aria-label={title}
   data-twikoo-comments
   data-twikoo-env-id={SITE.twikoo.envId}
-  data-twikoo-path={Astro.url.pathname}
+  data-twikoo-path={path}
   data-twikoo-variant={variant}
 >
   <p class="comments-status" role="status" data-twikoo-status>评论正在加载…</p>

@@ -11,6 +11,7 @@ import { sanctuaryRoot } from '../src/lib/sanctuary-root';
 import { snippetRoot } from '../src/lib/snippet-root';
 import { snippetIdFromFile, snippetPath } from '../src/lib/snippets';
 import { sanctuaryPath } from '../src/lib/sanctuary';
+import { postPath, previousPostSlugs } from '../src/lib/urls';
 import {
   dangerousBrowserUrlKind,
   isApprovedRemoteImageUrl,
@@ -600,9 +601,16 @@ export async function inspectProjectBuiltSite(
     errors,
     'Missing generated posts directory: /posts/'
   );
+  const redirectFiles = new Set(Object.values(previousPostSlugs).map((slug) => `${slug}/index.html`));
   const generatedPostCount = postOutputFiles
-    .filter((file) => /^[^/]+\/index\.html$/.test(relative(join(distPath, 'posts'), file).replaceAll('\\', '/')))
+    .map((file) => relative(join(distPath, 'posts'), file).replaceAll('\\', '/'))
+    .filter((file) => /^[^/]+\/index\.html$/.test(file) && !redirectFiles.has(file))
     .length;
+  for (const [current, previous] of Object.entries(previousPostSlugs)) {
+    if (routes.includes(postPath(current)) && !(await resolvesToOutput(distPath, postPath(previous)))) {
+      errors.push(`Missing expected post redirect: ${postPath(previous)}`);
+    }
+  }
   if (generatedPostCount !== expectedPostCount) {
     errors.push(`Expected ${expectedPostCount} generated post routes, found ${generatedPostCount}.`);
   }

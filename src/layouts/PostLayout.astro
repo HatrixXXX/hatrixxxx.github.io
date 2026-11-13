@@ -11,7 +11,7 @@ import LatestPostRail from '@/components/LatestPostRail.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { AdjacentPosts, PostEntry } from '@/lib/content';
 import { buildSiteStats, formatRunningDurationAt } from '@/lib/site-stats';
-import { postPath } from '@/lib/urls';
+import { postPath, previousPostSlugs } from '@/lib/urls';
 import { latestPostLimit } from '@/lib/post-layout';
 import { SITE } from '@/config/site';
 import { DEFAULT_ARTICLE_COVER } from '@/config/article-images';
@@ -31,6 +31,8 @@ interface Props {
 
 const { post, headings, adjacent } = Astro.props;
 const canonicalPath = postPath(post.data.legacySlug);
+const previousSlug = previousPostSlugs[post.data.legacySlug];
+const commentPath = previousSlug ? encodeURI(postPath(previousSlug)) : Astro.url.pathname;
 const posts = await getCollection('posts');
 const stats = buildSiteStats(posts);
 
@@ -80,7 +82,7 @@ const stats = buildSiteStats(posts);
 
           <div class="post-comments-shell">
             <div class="post-comments-screen" role="region" aria-label="评论内容" tabindex="0">
-              <TwikooComments />
+              <TwikooComments path={commentPath} />
             </div>
           </div>
         </div>

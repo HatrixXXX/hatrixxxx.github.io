@@ -1,6 +1,6 @@
 # Twikoo 后端部署与回退
 
-本站仍由 GitHub Pages 提供静态文件。Twikoo 评论单独运行在 Cloudflare Worker，数据保存在 D1，前端的 `envId` 为 `https://comments.hatrix.site`。博客文章继续用原有 `/posts/<legacySlug>/` 路径，留言板用 `/guestbook/`；旧 GitHub Discussions 留言不迁移，也不删除。
+本站由 GitHub Pages 提供静态文件。Twikoo 评论单独运行在 Cloudflare Worker，数据保存在 D1，前端的 `envId` 为 `https://comments.hatrix.site`。博客文章默认用 `/posts/<legacySlug>/` 作为评论路径。已更名的文章通过 [旧 slug 清单](../../src/lib/urls.ts) 沿用原评论路径，旧文章网址跳转到新地址。留言板用 `/guestbook/`，旧 GitHub Discussions 留言不迁移、不删除。
 
 本页依据 [Twikoo 2.0 Cloudflare 部署说明](https://twikoo.js.org/backend.html#cloudflare-workers-部署)、[2.0.13 适配器 README](https://github.com/twikoojs/twikoo/blob/2.0.13/packages/server-cloudflare/README.md) 和 [Cloudflare Workers 自定义域名文档](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/) 编写。执行前核对这些页面及 `docs/operations/cloudflare.md` 的当前配置。网站本身继续使用 Node 24；下面的 Node 26 只用于独立的 Twikoo 源码构建。
 

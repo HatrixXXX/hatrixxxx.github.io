@@ -10,6 +10,14 @@ import { snippetIdFromFile, snippetPath } from './src/lib/snippets';
 import { sanctuaryRoot } from './src/lib/sanctuary-root';
 import { sanctuaryPath } from './src/lib/sanctuary';
 import { APPROVED_IMAGE_REFS, IMAGE_REPOSITORY } from './src/lib/safe-url';
+import { postPath, previousPostSlugs } from './src/lib/urls';
+
+const postRedirects = Object.fromEntries(
+  Object.entries(previousPostSlugs).map(([current, previous]) => [
+    postPath(previous),
+    { status: 301 as const, destination: postPath(current) }
+  ])
+);
 
 function markdownFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -24,7 +32,9 @@ function sitemapExcludedRoutes(): Set<string> {
     '/blog/', '/blog/all/', '/projects/', '/about/bookmarks/',
     '/about/software/', '/about/friends/', '/lab/'
   ];
-  const routes = new Set([...LOCKED_PAGE_PATHS, ...legacyRedirectPaths].map(normalizeRoutePath));
+  const routes = new Set([
+    ...LOCKED_PAGE_PATHS, ...legacyRedirectPaths, ...Object.keys(postRedirects)
+  ].map(normalizeRoutePath));
 
   const snippetsRoot = snippetRoot('snippets');
   if (existsSync(snippetsRoot)) {
@@ -60,6 +70,7 @@ export default defineConfig({
   site: 'https://hatrix.site',
   output: 'static',
   trailingSlash: 'always',
+  redirects: postRedirects,
   devToolbar: { enabled: process.env.PLAYWRIGHT_TEST !== '1' },
   prefetch: { prefetchAll: false, defaultStrategy: 'hover' },
   integrations: [
