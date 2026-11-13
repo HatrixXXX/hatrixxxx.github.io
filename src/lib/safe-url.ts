@@ -2,6 +2,7 @@ export const SITE_ORIGIN = 'https://hatrix.site';
 export const IMAGE_REPOSITORY = 'HatrixXXX/Hatrix-s-Blog-Image';
 const DEFAULT_IMAGE_REF = '85bc7b2b63bcf294f1079a98edf79ee1c9f41606';
 export const APPROVED_IMAGE_REFS = [
+  '0169403db288910d536dc3e35622bbfdc055e2ad',
   'ea2f46664d431232aaba8376567f5cbaa2aff79e',
   '8edfe3abf3ecb2438e74b9e3bfc6d0a41303597b',
   'cb37da0a31aa4e0c05213f522ebb409d9c7592cd',

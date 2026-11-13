@@ -22,7 +22,7 @@ describe('content contracts', () => {
     const files = (await readdir(root)).filter((file) => /\.mdx?$/.test(file));
     const usesPublicFixtures = root === resolve('tests/fixtures/private-blogs/posts');
 
-    expect(files).toHaveLength(usesPublicFixtures ? 2 : 18);
+    expect(files).toHaveLength(usesPublicFixtures ? 2 : 19);
     for (const file of files) {
       const { data } = matter(await readFile(join(root, file), 'utf8'));
       const parsed = postSchema.safeParse(data);
